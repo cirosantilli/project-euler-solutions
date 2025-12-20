@@ -1,0 +1,1502 @@
+= Project Euler Solutions
+:docinfo:
+:idprefix:
+:idseparator: -
+:sectanchors:
+:sectlinks:
+:sectnumlevels: 6
+:sectnums:
+:toc: macro
+:toclevels: 6
+:toc-title:
+
+This repo aims to solve **ALL** https://projecteuler.net[Project Euler] problems in openly licensed Python code, mostly using LLMs to generate the bulk of the solutions. Status:
+
+// STATUS TABLE
+* **1-900**: done
+* **901-981**: 78/81 (TODO: 979, 980, 981)
+
+Tested on Python 3.13.7, PyPy 7.3.20, Ubuntu 25.10.
+
+.https://commons.wikimedia.org/wiki/File:Leonhard_Euler_2.jpg[Portrait of Leonard Euler by Jakob Emanuel Handmann c.1756] with https://knowyourmeme.com/memes/deal-with-it[Deal With It meme sunglasses] added on it by ChatGPT with prompt "Extract bust and add meme sunglasses."
+image::logo.jpg[]
+
+toc::[]
+
+== Goals
+
+There are a few solution collections out there such as:
+
+* https://github.com/nayuki/Project-Euler-solutions
+* https://github.com/stbrumme/euler
+* https://github.com/igorvanloo/Project-Euler-Explained/tree/master/Finished%20Problems
+
+but we couldn't find any complete ones, and the reason is obvious: there's no single human who's had both the patience and the willingness to spoil problems and get banned from the leaderboards forever. The existing solution repos are also partially a showcase of users's skills rather than pure a mass collaborative effort to get it done. Contributors of this project however have attained Buddhahood and completely freed themselves of their own ego: we do stupid things and we are not proud. As such, we have come closer to the more fundamental reason for doing PE problems: autism.
+
+We also have https://github.com/lucky-bai/projecteuler-solutions which contains the numerical solutions. And of course, once you have the numerical solution you can enter the private forum threads where people freely share their solutions. But they don't use open licenses, so we can't republish them openly.
+
+But with the advent of https://matharena.ai/?comp=euler--euler&task=4&model=GPT-5+%28high%29&view=problem&run=1[LLMs being able to solve a large number of them], this project has become a possibility.
+
+At least initially, we are not going to restrict ourselves only to LLM solutions, or attempt to carefully benchmark LLM capability with this repo. If one problem is hard and we manually find a solution, it is fine to add it manually. It is also fine to raid the private Project Euler forums to understand the key tricks and feed insights to LLMs (though we must never ever touch code from there), since mathematical ideas themselves cannot be copyrighted. The initial goal is just to have all solvers legally with as little effort and money as possible. Editing LLM output to make it work in any way is also OK.
+
+The main reasons for creating this repo are:
+
+* let people and LLMs get solutions without wasting more GPUs
+* pissing off Project Euler people who say solutions must not be published
+* beauty
+* get a feeling for how much LLMs cost vs how powerful they are for hard but non-frontier tasks
+
+Of course, it can be argued that https://github.com/eth-sri/matharena infrastructure does everything that this repository does and more, but because we focus solely on Project Euler and openly give answers, our repo can be cuter. Also they are not trying to do the older ones like we are.
+
+We are focusing on Python solutions at first because this is the language that LLMs seems to speak better. It is also cute and avoid compilation overhead. Also pypy3 does a lot to bring runtime closer to that of compiled languages. We are not against adding solutions in every single language in existence in the future, but that is becoming increasingly cheap and easy with vibe translation with Codex CLI, so we are not too concerned either.
+
+May this repo free unsuspecting nerds from the ambition to solve some useless problems. You need to pick something even harder to do now.
+
+=== Solution guidelines
+
+Each Python solution file should be completely self contained and have no dependencies outside of the Python standard library.
+
+Solutions must run on a single CPU core, multithreading or accelerators like GPUs are not allowed.
+
+We are initially striving strongly for a 10 minute maximum runtime of each solution. This number is semi arbitrary, but it feels like a ridiculously high ceiling above which a non-bruteforce algorithm with the key insight should never ever go above, and we are yet to see a compelling case of the contrary. A few seconds is much much more common and pleasant. One minute starts to feel bad. Five is already basically hopeless. So ten feels like beyond reasonable. The following problems may be exceptions ot this rule as people in the forums were suffering, optimizing this would be great. The slowest known solvers are listed at: <<slowest-solvers>>.
+
+We want to avoid any magic pre-computed constants used as intermediate results as much as possible, and especially large precomputed number tables. Ideally the program should compute anything it needs from scratch. Well known mathematical constants that appear in the Python stlib like Pi are fine though. One particular example of what to avoid is hardcoding OEIS sequences: it is fine to know about them and mention them in comments, but the final code should calculate them from scratch. This is hard to enforce this rule automatically except in the case where large precomputed tables are present and the file becomes huge. But we will do our best. The following simple link:numerical-consts.sh[] helper lists files sorted by those having the most hardcoded constants in them and can help find such failures:
+
+....
+./numerical-consts.sh
+....
+
+There are currently no known solvers with ugly precomputed results which should be removed.
+
+== Status
+
+After trying more automated approaches which failed due to reliability/cost issues, we ended up painstakingly (but also meditatively) doing at least a single pass of "paste on chatgpt.com", which solves 90% of them. When that fails the algorithm is a mixture of:
+
+* Codex locally with `generate-solvers.py --codex N`. Sometimes works.
+* raid the forum for insight
+
+The above was after we have vibe ported all solutions from the following repositories into this one with Codex CLI, both of which are CC0:
+
+* https://github.com/stbrumme/euler
+* https://github.com/igorvanloo/Project-Euler-Explained/tree/master/Finished%20Problems
+
+Holdouts, what we did beyond the basic chatgpt.com attempt so we don't try it again:
+
+* 660: codex produced code but it timed out. Geometry.
+* 665: codex produced code but it timed out Game theory.
+* 667: codex cheats by reading Solutions.md. Geometry.
+* 747: codex. Geometry.
+* 780: codex. Geometry problem with many images. This one could be trouble. Codex fails with:
++
+....
+I could not derive a correct algorithm consistent with the problem’s geometry and the provided sample values.
+
+Key blocking issues:
+- The standard derivation (quotients of the regular triangular tiling by a translation sublattice) gives "'`F(6)=4`, which contradicts the statement’s `F(6)=8`.
+- Alternative interpretations (rectangular tori only, or mirror-chirality adjustments) still failed to match the given totals, including `G(100)=8090`.
+....
+* 867. Geometry.
+* 883
+* 888
+
+Here is a description of how we previously tried to more automatically tackle things but mostly failed:
+
+* link:generate-solvers.py[] managed to solve 1-100 for very little money, but then quickly spent 20 dollars on the API to try and solve 101-200 with GPT-5.2. We didn't limit output tokens per prompt however, so it is possible that a small number of tasks took up all the tokens.
++
+We then tried to load up 10$ and see if I could solve any unsolved problems above 200 on API with:
++
+[source,shell]
+----
+./generate-solvers.py --max-output-tokens 50000 --model gpt-5.2 202 210 212
+----
++
+but that ate up 7$ and ended up in three timeouts thus wasting most of my money. So I'm never trying to use this shitty API again. Plus plan Web UI solved all three immediately after.
+* link:generate-solvers.py[] `--codex` managed to solve 400-413, but it is slow and then it hit the 5 hour usage limit on my Plus plan.
+* https://chatgpt.com web UI: GPT-5.2 models seem to easily solve all the old problems when I ask for it on the , it's just that the API feels way more expensive. Maybe this is just an illusion as we start to hit web UI limits as well later on. But if those are not hit, worse case we could solve all problems by manually copy pasting on web UI, it's then just a matter of kicking it repeatedly until it gives the results.
+
+== Setup
+
+[source,shell]
+----
+virtualenv -p python3 .venv
+. .venv/bin/activate
+----
+
+== Generating solvers
+
+=== generate-solvers.py
+
+link:generate-solvers.py[] attempts to generate solvers via OpenAI API.
+
+Try to generate solvers for problem 420 with the OpenAI API:
+
+[source,shell]
+----
+./generate-solvers.py 420
+----
+
+The program hangs until all tasks are done. This may take a while, 10-15 mins is common. If successful, solvers are stored under link:solvers[]
+
+Same but for problems 420to 430:
+
+[source,shell]
+----
+./generate-solvers.py --max-output-tokens 10000 420 430
+----
+
+`--max-output-tokens` and smaller batches are highly recommended to gage how much you are likely to spend per solution on average, otherwise it is easy to run out of API credits.
+
+Another thing you can try is to pick a cheaper model to see if it also solves some given problems for way less money:
+
+[source,shell]
+----
+./generate-solvers.py --max-output-tokens 10000 --model gpt-5-mini 200
+----
+
+202, 210 and 212 failed to solve however with this.
+
+Same but in batch mode, which is about 2x cheaper but may take up to 24 hours to complete:
+
+[source,shell]
+----
+./generate-solvers.py --max-output-tokens 10000 --batch 420 430
+----
+
+=== generate-solvers.py --codex
+
+With `--codex`, link:generate-solvers.py[] attempts to generate solvers by running Codex on your local machine + its API calls. Sample usage:
+
+[source,shell]
+----
+./generate-solvers.py --codex 245
+----
+
+TODO: output_tokens not showing up correctly in the JSON.
+
+=== Manual prompt on web UI
+
+This is a decent prompt template:
+
+----
+Solve project euler 245 in file main.py. Don't use any external libraries. Add asserts to any test values given in the problem statement. Also produce a markdown summary of the main techniques used as README.md. Provide the two files both inline here and with download links. Any known final answer must not appear anywhere in the generated files, don't assert that value only print it.
+----
+
+If you are running a few of those you can more easily
+
+== Testing
+
+Run just one manually solver link:solvers/400.py[]:
+
+[source,shell]
+----
+pypy3 solvers/400.py
+----
+
+A small number of the earlier problems actually need input data from a separate file, to run those manually you also need to `cd` into the directory that contains them first e.g. for link:solvers/22.py[]:
+
+[source,shell]
+----
+cd data/project-euler-statements/data/documents
+pypy3 ../../../../solvers/22.py
+----
+
+Each solver should print the final solution to stdout and nothing else.
+
+They should also assert any other given test values to increase the probability that the solver is actually correct.
+
+Run all solvers and check for correctness against the numerical solutions published at https://github.com/lucky-bai/projecteuler-solutions[lucky-bai/projecteuler-solutions]:
+
+[source,shell]
+----
+./test.py
+----
+
+Same for one specific solver:
+
+[source,shell]
+----
+./test.py 400
+----
+
+Same for an inclusive range of solvers:
+
+[source,shell]
+----
+./test.py 400-410
+----
+
+Set timeout in seconds under which solvers must run with `-t`. The default value is 600. Having a timeout is useful when trying several solvers for the first time before you know if they are correct or not:
+
+[source,shell]
+----
+./test.py -t60 400-410
+----
+
+Solvers that fail to terminated under that time fail with something like:
+
+....
+| link:solvers/141.py[141] |  |  |  | timed out after 60.000s
+....
+
+One extremely convenient automation to `./test.py` is the -A --autoupdate flag which automatically updates this README with updated results as tests are run, saving you a lot of copy paste:
+
+....
+| link:solvers/141.py[141] |  |  |  | timed out after 60.000s
+....
+
+[source,shell]
+----
+./test.py -A -t60 400-410
+----
+
+=== Linting
+
+We have basic linting with link:lint.py[]:
+
+....
+./lint.py
+....
+
+Currently the only thing that this script does it to check that the output answers don't show up on implementations to help prevent cheating by directly printing or returning hardcoded values. ChatGPT 5.2 does that sometimes when it can't find a decent solution.
+
+Note that this linting does not affect languages where you can actually formally prove your algorithm such as Lean. That's their beauty!
+
+The functionality of link:lint.py[] is automatically called from link:test.py[] and tests just fail if the output string is present in them.
+
+Of course, this does not rule out malice entirely, an evil LLM could simply obfuscate the cheating with string concatenation or addition. But this already greatly reduces the chances. There is only one solution to this problem: <<lean>> or other formal proof systems.
+
+==== Autoformatting
+
+In the age of LLM code generation, autoformaters have become even sweeter:
+
+[source,shell]
+----
+black .
+./format_md.py
+----
+
+=== Multilanguage support
+
+We have basic support for solvers written in multiple languages.
+
+While the main goal of the repository is to have Python solutions, we couldn't resist generalizing things a bit for <<lean>>. But it is also interesting to have multilanguage support to compare implementation speed across different languages.
+
+For most compiled languages such as C and C++, you first have to compile the examples. From inside link:solvers/[]:
+
+----
+cd solvers
+----
+
+you can build example with commands such as:
+
+* `make`: build all compiled examples
+* `make c`: build all compiled C examples
+* `make 1_c.out`: build just example 1 in language C
+
+By default running:
+
+[source,shell]
+----
+./test.py 1
+----
+
+runs all solvers found for that given problem. If any compiled solvers have not been compiled, they are simply skipped.
+
+Run only the selected languages with the `-l` flag:
+
+----
+./test.py -l c -l py 1
+----
+
+You can also run a solver of a specific language with the more intuitive syntax:
+
+----
+./test.py 1.cpp
+----
+
+Results for non-Python solvers can be seen at: <<non-python-solvers>>.
+
+==== Lean
+
+One massive stretch goal of this project is to have formal lean proofs of the Lean solutions.
+
+Lean is an automated theorem checker that doubles as a programming language, so as long as we get the formalization of the problem statement right, Lean will ensure that the final algorithm is correct. Notably this ensures that the LLM didn't cheat and found a flawed algorithm which happens to work by chance or malice only on certain cases. 
+
+Probably the proofs will come down to proofs that the bruteforce solution function is equivalent to the insight-optimized one that you need to have reasonable runtime, but we will see how it goes.
+
+The plan is to vibe-translate Python to lean without proof initially, and then starting adding proofs little by little. We need to see get a feel for how automatable that will be! There are a bunch of autoformalizatoin and automatic proof companies out there right now, so this will be a perfect chance to try them out.
+
+There are two ways to run the Lean program of this repo:
+
+* you can convert them to executables just as for .c or .cpp files
+* or you can run them directly with lean
+
+and it is only the second method which will run the actual proofs.
+
+To run first setup Lean with:
+
+[source,shell]
+----
+curl https://elan.lean-lang.org/elan-init.sh -sSf | sh
+source $HOME/.elan/env
+lake build
+----
+
+and then you can run the generated executables with:
+
+[source,shell]
+----
+solvers/1_lean.out
+----
+
+Rebuild just one executable:
+
+[source,shell]
+----
+lake env make -C solvers 1_lean.out
+----
+
+Run the proof of of a single solver e.g. link:solvers/1.lean[]:
+
+[source,shell]
+----
+lake env lean solvers/1.lean
+----
+
+The way things work is that link:data/project-euler-statements[] will contain a Lean formalization of each problem statement, for example:
+
+* link:data/project-euler-statements/data/lean/ProjectEulerStatements/P1.lean[]: problem statement
+* link:solvers/P1.lean[]: efficient algorithm and proof of equivalence with the problem statement
+
+== Folders
+
+* link:solvers/[]: the solver programs
+** link:solvers/400.py[]: a solver program
+** link:solvers/400.md[]: optional high level Markdown description of the solution
+** link:solvers/2.py.json[]: optional LLM metadata describing the generation process. This one was done on API:
++
+....
+{
+  "output_tokens": 432,
+  "model": "gpt-5.2-2025-12-11",
+  "interface": "api",
+  "reasoning_effort": "high",
+  "input_prompt": "TASK\n\nSolve the following problem by coding a Python program that runs on pypy3. Add asserts for the test cases given in the problem statement if any, and a print with the final result at the end. Your code must run in a few minutes at most, usually a few seconds. Don't try to brute force the solution, only use brute forcing if needed to better understand the problem on small instances. Don't use external libraries, only the Python standard library. Don't use multithreading, only a single CPU core. Use typing for function signatures.\n\nOUTPUT FORMAT\n\nmain.py\n\n<Python implementation>\n\nREADME.md\n\n<Markdown summary of the reasoning/insights used (high level; no chain-of-thought)>\n\nPROBLEM\n\n# Even Fibonacci Numbers\n\nEach new term in the Fibonacci sequence is generated by adding the previous two terms. By starting with $1$ and $2$, the first $10$ terms will be:\n$$1, 2, 3, 5, 8, 13, 21, 34, 55, 89, \\dots$$\n\nBy considering the terms in the Fibonacci sequence whose values do not exceed four million, find the sum of the even-valued terms.\n",
+  "generation_time_seconds": 9.143
+}
+....
+*** link:solvers/976.py.json[] is how it should look like for Codex runs (TODO not currently automated):
++
+....
+{
+  "output_tokens": 131264,
+  "model": "gpt-5.2-codex",
+  "interface": "codex-0.77.0",
+  "input_prompt": "\"Solve the following problem with a program main.py, make sure it runs in pypy3: <p>\\n  Two players X and O play a game with $ strips of squares of lengths ,\\\\dots,n_k$, originally all blank.</p>\\n\\n  <p>\\n  Starting with X, they make moves in turn. At X's turn, X draws an \\\"X\\\" symbol; at O's turn, O draws an \\\"O\\\" symbol.<br>\\n  The symbol must be drawn in one blank square with either red or blue pen, subject to the following restrictions:</p>\\n  <ol>\\n  <li>two symbols in adjacent squares on one strip must be different symbols <b>and</b> must have different colour;</li>\\n  <li>if there is at least one blank strip, then one must draw on a blank strip.</li></ol>\\n  <p>\\n  Whoever does not have a valid move loses the game.</p>\\n\\n  <p>\\n  Let (K, N)$ be the number of tuples $ such that  \\\\leq k \\\\leq K$, \\\\leq n_1\\\\leq\\\\cdots\\\\leq n_k\\\\leq N$ and that X has a winning strategy to the\\n  corresponding game.<br>\\n  For example, (2, 4)=7$ and (5, 10) = 901$.</p>\\n\\n  <p>\\n  Find (10^7, 10^7)\\\\bmod 1234567891$.</p>\\n\"",
+  "generation_time_seconds": 1695
+}
+....
+
+== Build README locally
+
+Install the Asciidoctor gem via Bundler and generate HTML:
+
+[source,shell]
+----
+bundle install
+----
+
+and then build with:
+
+[source,shell]
+----
+./readme.sh
+----
+
+== License
+
+The nominal license for this entire repo is https://creativecommons.org/public-domain/cc0/[CC0] (public domain) with the following caveats:
+
+* link:README.adoc[]: written manually, so certain CC0
+* link:solvers/[]: double check the file headers. In a very small number of cases we have copied code from random public places, notably https://github.com/lucky-bai/projecteuler-solutions/issues where it seemed clear that the author wanted a free license but they might have not specified it. We never ever take code from the private forums, or from public solvers that clearly label their code as proprietary (https://github.com/nayuki/Project-Euler-solutions lol), where we would almost certain receive DMCA takedown.
+
+  Otherwise, the vast majority of solvers is very likely safely CC0, or whatever your lawyer says is the license for code generated by LLMs (for those that are LLM generated, some were imported from properly licensed existing human solvers like https://github.com/stbrumme/euler and https://github.com/igorvanloo/Project-Euler-Explained/tree/master/Finished%20Problems and are for sure CC0), or CC-By-NC-SA if your lawyer says that problem solutions must have the same license as problem statements.
+* infrastructure code such as link:test.py[] and link:generate-solvers.py[], link:logo.jpg[]: mostly vibe coded in Codex, so CC0 on our side or take your lawyer's pick again
+
+== Solvers
+
+Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
+
+// RESULTS TABLE
+|===
+| ID | Explanation | Runtime (s) | Model | Out Tokens | Output | Error
+| link:solvers/1.py[1.py] |  | 0.059 |  |  | 233168 |
+| link:solvers/2.py[2.py] | link:solvers/2.md[2.md] | 0.153 | gpt-5.2-2025-12-11 | 432 | 4613732 |
+| link:solvers/3.py[3.py] | link:solvers/3.md[3.md] | 0.134 | gpt-5.2-2025-12-11 | 585 | 6857 |
+| link:solvers/4.py[4.py] | link:solvers/4.md[4.md] | 0.140 | gpt-5.2-2025-12-11 | 992 | 906609 |
+| link:solvers/5.py[5.py] | link:solvers/5.md[5.md] | 0.149 | gpt-5.2-2025-12-11 | 458 | 232792560 |
+| link:solvers/6.py[6.py] | link:solvers/6.md[6.md] | 0.132 | gpt-5.2-2025-12-11 | 504 | 25164150 |
+| link:solvers/7.py[7.py] | link:solvers/7.md[7.md] | 0.152 | gpt-5.2-2025-12-11 | 1140 | 104743 |
+| link:solvers/8.py[8.py] | link:solvers/8.md[8.md] | 0.137 | gpt-5.2-2025-12-11 | 1691 | 23514624000 |
+| link:solvers/9.py[9.py] | link:solvers/9.md[9.md] | 0.068 | gpt-5.2-2025-12-11 | 1045 | 31875000 |
+| link:solvers/10.py[10.py] | link:solvers/10.md[10.md] | 0.081 | gpt-5.2-2025-12-11 | 1586 | 142913828922 |
+| link:solvers/11.py[11.py] | link:solvers/11.md[11.md] | 0.081 | gpt-5.2-2025-12-11 | 1639 | 70600674 |
+| link:solvers/12.py[12.py] | link:solvers/12.md[12.md] | 0.110 | gpt-5.2-2025-12-11 | 1599 | 76576500 |
+| link:solvers/13.py[13.py] | link:solvers/13.md[13.md] | 0.069 | gpt-5.2-2025-12-11 | 2183 | 5537376230 |
+| link:solvers/14.py[14.py] | link:solvers/14.md[14.md] | 0.520 | gpt-5.2-2025-12-11 | 1359 | 837799 |
+| link:solvers/15.py[15.py] | link:solvers/15.md[15.md] | 0.077 | gpt-5.2-2025-12-11 | 557 | 137846528820 |
+| link:solvers/16.py[16.py] | link:solvers/16.md[16.md] | 0.066 | gpt-5.2-2025-12-11 | 312 | 1366 |
+| link:solvers/17.py[17.py] | link:solvers/17.md[17.md] | 0.069 | gpt-5.2-2025-12-11 | 927 | 21124 |
+| link:solvers/18.py[18.py] | link:solvers/18.md[18.md] | 0.069 | gpt-5.2-2025-12-11 | 932 | 1074 |
+| link:solvers/19.py[19.py] | link:solvers/19.md[19.md] | 0.079 | gpt-5.2-2025-12-11 | 734 | 171 |
+| link:solvers/20.py[20.py] | link:solvers/20.md[20.md] | 0.065 | gpt-5.2-2025-12-11 | 520 | 648 |
+| link:solvers/21.py[21.py] | link:solvers/21.md[21.md] | 0.077 | gpt-5.2-2025-12-11 | 1858 | 31626 |
+| link:solvers/22.py[22.py] | link:solvers/22.md[22.md] | 0.082 | gpt-5.2-2025-12-11 | 962 | 871198282 |
+| link:solvers/23.py[23.py] | link:solvers/23.md[23.md] | 0.136 | gpt-5.2-2025-12-11 | 2068 | 4179871 |
+| link:solvers/24.py[24.py] | link:solvers/24.md[24.md] | 0.068 | gpt-5.2-2025-12-11 | 646 | 2783915460 |
+| link:solvers/25.py[25.py] | link:solvers/25.md[25.md] | 0.089 | gpt-5.2-2025-12-11 | 676 | 4782 |
+| link:solvers/26.py[26.py] | link:solvers/26.md[26.md] | 0.073 | gpt-5.2-2025-12-11 | 1144 | 983 |
+| link:solvers/27.py[27.py] | link:solvers/27.md[27.md] | 0.091 | gpt-5.2-2025-12-11 | 2533 | -59231 |
+| link:solvers/28.py[28.py] | link:solvers/28.md[28.md] | 0.069 | gpt-5.2-2025-12-11 | 1087 | 669171001 |
+| link:solvers/29.py[29.py] | link:solvers/29.md[29.md] | 0.076 | gpt-5.2-2025-12-11 | 510 | 9183 |
+| link:solvers/30.py[30.py] | link:solvers/30.md[30.md] | 0.085 | gpt-5.2-2025-12-11 | 960 | 443839 |
+| link:solvers/31.py[31.py] | link:solvers/31.md[31.md] | 0.070 | gpt-5.2-2025-12-11 | 856 | 73682 |
+| link:solvers/32.py[32.py] | link:solvers/32.md[32.md] | 0.145 | gpt-5.2-2025-12-11 | 1924 | 45228 |
+| link:solvers/33.py[33.py] | link:solvers/33.md[33.md] | 0.076 | gpt-5.2-2025-12-11 | 1518 | 100 |
+| link:solvers/34.py[34.py] | link:solvers/34.md[34.md] | 0.164 | gpt-5.2-2025-12-11 | 907 | 40730 |
+| link:solvers/35.py[35.py] | link:solvers/35.md[35.md] | 0.103 | gpt-5.2-2025-12-11 | 8357 | 55 |
+| link:solvers/36.py[36.py] | link:solvers/36.md[36.md] | 0.083 | gpt-5.2-2025-12-11 | 1051 | 872187 |
+| link:solvers/37.py[37.py] | link:solvers/37.md[37.md] | 0.086 | gpt-5.2-2025-12-11 | 1589 | 748317 |
+| link:solvers/38.py[38.py] | link:solvers/38.md[38.md] | 0.082 | gpt-5.2-2025-12-11 | 1413 | 932718654 |
+| link:solvers/39.py[39.py] | link:solvers/39.md[39.md] | 0.068 | gpt-5.2-2025-12-11 | 1445 | 840 |
+| link:solvers/40.py[40.py] | link:solvers/40.md[40.md] | 0.066 | gpt-5.2-2025-12-11 | 1048 | 210 |
+| link:solvers/41.py[41.py] | link:solvers/41.md[41.md] | 0.083 | gpt-5.2-2025-12-11 | 2102 | 7652413 |
+| link:solvers/42.py[42.py] | link:solvers/42.md[42.md] | 0.135 | gpt-5.2-2025-12-11 | 1320 | 162 |
+| link:solvers/43.py[43.py] | link:solvers/43.md[43.md] | 0.070 | gpt-5.2-2025-12-11 | 2516 | 16695334890 |
+| link:solvers/44.py[44.py] | link:solvers/44.md[44.md] | 0.494 | gpt-5.2-2025-12-11 | 3088 | 5482660 |
+| link:solvers/45.py[45.py] | link:solvers/45.md[45.md] | 0.080 | gpt-5.2-2025-12-11 | 915 | 1533776805 |
+| link:solvers/46.py[46.py] | link:solvers/46.md[46.md] | 0.095 | gpt-5.2-2025-12-11 | 1324 | 5777 |
+| link:solvers/47.py[47.py] | link:solvers/47.md[47.md] | 0.075 | gpt-5.2-2025-12-11 | 1463 | 134043 |
+| link:solvers/48.py[48.py] | link:solvers/48.md[48.md] | 0.080 | gpt-5.2-2025-12-11 | 815 | 9110846700 |
+| link:solvers/49.py[49.py] | link:solvers/49.md[49.md] | 0.073 | gpt-5.2-2025-12-11 | 1032 | 296962999629 |
+| link:solvers/50.py[50.py] | link:solvers/50.md[50.md] | 0.090 | gpt-5.2-2025-12-11 | 1884 | 997651 |
+| link:solvers/51.py[51.py] | link:solvers/51.md[51.md] | 0.110 | gpt-5.2-2025-12-11 | 7525 | 121313 |
+| link:solvers/52.py[52.py] | link:solvers/52.md[52.md] | 0.083 | gpt-5.2-2025-12-11 | 759 | 142857 |
+| link:solvers/53.py[53.py] | link:solvers/53.md[53.md] | 0.063 | gpt-5.2-2025-12-11 | 921 | 4075 |
+| link:solvers/54.py[54.py] | link:solvers/54.md[54.md] | 0.128 | gpt-5.2-2025-12-11 | 2626 | 376 |
+| link:solvers/55.py[55.py] | link:solvers/55.md[55.md] | 0.095 | gpt-5.2-2025-12-11 | 742 | 249 |
+| link:solvers/56.py[56.py] | link:solvers/56.md[56.md] | 0.112 | gpt-5.2-2025-12-11 | 674 | 972 |
+| link:solvers/57.py[57.py] | link:solvers/57.md[57.md] | 0.062 | gpt-5.2-2025-12-11 | 975 | 153 |
+| link:solvers/58.py[58.py] | link:solvers/58.md[58.md] | 0.152 | gpt-5.2-2025-12-11 | 2498 | 26241 |
+| link:solvers/59.py[59.py] | link:solvers/59.md[59.md] | 0.099 | gpt-5.2-2025-12-11 | 7067 | 129448 |
+| link:solvers/60.py[60.py] | link:solvers/60.md[60.md] | 0.366 | gpt-5.2-2025-12-11 | 8051 | 26033 |
+| link:solvers/61.py[61.py] | link:solvers/61.md[61.md] | 0.061 | gpt-5.2-2025-12-11 | 2427 | 28684 |
+| link:solvers/62.py[62.py] | link:solvers/62.md[62.md] | 0.075 | gpt-5.2-2025-12-11 | 1885 | 127035954683 |
+| link:solvers/63.py[63.py] | link:solvers/63.md[63.md] | 0.060 | gpt-5.2-2025-12-11 | 1492 | 49 |
+| link:solvers/64.py[64.py] | link:solvers/64.md[64.md] | 0.079 | gpt-5.2-2025-12-11 | 794 | 1322 |
+| link:solvers/65.py[65.py] | link:solvers/65.md[65.md] | 0.059 | gpt-5.2-2025-12-11 | 1108 | 272 |
+| link:solvers/66.py[66.py] | link:solvers/66.md[66.md] | 0.070 | gpt-5.2-2025-12-11 | 1385 | 661 |
+| link:solvers/67.py[67.py] | link:solvers/67.md[67.md] | 0.093 | gpt-5.2-2025-12-11 | 1536 | 7273 |
+| link:solvers/68.py[68.py] | link:solvers/68.md[68.md] | 0.072 | gpt-5.2-2025-12-11 | 2939 | 6531031914842725 |
+| link:solvers/69.py[69.py] | link:solvers/69.md[69.md] | 0.067 | gpt-5.2-2025-12-11 | 964 | 510510 |
+| link:solvers/70.py[70.py] | link:solvers/70.md[70.md] | 0.488 | gpt-5.2-2025-12-11 | 6052 | 8319823 |
+| link:solvers/71.py[71.py] | link:solvers/71.md[71.md] | 0.166 | gpt-5.2-2025-12-11 | 931 | 428570 |
+| link:solvers/72.py[72.py] | link:solvers/72.md[72.md] | 0.094 | gpt-5.2-2025-12-11 | 1940 | 303963552391 |
+| link:solvers/73.py[73.py] | link:solvers/73.md[73.md] | 0.897 | gpt-5.2-2025-12-11 | 3333 | 7295372 |
+| link:solvers/74.py[74.py] | link:solvers/74.md[74.md] | 0.176 | gpt-5.2-2025-12-11 | 7678 | 402 |
+| link:solvers/75.py[75.py] | link:solvers/75.md[75.md] | 0.143 | gpt-5.2-2025-12-11 | 1367 | 161667 |
+| link:solvers/76.py[76.py] | link:solvers/76.md[76.md] | 0.118 | gpt-5.2-2025-12-11 | 1733 | 190569291 |
+| link:solvers/77.py[77.py] | link:solvers/77.md[77.md] | 0.074 | gpt-5.2-2025-12-11 | 1476 | 71 |
+| link:solvers/78.py[78.py] | link:solvers/78.md[78.md] | 0.162 | gpt-5.2-2025-12-11 | 1478 | 55374 |
+| link:solvers/79.py[79.py] | link:solvers/79.md[79.md] | 0.098 | gpt-5.2-2025-12-11 | 1703 | 73162890 |
+| link:solvers/80.py[80.py] | link:solvers/80.md[80.md] | 0.066 | gpt-5.2-2025-12-11 | 1792 | 40886 |
+| link:solvers/81.py[81.py] | link:solvers/81.md[81.md] | 0.079 | gpt-5.2-2025-12-11 | 1161 | 427337 |
+| link:solvers/82.py[82.py] | link:solvers/82.md[82.md] | 0.070 | gpt-5.2-2025-12-11 | 1809 | 260324 |
+| link:solvers/83.py[83.py] | link:solvers/83.md[83.md] | 0.152 | gpt-5.2-2025-12-11 | 1522 | 425185 |
+| link:solvers/84.py[84.py] | link:solvers/84.md[84.md] | 0.121 | gpt-5.2-2025-12-11 | 8873 | 101524 |
+| link:solvers/85.py[85.py] | link:solvers/85.md[85.md] | 0.078 | gpt-5.2-2025-12-11 | 2824 | 2772 |
+| link:solvers/86.py[86.py] | link:solvers/86.md[86.md] | 0.294 | gpt-5.2-2025-12-11 | 2627 | 1818 |
+| link:solvers/87.py[87.py] | link:solvers/87.md[87.md] | 0.304 | gpt-5.2-2025-12-11 | 1546 | 1097343 |
+| link:solvers/88.py[88.py] | link:solvers/88.md[88.md] | 0.097 | gpt-5.2-2025-12-11 | 1635 | 7587457 |
+| link:solvers/89.py[89.py] | link:solvers/89.md[89.md] | 0.089 | gpt-5.2-2025-12-11 | 2937 | 743 |
+| link:solvers/90.py[90.py] | link:solvers/90.md[90.md] | 0.090 | gpt-5.2-2025-12-11 | 1647 | 1217 |
+| link:solvers/91.py[91.py] | link:solvers/91.md[91.md] | 0.082 | gpt-5.2-2025-12-11 | 3510 | 14234 |
+| link:solvers/92.py[92.py] | link:solvers/92.md[92.md] | 0.139 | gpt-5.2-2025-12-11 | 2397 | 8581146 |
+| link:solvers/93.py[93.py] | link:solvers/93.md[93.md] | 1.685 | gpt-5.2-2025-12-11 | 3044 | 1258 |
+| link:solvers/94.py[94.py] | link:solvers/94.md[94.md] | 0.080 | gpt-5.2-2025-12-11 | 4465 | 518408346 |
+| link:solvers/95.py[95.py] | link:solvers/95.md[95.md] | 0.309 | gpt-5.2-2025-12-11 | 2230 | 14316 |
+| link:solvers/96.py[96.py] |  | 0.134 |  |  | 24702 |
+| link:solvers/97.py[97.py] | link:solvers/97.md[97.md] | 0.076 | gpt-5.2-2025-12-11 | 414 | 8739992577 |
+| link:solvers/98.py[98.py] | link:solvers/98.md[98.md] | 0.177 | gpt-5.2-2025-12-11 | 4225 | 18769 |
+| link:solvers/99.py[99.py] | link:solvers/99.md[99.md] | 0.080 | gpt-5.2-2025-12-11 | 1098 | 709 |
+| link:solvers/100.py[100.py] | link:solvers/100.md[100.md] | 0.076 | gpt-5.2-2025-12-11 | 2123 | 756872327473 |
+| link:solvers/101.py[101.py] | link:solvers/101.md[101.md] | 0.107 | gpt-5.2-2025-12-11 | 1713 | 37076114526 |
+| link:solvers/102.py[102.py] | link:solvers/102.md[102.md] | 0.080 | gpt-5.2-2025-12-11 | 1815 | 228 |
+| link:solvers/103.py[103.py] |  | 1.410 |  |  | 20313839404245 |
+| link:solvers/104.py[104.py] | link:solvers/104.md[104.md] | 0.171 | gpt-5.2-2025-12-11 | 5943 | 329468 |
+| link:solvers/105.py[105.py] | link:solvers/105.md[105.md] | 0.077 | gpt-5.2-2025-12-11 | 2590 | 73702 |
+| link:solvers/106.py[106.py] | link:solvers/106.md[106.md] | 0.063 | gpt-5.2-2025-12-11 | 2839 | 21384 |
+| link:solvers/107.py[107.py] | link:solvers/107.md[107.md] | 0.064 | gpt-5.2-2025-12-11 | 1815 | 259679 |
+| link:solvers/108.py[108.py] | link:solvers/108.md[108.md] | 0.061 | gpt-5.2-2025-12-11 | 5789 | 180180 |
+| link:solvers/109.py[109.py] | link:solvers/109.md[109.md] | 0.083 | gpt-5.2-2025-12-11 | 3682 | 38182 |
+| link:solvers/110.py[110.py] | link:solvers/110.md[110.md] | 0.112 | gpt-5.2-2025-12-11 | 12692 | 9350130049860600 |
+| link:solvers/111.py[111.py] |  | 0.114 |  |  | 612407567715 |
+| link:solvers/112.py[112.py] |  | 0.133 |  |  | 1587000 |
+| link:solvers/113.py[113.py] |  | 0.070 |  |  | 51161058134250 |
+| link:solvers/114.py[114.py] |  | 0.058 |  |  | 16475640049 |
+| link:solvers/115.py[115.py] |  | 0.087 |  |  | 168 |
+| link:solvers/116.py[116.py] |  | 0.056 |  |  | 20492570929 |
+| link:solvers/117.py[117.py] |  | 0.054 |  |  | 100808458960497 |
+| link:solvers/118.py[118.py] |  | 0.731 |  |  | 44680 |
+| link:solvers/119.py[119.py] |  | 0.114 |  |  | 248155780267521 |
+| link:solvers/120.py[120.py] |  | 0.055 |  |  | 333082500 |
+| link:solvers/121.py[121.py] |  | 0.054 |  |  | 2269 |
+| link:solvers/122.py[122.py] |  | 0.316 |  |  | 1582 |
+| link:solvers/123.py[123.py] |  | 0.085 |  |  | 21035 |
+| link:solvers/124.py[124.py] |  | 0.143 |  |  | 21417 |
+| link:solvers/125.py[125.py] |  | 0.079 |  |  | 2906969179 |
+| link:solvers/126.py[126.py] |  | 0.075 |  |  | 18522 |
+| link:solvers/127.py[127.py] |  | 4.041 |  |  | 18407904 |
+| link:solvers/128.py[128.py] |  | 0.086 |  |  | 14516824220 |
+| link:solvers/129.py[129.py] |  | 0.068 |  |  | 1000023 |
+| link:solvers/130.py[130.py] |  | 0.072 |  |  | 149253 |
+| link:solvers/131.py[131.py] |  | 0.059 |  |  | 173 |
+| link:solvers/132.py[132.py] |  | 0.074 |  |  | 843296 |
+| link:solvers/133.py[133.py] |  | 0.103 |  |  | 453647705 |
+| link:solvers/134.py[134.py] |  | 0.158 |  |  | 18613426663617118 |
+| link:solvers/135.py[135.py] |  | 0.095 |  |  | 4989 |
+| link:solvers/136.py[136.py] |  | 2.980 |  |  | 2544559 |
+| link:solvers/137.py[137.py] |  | 0.062 |  |  | 1120149658760 |
+| link:solvers/138.py[138.py] |  | 0.058 |  |  | 1118049290473932 |
+| link:solvers/139.py[139.py] |  | 1.011 |  |  | 10057761 |
+| link:solvers/140.py[140.py] |  | 0.089 |  |  | 5673835352990 |
+| link:solvers/141.py[141.py] |  | 0.577 |  |  | 878454337159 |
+| link:solvers/142.py[142.py] |  | 0.163 |  |  | 1006193 |
+| link:solvers/143.py[143.py] |  | 0.341 |  |  | 30758397 |
+| link:solvers/144.py[144.py] |  | 0.068 |  |  | 354 |
+| link:solvers/145.py[145.py] |  | 2.390 |  |  | 608720 |
+| link:solvers/146.py[146.py] |  | 1.918 |  |  | 676333270 |
+| link:solvers/147.py[147.py] |  | 1.693 |  |  | 846910284 |
+| link:solvers/148.py[148.py] |  | 17.783 |  |  | 2129970655314432 |
+| link:solvers/149.py[149.py] |  | 0.180 |  |  | 52852124 |
+| link:solvers/150.py[150.py] |  | 2.430 |  |  | -271248680 |
+| link:solvers/151.py[151.py] |  | 0.091 |  |  | 0.464399 |
+| link:solvers/152.py[152.py] |  | 0.452 |  |  | 301 |
+| link:solvers/153.py[153.py] |  | 3.061 |  |  | 17971254122360635 |
+| link:solvers/154.py[154.py] |  | 19.986 |  |  | 479742450 |
+| link:solvers/155.py[155.py] |  | 37.908 |  |  | 3857447 |
+| link:solvers/156.py[156.py] |  | 0.142 |  |  | 21295121502550 |
+| link:solvers/157.py[157.py] |  | 0.089 |  |  | 53490 |
+| link:solvers/158.py[158.py] |  | 0.059 |  |  | 409511334375 |
+| link:solvers/159.py[159.py] |  | 0.214 |  |  | 14489159 |
+| link:solvers/160.py[160.py] |  | 0.088 |  |  | 16576 |
+| link:solvers/161.py[161.py] |  | 0.395 |  |  | 20574308184277971 |
+| link:solvers/162.py[162.py] |  | 0.107 |  |  | 3D58725572C62302 |
+| link:solvers/163.py[163.py] |  | 0.269 |  |  | 343047 |
+| link:solvers/164.py[164.py] |  | 0.083 |  |  | 378158756814587 |
+| link:solvers/165.py[165.py] |  | 7.962 |  |  | 2868868 |
+| link:solvers/166.py[166.py] |  | 2.932 |  |  | 7130034 |
+| link:solvers/167.py[167.py] |  | 0.233 |  |  | 3916160068885 |
+| link:solvers/168.py[168.py] |  | 0.065 |  |  | 59206 |
+| link:solvers/169.py[169.py] |  | 0.054 |  |  | 178653872807 |
+| link:solvers/170.py[170.py] |  | 0.131 |  |  | 9857164023 |
+| link:solvers/171.py[171.py] |  | 1.801 |  |  | 142989277 |
+| link:solvers/172.py[172.py] |  | 4.334 |  |  | 227485267000992000 |
+| link:solvers/173.py[173.py] |  | 0.061 |  |  | 1572729 |
+| link:solvers/174.py[174.py] |  | 0.100 |  |  | 209566 |
+| link:solvers/175.py[175.py] |  | 0.059 |  |  | 1,13717420,8 |
+| link:solvers/176.py[176.py] |  | 0.064 |  |  | 96818198400000 |
+| link:solvers/177.py[177.py] |  | 2.431 |  |  | 129325 |
+| link:solvers/178.py[178.py] |  | 0.092 |  |  | 126461847755 |
+| link:solvers/179.py[179.py] |  | 1.397 |  |  | 986262 |
+| link:solvers/180.py[180.py] |  | 0.375 |  |  | 285196020571078987 |
+| link:solvers/181.py[181.py] |  | 0.162 |  |  | 83735848679360680 |
+| link:solvers/182.py[182.py] |  | 0.416 |  |  | 399788195976 |
+| link:solvers/183.py[183.py] |  | 0.069 |  |  | 48861552 |
+| link:solvers/184.py[184.py] |  | 0.133 |  |  | 1725323624056 |
+| link:solvers/185.py[185.py] |  | 3.334 |  |  | 4640261571849533 |
+| link:solvers/186.py[186.py] |  | 3.443 |  |  | 2325629 |
+| link:solvers/187.py[187.py] |  | 0.464 |  |  | 17427258 |
+| link:solvers/188.py[188.py] |  | 0.054 |  |  | 95962097 |
+| link:solvers/189.py[189.py] |  | 0.248 |  |  | 10834893628237824 |
+| link:solvers/190.py[190.py] |  | 0.054 |  |  | 371048281 |
+| link:solvers/191.py[191.py] |  | 0.055 |  |  | 1918080160 |
+| link:solvers/192.py[192.py] |  | 0.133 |  |  | 57060635927998347 |
+| link:solvers/193.py[193.py] |  | 1.960 |  |  | 684465067343069 |
+| link:solvers/194.py[194.py] |  | 0.067 |  |  | 61190912 |
+| link:solvers/195.py[195.py] |  | 1.432 |  |  | 75085391 |
+| link:solvers/196.py[196.py] |  | 3.518 |  |  | 322303240771079935 |
+| link:solvers/197.py[197.py] |  | 0.055 |  |  | 1.710637717 |
+| link:solvers/198.py[198.py] |  | 0.100 |  |  | 52374425 |
+| link:solvers/199.py[199.py] |  | 0.071 |  |  | 0.00396087 |
+| link:solvers/200.py[200.py] |  | 2.155 |  |  | 229161792008 |
+| link:solvers/201.py[201.py] |  | 10.043 |  |  | 115039000 |
+| link:solvers/202.py[202.py] |  | 0.115 |  |  | 1209002624 |
+| link:solvers/203.py[203.py] |  | 0.058 |  |  | 34029210557338 |
+| link:solvers/204.py[204.py] |  | 0.190 |  |  | 2944730 |
+| link:solvers/205.py[205.py] |  | 0.158 |  |  | 0.5731441 |
+| link:solvers/206.py[206.py] |  | 0.087 |  |  | 1389019170 |
+| link:solvers/207.py[207.py] |  | 0.078 |  |  | 44043947822 |
+| link:solvers/208.py[208.py] |  | 0.433 |  |  | 331951449665644800 |
+| link:solvers/209.py[209.py] |  | 0.078 |  |  | 15964587728784 |
+| link:solvers/210.py[210.py] |  | 4.211 |  |  | 1598174770174689458 |
+| link:solvers/211.py[211.py] |  | 18.066 |  |  | 1922364685 |
+| link:solvers/212.py[212.py] |  | 1.794 |  |  | 328968937309 |
+| link:solvers/213.py[213.py] |  | 0.186 |  |  | 330.721154 |
+| link:solvers/214.py[214.py] |  | 2.658 |  |  | 1677366278943 |
+| link:solvers/215.py[215.py] |  | 0.212 |  |  | 806844323190414 |
+| link:solvers/216.py[216.py] |  | 82.069 |  |  | 5437849 |
+| link:solvers/217.py[217.py] | link:solvers/217.md[217.md] | 0.082 |  |  | 6273134 |
+| link:solvers/218.py[218.py] |  | 0.058 |  |  | 0 |
+| link:solvers/219.py[219.py] |  | 0.057 |  |  | 64564225042 |
+| link:solvers/220.py[220.py] | link:solvers/220.md[220.md] | 0.088 |  |  | 139776,963904 |
+| link:solvers/221.py[221.py] |  | 8.239 |  |  | 1884161251122450 |
+| link:solvers/222.py[222.py] | link:solvers/222.md[222.md] | 0.558 |  |  | 1590933 |
+| link:solvers/223.py[223.py] |  | 1.447 |  |  | 61614848 |
+| link:solvers/224.py[224.py] | link:solvers/224.md[224.md] | 0.245 |  |  | 4137330 |
+| link:solvers/225.py[225.py] |  | 0.074 |  |  | 2009 |
+| link:solvers/226.py[226.py] |  | 0.080 |  |  | 0.11316017 |
+| link:solvers/227.py[227.py] | link:solvers/227.md[227.md] | 0.380 |  |  | 3780.618622 |
+| link:solvers/228.py[228.py] | link:solvers/228.md[228.md] | 0.075 |  |  | 86226 |
+| link:solvers/229.py[229.py] |  | 14.078 |  |  | 11325263 |
+| link:solvers/230.py[230.py] |  | 0.053 |  |  | 850481152593119296 |
+| link:solvers/231.py[231.py] |  | 0.176 |  |  | 7526965179680 |
+| link:solvers/232.py[232.py] |  | 0.093 |  |  | 0.83648556 |
+| link:solvers/233.py[233.py] | link:solvers/233.md[233.md] | 0.141 |  |  | 271204031455541309 |
+| link:solvers/234.py[234.py] |  | 0.074 |  |  | 1259187438574927161 |
+| link:solvers/235.py[235.py] |  | 0.068 |  |  | 1.002322108633 |
+| link:solvers/236.py[236.py] | link:solvers/236.md[236.md] | 0.283 |  |  | 123/59 |
+| link:solvers/237.py[237.py] |  | 0.080 |  |  | 15836928 |
+| link:solvers/238.py[238.py] | link:solvers/238.md[238.md] | 2.616 |  |  | 9922545104535661 |
+| link:solvers/239.py[239.py] |  | 0.082 |  |  | 0.001887854841 |
+| link:solvers/240.py[240.py] |  | 0.465 |  |  | 7448717393364181966 |
+| link:solvers/241.py[241.py] | link:solvers/241.md[241.md] | 5.802 |  |  | 482316491800641154 |
+| link:solvers/242.py[242.py] | link:solvers/242.md[242.md] | 0.072 |  |  | 997104142249036713 |
+| link:solvers/243.py[243.py] |  | 0.057 |  |  | 892371480 |
+| link:solvers/244.py[244.py] |  | 0.201 |  |  | 96356848 |
+| link:solvers/245.py[245.py] | link:solvers/245.md[245.md] | 1.612 |  |  | 288084712410001 |
+| link:solvers/246.py[246.py] | link:solvers/246.md[246.md] | 0.106 |  |  | 810834388 |
+| link:solvers/247.py[247.py] |  | 1.026 |  |  | 782252 |
+| link:solvers/248.py[248.py] |  | 1.402 |  |  | 23507044290 |
+| link:solvers/249.py[249.py] |  | 0.791 |  |  | 9275262564250418 |
+| link:solvers/250.py[250.py] |  | 0.405 |  |  | 1425480602091519 |
+| link:solvers/251.py[251.py] | link:solvers/251.md[251.md] | 23.087 | gpt-5.2-thinking |  | 18946051 |
+| link:solvers/252.py[252.py] | link:solvers/252.md[252.md] | 8.775 |  |  | 104924.0 |
+| link:solvers/253.py[253.py] | link:solvers/253.md[253.md] | 23.854 |  |  | 11.492847 |
+| link:solvers/254.py[254.py] | link:solvers/254.md[254.md] | 0.642 |  |  | 8184523820510 |
+| link:solvers/255.py[255.py] | link:solvers/255.md[255.md] | 1.105 | gpt-5.2-thinking |  | 4.4474011180 |
+| link:solvers/256.py[256.py] | link:solvers/256.md[256.md] | 1.786 |  |  | 85765680 |
+| link:solvers/257.py[257.py] | link:solvers/257.md[257.md] | 2.900 |  |  | 139012411 |
+| link:solvers/258.py[258.py] | link:solvers/258.md[258.md] | 1.565 |  |  | 12747994 |
+| link:solvers/259.py[259.py] |  | 115.037 |  |  | 20101196798 |
+| link:solvers/260.py[260.py] |  | 0.965 |  |  | 167542057 |
+| link:solvers/261.py[261.py] | link:solvers/261.md[261.md] | 0.162 |  |  | 238890850232021 |
+| link:solvers/262.py[262.py] | link:solvers/262.md[262.md] | 0.554 |  |  | 2531.205 |
+| link:solvers/263.py[263.py] | link:solvers/263.md[263.md] | 6.522 |  |  | 2039506520 |
+| link:solvers/264.py[264.py] | link:solvers/264.md[264.md] | 1.089 |  |  | 2816417.1055 |
+| link:solvers/265.py[265.py] |  | 0.106 |  |  | 209110240768 |
+| link:solvers/266.py[266.py] |  | 9.873 |  |  | 1096883702440585 |
+| link:solvers/267.py[267.py] |  | 0.151 |  |  | 0.999992836187 |
+| link:solvers/268.py[268.py] |  | 1.479 |  |  | 785478606870985 |
+| link:solvers/269.py[269.py] | link:solvers/269.md[269.md] | 0.356 |  |  | 1311109198529286 |
+| link:solvers/270.py[270.py] | link:solvers/270.md[270.md] | 0.278 |  |  | 82282080 |
+| link:solvers/271.py[271.py] |  | 0.068 |  |  | 4617456485273129588 |
+| link:solvers/272.py[272.py] | link:solvers/272.md[272.md] | 0.652 |  |  | 8495585919506151122 |
+| link:solvers/273.py[273.py] |  | 0.326 |  |  | 2032447591196869022 |
+| link:solvers/274.py[274.py] |  | 0.254 |  |  | 1601912348822 |
+| link:solvers/275.py[275.py] | link:solvers/275.md[275.md] | 43.817 |  |  | 15030564 |
+| link:solvers/276.py[276.py] | link:solvers/276.md[276.md] | 0.466 |  |  | 5777137137739632912 |
+| link:solvers/277.py[277.py] |  | 0.056 |  |  | 1125977393124310 |
+| link:solvers/278.py[278.py] |  | 0.209 |  |  | 1228215747273908452 |
+| link:solvers/279.py[279.py] |  | 4.793 |  |  | 416577688 |
+| link:solvers/280.py[280.py] |  | 0.782 |  |  | 430.088247 |
+| link:solvers/281.py[281.py] |  | 0.125 |  |  | 1485776387445623 |
+| link:solvers/282.py[282.py] | link:solvers/282.md[282.md] | 0.076 |  |  | 1098988351 |
+| link:solvers/283.py[283.py] | link:solvers/283.md[283.md] | 10.757 |  |  | 28038042525570324 |
+| link:solvers/284.py[284.py] |  | 2.351 |  |  | 5a411d7b |
+| link:solvers/285.py[285.py] |  | 0.125 |  |  | 157055.80999 |
+| link:solvers/286.py[286.py] |  | 0.080 |  |  | 52.6494571953 |
+| link:solvers/287.py[287.py] |  | 4.865 |  |  | 313135496 |
+| link:solvers/288.py[288.py] |  | 0.895 |  |  | 605857431263981935 |
+| link:solvers/289.py[289.py] | link:solvers/289.md[289.md] | 0.176 |  |  | 6567944538 |
+| link:solvers/290.py[290.py] |  | 0.135 |  |  | 20444710234716473 |
+| link:solvers/291.py[291.py] |  | 22.839 |  |  | 4037526 |
+| link:solvers/292.py[292.py] | link:solvers/292.md[292.md] | 1.841 |  |  | 3600060866 |
+| link:solvers/293.py[293.py] |  | 0.173 |  |  | 2209 |
+| link:solvers/294.py[294.py] | link:solvers/294.md[294.md] | 0.204 |  |  | 789184709 |
+| link:solvers/295.py[295.py] | link:solvers/295.md[295.md] | 4.636 | gpt-5.2-codex |  | 4884650818 |
+| link:solvers/296.py[296.py] |  | 80.048 |  |  | 1137208419 |
+| link:solvers/297.py[297.py] |  | 0.065 |  |  | 2252639041804718029 |
+| link:solvers/298.py[298.py] | link:solvers/298.md[298.md] | 0.538 |  |  | 1.76882294 |
+| link:solvers/299.py[299.py] | link:solvers/299.md[299.md] | 1.066 |  |  | 549936643 |
+| link:solvers/300.py[300.py] | link:solvers/300.md[300.md] | 1.036 |  |  | 8.0540771484375 |
+| link:solvers/301.py[301.py] |  | 0.062 |  |  | 2178309 |
+| link:solvers/302.py[302.py] | link:solvers/302.md[302.md] | 2.369 | gpt-5.2-thinking |  | 1170060 |
+| link:solvers/303.py[303.py] |  | 0.619 |  |  | 1111981904675169 |
+| link:solvers/304.py[304.py] |  | 0.571 |  |  | 283988410192 |
+| link:solvers/305.py[305.py] | link:solvers/305.md[305.md] | 0.229 |  |  | 18174995535140 |
+| link:solvers/306.py[306.py] |  | 0.058 |  |  | 852938 |
+| link:solvers/307.py[307.py] | link:solvers/307.md[307.md] | 0.112 |  |  | 0.7311720251 |
+| link:solvers/308.py[308.py] | link:solvers/308.md[308.md] | 0.217 |  |  | 1539669807660924 |
+| link:solvers/309.py[309.py] |  | 1.503 |  |  | 210139 |
+| link:solvers/310.py[310.py] |  | 6.476 |  |  | 2586528661783 |
+| link:solvers/311.py[311.py] | link:solvers/311.md[311.md] | 0.293 |  |  | 2466018557 |
+| link:solvers/312.py[312.py] |  | 0.409 |  |  | 324681947 |
+| link:solvers/313.py[313.py] |  | 0.071 |  |  | 2057774861813004 |
+| link:solvers/314.py[314.py] | link:solvers/314.md[314.md] | 1.835 |  |  | 132.52756426 |
+| link:solvers/315.py[315.py] | link:solvers/315.md[315.md] | 0.244 |  |  | 13625242 |
+| link:solvers/316.py[316.py] |  | 11.613 |  |  | 542934735751917735 |
+| link:solvers/317.py[317.py] |  | 0.057 |  |  | 1856532.8455 |
+| link:solvers/318.py[318.py] |  | 0.074 |  |  | 709313889 |
+| link:solvers/319.py[319.py] | link:solvers/319.md[319.md] | 0.715 |  |  | 268457129 |
+| link:solvers/320.py[320.py] |  | 28.163 |  |  | 278157919195482643 |
+| link:solvers/321.py[321.py] |  | 0.060 |  |  | 2470433131948040 |
+| link:solvers/322.py[322.py] | link:solvers/322.md[322.md] | 0.118 |  |  | 999998760323313995 |
+| link:solvers/323.py[323.py] |  | 0.055 |  |  | 6.3551758451 |
+| link:solvers/324.py[324.py] | link:solvers/324.md[324.md] | 0.381 |  |  | 96972774 |
+| link:solvers/325.py[325.py] | link:solvers/325.md[325.md] | 0.137 |  |  | 54672965 |
+| link:solvers/326.py[326.py] | link:solvers/326.md[326.md] | 0.682 |  |  | 1966666166408794329 |
+| link:solvers/327.py[327.py] |  | 0.077 |  |  | 34315549139516 |
+| link:solvers/328.py[328.py] | link:solvers/328.md[328.md] | 0.208 |  |  | 260511850222 |
+| link:solvers/329.py[329.py] |  | 0.098 |  |  | 199740353/29386561536000 |
+| link:solvers/330.py[330.py] | link:solvers/330.md[330.md] | 0.103 |  |  | 15955822 |
+| link:solvers/331.py[331.py] | link:solvers/331.md[331.md] | 0.225 | gpt-5.2-thinking |  | 467178235146843549 |
+| link:solvers/332.py[332.py] | link:solvers/332.md[332.md] | 0.406 |  |  | 2717.751525 |
+| link:solvers/333.py[333.py] |  | 2.909 |  |  | 3053105 |
+| link:solvers/334.py[334.py] | link:solvers/334.md[334.md] | 0.640 |  |  | 150320021261690835 |
+| link:solvers/335.py[335.py] |  | 0.072 |  |  | 5032316 |
+| link:solvers/336.py[336.py] |  | 0.252 |  |  | CAGBIHEFJDK |
+| link:solvers/337.py[337.py] | link:solvers/337.md[337.md] | 11.549 |  |  | 85068035 |
+| link:solvers/338.py[338.py] | link:solvers/338.md[338.md] | 0.110 |  |  | 15614292 |
+| link:solvers/339.py[339.py] | link:solvers/339.md[339.md] | 0.113 |  |  | 19823.542204 |
+| link:solvers/340.py[340.py] |  | 0.062 |  |  | 291504964 |
+| link:solvers/341.py[341.py] |  | 0.702 |  |  | 56098610614277014 |
+| link:solvers/342.py[342.py] | link:solvers/342.md[342.md] | 11.835 |  |  | 5943040885644 |
+| link:solvers/343.py[343.py] |  | 27.787 |  |  | 269533451410884183 |
+| link:solvers/344.py[344.py] | link:solvers/344.md[344.md] | 1.638 |  |  | 65579304332 |
+| link:solvers/345.py[345.py] |  | 0.095 |  |  | 13938 |
+| link:solvers/346.py[346.py] |  | 0.152 |  |  | 336108797689259276 |
+| link:solvers/347.py[347.py] |  | 0.199 |  |  | 11109800204052 |
+| link:solvers/348.py[348.py] |  | 59.633 |  |  | 1004195061 |
+| link:solvers/349.py[349.py] |  | 0.057 |  |  | 115384615384614952 |
+| link:solvers/350.py[350.py] | link:solvers/350.md[350.md] | 0.192 | gpt-5.2-thinking |  | 84664213 |
+| link:solvers/351.py[351.py] |  | 0.095 |  |  | 11762187201804552 |
+| link:solvers/352.py[352.py] | link:solvers/352.md[352.md] | 0.658 |  |  | 378563.260589 |
+| link:solvers/353.py[353.py] | link:solvers/353.md[353.md] | 8.820 | gpt-5.2-thinking |  | 1.2759860331 |
+| link:solvers/354.py[354.py] | link:solvers/354.md[354.md] | 1.617 |  |  | 58065134 |
+| link:solvers/355.py[355.py] | link:solvers/355.md[355.md] | 0.720 |  |  | 1726545007 |
+| link:solvers/356.py[356.py] | link:solvers/356.md[356.md] | 0.110 |  |  | 28010159 |
+| link:solvers/357.py[357.py] |  | 5.254 |  |  | 1739023853137 |
+| link:solvers/358.py[358.py] |  | 13.951 |  |  | 3284144505 |
+| link:solvers/359.py[359.py] |  | 0.055 |  |  | 40632119 |
+| link:solvers/360.py[360.py] | link:solvers/360.md[360.md] | 0.112 |  |  | 878825614395267072 |
+| link:solvers/361.py[361.py] | link:solvers/361.md[361.md] | 0.222 | gpt-5.2-codex |  | 178476944 |
+| link:solvers/362.py[362.py] | link:solvers/362.md[362.md] | 2.600 |  |  | 457895958010 |
+| link:solvers/363.py[363.py] |  | 0.131 |  |  | 0.0000372091 |
+| link:solvers/364.py[364.py] | link:solvers/364.md[364.md] | 0.169 |  |  | 44855254 |
+| link:solvers/365.py[365.py] | link:solvers/365.md[365.md] | 0.420 |  |  | 162619462356610313 |
+| link:solvers/366.py[366.py] | link:solvers/366.md[366.md] | 0.106 |  |  | 88351299 |
+| link:solvers/367.py[367.py] | link:solvers/367.md[367.md] | 0.276 | gpt-5.2-thinking |  | 48271207 |
+| link:solvers/368.py[368.py] | link:solvers/368.md[368.md] | 0.691 | gpt-5.2-thinking |  | 253.6135092068 |
+| link:solvers/369.py[369.py] | link:solvers/369.md[369.md] | 0.127 |  |  | 862400558448 |
+| link:solvers/370.py[370.py] | link:solvers/370.md[370.md] | 0.133 |  |  | 41791929448408 |
+| link:solvers/371.py[371.py] |  | 0.053 |  |  | 40.66368097 |
+| link:solvers/372.py[372.py] | link:solvers/372.md[372.md] | 1.705 |  |  | 301450082318807027 |
+| link:solvers/373.py[373.py] | link:solvers/373.md[373.md] | 1.098 |  |  | 727227472448913 |
+| link:solvers/374.py[374.py] | link:solvers/374.md[374.md] | 0.618 |  |  | 334420941 |
+| link:solvers/375.py[375.py] | link:solvers/375.md[375.md] | 1.304 |  |  | 7435327983715286168 |
+| link:solvers/376.py[376.py] | link:solvers/376.md[376.md] | 4.841 |  |  | 973059630185670 |
+| link:solvers/377.py[377.py] | link:solvers/377.md[377.md] | 0.105 |  |  | 732385277 |
+| link:solvers/378.py[378.py] | link:solvers/378.md[378.md] | 13.007 |  |  | 147534623725724718 |
+| link:solvers/379.py[379.py] | link:solvers/379.md[379.md] | 5.745 | gpt-5.2-thinking |  | 132314136838185 |
+| link:solvers/380.py[380.py] | link:solvers/380.md[380.md] | 0.098 |  |  | 6.3202e25093 |
+| link:solvers/381.py[381.py] |  | 2.832 |  |  | 139602943319822 |
+| link:solvers/382.py[382.py] | link:solvers/382.md[382.md] | 0.087 |  |  | 697003956 |
+| link:solvers/383.py[383.py] | link:solvers/383.md[383.md] | 0.179 |  |  | 22173624649806 |
+| link:solvers/384.py[384.py] | link:solvers/384.md[384.md] | 0.094 |  |  | 3354706415856332783 |
+| link:solvers/385.py[385.py] | link:solvers/385.md[385.md] | 0.134 |  |  | 3776957309612153700 |
+| link:solvers/386.py[386.py] | link:solvers/386.md[386.md] | 0.834 | gpt-5.2-thinking |  | 528755790 |
+| link:solvers/387.py[387.py] |  | 0.122 |  |  | 696067597313468 |
+| link:solvers/388.py[388.py] | link:solvers/388.md[388.md] | 0.561 |  |  | 831907372805129931 |
+| link:solvers/389.py[389.py] | link:solvers/389.md[389.md] | 0.131 | gpt-5.2-thinking |  | 2406376.3623 |
+| link:solvers/390.py[390.py] | link:solvers/390.md[390.md] | 0.127 | gpt-5.2-thinking |  | 2919133642971 |
+| link:solvers/391.py[391.py] | link:solvers/391.md[391.md] | 1.027 | gpt-5.2-thinking |  | 61029882288 |
+| link:solvers/392.py[392.py] | link:solvers/392.md[392.md] | 0.080 |  |  | 3.1486734435 |
+| link:solvers/393.py[393.py] |  | 13.176 |  |  | 112398351350823112 |
+| link:solvers/394.py[394.py] | link:solvers/394.md[394.md] | 0.088 |  |  | 3.2370342194 |
+| link:solvers/395.py[395.py] | link:solvers/395.md[395.md] | 0.245 |  |  | 28.2453753155 |
+| link:solvers/396.py[396.py] | link:solvers/396.md[396.md] | 0.116 |  |  | 173214653 |
+| link:solvers/397.py[397.py] | link:solvers/397.md[397.md] | 3.560 |  |  | 141630459461893728 |
+| link:solvers/398.py[398.py] | link:solvers/398.md[398.md] | 0.328 | gpt-5.2-thinking |  | 2010.59096 |
+| link:solvers/399.py[399.py] | link:solvers/399.md[399.md] | 4.903 |  |  | 1508395636674243,6.5e27330467 |
+| link:solvers/400.py[400.py] |  | 0.342 |  |  | 438505383468410633 |
+| link:solvers/401.py[401.py] |  | 2.009 |  |  | 281632621 |
+| link:solvers/402.py[402.py] |  | 0.127 |  |  | 356019862 |
+| link:solvers/403.py[403.py] |  | 1.094 |  |  | 18224771 |
+| link:solvers/404.py[404.py] |  | 9.342 |  |  | 1199215615081353 |
+| link:solvers/405.py[405.py] |  | 0.083 |  |  | 237696125 |
+| link:solvers/406.py[406.py] |  | 1.002 |  |  | 36813.12757207 |
+| link:solvers/407.py[407.py] |  | 8.929 |  |  | 39782849136421 |
+| link:solvers/408.py[408.py] |  | 2.705 |  |  | 299742733 |
+| link:solvers/409.py[409.py] |  | 0.329 |  |  | 253223948 |
+| link:solvers/410.py[410.py] |  | 1.995 |  |  | 799999783589946560 |
+| link:solvers/411.py[411.py] |  | 13.880 |  |  | 9936352 |
+| link:solvers/412.py[412.py] |  | 0.578 |  |  | 38788800 |
+| link:solvers/413.py[413.py] |  | 18.845 |  |  | 3079418648040719 |
+| link:solvers/414.py[414.py] |  | 13.126 |  |  | 552506775824935461 |
+| link:solvers/415.py[415.py] |  | 100.317 |  |  | 55859742 |
+| link:solvers/416.py[416.py] | link:solvers/416.md[416.md] | 6.503 | gpt-5.2-codex |  | 898082747 |
+| link:solvers/417.py[417.py] | link:solvers/417.md[417.md] | 11.211 |  |  | 446572970925740 |
+| link:solvers/418.py[418.py] | link:solvers/418.md[418.md] | 2.043 | gpt-5.2-thinking |  | 1177163565297340320 |
+| link:solvers/419.py[419.py] | link:solvers/419.md[419.md] | 0.326 | gpt-5.2-thinking |  | 998567458,1046245404,43363922 |
+| link:solvers/420.py[420.py] |  | 0.982 |  |  | 145159332 |
+| link:solvers/421.py[421.py] | link:solvers/421.md[421.md] | 2.073 | gpt-5.2-thinking |  | 2304215802083466198 |
+| link:solvers/422.py[422.py] | link:solvers/422.md[422.md] | 0.109 |  |  | 92060460 |
+| link:solvers/423.py[423.py] | link:solvers/423.md[423.md] | 2.134 |  |  | 653972374 |
+| link:solvers/424.py[424.py] | link:solvers/424.md[424.md] | 0.844 | gpt-5.2-thinking |  | 1059760019628 |
+| link:solvers/425.py[425.py] |  | 4.366 |  |  | 46479497324 |
+| link:solvers/426.py[426.py] | link:solvers/426.md[426.md] | 0.496 | gpt-5.2-thinking |  | 31591886008 |
+| link:solvers/427.py[427.py] | link:solvers/427.md[427.md] | 3.178 |  |  | 97138867 |
+| link:solvers/428.py[428.py] | link:solvers/428.md[428.md] | 2.022 | gpt-5.2-thinking |  | 747215561862 |
+| link:solvers/429.py[429.py] |  | 1.636 |  |  | 98792821 |
+| link:solvers/430.py[430.py] | link:solvers/430.md[430.md] | 0.108 |  |  | 5000624921.38 |
+| link:solvers/431.py[431.py] | link:solvers/431.md[431.md] | 0.146 |  |  | 23.386029052 |
+| link:solvers/432.py[432.py] | link:solvers/432.md[432.md] | 1.240 | gpt-5.2-thinking |  | 754862080 |
+| link:solvers/433.py[433.py] | link:solvers/433.md[433.md] | 0.105 |  |  | 326624372659664 |
+| link:solvers/434.py[434.py] | link:solvers/434.md[434.md] | 0.739 | gpt-5.2-thinking |  | 863253606 |
+| link:solvers/435.py[435.py] |  | 0.068 |  |  | 252541322550 |
+| link:solvers/436.py[436.py] | link:solvers/436.md[436.md] | 0.115 |  |  | 0.5276662759 |
+| link:solvers/437.py[437.py] | link:solvers/437.md[437.md] | 6.854 |  |  | 74204709657207 |
+| link:solvers/438.py[438.py] | link:solvers/438.md[438.md] | 19.389 | gpt-5.2-thinking |  | 2046409616809 |
+| link:solvers/439.py[439.py] | link:solvers/439.md[439.md] | 12.590 | gpt-5.2-thinking |  | 968697378 |
+| link:solvers/440.py[440.py] | link:solvers/440.md[440.md] | 0.993 |  |  | 970746056 |
+| link:solvers/441.py[441.py] | link:solvers/441.md[441.md] | 0.675 | gpt-5.2-thinking |  | 5000088.8395 |
+| link:solvers/442.py[442.py] | link:solvers/442.md[442.md] | 0.464 | gpt-5.2-thinking |  | 1295552661530920149 |
+| link:solvers/443.py[443.py] |  | 2.064 |  |  | 2744233049300770 |
+| link:solvers/444.py[444.py] | link:solvers/444.md[444.md] | 0.142 | gpt-5.2-thinking |  | 1.200856722e263 |
+| link:solvers/445.py[445.py] | link:solvers/445.md[445.md] | 4.030 |  |  | 659104042 |
+| link:solvers/446.py[446.py] | link:solvers/446.md[446.md] | 3.014 | gpt-5.2-thinking |  | 907803852 |
+| link:solvers/447.py[447.py] | link:solvers/447.md[447.md] | 0.545 |  |  | 530553372 |
+| link:solvers/448.py[448.py] | link:solvers/448.md[448.md] | 2.785 |  |  | 106467648 |
+| link:solvers/449.py[449.py] | link:solvers/449.md[449.md] | 0.100 | gpt-5.2-thinking |  | 103.37870096 |
+| link:solvers/450.py[450.py] | link:solvers/450.md[450.md] | 0.602 | gpt-5.2-thinking |  | 583333163984220940 |
+| link:solvers/451.py[451.py] |  | 74.218 |  |  | 153651073760956 |
+| link:solvers/452.py[452.py] | link:solvers/452.md[452.md] | 2.987 | gpt-5.2-thinking |  | 345558983 |
+| link:solvers/453.py[453.py] | link:solvers/453.md[453.md] | 0.229 | gpt-5.2-thinking |  | 104354107 |
+| link:solvers/454.py[454.py] | link:solvers/454.md[454.md] | 3.694 | gpt-5.2-thinking |  | 5435004633092 |
+| link:solvers/455.py[455.py] |  | 1.458 |  |  | 450186511399999 |
+| link:solvers/456.py[456.py] | link:solvers/456.md[456.md] | 7.393 | gpt-5.2-thinking |  | 333333208685971546 |
+| link:solvers/457.py[457.py] |  | 1.024 |  |  | 2647787126797397063 |
+| link:solvers/458.py[458.py] |  | 0.067 |  |  | 423341841 |
+| link:solvers/459.py[459.py] | link:solvers/459.md[459.md] | 36.174 | gpt-5.2-thinking |  | 3996390106631 |
+| link:solvers/460.py[460.py] | link:solvers/460.md[460.md] | 1.552 | gpt-5.2-thinking |  | 18.420738199 |
+| link:solvers/461.py[461.py] | link:solvers/461.md[461.md] | 0.162 | gpt-5.2-thinking |  | 159820276 |
+| link:solvers/462.py[462.py] | link:solvers/462.md[462.md] | 0.099 | gpt-5.2-thinking |  | 5.5350769703e1512 |
+| link:solvers/463.py[463.py] | link:solvers/463.md[463.md] | 0.127 | gpt-5.2-thinking |  | 808981553 |
+| link:solvers/464.py[464.py] | link:solvers/464.md[464.md] | 10.824 |  |  | 198775297232878 |
+| link:solvers/465.py[465.py] | link:solvers/465.md[465.md] | 7.407 | gpt-5.2-thinking |  | 585965659 |
+| link:solvers/466.py[466.py] | link:solvers/466.md[466.md] | 7.379 | gpt-5.2-thinking |  | 258381958195474745 |
+| link:solvers/467.py[467.py] | link:solvers/467.md[467.md] | 0.233 | gpt-5.2-thinking |  | 775181359 |
+| link:solvers/468.py[468.py] | link:solvers/468.md[468.md] | 0.225 | gpt-5.2-thinking |  | 852950321 |
+| link:solvers/469.py[469.py] | link:solvers/469.md[469.md] | 0.145 | gpt-5.2-thinking |  | 0.56766764161831 |
+| link:solvers/470.py[470.py] | link:solvers/470.md[470.md] | 1.820 |  |  | 147668794 |
+| link:solvers/471.py[471.py] | link:solvers/471.md[471.md] | 0.156 | gpt-5.2-thinking |  | 1.895093981e31 |
+| link:solvers/472.py[472.py] | link:solvers/472.md[472.md] | 0.103 | gpt-5.2-thinking |  | 73811586 |
+| link:solvers/473.py[473.py] |  | 0.585 |  |  | 35856681704365 |
+| link:solvers/474.py[474.py] | link:solvers/474.md[474.md] | 41.171 | gpt-5.2-codex |  | 9690646731515010 |
+| link:solvers/475.py[475.py] | link:solvers/475.md[475.md] | 0.168 | gpt-5.2-thinking |  | 75780067 |
+| link:solvers/476.py[476.py] | link:solvers/476.md[476.md] | 25.504 | gpt-5.2-thinking |  | 110242.87794 |
+| link:solvers/477.py[477.py] | link:solvers/477.md[477.md] | 0.465 | gpt-5.2-thinking |  | 25044905874565165 |
+| link:solvers/478.py[478.py] | link:solvers/478.md[478.md] | 0.119 | gpt-5.2-thinking |  | 59510340 |
+| link:solvers/479.py[479.py] |  | 0.515 |  |  | 191541795 |
+| link:solvers/480.py[480.py] | link:solvers/480.md[480.md] | 0.133 | gpt-5.2-thinking |  | turnthestarson |
+| link:solvers/481.py[481.py] | link:solvers/481.md[481.md] | 0.755 | gpt-5.2-thinking |  | 729.12106947 |
+| link:solvers/482.py[482.py] | link:solvers/482.md[482.md] | 3.574 | gpt-5.2-thinking |  | 1400824879147 |
+| link:solvers/483.py[483.py] | link:solvers/483.md[483.md] | 8.307 | gpt-5.2-thinking |  | 4.993401567e22 |
+| link:solvers/484.py[484.py] | link:solvers/484.md[484.md] | 1.523 | gpt-5.2-thinking |  | 8907904768686152599 |
+| link:solvers/485.py[485.py] |  | 2.056 |  |  | 51281274340 |
+| link:solvers/486.py[486.py] | link:solvers/486.md[486.md] | 0.296 | gpt-5.2-thinking |  | 11408450515 |
+| link:solvers/487.py[487.py] | link:solvers/487.md[487.md] | 0.362 | gpt-5.2-thinking |  | 106650212746 |
+| link:solvers/488.py[488.py] | link:solvers/488.md[488.md] | 0.125 | gpt-5.2-thinking |  | 216737278 |
+| link:solvers/489.py[489.py] | link:solvers/489.md[489.md] | 0.893 | gpt-5.2-thinking |  | 1791954757162 |
+| link:solvers/490.py[490.py] | link:solvers/490.md[490.md] | 0.160 | gpt-5.2-thinking |  | 777577686 |
+| link:solvers/491.py[491.py] |  | 0.066 |  |  | 194505988824000 |
+| link:solvers/492.py[492.py] | link:solvers/492.md[492.md] | 1.367 | gpt-5.2-thinking |  | 242586962923928 |
+| link:solvers/493.py[493.py] | link:solvers/493.md[493.md] | 0.097 | gpt-5.2-thinking |  | 6.818741802 |
+| link:solvers/494.py[494.py] | link:solvers/494.md[494.md] | 0.083 | gpt-5.2-thinking |  | 2880067194446832666 |
+| link:solvers/495.py[495.py] | link:solvers/495.md[495.md] | 1.424 | gpt-5.2-thinking |  | 789107601 |
+| link:solvers/496.py[496.py] | link:solvers/496.md[496.md] | 0.370 | gpt-5.2-thinking |  | 2042473533769142717 |
+| link:solvers/497.py[497.py] | link:solvers/497.md[497.md] | 0.243 | gpt-5.2-thinking |  | 684901360 |
+| link:solvers/498.py[498.py] | link:solvers/498.md[498.md] | 0.140 | gpt-5.2-thinking |  | 472294837 |
+| link:solvers/499.py[499.py] | link:solvers/499.md[499.md] | 0.116 | gpt-5.2-thinking |  | 0.8660312 |
+| link:solvers/500.py[500.py] |  | 1.463 |  |  | 35407281 |
+| link:solvers/501.py[501.py] | link:solvers/501.md[501.md] | 126.958 | gpt-5.2-thinking |  | 197912312715 |
+| link:solvers/502.py[502.py] | link:solvers/502.md[502.md] | 2.903 | gpt-5.2-thinking |  | 749485217 |
+| link:solvers/503.py[503.py] | link:solvers/503.md[503.md] | 0.137 | gpt-5.2-thinking |  | 3.8694550145 |
+| link:solvers/504.py[504.py] |  | 0.645 |  |  | 694687 |
+| link:solvers/505.py[505.py] | link:solvers/505.md[505.md] | 106.445 | gpt-5.2-thinking |  | 714591308667615832 |
+| link:solvers/506.py[506.py] | link:solvers/506.md[506.md] | 0.101 | gpt-5.2-thinking |  | 18934502 |
+| link:solvers/507.py[507.py] | link:solvers/507.md[507.md] | 177.141 | gpt-5.2-thinking |  | 316558047002627270 |
+| link:solvers/508.py[508.py] | link:solvers/508.md[508.md] | 0.211 | gpt-5.2-thinking |  | 891874596 |
+| link:solvers/509.py[509.py] | link:solvers/509.md[509.md] | 0.107 | gpt-5.2-thinking |  | 151725678 |
+| link:solvers/510.py[510.py] |  | 1.384 |  |  | 315306518862563689 |
+| link:solvers/511.py[511.py] | link:solvers/511.md[511.md] | 1.665 | gpt-5.2-thinking |  | 935247012 |
+| link:solvers/512.py[512.py] |  | 18.230 |  |  | 50660591862310323 |
+| link:solvers/513.py[513.py] | link:solvers/513.md[513.md] | 15.445 | gpt-5.2-thinking |  | 2925619196 |
+| link:solvers/514.py[514.py] | link:solvers/514.md[514.md] | 0.522 | gpt-5.2-thinking |  | 8986.86698 |
+| link:solvers/515.py[515.py] | link:solvers/515.md[515.md] | 0.132 | gpt-5.2-thinking |  | 2422639000800 |
+| link:solvers/516.py[516.py] |  | 0.941 |  |  | 939087315 |
+| link:solvers/517.py[517.py] | link:solvers/517.md[517.md] | 0.705 | gpt-5.2-thinking |  | 581468882 |
+| link:solvers/518.py[518.py] |  | 4.163 |  |  | 100315739184392 |
+| link:solvers/519.py[519.py] | link:solvers/519.md[519.md] | 0.200 | gpt-5.2-thinking |  | 804739330 |
+| link:solvers/520.py[520.py] | link:solvers/520.md[520.md] | 0.108 | gpt-5.2-thinking |  | 238413705 |
+| link:solvers/521.py[521.py] | link:solvers/521.md[521.md] | 35.023 | gpt-5.2-thinking |  | 44389811 |
+| link:solvers/522.py[522.py] | link:solvers/522.md[522.md] | 2.453 | gpt-5.2-thinking |  | 96772715 |
+| link:solvers/523.py[523.py] |  | 0.060 |  |  | 37125450.44 |
+| link:solvers/524.py[524.py] | link:solvers/524.md[524.md] | 11.384 | gpt-5.2-thinking |  | 2432925835413407847 |
+| link:solvers/525.py[525.py] | link:solvers/525.md[525.md] | 0.167 | gpt-5.2-thinking |  | 44.69921807 |
+| link:solvers/526.py[526.py] | link:solvers/526.md[526.md] | 41.979 | gpt-5.2-thinking |  | 49601160286750947 |
+| link:solvers/527.py[527.py] | link:solvers/527.md[527.md] | 0.120 | gpt-5.2-thinking |  | 11.92412011 |
+| link:solvers/528.py[528.py] | link:solvers/528.md[528.md] | 0.126 | gpt-5.2-thinking |  | 779027989 |
+| link:solvers/529.py[529.py] | link:solvers/529.md[529.md] | 9.143 | gpt-5.2-thinking |  | 23624465 |
+| link:solvers/530.py[530.py] | link:solvers/530.md[530.md] | 5.856 | gpt-5.2-thinking |  | 207366437157977206 |
+| link:solvers/531.py[531.py] |  | 1.608 |  |  | 4515432351156203105 |
+| link:solvers/532.py[532.py] | link:solvers/532.md[532.md] | 0.132 | gpt-5.2-thinking |  | 827306.56 |
+| link:solvers/533.py[533.py] | link:solvers/533.md[533.md] | 1.071 | gpt-5.2-thinking |  | 789453601 |
+| link:solvers/534.py[534.py] | link:solvers/534.md[534.md] | 51.208 | gpt-5.2-thinking |  | 11726115562784664 |
+| link:solvers/535.py[535.py] | link:solvers/535.md[535.md] | 0.568 | gpt-5.2-thinking |  | 611778217 |
+| link:solvers/536.py[536.py] | link:solvers/536.md[536.md] | 10.601 | gpt-5.2-thinking |  | 3557005261906288 |
+| link:solvers/537.py[537.py] |  | 23.167 |  |  | 779429131 |
+| link:solvers/538.py[538.py] | link:solvers/538.md[538.md] | 1.363 | gpt-5.2-thinking |  | 22472871503401097 |
+| link:solvers/539.py[539.py] | link:solvers/539.md[539.md] | 0.104 | gpt-5.2-thinking |  | 426334056 |
+| link:solvers/540.py[540.py] |  | 9.710 |  |  | 500000000002845 |
+| link:solvers/541.py[541.py] | link:solvers/541.md[541.md] | 0.154 | gpt-5.2-thinking |  | 4580726482872451 |
+| link:solvers/542.py[542.py] | link:solvers/542.md[542.md] | 1.065 | gpt-5.2-thinking |  | 697586734240314852 |
+| link:solvers/543.py[543.py] |  | 0.706 |  |  | 199007746081234640 |
+| link:solvers/544.py[544.py] | link:solvers/544.md[544.md] | 2.921 | gpt-5.2-thinking |  | 640432376 |
+| link:solvers/545.py[545.py] | link:solvers/545.md[545.md] | 0.878 | gpt-5.2-thinking |  | 921107572 |
+| link:solvers/546.py[546.py] | link:solvers/546.md[546.md] | 0.112 | gpt-5.2-thinking |  | 215656873 |
+| link:solvers/547.py[547.py] | link:solvers/547.md[547.md] | 0.543 | gpt-5.2-thinking |  | 11730879.0023 |
+| link:solvers/548.py[548.py] | link:solvers/548.md[548.md] | 0.795 | gpt-5.2-thinking |  | 12144044603581281 |
+| link:solvers/549.py[549.py] |  | 31.523 |  |  | 476001479068717 |
+| link:solvers/550.py[550.py] | link:solvers/550.md[550.md] | 0.692 | gpt-5.2-thinking |  | 328104836 |
+| link:solvers/551.py[551.py] | link:solvers/551.md[551.md] | 0.154 | gpt-5.2-thinking |  | 73597483551591773 |
+| link:solvers/552.py[552.py] | link:solvers/552.md[552.md] | 66.467 | gpt-5.2-thinking |  | 326227335 |
+| link:solvers/553.py[553.py] | link:solvers/553.md[553.md] | 0.891 | gpt-5.2-thinking |  | 57717170 |
+| link:solvers/554.py[554.py] | link:solvers/554.md[554.md] | 0.791 | gpt-5.2-thinking |  | 89539872 |
+| link:solvers/555.py[555.py] |  | 0.273 |  |  | 208517717451208352 |
+| link:solvers/556.py[556.py] | link:solvers/556.md[556.md] | 1.137 | gpt-5.2-thinking |  | 52126939292957 |
+| link:solvers/557.py[557.py] | link:solvers/557.md[557.md] | 13.987 | gpt-5.2-thinking |  | 2699929328 |
+| link:solvers/558.py[558.py] | link:solvers/558.md[558.md] | 102.015 | gpt-5.2-thinking |  | 226754889 |
+| link:solvers/559.py[559.py] | link:solvers/559.md[559.md] | 3.744 | gpt-5.2-thinking |  | 684724920 |
+| link:solvers/560.py[560.py] | link:solvers/560.md[560.md] | 0.397 | gpt-5.2-thinking |  | 994345168 |
+| link:solvers/561.py[561.py] |  | 0.065 |  |  | 452480999988235494 |
+| link:solvers/562.py[562.py] | link:solvers/562.md[562.md] | 0.416 | gpt-5.2-thinking |  | 51208732914368 |
+| link:solvers/563.py[563.py] |  | 4.428 |  |  | 27186308211734760 |
+| link:solvers/564.py[564.py] | link:solvers/564.md[564.md] | 2.307 | gpt-5.2-thinking |  | 12363.698850 |
+| link:solvers/565.py[565.py] |  | 16.009 |  |  | 2992480851924313898 |
+| link:solvers/566.py[566.py] | link:solvers/566.md[566.md] | 0.101 | gpt-5.2-thinking |  | 329569369413585 |
+| link:solvers/567.py[567.py] | link:solvers/567.md[567.md] | 0.101 | gpt-5.2-thinking |  | 75.44817535 |
+| link:solvers/568.py[568.py] | link:solvers/568.md[568.md] | 0.122 | gpt-5.2-thinking |  | 4228020 |
+| link:solvers/569.py[569.py] | link:solvers/569.md[569.md] | 2.061 | gpt-5.2-thinking |  | 21025060 |
+| link:solvers/570.py[570.py] | link:solvers/570.md[570.md] | 3.488 | gpt-5.2-thinking |  | 271197444 |
+| link:solvers/571.py[571.py] |  | 37.492 |  |  | 30510390701978 |
+| link:solvers/572.py[572.py] | link:solvers/572.md[572.md] | 1.163 | gpt-5.2-thinking |  | 19737656 |
+| link:solvers/573.py[573.py] | link:solvers/573.md[573.md] | 0.105 | gpt-5.2-thinking |  | 1252.9809 |
+| link:solvers/574.py[574.py] | link:solvers/574.md[574.md] | 0.247 | gpt-5.2-thinking |  | 5780447552057000454 |
+| link:solvers/575.py[575.py] | link:solvers/575.md[575.md] | 0.072 | gpt-5.2-thinking |  | 0.000989640561 |
+| link:solvers/576.py[576.py] | link:solvers/576.md[576.md] | 6.163 | gpt-5.2-thinking |  | 344457.5871 |
+| link:solvers/577.py[577.py] |  | 0.105 |  |  | 265695031399260211 |
+| link:solvers/578.py[578.py] | link:solvers/578.md[578.md] | 24.776 | gpt-5.2-thinking |  | 9219696799346 |
+| link:solvers/579.py[579.py] | link:solvers/579.md[579.md] | 1.650 | gpt-5.2-thinking |  | 3805524 |
+| link:solvers/580.py[580.py] | link:solvers/580.md[580.md] | 3.210 | gpt-5.2-thinking |  | 2327213148095366 |
+| link:solvers/581.py[581.py] | link:solvers/581.md[581.md] | 3.398 | gpt-5.2-thinking |  | 2227616372734 |
+| link:solvers/582.py[582.py] | link:solvers/582.md[582.md] | 0.159 | gpt-5.2-thinking |  | 19903 |
+| link:solvers/583.py[583.py] | link:solvers/583.md[583.md] | 25.482 | gpt-5.2-thinking |  | 1174137929000 |
+| link:solvers/584.py[584.py] | link:solvers/584.md[584.md] | 1.663 | gpt-5.2-thinking |  | 32.83822408 |
+| link:solvers/585.py[585.py] | link:solvers/585.md[585.md] | 0.523 | gpt-5.2-thinking |  | 17714439395932 |
+| link:solvers/586.py[586.py] | link:solvers/586.md[586.md] | 0.397 | gpt-5.2-thinking |  | 82490213 |
+| link:solvers/587.py[587.py] |  | 0.075 |  |  | 2240 |
+| link:solvers/588.py[588.py] | link:solvers/588.md[588.md] | 0.102 | gpt-5.2-thinking |  | 11651930052 |
+| link:solvers/589.py[589.py] | link:solvers/589.md[589.md] | 3.219 | gpt-5.2-thinking |  | 131776959.25 |
+| link:solvers/590.py[590.py] | link:solvers/590.md[590.md] | 0.263 | gpt-5.2-thinking |  | 834171904 |
+| link:solvers/591.py[591.py] | link:solvers/591.md[591.md] | 0.755 | gpt-5.2-thinking |  | 526007984625966 |
+| link:solvers/592.py[592.py] | link:solvers/592.md[592.md] | 0.168 | gpt-5.2-thinking |  | 13415DF2BE9C |
+| link:solvers/593.py[593.py] | link:solvers/593.md[593.md] | 1.373 | gpt-5.2-thinking |  | 96632320042.0 |
+| link:solvers/594.py[594.py] | link:solvers/594.md[594.md] | 0.178 | gpt-5.2-thinking |  | 47067598 |
+| link:solvers/595.py[595.py] | link:solvers/595.md[595.md] | 0.237 | gpt-5.2-thinking |  | 54.17529329 |
+| link:solvers/596.py[596.py] | link:solvers/596.md[596.md] | 5.341 | gpt-5.2-thinking |  | 734582049 |
+| link:solvers/597.py[597.py] | link:solvers/597.md[597.md] | 0.117 | gpt-5.2-thinking |  | 0.5001817828 |
+| link:solvers/598.py[598.py] | link:solvers/598.md[598.md] | 0.681 | gpt-5.2-thinking |  | 543194779059 |
+| link:solvers/599.py[599.py] | link:solvers/599.md[599.md] | 0.099 | gpt-5.2-thinking |  | 12395526079546335 |
+| link:solvers/600.py[600.py] | link:solvers/600.md[600.md] | 0.084 | gpt-5.2-thinking |  | 2668608479740672 |
+| link:solvers/601.py[601.py] |  | 0.056 |  |  | 1617243 |
+| link:solvers/602.py[602.py] | link:solvers/602.md[602.md] | 0.797 | gpt-5.2-thinking |  | 269496760 |
+| link:solvers/603.py[603.py] | link:solvers/603.md[603.md] | 0.352 | gpt-5.2-thinking |  | 879476477 |
+| link:solvers/604.py[604.py] | link:solvers/604.md[604.md] | 0.183 | gpt-5.2-thinking |  | 1398582231101 |
+| link:solvers/605.py[605.py] | link:solvers/605.md[605.md] | 0.093 | gpt-5.2-thinking |  | 59992576 |
+| link:solvers/606.py[606.py] | link:solvers/606.md[606.md] | 6.217 | gpt-5.2-thinking |  | 158452775 |
+| link:solvers/607.py[607.py] |  | 0.088 |  |  | 13.1265108586 |
+| link:solvers/608.py[608.py] | link:solvers/608.md[608.md] | 3.452 | gpt-5.2-thinking |  | 439689828 |
+| link:solvers/609.py[609.py] |  | 13.965 |  |  | 172023848 |
+| link:solvers/610.py[610.py] | link:solvers/610.md[610.md] | 0.173 | gpt-5.2-thinking |  | 319.30207833 |
+| link:solvers/611.py[611.py] | link:solvers/611.md[611.md] | 12.964 | gpt-5.2-thinking |  | 49283233900 |
+| link:solvers/612.py[612.py] | link:solvers/612.md[612.md] | 0.122 | gpt-5.2-thinking |  | 819963842 |
+| link:solvers/613.py[613.py] |  | 0.061 |  |  | 0.3916721504 |
+| link:solvers/614.py[614.py] | link:solvers/614.md[614.md] | 0.066 | gpt-5.2-thinking |  | 130694090 |
+| link:solvers/615.py[615.py] | link:solvers/615.md[615.md] | 10.299 | gpt-5.2-thinking |  | 108424772 |
+| link:solvers/616.py[616.py] | link:solvers/616.md[616.md] | 0.416 | gpt-5.2-thinking |  | 310884668312456458 |
+| link:solvers/617.py[617.py] | link:solvers/617.md[617.md] | 0.111 | gpt-5.2-thinking |  | 1001133757 |
+| link:solvers/618.py[618.py] |  | 0.616 |  |  | 634212216 |
+| link:solvers/619.py[619.py] | link:solvers/619.md[619.md] | 0.526 | gpt-5.2-thinking |  | 857810883 |
+| link:solvers/620.py[620.py] | link:solvers/620.md[620.md] | 1.225 | gpt-5.2-thinking |  | 1470337306 |
+| link:solvers/621.py[621.py] | link:solvers/621.md[621.md] | 0.303 | gpt-5.2-thinking |  | 11429712 |
+| link:solvers/622.py[622.py] |  | 2.659 |  |  | 3010983666182123972 |
+| link:solvers/623.py[623.py] | link:solvers/623.md[623.md] | 8.766 | gpt-5.2-thinking |  | 3679796 |
+| link:solvers/624.py[624.py] | link:solvers/624.md[624.md] | 0.127 | gpt-5.2-thinking |  | 984524441 |
+| link:solvers/625.py[625.py] | link:solvers/625.md[625.md] | 1.877 | gpt-5.2-thinking |  | 551614306 |
+| link:solvers/626.py[626.py] | link:solvers/626.md[626.md] | 0.216 | gpt-5.2-thinking |  | 695577663 |
+| link:solvers/627.py[627.py] | link:solvers/627.md[627.md] | 0.122 | gpt-5.2-thinking |  | 220196142 |
+| link:solvers/628.py[628.py] | link:solvers/628.md[628.md] | 0.785 | gpt-5.2-thinking |  | 210286684 |
+| link:solvers/629.py[629.py] | link:solvers/629.md[629.md] | 0.164 | gpt-5.2-thinking |  | 626616617 |
+| link:solvers/630.py[630.py] | link:solvers/630.md[630.md] | 1.051 | gpt-5.2-thinking |  | 9669182880384 |
+| link:solvers/631.py[631.py] | link:solvers/631.md[631.md] | 1.760 | gpt-5.2-thinking |  | 869588692 |
+| link:solvers/632.py[632.py] | link:solvers/632.md[632.md] | 5.078 | gpt-5.2-thinking |  | 728378714 |
+| link:solvers/633.py[633.py] | link:solvers/633.md[633.md] | 0.246 | gpt-5.2-thinking |  | 1.0012e-10 |
+| link:solvers/634.py[634.py] | link:solvers/634.md[634.md] | 0.213 | gpt-5.2-thinking |  | 4019680944 |
+| link:solvers/635.py[635.py] | link:solvers/635.md[635.md] | 6.251 | gpt-5.2-thinking |  | 689294705 |
+| link:solvers/636.py[636.py] | link:solvers/636.md[636.md] | 3.425 | gpt-5.2-thinking |  | 888316 |
+| link:solvers/637.py[637.py] | link:solvers/637.md[637.md] | 26.787 | gpt-5.2-codex |  | 49000634845039 |
+| link:solvers/638.py[638.py] | link:solvers/638.md[638.md] | 0.270 | gpt-5.2-thinking |  | 18423394 |
+| link:solvers/639.py[639.py] | link:solvers/639.md[639.md] | 4.653 | gpt-5.2-thinking |  | 797866893 |
+| link:solvers/640.py[640.py] | link:solvers/640.md[640.md] | 1.630 | gpt-5.2-thinking |  | 50.317928 |
+| link:solvers/641.py[641.py] | link:solvers/641.md[641.md] | 1.280 | gpt-5.2-thinking |  | 793525366 |
+| link:solvers/642.py[642.py] |  | 47.987 |  |  | 631499044 |
+| link:solvers/643.py[643.py] | link:solvers/643.md[643.md] | 1.146 | gpt-5.2-thinking |  | 968274154 |
+| link:solvers/644.py[644.py] | link:solvers/644.md[644.md] | 3.547 | gpt-5.2-codex |  | 20.11208767 |
+| link:solvers/645.py[645.py] | link:solvers/645.md[645.md] | 0.117 | gpt-5.2-thinking |  | 48894.2174 |
+| link:solvers/646.py[646.py] | link:solvers/646.md[646.md] | 14.765 | gpt-5.2-thinking |  | 845218467 |
+| link:solvers/647.py[647.py] |  | 0.119 |  |  | 563132994232918611 |
+| link:solvers/648.py[648.py] | link:solvers/648.md[648.md] | 1.187 | gpt-5.2-thinking |  | 301483197 |
+| link:solvers/649.py[649.py] | link:solvers/649.md[649.md] | 0.146 | gpt-5.2-thinking |  | 924668016 |
+| link:solvers/650.py[650.py] |  | 30.908 |  |  | 538319652 |
+| link:solvers/651.py[651.py] | link:solvers/651.md[651.md] | 0.202 | gpt-5.2-thinking |  | 448233151 |
+| link:solvers/652.py[652.py] | link:solvers/652.md[652.md] | 0.081 | gpt-5.2-thinking |  | 983924497 |
+| link:solvers/653.py[653.py] | link:solvers/653.md[653.md] | 0.148 | gpt-5.2-thinking |  | 1130658687 |
+| link:solvers/654.py[654.py] | link:solvers/654.md[654.md] | 1.801 | gpt-5.2-thinking |  | 815868280 |
+| link:solvers/655.py[655.py] | link:solvers/655.md[655.md] | 38.562 | gpt-5.2-thinking |  | 2000008332 |
+| link:solvers/656.py[656.py] | link:solvers/656.md[656.md] | 0.107 | gpt-5.2-thinking |  | 888873503555187 |
+| link:solvers/657.py[657.py] | link:solvers/657.md[657.md] | 0.089 | gpt-5.2-thinking |  | 219493139 |
+| link:solvers/658.py[658.py] | link:solvers/658.md[658.md] | 1.087 | gpt-5.2-thinking |  | 958280177 |
+| link:solvers/659.py[659.py] |  | 1.456 |  |  | 238518915714422000 |
+| link:solvers/660.py[660.py] | link:solvers/660.md[660.md] | 6.946 | gpt-5.2-thinking |  | 474766783 |
+| link:solvers/661.py[661.py] | link:solvers/661.md[661.md] | 0.063 | gpt-5.2-thinking |  | 646231.2177 |
+| link:solvers/662.py[662.py] | link:solvers/662.md[662.md] | 94.847 | gpt-5.2-thinking |  | 860873428 |
+| link:solvers/663.py[663.py] | link:solvers/663.md[663.md] | 2.536 | gpt-5.2-thinking |  | 1884138010064752 |
+| link:solvers/664.py[664.py] | link:solvers/664.md[664.md] | 0.115 | gpt-5.2-thinking |  | 35295862 |
+| link:solvers/665.py[665.py] | link:solvers/665.md[665.md] | 2.510 | gpt-5.2-thinking |  | 11541685709674 |
+| link:solvers/666.py[666.py] | link:solvers/666.md[666.md] | 0.121 | gpt-5.2-thinking |  | 0.48023168 |
+| link:solvers/667.py[667.py] | link:solvers/667.md[667.md] | 6.725 | gpt-5.2-thinking |  | 1.5276527928 |
+| link:solvers/668.py[668.py] | link:solvers/668.md[668.md] | 0.387 | gpt-5.2-thinking |  | 2811077773 |
+| link:solvers/669.py[669.py] |  | 0.085 |  |  | 56342087360542122 |
+| link:solvers/670.py[670.py] | link:solvers/670.md[670.md] | 1.598 | gpt-5.2-thinking |  | 551055065 |
+| link:solvers/671.py[671.py] | link:solvers/671.md[671.md] | 0.198 | gpt-5.2-codex |  | 946106780 |
+| link:solvers/672.py[672.py] | link:solvers/672.md[672.md] | 0.102 | gpt-5.2-thinking |  | 91627537 |
+| link:solvers/673.py[673.py] | link:solvers/673.md[673.md] | 0.104 | gpt-5.2-thinking |  | 700325380 |
+| link:solvers/674.py[674.py] | link:solvers/674.md[674.md] | 3.307 | gpt-5.2-thinking |  | 416678753 |
+| link:solvers/675.py[675.py] |  | 46.059 |  |  | 416146418 |
+| link:solvers/676.py[676.py] | link:solvers/676.md[676.md] | 0.095 | gpt-5.2-thinking |  | 3562668074339584 |
+| link:solvers/677.py[677.py] | link:solvers/677.md[677.md] | 2.102 | gpt-5.2-thinking |  | 984183023 |
+| link:solvers/678.py[678.py] | link:solvers/678.md[678.md] | 5.441 | gpt-5.2-thinking |  | 1986065 |
+| link:solvers/679.py[679.py] | link:solvers/679.md[679.md] | 0.102 | gpt-5.2-thinking |  | 644997092988678 |
+| link:solvers/680.py[680.py] | link:solvers/680.md[680.md] | 105.370 | gpt-5.2-thinking |  | 563917241 |
+| link:solvers/681.py[681.py] | link:solvers/681.md[681.md] | 122.323 | gpt-5.2-thinking |  | 2611227421428 |
+| link:solvers/682.py[682.py] | link:solvers/682.md[682.md] | 0.070 | gpt-5.2-thinking |  | 290872710 |
+| link:solvers/683.py[683.py] | link:solvers/683.md[683.md] | 0.152 | gpt-5.2-thinking |  | 2.38955315e11 |
+| link:solvers/684.py[684.py] | link:solvers/684.md[684.md] | 0.066 | gpt-5.2-thinking |  | 922058210 |
+| link:solvers/685.py[685.py] | link:solvers/685.md[685.md] | 0.272 | gpt-5.2-thinking |  | 662878999 |
+| link:solvers/686.py[686.py] |  | 0.718 |  |  | 193060223 |
+| link:solvers/687.py[687.py] | link:solvers/687.md[687.md] | 0.108 | gpt-5.2-thinking |  | 0.3285320869 |
+| link:solvers/688.py[688.py] | link:solvers/688.md[688.md] | 6.874 | gpt-5.2-thinking |  | 110941813 |
+| link:solvers/689.py[689.py] | link:solvers/689.md[689.md] | 0.195 | gpt-5.2-thinking |  | 0.56565454 |
+| link:solvers/690.py[690.py] | link:solvers/690.md[690.md] | 0.185 | gpt-5.2-thinking |  | 415157690 |
+| link:solvers/691.py[691.py] | link:solvers/691.md[691.md] | 2.168 | gpt-5.2-thinking |  | 11570761 |
+| link:solvers/692.py[692.py] | link:solvers/692.md[692.md] | 0.077 | gpt-5.2-thinking |  | 842043391019219959 |
+| link:solvers/693.py[693.py] | link:solvers/693.md[693.md] | 6.818 | gpt-5.2-thinking |  | 699161 |
+| link:solvers/694.py[694.py] |  | 0.592 |  |  | 1339784153569958487 |
+| link:solvers/695.py[695.py] | link:solvers/695.md[695.md] | 0.220 | gpt-5.2-thinking |  | 0.1017786859 |
+| link:solvers/696.py[696.py] | link:solvers/696.md[696.md] | 0.286 | gpt-5.2-thinking |  | 436944244 |
+| link:solvers/697.py[697.py] |  | 0.113 |  |  | 4343871.06 |
+| link:solvers/698.py[698.py] | link:solvers/698.md[698.md] | 0.090 | gpt-5.2-thinking |  | 57808202 |
+| link:solvers/699.py[699.py] | link:solvers/699.md[699.md] | 0.968 | gpt-5.2-thinking |  | 37010438774467572 |
+| link:solvers/700.py[700.py] |  | 1.233 |  |  | 1517926517777556 |
+| link:solvers/701.py[701.py] | link:solvers/701.md[701.md] | 40.357 | gpt-5.2-thinking |  | 13.51099836 |
+| link:solvers/702.py[702.py] | link:solvers/702.md[702.md] | 0.079 | gpt-5.2-thinking |  | 622305608172525546 |
+| link:solvers/703.py[703.py] | link:solvers/703.md[703.md] | 0.227 | gpt-5.2-thinking |  | 843437991 |
+| link:solvers/704.py[704.py] |  | 0.133 |  |  | 501985601490518144 |
+| link:solvers/705.py[705.py] | link:solvers/705.md[705.md] | 65.249 | gpt-5.2-thinking |  | 480440153 |
+| link:solvers/706.py[706.py] | link:solvers/706.md[706.md] | 0.124 | gpt-5.2-thinking |  | 884837055 |
+| link:solvers/707.py[707.py] | link:solvers/707.md[707.md] | 0.228 | gpt-5.2-thinking |  | 652907799 |
+| link:solvers/708.py[708.py] | link:solvers/708.md[708.md] | 3.549 | gpt-5.2-codex |  | 28874142998632109 |
+| link:solvers/709.py[709.py] |  | 3.460 |  |  | 773479144 |
+| link:solvers/710.py[710.py] |  | 0.276 |  |  | 1275000 |
+| link:solvers/711.py[711.py] | link:solvers/711.md[711.md] | 0.244 | gpt-5.2-thinking |  | 541510990 |
+| link:solvers/712.py[712.py] |  | 95.006 |  |  | 413876461 |
+| link:solvers/713.py[713.py] | link:solvers/713.md[713.md] | 0.068 | gpt-5.2-thinking |  | 788626351539895 |
+| link:solvers/714.py[714.py] | link:solvers/714.md[714.md] | 5.339 | gpt-5.2-thinking |  | 2.452767775565e20 |
+| link:solvers/715.py[715.py] | link:solvers/715.md[715.md] | 77.257 | gpt-5.2-thinking |  | 883188017 |
+| link:solvers/716.py[716.py] | link:solvers/716.md[716.md] | 0.091 | gpt-5.2-thinking |  | 238948623 |
+| link:solvers/717.py[717.py] |  | 0.906 |  |  | 1603036763131 |
+| link:solvers/718.py[718.py] | link:solvers/718.md[718.md] | 1.549 | gpt-5.2-thinking |  | 228579116 |
+| link:solvers/719.py[719.py] | link:solvers/719.md[719.md] | 1.035 | gpt-5.2-thinking |  | 128088830547982 |
+| link:solvers/720.py[720.py] | link:solvers/720.md[720.md] | 0.634 | gpt-5.2-codex |  | 688081048 |
+| link:solvers/721.py[721.py] |  | 9.884 |  |  | 700792959 |
+| link:solvers/722.py[722.py] | link:solvers/722.md[722.md] | 0.086 | gpt-5.2-thinking |  | 3.376792776502e132 |
+| link:solvers/723.py[723.py] | link:solvers/723.md[723.md] | 1.192 | gpt-5.2-thinking |  | 1395793419248 |
+| link:solvers/724.py[724.py] | link:solvers/724.md[724.md] | 0.190 | gpt-5.2-thinking |  | 18128250110 |
+| link:solvers/725.py[725.py] |  | 0.168 |  |  | 4598797036650685 |
+| link:solvers/726.py[726.py] | link:solvers/726.md[726.md] | 0.511 | gpt-5.2-thinking |  | 578040951 |
+| link:solvers/727.py[727.py] | link:solvers/727.md[727.md] | 0.214 | gpt-5.2-thinking |  | 3.64039141 |
+| link:solvers/728.py[728.py] | link:solvers/728.md[728.md] | 0.754 | gpt-5.2-thinking |  | 709874991 |
+| link:solvers/729.py[729.py] | link:solvers/729.md[729.md] | 62.867 | gpt-5.2-thinking |  | 308896374.2502 |
+| link:solvers/730.py[730.py] | link:solvers/730.md[730.md] | 34.591 | gpt-5.2-thinking |  | 1315965924 |
+| link:solvers/731.py[731.py] |  | 0.084 |  |  | 6086371427 |
+| link:solvers/732.py[732.py] | link:solvers/732.md[732.md] | 0.382 | gpt-5.2-thinking |  | 45609 |
+| link:solvers/733.py[733.py] | link:solvers/733.md[733.md] | 8.167 | gpt-5.2-thinking |  | 574368578 |
+| link:solvers/734.py[734.py] | link:solvers/734.md[734.md] | 0.689 | gpt-5.2-thinking |  | 557988060 |
+| link:solvers/735.py[735.py] | link:solvers/735.md[735.md] | 16.234 | gpt-5.2-thinking |  | 174848216767932 |
+| link:solvers/736.py[736.py] | link:solvers/736.md[736.md] | 0.158 | gpt-5.2-thinking |  | 25332747903959376 |
+| link:solvers/737.py[737.py] | link:solvers/737.md[737.md] | 0.165 | gpt-5.2-thinking |  | 757794899 |
+| link:solvers/738.py[738.py] | link:solvers/738.md[738.md] | 3.772 | gpt-5.2-thinking |  | 143091030 |
+| link:solvers/739.py[739.py] | link:solvers/739.md[739.md] | 2.505 | gpt-5.2-thinking |  | 711399016 |
+| link:solvers/740.py[740.py] | link:solvers/740.md[740.md] | 1.920 | gpt-5.2-thinking |  | 0.0189581208 |
+| link:solvers/741.py[741.py] | link:solvers/741.md[741.md] | 0.868 | gpt-5.2-thinking |  | 512895223 |
+| link:solvers/742.py[742.py] | link:solvers/742.md[742.md] | 0.898 | gpt-5.2-thinking |  | 18397727 |
+| link:solvers/743.py[743.py] | link:solvers/743.md[743.md] | 3.036 | gpt-5.2-thinking |  | 259158998 |
+| link:solvers/744.py[744.py] | link:solvers/744.md[744.md] | 0.135 | gpt-5.2-thinking |  | 0.0001999600 |
+| link:solvers/745.py[745.py] |  | 2.681 |  |  | 94586478 |
+| link:solvers/746.py[746.py] | link:solvers/746.md[746.md] | 0.210 | gpt-5.2-thinking |  | 867150922 |
+| link:solvers/747.py[747.py] | link:solvers/747.md[747.md] | 17.801 | gpt-5.2-thinking |  | 681813395 |
+| link:solvers/748.py[748.py] | link:solvers/748.md[748.md] | 2.359 | gpt-5.2-thinking |  | 276402862 |
+| link:solvers/749.py[749.py] | link:solvers/749.md[749.md] | 1.652 | gpt-5.2-thinking |  | 13459471903176422 |
+| link:solvers/750.py[750.py] | link:solvers/750.md[750.md] | 1.133 | gpt-5.2-thinking |  | 160640 |
+| link:solvers/751.py[751.py] |  | 0.089 |  |  | 2.223561019313554106173177 |
+| link:solvers/752.py[752.py] |  | 5.407 |  |  | 5610899769745488 |
+| link:solvers/753.py[753.py] | link:solvers/753.md[753.md] | 0.203 | gpt-5.2-thinking |  | 4714126766770661630 |
+| link:solvers/754.py[754.py] |  | 105.190 |  |  | 785845900 |
+| link:solvers/755.py[755.py] | link:solvers/755.md[755.md] | 0.098 | gpt-5.2-thinking |  | 2877071595975576960 |
+| link:solvers/756.py[756.py] | link:solvers/756.md[756.md] | 0.108 | gpt-5.2-thinking |  | 607238.610661 |
+| link:solvers/757.py[757.py] |  | 28.238 |  |  | 75737353 |
+| link:solvers/758.py[758.py] | link:solvers/758.md[758.md] | 0.408 | gpt-5.2-thinking |  | 331196954 |
+| link:solvers/759.py[759.py] | link:solvers/759.md[759.md] | 0.092 | gpt-5.2-thinking |  | 282771304 |
+| link:solvers/760.py[760.py] | link:solvers/760.md[760.md] | 0.113 | gpt-5.2-thinking |  | 172747503 |
+| link:solvers/761.py[761.py] |  | 1.908 |  |  | 5.05505046 |
+| link:solvers/762.py[762.py] | link:solvers/762.md[762.md] | 0.217 | gpt-5.2-thinking |  | 285528863 |
+| link:solvers/763.py[763.py] | link:solvers/763.md[763.md] | 1.871 | gpt-5.2-thinking |  | 798443574 |
+| link:solvers/764.py[764.py] | link:solvers/764.md[764.md] | 0.312 | gpt-5.2-thinking |  | 255228881 |
+| link:solvers/765.py[765.py] | link:solvers/765.md[765.md] | 0.104 | gpt-5.2-thinking |  | 0.2429251641 |
+| link:solvers/766.py[766.py] | link:solvers/766.md[766.md] | 12.830 | gpt-5.2-thinking |  | 2613742 |
+| link:solvers/767.py[767.py] | link:solvers/767.md[767.md] | 1.240 | gpt-5.2-thinking |  | 783976175 |
+| link:solvers/768.py[768.py] | link:solvers/768.md[768.md] | 0.113 | gpt-5.2-thinking |  | 14655308696436060 |
+| link:solvers/769.py[769.py] | link:solvers/769.md[769.md] | 5.687 | gpt-5.2-thinking |  | 14246712611506 |
+| link:solvers/770.py[770.py] | link:solvers/770.md[770.md] | 0.097 | gpt-5.2-thinking |  | 127311223 |
+| link:solvers/771.py[771.py] | link:solvers/771.md[771.md] | 1.992 | gpt-5.2-codex |  | 398803409 |
+| link:solvers/772.py[772.py] | link:solvers/772.md[772.md] | 0.633 | gpt-5.2-thinking |  | 83985379 |
+| link:solvers/773.py[773.py] | link:solvers/773.md[773.md] | 0.074 | gpt-5.2-thinking |  | 556206950 |
+| link:solvers/774.py[774.py] | link:solvers/774.md[774.md] | 19.126 | gpt-5.2-thinking |  | 459155763 |
+| link:solvers/775.py[775.py] | link:solvers/775.md[775.md] | 0.263 | gpt-5.2-thinking |  | 946791106 |
+| link:solvers/776.py[776.py] | link:solvers/776.md[776.md] | 0.173 | gpt-5.2-thinking |  | 9.627509725002e33 |
+| link:solvers/777.py[777.py] | link:solvers/777.md[777.md] | 0.195 | gpt-5.2-thinking |  | 2.533018434e23 |
+| link:solvers/778.py[778.py] | link:solvers/778.md[778.md] | 0.108 | gpt-5.2-thinking |  | 146133880 |
+| link:solvers/779.py[779.py] |  | 0.184 |  |  | 0.547326103833 |
+| link:solvers/780.py[780.py] | link:solvers/780.md[780.md] | 4.671 | gpt-5.2-thinking |  | 613979935 |
+| link:solvers/781.py[781.py] | link:solvers/781.md[781.md] | 0.653 | gpt-5.2-thinking |  | 162450870 |
+| link:solvers/782.py[782.py] | link:solvers/782.md[782.md] | 4.005 | gpt-5.2-thinking |  | 318313204 |
+| link:solvers/783.py[783.py] | link:solvers/783.md[783.md] | 0.127 | gpt-5.2-thinking |  | 136666597 |
+| link:solvers/784.py[784.py] | link:solvers/784.md[784.md] | 5.414 | gpt-5.2-thinking |  | 5833303012576429231 |
+| link:solvers/785.py[785.py] | link:solvers/785.md[785.md] | 1.492 | gpt-5.2-thinking |  | 29526986315080920 |
+| link:solvers/786.py[786.py] | link:solvers/786.md[786.md] | 0.977 | gpt-5.2-thinking |  | 45594532839912702 |
+| link:solvers/787.py[787.py] | link:solvers/787.md[787.md] | 0.364 | gpt-5.2-thinking |  | 202642367520564145 |
+| link:solvers/788.py[788.py] |  | 0.914 |  |  | 471745499 |
+| link:solvers/789.py[789.py] | link:solvers/789.md[789.md] | 4.265 | gpt-5.2-thinking |  | 13431419535872807040 |
+| link:solvers/790.py[790.py] | link:solvers/790.md[790.md] | 9.579 | gpt-5.2-thinking |  | 16585056588495119 |
+| link:solvers/791.py[791.py] | link:solvers/791.md[791.md] | 4.156 | gpt-5.2-thinking |  | 404890862 |
+| link:solvers/792.py[792.py] | link:solvers/792.md[792.md] | 0.549 | gpt-5.2-thinking |  | 2500500025183626 |
+| link:solvers/793.py[793.py] |  | 2.609 |  |  | 475808650131120 |
+| link:solvers/794.py[794.py] | link:solvers/794.md[794.md] | 0.340 | gpt-5.2-thinking |  | 8.146681749623 |
+| link:solvers/795.py[795.py] | link:solvers/795.md[795.md] | 1.103 | gpt-5.2-thinking |  | 955892601606483 |
+| link:solvers/796.py[796.py] | link:solvers/796.md[796.md] | 0.419 | gpt-5.2-thinking |  | 43.20649061 |
+| link:solvers/797.py[797.py] | link:solvers/797.md[797.md] | 6.615 | gpt-5.2-thinking |  | 47722272 |
+| link:solvers/798.py[798.py] | link:solvers/798.md[798.md] | 5.988 | gpt-5.2-thinking |  | 132996198 |
+| link:solvers/799.py[799.py] | link:solvers/799.md[799.md] | 2.430 | gpt-5.2-thinking |  | 1096910149053902 |
+| link:solvers/800.py[800.py] |  | 1.119 |  |  | 1412403576 |
+| link:solvers/801.py[801.py] | link:solvers/801.md[801.md] | 2.727 | gpt-5.2-thinking |  | 638129754 |
+| link:solvers/802.py[802.py] | link:solvers/802.md[802.md] | 0.503 | gpt-5.2-thinking |  | 973873727 |
+| link:solvers/803.py[803.py] | link:solvers/803.md[803.md] | 0.730 | gpt-5.2-thinking |  | 9300900470636 |
+| link:solvers/804.py[804.py] | link:solvers/804.md[804.md] | 1.553 | gpt-5.2-thinking |  | 4921370551019052 |
+| link:solvers/805.py[805.py] | link:solvers/805.md[805.md] | 0.421 | gpt-5.2-thinking |  | 119719335 |
+| link:solvers/806.py[806.py] | link:solvers/806.md[806.md] | 0.327 | gpt-5.2-thinking |  | 94394343 |
+| link:solvers/807.py[807.py] | link:solvers/807.md[807.md] | 0.116 | gpt-5.2-thinking |  | 0.1091523673 |
+| link:solvers/808.py[808.py] |  | 2.932 |  |  | 3807504276997394 |
+| link:solvers/809.py[809.py] | link:solvers/809.md[809.md] | 0.101 | gpt-5.2-thinking |  | 75353432948733 |
+| link:solvers/810.py[810.py] |  | 51.788 |  |  | 124136381 |
+| link:solvers/811.py[811.py] | link:solvers/811.md[811.md] | 0.097 | gpt-5.2-thinking |  | 327287526 |
+| link:solvers/812.py[812.py] | link:solvers/812.md[812.md] | 0.334 | gpt-5.2-thinking |  | 986262698 |
+| link:solvers/813.py[813.py] | link:solvers/813.md[813.md] | 0.103 | gpt-5.2-thinking |  | 14063639 |
+| link:solvers/814.py[814.py] | link:solvers/814.md[814.md] | 1.466 | gpt-5.2-thinking |  | 307159326 |
+| link:solvers/815.py[815.py] | link:solvers/815.md[815.md] | 0.862 | gpt-5.2-thinking |  | 54.12691621 |
+| link:solvers/816.py[816.py] |  | 9.427 |  |  | 20.880613018 |
+| link:solvers/817.py[817.py] | link:solvers/817.md[817.md] | 0.217 | gpt-5.2-thinking |  | 93158936107011 |
+| link:solvers/818.py[818.py] | link:solvers/818.md[818.md] | 0.575 | gpt-5.2-thinking |  | 11871909492066000 |
+| link:solvers/819.py[819.py] | link:solvers/819.md[819.md] | 0.112 | gpt-5.2-thinking |  | 1995.975556 |
+| link:solvers/820.py[820.py] |  | 1.803 |  |  | 44967734 |
+| link:solvers/821.py[821.py] | link:solvers/821.md[821.md] | 0.135 | gpt-5.2-thinking |  | 9219661511328178 |
+| link:solvers/822.py[822.py] |  | 0.113 |  |  | 950591530 |
+| link:solvers/823.py[823.py] | link:solvers/823.md[823.md] | 2.639 | gpt-5.2-thinking |  | 865849519 |
+| link:solvers/824.py[824.py] | link:solvers/824.md[824.md] | 3.781 | gpt-5.2-thinking |  | 26532152736197 |
+| link:solvers/825.py[825.py] | link:solvers/825.md[825.md] | 0.187 | gpt-5.2-thinking |  | 32.34481054 |
+| link:solvers/826.py[826.py] |  | 0.221 |  |  | 0.3889014797 |
+| link:solvers/827.py[827.py] | link:solvers/827.md[827.md] | 0.871 | gpt-5.2-thinking |  | 397289979 |
+| link:solvers/828.py[828.py] |  | 1.234 |  |  | 148693670 |
+| link:solvers/829.py[829.py] | link:solvers/829.md[829.md] | 5.043 | gpt-5.2-thinking |  | 41768797657018024 |
+| link:solvers/830.py[830.py] | link:solvers/830.md[830.md] | 0.108 | gpt-5.2-thinking |  | 254179446930484376 |
+| link:solvers/831.py[831.py] | link:solvers/831.md[831.md] | 0.099 | gpt-5.2-thinking |  | 5226432553 |
+| link:solvers/832.py[832.py] |  | 0.096 |  |  | 552839586 |
+| link:solvers/833.py[833.py] | link:solvers/833.md[833.md] | 0.149 | gpt-5.2-thinking |  | 43884302 |
+| link:solvers/834.py[834.py] | link:solvers/834.md[834.md] | 1.494 | gpt-5.2-thinking |  | 1254404167198752370 |
+| link:solvers/835.py[835.py] | link:solvers/835.md[835.md] | 0.095 | gpt-5.2-thinking |  | 1050923942 |
+| link:solvers/836.py[836.py] |  | 0.096 |  |  | aprilfoolsjoke |
+| link:solvers/837.py[837.py] | link:solvers/837.md[837.md] | 12.890 | gpt-5.2-thinking |  | 428074856 |
+| link:solvers/838.py[838.py] | link:solvers/838.md[838.md] | 0.167 | gpt-5.2-thinking |  | 250591.442792 |
+| link:solvers/839.py[839.py] | link:solvers/839.md[839.md] | 2.525 | gpt-5.2-thinking |  | 150893234438294408 |
+| link:solvers/840.py[840.py] | link:solvers/840.md[840.md] | 1.390 | gpt-5.2-thinking |  | 194396971 |
+| link:solvers/841.py[841.py] | link:solvers/841.md[841.md] | 0.572 | gpt-5.2-thinking |  | 381.7860132854 |
+| link:solvers/842.py[842.py] | link:solvers/842.md[842.md] | 3.067 | gpt-5.2-thinking |  | 885226002 |
+| link:solvers/843.py[843.py] | link:solvers/843.md[843.md] | 0.558 | gpt-5.2-thinking |  | 2816775424692 |
+| link:solvers/844.py[844.py] | link:solvers/844.md[844.md] | 0.270 | gpt-5.2-thinking |  | 101805206 |
+| link:solvers/845.py[845.py] | link:solvers/845.md[845.md] | 0.127 | gpt-5.2-thinking |  | 45009328011709400 |
+| link:solvers/846.py[846.py] | link:solvers/846.md[846.md] | 5.091 | gpt-5.2-thinking |  | 9851175623 |
+| link:solvers/847.py[847.py] | link:solvers/847.md[847.md] | 0.107 | gpt-5.2-thinking |  | 381868244 |
+| link:solvers/848.py[848.py] | link:solvers/848.md[848.md] | 0.094 | gpt-5.2-thinking |  | 188.45503259 |
+| link:solvers/849.py[849.py] | link:solvers/849.md[849.md] | 2.254 | gpt-5.2-thinking |  | 936203459 |
+| link:solvers/850.py[850.py] | link:solvers/850.md[850.md] | 15.404 | gpt-5.2-thinking |  | 878255725 |
+| link:solvers/851.py[851.py] | link:solvers/851.md[851.md] | 0.327 | gpt-5.2-thinking |  | 726358482 |
+| link:solvers/852.py[852.py] | link:solvers/852.md[852.md] | 0.367 | gpt-5.2-thinking |  | 130.313496 |
+| link:solvers/853.py[853.py] |  | 0.134 |  |  | 44511058204 |
+| link:solvers/854.py[854.py] | link:solvers/854.md[854.md] | 0.081 | gpt-5.2-thinking |  | 29894398 |
+| link:solvers/855.py[855.py] | link:solvers/855.md[855.md] | 0.077 | gpt-5.2-thinking |  | 6.8827571976e-57 |
+| link:solvers/856.py[856.py] | link:solvers/856.md[856.md] | 1.177 | gpt-5.2-thinking |  | 17.09661501 |
+| link:solvers/857.py[857.py] | link:solvers/857.md[857.md] | 0.288 | gpt-5.2-thinking |  | 966332096 |
+| link:solvers/858.py[858.py] | link:solvers/858.md[858.md] | 0.711 | gpt-5.2-thinking |  | 973077199 |
+| link:solvers/859.py[859.py] | link:solvers/859.md[859.md] | 0.148 | gpt-5.2-thinking |  | 1527162658488196 |
+| link:solvers/860.py[860.py] | link:solvers/860.md[860.md] | 0.127 | gpt-5.2-thinking |  | 958666903 |
+| link:solvers/861.py[861.py] | link:solvers/861.md[861.md] | 2.722 | gpt-5.2-thinking |  | 672623540591 |
+| link:solvers/862.py[862.py] | link:solvers/862.md[862.md] | 0.183 | gpt-5.2-thinking |  | 6111397420935766740 |
+| link:solvers/863.py[863.py] | link:solvers/863.md[863.md] | 0.293 | gpt-5.2-thinking |  | 3862.871397 |
+| link:solvers/864.py[864.py] | link:solvers/864.md[864.md] | 3.488 | gpt-5.2-thinking |  | 110572936177 |
+| link:solvers/865.py[865.py] | link:solvers/865.md[865.md] | 2.250 | gpt-5.2-thinking |  | 761181918 |
+| link:solvers/866.py[866.py] | link:solvers/866.md[866.md] | 0.173 | gpt-5.2-thinking |  | 492401720 |
+| link:solvers/867.py[867.py] | link:solvers/867.md[867.md] | 0.384 | gpt-5.2-thinking |  | 870557257 |
+| link:solvers/868.py[868.py] | link:solvers/868.md[868.md] | 0.142 | gpt-5.2-thinking |  | 3832914911887589 |
+| link:solvers/869.py[869.py] |  | 15.440 |  |  | 14.97696693 |
+| link:solvers/870.py[870.py] | link:solvers/870.md[870.md] | 11.637 | gpt-5.2-thinking |  | 229.9129353234 |
+| link:solvers/871.py[871.py] | link:solvers/871.md[871.md] | 0.659 | gpt-5.2-thinking |  | 2848790 |
+| link:solvers/872.py[872.py] |  | 0.068 |  |  | 2903144925319290239 |
+| link:solvers/873.py[873.py] | link:solvers/873.md[873.md] | 0.381 | gpt-5.2-thinking |  | 735131856 |
+| link:solvers/874.py[874.py] | link:solvers/874.md[874.md] | 0.295 | gpt-5.2-thinking |  | 4992775389 |
+| link:solvers/875.py[875.py] | link:solvers/875.md[875.md] | 1.062 | gpt-5.2-thinking |  | 79645946 |
+| link:solvers/876.py[876.py] | link:solvers/876.md[876.md] | 0.313 | gpt-5.2-thinking |  | 457019806569269 |
+| link:solvers/877.py[877.py] | link:solvers/877.md[877.md] | 0.095 | gpt-5.2-thinking |  | 336785000760344621 |
+| link:solvers/878.py[878.py] | link:solvers/878.md[878.md] | 19.465 | gpt-5.2-thinking |  | 23707109 |
+| link:solvers/879.py[879.py] | link:solvers/879.md[879.md] | 0.214 | gpt-5.2-thinking |  | 4350069824940 |
+| link:solvers/880.py[880.py] | link:solvers/880.md[880.md] | 10.848 | gpt-5.2-thinking |  | 522095328 |
+| link:solvers/881.py[881.py] | link:solvers/881.md[881.md] | 0.139 | gpt-5.2-thinking |  | 205702861096933200 |
+| link:solvers/882.py[882.py] | link:solvers/882.md[882.md] | 0.149 | gpt-5.2-thinking |  | 15800662276 |
+| link:solvers/883.py[883.py] | link:solvers/883.md[883.md] | 3.323 | gpt-5.2-thinking |  | 14854003484704 |
+| link:solvers/884.py[884.py] | link:solvers/884.md[884.md] | 0.708 | gpt-5.2-thinking |  | 1105985795684653500 |
+| link:solvers/885.py[885.py] | link:solvers/885.md[885.md] | 0.094 | gpt-5.2-thinking |  | 827850196 |
+| link:solvers/886.py[886.py] | link:solvers/886.md[886.md] | 53.376 | gpt-5.2-thinking |  | 5570163 |
+| link:solvers/887.py[887.py] | link:solvers/887.md[887.md] | 0.062 | gpt-5.2-thinking |  | 39896187138661622 |
+| link:solvers/888.py[888.py] | link:solvers/888.md[888.md] | 0.333 | gpt-5.2-thinking |  | 227429102 |
+| link:solvers/889.py[889.py] | link:solvers/889.md[889.md] | 0.112 | gpt-5.2-thinking |  | 424315113 |
+| link:solvers/890.py[890.py] | link:solvers/890.md[890.md] | 5.698 | gpt-5.2-thinking |  | 820442179 |
+| link:solvers/891.py[891.py] | link:solvers/891.md[891.md] | 1.364 | gpt-5.2-thinking |  | 1541414 |
+| link:solvers/892.py[892.py] | link:solvers/892.md[892.md] | 0.290 | gpt-5.2-thinking |  | 469137427 |
+| link:solvers/893.py[893.py] | link:solvers/893.md[893.md] | 4.899 | gpt-5.2-thinking |  | 26688208 |
+| link:solvers/894.py[894.py] | link:solvers/894.md[894.md] | 0.090 | gpt-5.2-thinking |  | 0.7718678168 |
+| link:solvers/895.py[895.py] | link:solvers/895.md[895.md] | 0.531 | gpt-5.2-thinking |  | 670785433 |
+| link:solvers/896.py[896.py] | link:solvers/896.md[896.md] | 0.258 | gpt-5.2-thinking |  | 274229635640 |
+| link:solvers/897.py[897.py] | link:solvers/897.md[897.md] | 0.086 | gpt-5.2-thinking |  | 1.599827123 |
+| link:solvers/898.py[898.py] | link:solvers/898.md[898.md] | 6.089 | gpt-5.2-thinking |  | 0.9861343531 |
+| link:solvers/899.py[899.py] | link:solvers/899.md[899.md] | 0.059 | gpt-5.2-thinking |  | 10784223938983273 |
+| link:solvers/900.py[900.py] | link:solvers/900.md[900.md] | 0.258 | gpt-5.2-thinking |  | 646900900 |
+| link:solvers/901.py[901.py] | link:solvers/901.md[901.md] | 2.435 | gpt-5.2-thinking |  | 2.364497769 |
+| link:solvers/902.py[902.py] | link:solvers/902.md[902.md] | 1.294 | gpt-5.2-thinking |  | 343557869 |
+| link:solvers/903.py[903.py] | link:solvers/903.md[903.md] | 0.856 | gpt-5.2-thinking |  | 128553191 |
+| link:solvers/904.py[904.py] | link:solvers/904.md[904.md] | 1.566 | gpt-5.2-thinking |  | 880652522278760 |
+| link:solvers/905.py[905.py] | link:solvers/905.md[905.md] | 0.062 | gpt-5.2-thinking |  | 70228218 |
+| link:solvers/906.py[906.py] | link:solvers/906.md[906.md] | 0.195 | gpt-5.2-thinking |  | 0.0195868911 |
+| link:solvers/907.py[907.py] | link:solvers/907.md[907.md] | 0.676 | gpt-5.2-thinking |  | 196808901 |
+| link:solvers/908.py[908.py] | link:solvers/908.md[908.md] | 4.928 | gpt-5.2-thinking |  | 451822602 |
+| link:solvers/909.py[909.py] | link:solvers/909.md[909.md] | 0.147 | gpt-5.2-thinking |  | 399885292 |
+| link:solvers/910.py[910.py] |  | 39.422 |  |  | 547480666 |
+| link:solvers/911.py[911.py] | link:solvers/911.md[911.md] | 0.644 | gpt-5.2-thinking |  | 5679.934966 |
+| link:solvers/912.py[912.py] | link:solvers/912.md[912.md] | 0.117 | gpt-5.2-thinking |  | 674045136 |
+| link:solvers/913.py[913.py] | link:solvers/913.md[913.md] | 0.576 | gpt-5.2-thinking |  | 2101925115560555020 |
+| link:solvers/914.py[914.py] | link:solvers/914.md[914.md] | 0.477 | gpt-5.2-thinking |  | 414213562371805310 |
+| link:solvers/915.py[915.py] | link:solvers/915.md[915.md] | 0.199 | gpt-5.2-thinking |  | 55601924 |
+| link:solvers/916.py[916.py] | link:solvers/916.md[916.md] | 0.312 | gpt-5.2-thinking |  | 877789135 |
+| link:solvers/917.py[917.py] | link:solvers/917.md[917.md] | 0.821 | gpt-5.2-thinking |  | 9986212680734636 |
+| link:solvers/918.py[918.py] |  | 0.061 |  |  | -6999033352333308 |
+| link:solvers/919.py[919.py] | link:solvers/919.md[919.md] | 5.171 | gpt-5.2-thinking |  | 134222859969633 |
+| link:solvers/920.py[920.py] | link:solvers/920.md[920.md] | 0.801 | gpt-5.2-thinking |  | 1154027691000533893 |
+| link:solvers/921.py[921.py] | link:solvers/921.md[921.md] | 2.152 | gpt-5.2-thinking |  | 378401935 |
+| link:solvers/922.py[922.py] | link:solvers/922.md[922.md] | 0.475 | gpt-5.2-thinking |  | 858945298 |
+| link:solvers/923.py[923.py] | link:solvers/923.md[923.md] | 0.814 | gpt-5.2-thinking |  | 740759929 |
+| link:solvers/924.py[924.py] | link:solvers/924.md[924.md] | 0.855 | gpt-5.2-thinking |  | 811141860 |
+| link:solvers/925.py[925.py] | link:solvers/925.md[925.md] | 26.061 | gpt-5.2-thinking |  | 400034379 |
+| link:solvers/926.py[926.py] | link:solvers/926.md[926.md] | 0.963 | gpt-5.2-thinking |  | 40410219 |
+| link:solvers/927.py[927.py] | link:solvers/927.md[927.md] | 8.991 | gpt-5.2-thinking |  | 207282955 |
+| link:solvers/928.py[928.py] | link:solvers/928.md[928.md] | 9.830 | gpt-5.2-thinking |  | 81108001093 |
+| link:solvers/929.py[929.py] | link:solvers/929.md[929.md] | 4.290 | gpt-5.2-thinking |  | 57322484 |
+| link:solvers/930.py[930.py] | link:solvers/930.md[930.md] | 1.150 | gpt-5.2-thinking |  | 1.345679959251e12 |
+| link:solvers/931.py[931.py] | link:solvers/931.md[931.md] | 78.821 | gpt-5.2-thinking |  | 128856311 |
+| link:solvers/932.py[932.py] |  | 4.977 |  |  | 72673459417881349 |
+| link:solvers/933.py[933.py] | link:solvers/933.md[933.md] | 16.853 | gpt-5.2-thinking |  | 5707485980743099 |
+| link:solvers/934.py[934.py] | link:solvers/934.md[934.md] | 0.337 | gpt-5.2-thinking |  | 292137809490441370 |
+| link:solvers/935.py[935.py] | link:solvers/935.md[935.md] | 0.419 | gpt-5.2-thinking |  | 759908921637225 |
+| link:solvers/936.py[936.py] | link:solvers/936.md[936.md] | 0.138 | gpt-5.2-thinking |  | 12144907797522336 |
+| link:solvers/937.py[937.py] | link:solvers/937.md[937.md] | 20.411 | gpt-5.2-thinking |  | 792169346 |
+| link:solvers/938.py[938.py] | link:solvers/938.md[938.md] | 0.124 | gpt-5.2-thinking |  | 0.2928967987 |
+| link:solvers/939.py[939.py] | link:solvers/939.md[939.md] | 1.069 | gpt-5.2-thinking |  | 246776732 |
+| link:solvers/940.py[940.py] | link:solvers/940.md[940.md] | 0.118 | gpt-5.2-thinking |  | 969134784 |
+| link:solvers/941.py[941.py] | link:solvers/941.md[941.md] | 53.237 | gpt-5.2-thinking |  | 1068765750 |
+| link:solvers/942.py[942.py] | link:solvers/942.md[942.md] | 3.238 | gpt-5.2-thinking |  | 557539756 |
+| link:solvers/943.py[943.py] |  | 25.158 |  |  | 1038733707 |
+| link:solvers/944.py[944.py] | link:solvers/944.md[944.md] | 0.458 | gpt-5.2-thinking |  | 1228599511 |
+| link:solvers/945.py[945.py] | link:solvers/945.md[945.md] | 0.563 | gpt-5.2-thinking |  | 83357132 |
+| link:solvers/946.py[946.py] | link:solvers/946.md[946.md] | 0.221 | gpt-5.2-thinking |  | 585787007 |
+| link:solvers/947.py[947.py] | link:solvers/947.md[947.md] | 2.281 | gpt-5.2-thinking |  | 213731313 |
+| link:solvers/948.py[948.py] |  | 0.191 |  |  | 1033654680825334184 |
+| link:solvers/949.py[949.py] |  | 4.876 |  |  | 726010935 |
+| link:solvers/950.py[950.py] | link:solvers/950.md[950.md] | 0.251 | gpt-5.2-thinking |  | 429162542 |
+| link:solvers/951.py[951.py] | link:solvers/951.md[951.md] | 0.147 | gpt-5.2-thinking |  | 495568995495726 |
+| link:solvers/952.py[952.py] | link:solvers/952.md[952.md] | 2.243 | gpt-5.2-thinking |  | 794394453 |
+| link:solvers/953.py[953.py] |  | 86.836 |  |  | 176907658 |
+| link:solvers/954.py[954.py] |  | 76.641 |  |  | 736463823 |
+| link:solvers/955.py[955.py] |  | 0.482 |  |  | 6795261671274 |
+| link:solvers/956.py[956.py] |  | 0.151 |  |  | 882086212 |
+| link:solvers/957.py[957.py] | link:solvers/957.md[957.md] | 0.193 | gpt-5.2-thinking |  | 234897386493229284 |
+| link:solvers/958.py[958.py] | link:solvers/958.md[958.md] | 13.233 | gpt-5.2-thinking |  | 367554579311 |
+| link:solvers/959.py[959.py] | link:solvers/959.md[959.md] | 2.264 | gpt-5.2-thinking |  | 0.857162085 |
+| link:solvers/960.py[960.py] |  | 0.061 |  |  | 243559751 |
+| link:solvers/961.py[961.py] |  | 1.306 |  |  | 166666666689036288 |
+| link:solvers/962.py[962.py] |  | 27.947 |  |  | 7259046 |
+| link:solvers/963.py[963.py] |  | 15.752 |  |  | 55129975871328418 |
+| link:solvers/964.py[964.py] |  | 0.114 |  |  | 4.7126135532e-29 |
+| link:solvers/965.py[965.py] | link:solvers/965.md[965.md] | 0.708 | gpt-5.2-thinking |  | 0.0003452201133 |
+| link:solvers/966.py[966.py] | link:solvers/966.md[966.md] | 36.829 | gpt-5.2-thinking |  | 29337152.09 |
+| link:solvers/967.py[967.py] |  | 1.591 |  |  | 357591131712034236 |
+| link:solvers/968.py[968.py] |  | 0.932 |  |  | 885362394 |
+| link:solvers/969.py[969.py] |  | 0.065 |  |  | 412543690 |
+| link:solvers/970.py[970.py] |  | 0.125 |  |  | 44754029 |
+| link:solvers/971.py[971.py] |  | 3.249 |  |  | 33626723890930 |
+| link:solvers/972.py[972.py] |  | 50.921 |  |  | 3575508 |
+| link:solvers/973.py[973.py] |  | 0.423 |  |  | 427278142 |
+| link:solvers/974.py[974.py] |  | 0.320 |  |  | 13313751171933973557517973175 |
+| link:solvers/975.py[975.py] |  | 18.081 |  |  | 88597366.47748 |
+| link:solvers/976.py[976.py] |  | 0.706 | gpt-5.2-codex | 131264 | 675608326 |
+| link:solvers/977.py[977.py] | link:solvers/977.md[977.md] | 1.616 |  |  | 537945304 |
+| link:solvers/978.py[978.py] | link:solvers/978.md[978.md] | 0.070 | gpt-5.2-thinking |  | 254.54470757 |
+| link:solvers/979.py[979.py] | link:solvers/979.md[979.md] | 0.126 | gpt-5.2-thinking |  | 189306828278449 | error: missing reference answer
+| link:solvers/980.py[980.py] | link:solvers/980.md[980.md] | 0.508 | gpt-5.2-thinking |  | 124999683766 | error: missing reference answer
+| link:solvers/981.py[981.py] | link:solvers/981.md[981.md] | 0.242 | gpt-5.2-thinking |  | 794963735 | error: missing reference answer
+|===
+
+=== Non-Python solvers
+
+We have placed non-Python solvers in this separate table for the following reasons:
+
+* Python is the primary language, and it is nice to have a cleaner table containing only it
+* non-Python solvers will mostly be vibe-translated, and as such auto-generation metadata such as number of tokens and model doesn't matter so much for them
+
+// RESULTS TABLE OTHER
+|===
+| ID | Runtime (s) | Output | Error
+| link:solvers/1.c[1.c] | 0.002 | 233168 |
+| link:solvers/1.cpp[1.cpp] | 0.002 | 233168 |
+| link:solvers/1.lean[1.lean] | 0.007 | 233168 |
+| link:solvers/2.lean[2.lean] | 0.021 | 4613732 |
+|===
+
+=== Slowest solvers
+
+This section lists the slowest solvers we have. Anything incredibly slower than most problems is likely to have important missing optimizations which we should ideally find.
+
+A bar plot of solver times can be generated with link:plot.py[] but I couldn't be bothered showing it here:
+
+----
+./plot.py
+----
+
+50 slowest Python solvers which give the correct answer:
+
+// SLOWEST PYTHON SOLVERS TABLE
+|===
+| ID | Runtime (s)
+| link:solvers/507.py[507.py] | 177.141
+| link:solvers/501.py[501.py] | 126.958
+| link:solvers/681.py[681.py] | 122.323
+| link:solvers/259.py[259.py] | 115.037
+| link:solvers/505.py[505.py] | 106.445
+| link:solvers/680.py[680.py] | 105.370
+| link:solvers/754.py[754.py] | 105.190
+| link:solvers/558.py[558.py] | 102.015
+| link:solvers/415.py[415.py] | 100.317
+| link:solvers/712.py[712.py] | 95.006
+| link:solvers/662.py[662.py] | 94.847
+| link:solvers/953.py[953.py] | 86.836
+| link:solvers/216.py[216.py] | 82.069
+| link:solvers/296.py[296.py] | 80.048
+| link:solvers/931.py[931.py] | 78.821
+| link:solvers/715.py[715.py] | 77.257
+| link:solvers/954.py[954.py] | 76.641
+| link:solvers/451.py[451.py] | 74.218
+| link:solvers/552.py[552.py] | 66.467
+| link:solvers/705.py[705.py] | 65.249
+| link:solvers/729.py[729.py] | 62.867
+| link:solvers/348.py[348.py] | 59.633
+| link:solvers/886.py[886.py] | 53.376
+| link:solvers/941.py[941.py] | 53.237
+| link:solvers/810.py[810.py] | 51.788
+| link:solvers/534.py[534.py] | 51.208
+| link:solvers/972.py[972.py] | 50.921
+| link:solvers/642.py[642.py] | 47.987
+| link:solvers/675.py[675.py] | 46.059
+| link:solvers/275.py[275.py] | 43.817
+| link:solvers/526.py[526.py] | 41.979
+| link:solvers/474.py[474.py] | 41.171
+| link:solvers/701.py[701.py] | 40.357
+| link:solvers/910.py[910.py] | 39.422
+| link:solvers/655.py[655.py] | 38.562
+| link:solvers/155.py[155.py] | 37.908
+| link:solvers/571.py[571.py] | 37.492
+| link:solvers/966.py[966.py] | 36.829
+| link:solvers/459.py[459.py] | 36.174
+| link:solvers/521.py[521.py] | 35.023
+| link:solvers/730.py[730.py] | 34.591
+| link:solvers/549.py[549.py] | 31.523
+| link:solvers/650.py[650.py] | 30.908
+| link:solvers/757.py[757.py] | 28.238
+| link:solvers/320.py[320.py] | 28.163
+| link:solvers/962.py[962.py] | 27.947
+| link:solvers/343.py[343.py] | 27.787
+| link:solvers/637.py[637.py] | 26.787
+| link:solvers/925.py[925.py] | 26.061
+| link:solvers/476.py[476.py] | 25.504
+|===
+
+We've put some effort into optimizing the following above further but failed so far:
+
+* 507
+* 715

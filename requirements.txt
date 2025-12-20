@@ -1,0 +1,4 @@
+openai==2.14.0
+black==24.10.0
+matplotlib==3.10.0
+numpy==2.2.2

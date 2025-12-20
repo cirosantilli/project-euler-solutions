@@ -1,0 +1,11 @@
+*.out
+README.html
+.venv
+__pycache__
+tmp
+tmp.*
+*.lean.c
+/.lake
+.lean-build-stamp
+.lean-build-stamp.*
+plot.png
