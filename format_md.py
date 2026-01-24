@@ -24,11 +24,11 @@ def find_solver_files(pid: int) -> list[Path]:
     prefix = f"{pid}_"
     candidates: list[Path] = []
     for path in SOLVERS_DIR.glob(f"{pid}.*"):
-        if path.suffix in {".md", ".json"}:
+        if path.suffix in {".md", ".json", ".out"}:
             continue
         candidates.append(path)
     for path in SOLVERS_DIR.glob(f"{pid}_*.*"):
-        if path.suffix in {".md", ".json"}:
+        if path.suffix in {".md", ".json", ".out"}:
             continue
         candidates.append(path)
     return sorted(candidates, key=lambda p: (p.suffix, p.name))
