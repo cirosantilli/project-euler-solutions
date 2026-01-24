@@ -1,6 +1,6 @@
 import ProjectEulerStatements.P2
 
-namespace ProjectEulerSolvers.P2
+namespace ProjectEulerSolutions.P2
 
 partial def sol (limit : Nat) : Nat :=
   let rec go (a b total : Nat) : Nat :=
@@ -11,11 +11,11 @@ partial def sol (limit : Nat) : Nat :=
       total
   go 1 2 0
 
-theorem sol_4000000 : sol 4000000 = 4613732 := by native_decide
+example : sol 4000000 = 4613732 := by native_decide
 theorem equiv (n : Nat) : ProjectEulerStatements.P2.naive n = sol n := sorry
 
-end ProjectEulerSolvers.P2
-open ProjectEulerSolvers.P2
+end ProjectEulerSolutions.P2
+open ProjectEulerSolutions.P2
 
 def main : IO Unit := do
   IO.println (sol 4000000)
