@@ -1296,11 +1296,40 @@ def main() -> None:
     passed = sum(r.correct for r in results)
     print(f"\nPassed {passed}/{total_run} tests.")
 
-    print("\n|===")
-    print("| ID | Explanation | Runtime (s) | Model | Out Tokens | Output | Error")
-    for res in sorted(results, key=lambda r: (r.puzzle_id, r.language or "")):
-        print(format_row(res))
-    print("|===")
+    py_results = [res for res in results if (res.language or "py") == "py"]
+    other_results = [res for res in results if (res.language or "py") != "py"]
+
+    if py_results:
+        print("\n|===")
+        print("| ID | Explanation | Runtime (s) | Model | Out Tokens | Output | Error")
+        for res in sorted(py_results, key=lambda r: (r.puzzle_id, r.language or "")):
+            print(format_row(res))
+        print("|===")
+
+    if other_results:
+        py_runtime: dict[int, float] = {}
+        for res in py_results:
+            if res.elapsed is not None:
+                py_runtime[res.puzzle_id] = res.elapsed
+        print("\n|===")
+        print("| ID | Runtime (s) | Python runtime x | Output | Error")
+        for res in sorted(other_results, key=lambda r: (r.puzzle_id, r.language or "")):
+            ratio = ""
+            py_time = py_runtime.get(res.puzzle_id)
+            if res.elapsed is not None and py_time:
+                ratio = f"{(res.elapsed / py_time):.2f}"
+            row = format_row_other(res)
+            if row.startswith("|"):
+                row = row.lstrip("| ").rstrip()
+            row = row.rstrip()
+            cells = [cell.strip() for cell in row.split("|")]
+            if len(cells) >= 4:
+                id_cell, time_cell, output_cell, error_cell = cells[:4]
+                row = f"| {id_cell} | {time_cell} | {ratio} | {output_cell} | {error_cell}".rstrip()
+            else:
+                row = f"| {row} | {ratio}".rstrip()
+            print(row)
+        print("|===")
 
     if args.autoupdate:
         update_readme(results)
