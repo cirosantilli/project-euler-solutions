@@ -49,7 +49,7 @@ partial def isTruncatablePrime (n : Nat) (isPrime : Array Bool) : Bool :=
         if !isPrime[m]! then false else loopL (k - 1)
     loopR n && loopL (len - 1)
 
-partial def solve : Nat :=
+partial def solveCore : Nat :=
   let limit := 1000000
   let isPrime := sieve limit
   let rec loop (n found total : Nat) : Nat :=
@@ -96,12 +96,12 @@ example :
   native_decide
 
 
-def sol (_n : Nat) :=
-  solve
+def solve (_n : Nat) :=
+  solveCore
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P37.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P37.naive n = solve n := sorry
 end ProjectEulerSolutions.P37
 open ProjectEulerSolutions.P37
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

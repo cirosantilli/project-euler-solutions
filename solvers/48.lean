@@ -34,12 +34,12 @@ example : lastKDigitsSelfPowers 10 10 = "0405071317" := by
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   (lastKDigitsSelfPowers 1000 10).toNat!
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P48.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P48.naive n = solve n := sorry
 end ProjectEulerSolutions.P48
 open ProjectEulerSolutions.P48
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

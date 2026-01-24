@@ -27,16 +27,16 @@ partial def specialPythagoreanProduct (total : Nat) : Nat :=
   loopM 2
 
 
-def sol (total : Nat) : Nat :=
+def solve (total : Nat) : Nat :=
   specialPythagoreanProduct total
 
-example : sol 12 = 60 := by
+example : solve 12 = 60 := by
   native_decide
 
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P9.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P9.naive n = solve n := sorry
 end ProjectEulerSolutions.P9
 open ProjectEulerSolutions.P9
 
 def main : IO Unit := do
-  IO.println (sol 1000)
+  IO.println (solve 1000)

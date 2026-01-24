@@ -37,12 +37,12 @@ example : lettersInNumber 115 = 20 := by
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   (List.range 1000).foldl (fun acc i => acc + lettersInNumber (i + 1)) 0
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P17.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P17.naive n = solve n := sorry
 end ProjectEulerSolutions.P17
 open ProjectEulerSolutions.P17
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

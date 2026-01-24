@@ -21,7 +21,7 @@ partial def isLychrelCandidate (n : Nat) (maxIters : Nat) : Bool :=
         loop x (i + 1)
   loop n 0
 
-partial def solve (limit : Nat) : Nat :=
+partial def solveCore (limit : Nat) : Nat :=
   let rec loop (n : Nat) (acc : Nat) : Nat :=
     if n >= limit then
       acc
@@ -32,11 +32,11 @@ partial def solve (limit : Nat) : Nat :=
 
 
 
-def sol (_n : Nat) :=
-  solve 10000
+def solve (_n : Nat) :=
+  solveCore 10000
 
 end ProjectEulerSolutions.P55
 open ProjectEulerSolutions.P55
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

@@ -38,12 +38,12 @@ example : totientMaxN 10 = 6 := by
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   totientMaxN 1000000
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P69.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P69.naive n = solve n := sorry
 end ProjectEulerSolutions.P69
 open ProjectEulerSolutions.P69
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

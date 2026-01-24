@@ -33,12 +33,12 @@ example : countRightTriangles 2 = 14 := by
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   countRightTriangles 50
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P91.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P91.naive n = solve n := sorry
 end ProjectEulerSolutions.P91
 open ProjectEulerSolutions.P91
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

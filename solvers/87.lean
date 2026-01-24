@@ -88,12 +88,12 @@ example : countPrimePowerTriples 50 = 4 := by
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   countPrimePowerTriples 50000000
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P87.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P87.naive n = solve n := sorry
 end ProjectEulerSolutions.P87
 open ProjectEulerSolutions.P87
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

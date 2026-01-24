@@ -72,12 +72,12 @@ example : countFor 1000 120 = 3 := by
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   maxSolutionsPerimeter 1000
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P39.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P39.naive n = solve n := sorry
 end ProjectEulerSolutions.P39
 open ProjectEulerSolutions.P39
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

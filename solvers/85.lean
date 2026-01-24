@@ -34,12 +34,12 @@ example : rectangleCount 3 2 = 18 := by
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   bestGridAreaNear TARGET
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P85.naive n n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P85.naive n n = solve n := sorry
 end ProjectEulerSolutions.P85
 open ProjectEulerSolutions.P85
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

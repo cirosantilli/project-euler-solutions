@@ -16,12 +16,12 @@ partial def lastTenDigits : Nat :=
 
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   lastTenDigits
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P97.naive = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P97.naive = solve n := sorry
 end ProjectEulerSolutions.P97
 open ProjectEulerSolutions.P97
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

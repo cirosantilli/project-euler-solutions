@@ -29,11 +29,11 @@ example : digitSum (Nat.pow 2 15) = 26 := by
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   (maxDigitalSum 100).1
 
 end ProjectEulerSolutions.P56
 open ProjectEulerSolutions.P56
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

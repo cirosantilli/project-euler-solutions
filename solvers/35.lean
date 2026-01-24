@@ -112,12 +112,12 @@ example : isCircularPrime 197 (primeSieve 1000) = true := by
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   circularPrimeCount 1000000
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P35.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P35.naive n = solve n := sorry
 end ProjectEulerSolutions.P35
 open ProjectEulerSolutions.P35
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

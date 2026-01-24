@@ -72,12 +72,12 @@ example :
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   smallestCounterexample
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P46.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P46.naive n = solve n := sorry
 end ProjectEulerSolutions.P46
 open ProjectEulerSolutions.P46
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

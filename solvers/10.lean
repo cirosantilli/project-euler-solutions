@@ -32,16 +32,16 @@ partial def sumPrimesBelow (limit : Nat) : Nat :=
     go 3 2 #[2]
 
 
-def sol (limit : Nat) : Nat :=
+def solve (limit : Nat) : Nat :=
   sumPrimesBelow limit
 
-example : sol 10 = 17 := by
+example : solve 10 = 17 := by
   native_decide
 
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P10.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P10.naive n = solve n := sorry
 end ProjectEulerSolutions.P10
 open ProjectEulerSolutions.P10
 
 def main : IO Unit := do
-  IO.println (sol 2000000)
+  IO.println (solve 2000000)

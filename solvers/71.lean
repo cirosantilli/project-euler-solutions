@@ -25,12 +25,12 @@ example : bestFractionLeftOf 3 7 8 = (2, 5) := by
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   (bestFractionLeftOf 3 7 1000000).1
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P71.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P71.naive n = solve n := sorry
 end ProjectEulerSolutions.P71
 open ProjectEulerSolutions.P71
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

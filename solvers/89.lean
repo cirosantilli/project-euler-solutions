@@ -1087,13 +1087,13 @@ example : intToMinRoman 4999 = "MMMMCMXCIX" := by
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   let lines := romanText.splitOn "\n" |>.filter (fun ln => ln != "")
   totalCharactersSaved lines
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P89.naive ([] : List String) = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P89.naive ([] : List String) = solve n := sorry
 end ProjectEulerSolutions.P89
 open ProjectEulerSolutions.P89
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

@@ -40,12 +40,12 @@ def digitsToString (ds : List Nat) : String :=
 
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   digitsFromString (nthLexicographicPermutation (List.range 10) 1000000)
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P24.naive ([] : List Nat) n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P24.naive ([] : List Nat) n = solve n := sorry
 end ProjectEulerSolutions.P24
 open ProjectEulerSolutions.P24
 
 def main : IO Unit := do
-  IO.println (digitsToString (sol 0))
+  IO.println (digitsToString (solve 0))

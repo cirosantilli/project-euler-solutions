@@ -14,16 +14,16 @@ partial def factorialDigitSum (n : Nat) : Nat :=
   loop 2 1
 
 
-def sol (n : Nat) : Nat :=
+def solve (n : Nat) : Nat :=
   factorialDigitSum n
 
-example : sol 10 = 27 := by
+example : solve 10 = 27 := by
   native_decide
 
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P20.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P20.naive n = solve n := sorry
 end ProjectEulerSolutions.P20
 open ProjectEulerSolutions.P20
 
 def main : IO Unit := do
-  IO.println (sol 100)
+  IO.println (solve 100)

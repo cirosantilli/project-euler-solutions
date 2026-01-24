@@ -17,11 +17,11 @@ example : countSqrt2Convergents 8 = 1 := by
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   countSqrt2Convergents 1000
 
 end ProjectEulerSolutions.P57
 open ProjectEulerSolutions.P57
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

@@ -33,7 +33,7 @@ partial def minimalPellX (d : Nat) : Option Nat :=
         loop m d1 a h_m1 h k_m1 k
     some (loop 0 1 a0 0 1 1 0)
 
-partial def solve (limit : Nat) : Nat :=
+partial def solveCore (limit : Nat) : Nat :=
   let rec loop (d : Nat) (bestD bestX : Nat) : Nat :=
     if d > limit then
       bestD
@@ -52,12 +52,12 @@ example : minimalPellX 13 = some 649 := by
   native_decide
 
 
-def sol (_n : Nat) :=
-  solve 1000
+def solve (_n : Nat) :=
+  solveCore 1000
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P66.naive n n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P66.naive n n = solve n := sorry
 end ProjectEulerSolutions.P66
 open ProjectEulerSolutions.P66
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

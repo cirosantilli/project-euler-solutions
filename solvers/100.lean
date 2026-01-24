@@ -29,12 +29,12 @@ example :
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   (blueRedForTotalLimit (Nat.pow 10 12)).1
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P100.naive n n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P100.naive n n = solve n := sorry
 end ProjectEulerSolutions.P100
 open ProjectEulerSolutions.P100
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

@@ -15,7 +15,7 @@ partial def digitAt (n : Nat) : Nat :=
       ch.toNat - '0'.toNat
   loop n 1 1 9
 
-partial def solve : Nat :=
+partial def solveCore : Nat :=
   let positions := [1, 10, 100, 1000, 10000, 100000, 1000000]
   positions.foldl (fun acc p => acc * digitAt p) 1
 
@@ -45,12 +45,12 @@ example : digitAt 1000000 = 1 := by
   native_decide
 
 
-def sol (_n : Nat) :=
-  solve
+def solve (_n : Nat) :=
+  solveCore
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P40.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P40.naive n = solve n := sorry
 end ProjectEulerSolutions.P40
 open ProjectEulerSolutions.P40
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

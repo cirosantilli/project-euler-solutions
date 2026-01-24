@@ -36,22 +36,22 @@ partial def firstFibIndexWithDigits (digits : Nat) : Nat :=
     binary 1 hi
 
 
-def sol (digits : Nat) : Nat :=
+def solve (digits : Nat) : Nat :=
   firstFibIndexWithDigits digits
 
-example : sol 1 = 1 := by
+example : solve 1 = 1 := by
   native_decide
 
-example : sol 2 = 7 := by
+example : solve 2 = 7 := by
   native_decide
 
-example : sol 3 = 12 := by
+example : solve 3 = 12 := by
   native_decide
 
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P25.naive n n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P25.naive n n = solve n := sorry
 end ProjectEulerSolutions.P25
 open ProjectEulerSolutions.P25
 
 def main : IO Unit := do
-  IO.println (sol 1000)
+  IO.println (solve 1000)

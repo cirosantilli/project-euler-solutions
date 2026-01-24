@@ -93,7 +93,7 @@ partial def case2 (products : Array Bool) : Array Bool :=
         loopA2 (a + 1) (loopB2 bMin products)
   loopA2 10 products
 
-partial def solve : Nat :=
+partial def solveCore : Nat :=
   let products := Array.replicate 10000 false
   let products := case1 products
   let products := case2 products
@@ -107,12 +107,12 @@ partial def solve : Nat :=
 
 
 
-def sol (_n : Nat) :=
-  solve
+def solve (_n : Nat) :=
+  solveCore
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P32.naive n n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P32.naive n n = solve n := sorry
 end ProjectEulerSolutions.P32
 open ProjectEulerSolutions.P32
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

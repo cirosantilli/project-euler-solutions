@@ -36,16 +36,16 @@ partial def firstTriangularWithOver (k : Nat) : Nat :=
   loop 1
 
 
-def sol (k : Nat) : Nat :=
+def solve (k : Nat) : Nat :=
   firstTriangularWithOver k
 
-example : sol 5 = 28 := by
+example : solve 5 = 28 := by
   native_decide
 
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P12.naive n n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P12.naive n n = solve n := sorry
 end ProjectEulerSolutions.P12
 open ProjectEulerSolutions.P12
 
 def main : IO Unit := do
-  IO.println (sol 500)
+  IO.println (solve 500)

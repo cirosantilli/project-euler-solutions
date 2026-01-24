@@ -28,12 +28,12 @@ example : (toString (Nat.pow 8 9)).length = 9 := by
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   countNDigitNthPowers
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P63.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P63.naive n = solve n := sorry
 end ProjectEulerSolutions.P63
 open ProjectEulerSolutions.P63
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

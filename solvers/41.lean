@@ -88,12 +88,12 @@ example : isPrime 9 = false := by
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   largestPandigitalPrime
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P41.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P41.naive n = solve n := sorry
 end ProjectEulerSolutions.P41
 open ProjectEulerSolutions.P41
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

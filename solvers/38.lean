@@ -27,7 +27,7 @@ partial def isPandigital (s : String) : Bool :=
           if (mask &&& bit) != 0 then false else loop cs (mask ||| bit)
     loop s.data 0
 
-partial def solve : Nat :=
+partial def solveCore : Nat :=
   let rec loop (x best : Nat) : Nat :=
     if x >= 10000 then
       best
@@ -59,12 +59,12 @@ example : isPandigital "918273645" = true := by
   native_decide
 
 
-def sol (_n : Nat) :=
-  solve
+def solve (_n : Nat) :=
+  solveCore
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P38.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P38.naive n = solve n := sorry
 end ProjectEulerSolutions.P38
 open ProjectEulerSolutions.P38
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

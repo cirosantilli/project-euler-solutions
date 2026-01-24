@@ -43,12 +43,12 @@ example : firstConsecutiveWithKFactors 3 3 2000 = 644 := by
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   firstConsecutiveWithKFactors 4 4 200000
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P47.naive n n n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P47.naive n n n = solve n := sorry
 end ProjectEulerSolutions.P47
 open ProjectEulerSolutions.P47
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

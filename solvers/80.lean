@@ -27,7 +27,7 @@ partial def digitSumFirst100DigitsOfSqrt (n : Nat) : Nat :=
   let s := toString rootScaled
   s.data.foldl (fun acc c => acc + (c.toNat - '0'.toNat)) 0
 
-partial def solve : Nat :=
+partial def solveCore : Nat :=
   let rec loop (n : Nat) (total : Nat) : Nat :=
     if n > 100 then
       total
@@ -43,12 +43,12 @@ example : digitSumFirst100DigitsOfSqrt 2 = 475 := by
   native_decide
 
 
-def sol (_n : Nat) :=
-  solve
+def solve (_n : Nat) :=
+  solveCore
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P80.naive n n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P80.naive n n = solve n := sorry
 end ProjectEulerSolutions.P80
 open ProjectEulerSolutions.P80
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

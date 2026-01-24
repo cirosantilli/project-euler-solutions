@@ -117,11 +117,11 @@ example : Nat.xor 107 42 = 65 := by
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   bestKeyAndSum (parseCipher cipherText)
 
 end ProjectEulerSolutions.P59
 open ProjectEulerSolutions.P59
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

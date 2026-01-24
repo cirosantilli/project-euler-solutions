@@ -71,16 +71,16 @@ partial def maxAdjacentProduct (num : String) (k : Nat) : Nat :=
   loop 0 0
 
 
-def sol (k : Nat) : Nat :=
+def solve (k : Nat) : Nat :=
   maxAdjacentProduct numberStr k
 
-example : sol 4 = 5832 := by
+example : solve 4 = 5832 := by
   native_decide
 
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P8.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P8.naive n = solve n := sorry
 end ProjectEulerSolutions.P8
 open ProjectEulerSolutions.P8
 
 def main : IO Unit := do
-  IO.println (sol 13)
+  IO.println (solve 13)

@@ -86,15 +86,15 @@ partial def findSequence : Nat × Nat × Nat :=
 
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   [findSequence]
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P49.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P49.naive n = solve n := sorry
 end ProjectEulerSolutions.P49
 open ProjectEulerSolutions.P49
 
 def main : IO Unit := do
-  let seqs := sol 0
+  let seqs := solve 0
   match seqs with
   | [] => IO.println ""
   | (a, b, c) :: _ =>

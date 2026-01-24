@@ -29,7 +29,7 @@ partial def isPalindromeBase2 (n : Nat) : Bool :=
   let b := bits n []
   b == b.reverse
 
-partial def solve (limit : Nat) : Nat :=
+partial def solveCore (limit : Nat) : Nat :=
   let pals := generateDecimalPalindromes limit
   let rec loop (lst : List Nat) (total : Nat) : Nat :=
     match lst with
@@ -48,12 +48,12 @@ example : isPalindromeBase2 585 = true := by
   native_decide
 
 
-def sol (_n : Nat) :=
-  solve 1000000
+def solve (_n : Nat) :=
+  solveCore 1000000
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P36.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P36.naive n = solve n := sorry
 end ProjectEulerSolutions.P36
 open ProjectEulerSolutions.P36
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

@@ -19,7 +19,7 @@ partial def digitFactorialSum (n : Nat) (facts : Array Nat) : Nat :=
       loop (m / 10) (acc + facts[d]!)
   loop n 0
 
-partial def solve : Nat :=
+partial def solveCore : Nat :=
   let facts := precomputeFactorials
   let nineFact := facts[9]!
   let rec findN (n : Nat) : Nat :=
@@ -39,12 +39,12 @@ partial def solve : Nat :=
 
 
 
-def sol (_n : Nat) :=
-  solve
+def solve (_n : Nat) :=
+  solveCore
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P34.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P34.naive n = solve n := sorry
 end ProjectEulerSolutions.P34
 open ProjectEulerSolutions.P34
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

@@ -109,7 +109,7 @@ partial def insertAsc (x : Nat) (xs : List Nat) : List Nat :=
 partial def sortAsc (xs : List Nat) : List Nat :=
   xs.foldl (fun acc x => insertAsc x acc) []
 
-partial def solve (limit : Nat) : Nat × List Nat :=
+partial def solveCore (limit : Nat) : Nat × List Nat :=
   let primes := (primesUpTo limit).filter (fun p => p != 2 && p != 5)
   let rec dfs (clique candidates : List Nat) (currSum bestSum : Nat) (bestSet : List Nat) : Nat × List Nat :=
     let k := clique.length
@@ -183,17 +183,17 @@ example :
   native_decide
 
 example :
-    let res := solve 10000
+    let res := solveCore 10000
     let s := sortAsc res.2
     s = [13, 5197, 5701, 6733, 8389] := by
   native_decide
 
 
-def sol (_n : Nat) :=
-  (solve 10000).1
+def solve (_n : Nat) :=
+  (solveCore 10000).1
 
 end ProjectEulerSolutions.P60
 open ProjectEulerSolutions.P60
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

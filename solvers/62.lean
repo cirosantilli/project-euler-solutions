@@ -56,12 +56,12 @@ example : smallestCubeWithKPermutations 3 = 41063625 := by
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   smallestCubeWithKPermutations 5
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P62.naive n n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P62.naive n n = solve n := sorry
 end ProjectEulerSolutions.P62
 open ProjectEulerSolutions.P62
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

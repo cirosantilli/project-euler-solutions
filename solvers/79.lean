@@ -120,12 +120,12 @@ partial def derivePasscode : String :=
   digits.foldl (fun acc d => acc ++ toString d) ""
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   derivePasscode.data
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P79.naive ([] : List String) = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P79.naive ([] : List String) = solve n := sorry
 end ProjectEulerSolutions.P79
 open ProjectEulerSolutions.P79
 
 def main : IO Unit := do
-  IO.println (String.mk (sol 0))
+  IO.println (String.mk (solve 0))

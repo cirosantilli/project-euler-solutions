@@ -30,19 +30,19 @@ partial def nthPrime (n : Nat) : Nat :=
           go (candidate + 2) count primes
     go 3 1 #[2]
 
-def sol (n : Nat) : Nat :=
+def solve (n : Nat) : Nat :=
   nthPrime n
 
-example : sol 1 = 2 := by
+example : solve 1 = 2 := by
   native_decide
 
-example : sol 6 = 13 := by
+example : solve 6 = 13 := by
   native_decide
 
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P7.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P7.naive n = solve n := sorry
 end ProjectEulerSolutions.P7
 open ProjectEulerSolutions.P7
 
 def main : IO Unit := do
-  IO.println (sol 10001)
+  IO.println (solve 10001)

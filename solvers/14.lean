@@ -42,7 +42,7 @@ partial def longestCollatzUnder (limit : Nat) : Nat × Nat :=
   loop 1 1 1 cache0
 
 
-def sol (limit : Nat) : Nat :=
+def solve (limit : Nat) : Nat :=
   (longestCollatzUnder limit).1
 
 example : collatzLength 1 = 1 := by
@@ -52,9 +52,9 @@ example : collatzLength 13 = 10 := by
   native_decide
 
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P14.naive n n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P14.naive n n = solve n := sorry
 end ProjectEulerSolutions.P14
 open ProjectEulerSolutions.P14
 
 def main : IO Unit := do
-  IO.println (sol 1000000)
+  IO.println (solve 1000000)

@@ -38,11 +38,11 @@ partial def smallestPermutedMultiple (limitMul : Nat) : Nat :=
 
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   smallestPermutedMultiple 6
 
 end ProjectEulerSolutions.P52
 open ProjectEulerSolutions.P52
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

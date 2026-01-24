@@ -162,11 +162,11 @@ example : countPrimeFamilyForPositions 56003 [2, 3] = 7 := by
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   findSmallestPrimeInFamily 8
 
 end ProjectEulerSolutions.P51
 open ProjectEulerSolutions.P51
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)
