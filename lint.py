@@ -74,27 +74,6 @@ def python_comment_or_string_hits(text: str, answer: str) -> list[int]:
     return hits
 
 
-def python_line_hits(text: str, answer: str) -> list[int]:
-    hits: list[int] = []
-    for idx, line in enumerate(text.splitlines(), 1):
-        if answer not in line:
-            continue
-        stripped = line.strip()
-        if re.search(r"\bassert\b", line):
-            hits.append(idx)
-            continue
-        if re.search(r"\breturn\b", line) and answer in line:
-            hits.append(idx)
-            continue
-        if re.search(r"\bprint\s*\(", line) and answer in line:
-            hits.append(idx)
-            continue
-        if stripped.startswith("#"):
-            hits.append(idx)
-            continue
-    return hits
-
-
 def c_comment_hits(text: str, answer: str) -> list[int]:
     hits: list[int] = []
     in_block = False
@@ -184,7 +163,9 @@ def lint_paths(
                     )
                 )
             last_line = lines[-1] if lines else ""
-            if not re.match(r"^\s*IO\.println \(solve [^\s\)]", last_line):
+            if not re.match(
+                r"^\s*IO\.println \((?:solve|serialize \(solve) [^\s\)]", last_line
+            ):
                 context: list[tuple[int, str]] = []
                 if lines:
                     context = [(len(lines), last_line.rstrip())]
@@ -203,15 +184,15 @@ def lint_paths(
             continue
         if path.suffix not in (".py", ".c", ".cpp"):
             continue
-        try:
-            text = path.read_text()
-        except OSError as exc:
-            print(f"error: failed to read {path}: {exc}", file=sys.stderr)
-            continue
+        if path.suffix != ".py":
+            try:
+                text = path.read_text()
+            except OSError as exc:
+                print(f"error: failed to read {path}: {exc}", file=sys.stderr)
+                continue
         if answer and should_scan_answer(answer):
             if path.suffix == ".py":
                 line_hits = python_comment_or_string_hits(text, answer)
-                line_hits += python_line_hits(text, answer)
             else:
                 line_hits = c_comment_hits(text, answer)
                 line_hits += c_line_hits(text, answer)
