@@ -72,7 +72,7 @@ partial def chainLen (start : Nat)
     let (len, lens, seenStamp, seenPos) := loop start [] 0 lens seenStamp seenPos
     (len, lens, seenStamp, seenPos, stamp)
 
-partial def solve : Nat :=
+partial def solve (limit target : Nat) : Nat :=
   let fact := buildFact
   let nxt := buildNext LIMIT fact
   let lens := Array.replicate (LIMIT + 1) 0
@@ -80,7 +80,7 @@ partial def solve : Nat :=
   let seenPos := Array.replicate (LIMIT + 1) 0
   let rec loopN (n : Nat) (count : Nat) (lens seenStamp seenPos : Array Nat) (stamp : Nat)
       : Nat :=
-    if n >= 1000000 then
+    if n >= limit then
       count
     else
       let (len, lens, seenStamp, seenPos, stamp) :=
@@ -88,7 +88,7 @@ partial def solve : Nat :=
           (lens[n]!, lens, seenStamp, seenPos, stamp)
         else
           chainLen n nxt lens seenStamp seenPos stamp
-      let count := if len == 60 then count + 1 else count
+      let count := if len == target then count + 1 else count
       loopN (n + 1) count lens seenStamp seenPos stamp
   loopN 1 0 lens seenStamp seenPos 0
 
@@ -118,9 +118,10 @@ example : chainLenSimple 540 = 2 := by
 example : chainLenSimple 169 = 3 := by
   native_decide
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P74.naive n n n = solve := sorry
+theorem equiv (limit target : Nat) :
+    ProjectEulerStatements.P74.naive limit target = solve limit target := sorry
 end ProjectEulerSolutions.P74
 open ProjectEulerSolutions.P74
 
 def main : IO Unit := do
-  IO.println solve
+  IO.println (solve 1000000 60)

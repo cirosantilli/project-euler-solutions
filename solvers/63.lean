@@ -1,9 +1,9 @@
 import ProjectEulerStatements.P63
 namespace ProjectEulerSolutions.P63
 
-partial def solve : Nat :=
+partial def solve (limit : Nat) : Nat :=
   let rec loopN (n : Nat) (total : Nat) : Nat :=
-    if n > 200 then
+    if n > limit then
       total
     else
       let len9 := (toString (Nat.pow 9 n)).length
@@ -28,9 +28,9 @@ example : (toString (Nat.pow 8 9)).length = 9 := by
   native_decide
 
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P63.naive n = solve := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P63.naive n = solve n := sorry
 end ProjectEulerSolutions.P63
 open ProjectEulerSolutions.P63
 
 def main : IO Unit := do
-  IO.println solve
+  IO.println (solve 200)

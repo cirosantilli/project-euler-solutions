@@ -48,7 +48,7 @@ partial def lastOr (xs : List Nat) (default : Nat) : Nat :=
   | [] => default
   | x :: _ => x
 
-partial def solve : Nat :=
+partial def solve (n : Nat) : Nat :=
   let rec loopN (n : Nat) : Nat :=
     if n == 0 then
       0
@@ -72,7 +72,7 @@ partial def solve : Nat :=
               loopPerm ps best
         let best := loopPerm (permutations digits) 0
         if best != 0 then best else loopN (n - 1)
-  loopN 9
+  loopN n
 
 
 example : isPrime 2 = true := by
@@ -88,9 +88,9 @@ example : isPrime 9 = false := by
   native_decide
 
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P41.naive n = solve := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P41.naive n = solve n := sorry
 end ProjectEulerSolutions.P41
 open ProjectEulerSolutions.P41
 
 def main : IO Unit := do
-  IO.println solve
+  IO.println (solve 9)

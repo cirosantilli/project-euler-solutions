@@ -52,12 +52,12 @@ example : minimalPellX 13 = some 649 := by
   native_decide
 
 
-def solve (_n : Nat) :=
-  solveCore 1000
+def solve (limit : Nat) :=
+  solveCore limit
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P66.naive n n = solve n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P66.naive n = solve n := sorry
 end ProjectEulerSolutions.P66
 open ProjectEulerSolutions.P66
 
 def main : IO Unit := do
-  IO.println (solve 0)
+  IO.println (solve 1000)

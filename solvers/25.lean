@@ -44,7 +44,7 @@ example : solve 2 = 7 := by
 example : solve 3 = 12 := by
   native_decide
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P25.naive n n = solve n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P25.naive n = solve n := sorry
 end ProjectEulerSolutions.P25
 open ProjectEulerSolutions.P25
 

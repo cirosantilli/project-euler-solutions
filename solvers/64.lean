@@ -47,12 +47,12 @@ example : countOddPeriods 13 = 4 := by
   native_decide
 
 
-def solve (_n : Nat) :=
-  countOddPeriods 10000
+def solve (limit : Nat) :=
+  countOddPeriods limit
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P64.naive n n = solve n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P64.naive n = solve n := sorry
 end ProjectEulerSolutions.P64
 open ProjectEulerSolutions.P64
 
 def main : IO Unit := do
-  IO.println (solve 0)
+  IO.println (solve 10000)
