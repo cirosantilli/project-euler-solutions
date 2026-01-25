@@ -1,3 +1,4 @@
+import ProjectEulerStatements.P60
 namespace ProjectEulerSolutions.P60
 
 partial def sieveIsPrime (limit : Nat) : Array Bool :=
@@ -189,11 +190,14 @@ example :
   native_decide
 
 
-def solve (_n : Nat) :=
-  (solveCore 10000).1
+def solve (limit : Nat) :=
+  (solveCore limit).1
+
+theorem equiv (limit : Nat) :
+    ProjectEulerStatements.P60.naive limit = solve limit := sorry
 
 end ProjectEulerSolutions.P60
 open ProjectEulerSolutions.P60
 
 def main : IO Unit := do
-  IO.println (solve 0)
+  IO.println (solve 10000)

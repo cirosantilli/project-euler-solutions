@@ -1,3 +1,4 @@
+import ProjectEulerStatements.P57
 namespace ProjectEulerSolutions.P57
 
 partial def countSqrt2Convergents (limit : Nat) : Nat :=
@@ -17,11 +18,14 @@ example : countSqrt2Convergents 8 = 1 := by
   native_decide
 
 
-def solve (_n : Nat) :=
-  countSqrt2Convergents 1000
+def solve (limit : Nat) :=
+  countSqrt2Convergents limit
+
+theorem equiv (limit : Nat) :
+    ProjectEulerStatements.P57.naive limit = solve limit := sorry
 
 end ProjectEulerSolutions.P57
 open ProjectEulerSolutions.P57
 
 def main : IO Unit := do
-  IO.println (solve 0)
+  IO.println (solve 1000)

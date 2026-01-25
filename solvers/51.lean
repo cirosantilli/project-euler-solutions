@@ -1,3 +1,4 @@
+import ProjectEulerStatements.P51
 namespace ProjectEulerSolutions.P51
 
 partial def sieveIsPrime (limit : Nat) : Array Bool :=
@@ -75,13 +76,16 @@ partial def countPrimeFamilyForPositions (p : Nat) (idxs : List Nat) : Nat :=
                   loopR (r + 1) cnt
         loopR 0 0
 
-partial def solve (target : Nat) : Nat :=
+partial def solve (target limit : Nat) : Nat :=
   let rec loopDigits (ndigits : Nat) : Nat :=
     if ndigits >= 10 then
       0
     else
-      let upper := Nat.pow 10 ndigits - 1
+      let upper := Nat.min (Nat.pow 10 ndigits - 1) limit
       let lower := Nat.pow 10 (ndigits - 1)
+      if upper < lower then
+        0
+      else
       let isPrime := sieveIsPrime upper
       let primes := (List.range (upper + 1)).filter (fun n => n >= 2 && isPrime[n]!)
       let pow10 := (List.range ndigits).map (fun i => pow10At ndigits i)
@@ -162,8 +166,10 @@ example : countPrimeFamilyForPositions 56003 [2, 3] = 7 := by
   native_decide
 
 
+theorem equiv (target limit : Nat) :
+    ProjectEulerStatements.P51.naive target limit = solve target limit := sorry
 end ProjectEulerSolutions.P51
 open ProjectEulerSolutions.P51
 
 def main : IO Unit := do
-  IO.println (solve 8)
+  IO.println (solve 8 1000000)
