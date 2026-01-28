@@ -30,7 +30,7 @@ elab "lean_exes_from " dir:str : command => do
         | .error err => throwError err
         | .ok stx => elabCommand stx
 
-package ProjectEulerSolvers where
+package ProjectEulerSolutions where
   version := v!"0.1.0"
   keywords := #["math"]
   srcDir := "solvers"

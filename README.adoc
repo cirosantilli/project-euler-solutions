@@ -363,6 +363,7 @@ lake env lean solvers/1.lean
 The way things are organize is that link:data/project-euler-statements[] will contain a Lean formalization of each problem statement, for example:
 
 * link:data/project-euler-statements/data/lean/ProjectEulerStatements/P1.lean[]: defines a `ProjectEulerStatements.P1.naive` function, possibly non-computable, which we believe matches the problem definition
+** sometimes an alternative `ProjectEulerStatements.P1.naive2` is also defined as an alternative statement and it is also proven to be equivalent to `naive``
 * link:solvers/1.lean[]:
 ** defines a computable function `ProjectEulerSolvers.P1.sol` which is an efficient algorithm to solve the problem
 ** proves that this efficient function is equivalent to `ProjectEulerStatements.P1.naive`

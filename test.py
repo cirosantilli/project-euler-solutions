@@ -23,7 +23,7 @@ STATEMENTS_PROBLEM_DIR = ROOT / "data" / "project-euler-statements" / "data" / "
 LINE_RE = re.compile(r"^(\d+)\.\s+(.*)$")
 NUMERIC_RE = re.compile(r"^\d+(?:\.\d+)?$")
 EXPECTED_GOT_RE = re.compile(r"expected (.+), got (.+)")
-LANG_HINT_RE = re.compile(r"^\d+\.(py|c|cpp|lean)$")
+LANG_HINT_RE = re.compile(r"^(\d+)\.(py|c|cpp|lean)$")
 
 
 @dataclass
@@ -153,7 +153,8 @@ def extract_lang_hints(values: list[str]) -> tuple[list[str], set[str]]:
             continue
         match = LANG_HINT_RE.match(value)
         if match:
-            hints.add(match.group(1))
+            remaining.append(match.group(1))
+            hints.add(match.group(2))
             continue
         remaining.append(value)
     return remaining, hints
