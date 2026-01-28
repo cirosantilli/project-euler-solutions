@@ -374,6 +374,14 @@ We have tried to also build Lean more simply with make but we failed so far, rel
 * https://proofassistants.stackexchange.com/questions/4851/how-do-you-compile-and-link-a-lean-program-by-hand
 * https://proofassistants.stackexchange.com/questions/1388/how-to-run-the-main-function-in-lean-4
 
+===== Lean prompts
+
+Port Python to Lean:
+
+----
+Port solvers/4.py through to solvers/6.py to lean. Ignore all Python comments from the Lean file. Make sure "lake -R build" followed by "./test.py <N>.lean" passes. Convert any python asserts into lean "example" statements with native_decide. Put everything of that file except the main and imports under namespace ProjectEulerSolutions.P<N>, where <N> is the problem number. Name the final solver function as "sol". Don't worry about proofs for now, just make it as equivalent to the Python as possible and ensure it passes the test.
+----
+
 == Folders
 
 * link:solvers/[]: the solver programs

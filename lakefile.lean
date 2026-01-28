@@ -38,6 +38,7 @@ package ProjectEulerSolutions where
     ⟨`pp.unicode.fun, true⟩,
     ⟨`relaxedAutoImplicit, false⟩,
     ⟨`weak.linter.mathlibStandardSet, true⟩,
+    ⟨`weak.linter.style.nativeDecide, false⟩,
     ⟨`maxSynthPendingDepth, (Lean.LeanOptionValue.ofNat 3)⟩
   ]
 
