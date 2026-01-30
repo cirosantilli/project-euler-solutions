@@ -69,12 +69,12 @@ example :
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   nonAbundantSums 28123
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P23.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P23.naive n = solve n := sorry
 end ProjectEulerSolutions.P23
 open ProjectEulerSolutions.P23
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

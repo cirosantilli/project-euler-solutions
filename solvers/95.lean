@@ -75,12 +75,12 @@ example :
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   (amicableChainBest 1000000).2
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P95.naive n n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P95.naive n n = solve n := sorry
 end ProjectEulerSolutions.P95
 open ProjectEulerSolutions.P95
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

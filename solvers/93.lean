@@ -99,7 +99,7 @@ partial def combinations (k : Nat) (xs : List Nat) : List (List Nat) :=
         let withoutX := combinations k xs
         withX ++ withoutX
 
-partial def solve : String × Nat :=
+partial def solveCore : String × Nat :=
   let rec loop (combs : List (List Nat)) (bestLen : Nat) (bestDigits : List Nat) : String × Nat :=
     match combs with
     | [] => ((bestDigits.map toString).foldl (fun acc s => acc ++ s) "", bestLen)
@@ -118,12 +118,12 @@ example :
   native_decide
 
 
-def sol (_n : Nat) :=
-  (solve).1.toNat!
+def solve (_n : Nat) :=
+  (solveCore).1.toNat!
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P93.naive ([] : List Nat) = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P93.naive ([] : List Nat) = solve n := sorry
 end ProjectEulerSolutions.P93
 open ProjectEulerSolutions.P93
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

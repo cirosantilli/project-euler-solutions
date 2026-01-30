@@ -1166,11 +1166,11 @@ example : lexGreater (handRank ["AS","2D","3H","4C","5S"]) (handRank ["KS","QD",
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   countWins (parseLines pokerText)
 
 end ProjectEulerSolutions.P54
 open ProjectEulerSolutions.P54
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

@@ -56,12 +56,12 @@ example : countPrimeSummations 10 (sievePrimes 10) = 5 := by
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   firstValueOver 5000
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P77.naive n n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P77.naive n n = solve n := sorry
 end ProjectEulerSolutions.P77
 open ProjectEulerSolutions.P77
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

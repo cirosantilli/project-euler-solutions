@@ -671,10 +671,10 @@ partial def gridToCands (grid : List String) : Array Nat :=
       loopR (r + 1) (loopC 0 acc)
   loopR 0 (Array.replicate 81 ALL)
 
-partial def topLeftNumber (sol : Array Nat) : Nat :=
-  let a := bitToDigit (sol[0]!)
-  let b := bitToDigit (sol[1]!)
-  let c := bitToDigit (sol[2]!)
+partial def topLeftNumber (solve : Array Nat) : Nat :=
+  let a := bitToDigit (solve[0]!)
+  let b := bitToDigit (solve[1]!)
+  let c := bitToDigit (solve[2]!)
   100 * a + 10 * b + c
 
 partial def parsePuzzles (text : String) : List (List String) :=
@@ -700,18 +700,18 @@ partial def solveAll : Nat :=
     | g :: gs =>
         let cands := gridToCands g
         match solveCands cands peers units with
-        | some sol => loop gs (acc + topLeftNumber sol)
+        | some solve => loop gs (acc + topLeftNumber solve)
         | none => loop gs acc
   loop puzzles 0
 
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   solveAll
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P96.naive ([] : List (List (List Nat))) = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P96.naive ([] : List (List (List Nat))) = solve n := sorry
 end ProjectEulerSolutions.P96
 open ProjectEulerSolutions.P96
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

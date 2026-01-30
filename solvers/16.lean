@@ -10,12 +10,12 @@ example : digitSum (Nat.pow 2 15) = 26 := by
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   digitSum (Nat.pow 2 1000)
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P16.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P16.naive n = solve n := sorry
 end ProjectEulerSolutions.P16
 open ProjectEulerSolutions.P16
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

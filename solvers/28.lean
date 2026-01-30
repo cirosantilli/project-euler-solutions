@@ -10,22 +10,22 @@ partial def spiralDiagonalsSum (n : Nat) : Nat :=
   total + sumSquares + sumLinear + sumOnes
 
 
-def sol (n : Nat) : Nat :=
+def solve (n : Nat) : Nat :=
   spiralDiagonalsSum n
 
-example : sol 5 = 101 := by
+example : solve 5 = 101 := by
   native_decide
 
-example : sol 1 = 1 := by
+example : solve 1 = 1 := by
   native_decide
 
-example : sol 3 = 25 := by
+example : solve 3 = 25 := by
   native_decide
 
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P28.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P28.naive n = solve n := sorry
 end ProjectEulerSolutions.P28
 open ProjectEulerSolutions.P28
 
 def main : IO Unit := do
-  IO.println (sol 1001)
+  IO.println (solve 1001)

@@ -116,12 +116,12 @@ def firstTenDigits (nums : List String) : String :=
 
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   (firstTenDigits numbers).toNat!
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P13.naive = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P13.naive = solve n := sorry
 end ProjectEulerSolutions.P13
 open ProjectEulerSolutions.P13
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

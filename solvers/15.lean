@@ -22,12 +22,12 @@ example : latticePaths 2 2 = 6 := by
   native_decide
 
 
-def sol (_n : Nat) : Nat :=
+def solve (_n : Nat) : Nat :=
   latticePaths 20 20
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P15.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P15.naive n = solve n := sorry
 end ProjectEulerSolutions.P15
 open ProjectEulerSolutions.P15
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

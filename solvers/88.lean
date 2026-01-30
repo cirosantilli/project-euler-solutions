@@ -42,12 +42,12 @@ example : minProductSumNumbersSum 12 = 61 := by
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   minProductSumNumbersSum 12000
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P88.naive ([] : List Nat) = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P88.naive ([] : List Nat) = solve n := sorry
 end ProjectEulerSolutions.P88
 open ProjectEulerSolutions.P88
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

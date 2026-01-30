@@ -145,13 +145,13 @@ example : isTriangle 55 = true := by
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   let words := parseWords wordsText
   countTriangleWords words
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P42.naive ([] : List String) = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P42.naive ([] : List String) = solve n := sorry
 end ProjectEulerSolutions.P42
 open ProjectEulerSolutions.P42
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

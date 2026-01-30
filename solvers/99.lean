@@ -1029,13 +1029,13 @@ partial def bestLineNumber (pairs : List (Nat × Nat)) : Nat :=
   loop pairs 1 0 (-1.0)
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   let pairs := parsePairs baseExpText
   bestLineNumber pairs
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P99.naive ([] : List (Nat × Nat)) = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P99.naive ([] : List (Nat × Nat)) = solve n := sorry
 end ProjectEulerSolutions.P99
 open ProjectEulerSolutions.P99
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

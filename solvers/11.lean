@@ -96,16 +96,16 @@ partial def maxAdjacentProduct (g : Array (Array Nat)) (k : Nat) : Nat :=
   loopI 0 0
 
 
-def sol (k : Nat) : Nat :=
+def solve (k : Nat) : Nat :=
   maxAdjacentProduct grid k
 
 example : 26 * 63 * 78 * 14 = 1788696 := by
   native_decide
 
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P11.naive = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P11.naive = solve n := sorry
 end ProjectEulerSolutions.P11
 open ProjectEulerSolutions.P11
 
 def main : IO Unit := do
-  IO.println (sol 4)
+  IO.println (solve 4)

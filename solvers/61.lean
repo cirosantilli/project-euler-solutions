@@ -106,12 +106,12 @@ example : polygonal 5 44 = 2882 := by
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   findCycleSum
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P61.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P61.naive n = solve n := sorry
 end ProjectEulerSolutions.P61
 open ProjectEulerSolutions.P61
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

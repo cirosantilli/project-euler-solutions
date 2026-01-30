@@ -72,7 +72,7 @@ partial def chainLen (start : Nat)
     let (len, lens, seenStamp, seenPos) := loop start [] 0 lens seenStamp seenPos
     (len, lens, seenStamp, seenPos, stamp)
 
-partial def solve : Nat :=
+partial def solveCore : Nat :=
   let fact := buildFact
   let nxt := buildNext LIMIT fact
   let lens := Array.replicate (LIMIT + 1) 0
@@ -120,12 +120,12 @@ example : chainLenSimple 169 = 3 := by
   native_decide
 
 
-def sol (_n : Nat) :=
-  solve
+def solve (_n : Nat) :=
+  solveCore
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P74.naive n n n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P74.naive n n n = solve n := sorry
 end ProjectEulerSolutions.P74
 open ProjectEulerSolutions.P74
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

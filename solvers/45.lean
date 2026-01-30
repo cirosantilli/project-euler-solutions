@@ -34,7 +34,7 @@ partial def isPentagonal (x : Nat) : Bool :=
   let s := sqrtIfSquare d
   s != 0 && (1 + s) % 6 == 0
 
-partial def solve : Nat :=
+partial def solveCore : Nat :=
   let _ := triangle 285
   let _ := pentagonal 165
   let _ := hexagonal 143
@@ -54,12 +54,12 @@ example : hexagonal 143 = 40755 := by
   native_decide
 
 
-def sol (_n : Nat) :=
-  solve
+def solve (_n : Nat) :=
+  solveCore
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P45.naive n n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P45.naive n n = solve n := sorry
 end ProjectEulerSolutions.P45
 open ProjectEulerSolutions.P45
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

@@ -12,16 +12,16 @@ partial def lcmRange (n : Nat) : Nat :=
       go (x + 1) (lcm acc x)
   go 2 1
 
-def sol (n : Nat) : Nat :=
+def solve (n : Nat) : Nat :=
   lcmRange n
 
-example : sol 10 = 2520 := by
+example : solve 10 = 2520 := by
   native_decide
 
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P5.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P5.naive n = solve n := sorry
 end ProjectEulerSolutions.P5
 open ProjectEulerSolutions.P5
 
 def main : IO Unit := do
-  IO.println (sol 20)
+  IO.println (solve 20)

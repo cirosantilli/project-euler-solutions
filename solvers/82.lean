@@ -133,12 +133,12 @@ example :
 
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   minimalPathSumThreeWays (parseMatrix matrixText)
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P82.naive ([] : List (List Nat)) = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P82.naive ([] : List (List Nat)) = solve n := sorry
 end ProjectEulerSolutions.P82
 open ProjectEulerSolutions.P82
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

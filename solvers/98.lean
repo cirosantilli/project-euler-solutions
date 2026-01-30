@@ -105,7 +105,7 @@ partial def lookupChar (c : Char) (mp : List (Char × Char)) : Option Char :=
   | [] => none
   | (k, v) :: ms => if k == c then some v else lookupChar c ms
 
-partial def solve : Nat :=
+partial def solveCore : Nat :=
   let words := readWords
   let groups := groupAnagrams words
   let lengths := (concatMap (fun g => g.map (fun w => w.length)) groups).eraseDups
@@ -174,12 +174,12 @@ partial def solve : Nat :=
 
 
 
-def sol (_n : Nat) :=
-  solve
+def solve (_n : Nat) :=
+  solveCore
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P98.naive ([] : List String) = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P98.naive ([] : List String) = solve n := sorry
 end ProjectEulerSolutions.P98
 open ProjectEulerSolutions.P98
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

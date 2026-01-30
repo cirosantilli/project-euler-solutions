@@ -34,13 +34,13 @@ example : countWays 10 [1, 2, 5, 10, 20, 50, 100, 200] = 11 := by
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   let coins := [1, 2, 5, 10, 20, 50, 100, 200]
   countWays 200 coins
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P31.naive n n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P31.naive n n = solve n := sorry
 end ProjectEulerSolutions.P31
 open ProjectEulerSolutions.P31
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

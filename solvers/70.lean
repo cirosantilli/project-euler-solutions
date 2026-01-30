@@ -53,7 +53,7 @@ partial def digitSignature (x : Nat) : Nat :=
         loop (n / 10) (acc + SHIFT[d]!)
     loop x 0
 
-partial def solve (limit : Nat) : Nat :=
+partial def solveCore (limit : Nat) : Nat :=
   let phi := computePhiLinear limit
   let rec loop (n : Nat) (bestN bestPhi low high : Nat) : Nat :=
     if n > limit then
@@ -94,12 +94,12 @@ example : digitSignature 87109 = digitSignature 79180 := by
   native_decide
 
 
-def sol (_n : Nat) :=
-  solve MAX_N
+def solve (_n : Nat) :=
+  solveCore MAX_N
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P70.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P70.naive n = solve n := sorry
 end ProjectEulerSolutions.P70
 open ProjectEulerSolutions.P70
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

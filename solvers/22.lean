@@ -354,12 +354,12 @@ example : colinPosScore (parseNames namesText) = (938, 49714) := by
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   totalNameScores (parseNames namesText)
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P22.naive ([] : List String) = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P22.naive ([] : List String) = solve n := sorry
 end ProjectEulerSolutions.P22
 open ProjectEulerSolutions.P22
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

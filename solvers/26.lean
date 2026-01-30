@@ -16,7 +16,7 @@ partial def recurringCycleLength (d0 : Nat) : Nat :=
       if r == 1 then k else loop ((r * 10) % d) (k + 1)
     loop (10 % d) 1
 
-partial def solve (limit : Nat) : Nat :=
+partial def solveCore (limit : Nat) : Nat :=
   let rec loop (d bestD bestLen : Nat) : Nat :=
     if d >= limit then
       bestD
@@ -27,8 +27,8 @@ partial def solve (limit : Nat) : Nat :=
   loop 2 0 0
 
 
-def sol (limit : Nat) : Nat :=
-  solve limit
+def solve (limit : Nat) : Nat :=
+  solveCore limit
 
 example : recurringCycleLength 2 = 0 := by native_decide
 example : recurringCycleLength 3 = 1 := by native_decide
@@ -41,9 +41,9 @@ example : recurringCycleLength 9 = 1 := by native_decide
 example : recurringCycleLength 10 = 0 := by native_decide
 
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P26.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P26.naive n = solve n := sorry
 end ProjectEulerSolutions.P26
 open ProjectEulerSolutions.P26
 
 def main : IO Unit := do
-  IO.println (sol 1000)
+  IO.println (solve 1000)

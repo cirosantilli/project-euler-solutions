@@ -20,16 +20,16 @@ def largestPrimeFactor (n : Nat) : Nat :=
   let (n', largest') := stripTwos n 1
   oddLoop n' 3 largest'
 
-def sol (n : Nat) : Nat :=
+def solve (n : Nat) : Nat :=
   largestPrimeFactor n
 
-example : sol 13195 = 29 := by
+example : solve 13195 = 29 := by
   native_decide
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P3.naive ⟨2, by decide⟩ = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P3.naive ⟨2, by decide⟩ = solve n := sorry
 
 end ProjectEulerStatements.P3
 open ProjectEulerStatements.P3
 
 def main : IO Unit := do
-  IO.println (sol 600851475143)
+  IO.println (solve 600851475143)

@@ -19,7 +19,7 @@ partial def sqrtFloor (n : Nat) : Nat :=
         loop lo (mid - 1)
   loop 1 n
 
-partial def solve (limit : Nat) : Nat :=
+partial def solveCore (limit : Nat) : Nat :=
   let counts := Array.replicate (limit + 1) 0
   let mMax := sqrtFloor (limit / 2) + 1
   let rec loopM (m : Nat) (counts : Array Nat) : Array Nat :=
@@ -56,16 +56,16 @@ partial def solve (limit : Nat) : Nat :=
   countOnes 0 0
 
 
-example : solve 50 = 6 := by
+example : solveCore 50 = 6 := by
   native_decide
 
 
-def sol (_n : Nat) :=
-  solve 1500000
+def solve (_n : Nat) :=
+  solveCore 1500000
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P75.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P75.naive n = solve n := sorry
 end ProjectEulerSolutions.P75
 open ProjectEulerSolutions.P75
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

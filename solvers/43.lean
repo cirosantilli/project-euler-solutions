@@ -48,7 +48,7 @@ partial def isPandigitalSubstringProperty (n : Nat) : Bool :=
             if v % p == 0 then loop (i + 1) rest else false
       loop 0 primes
 
-partial def solve : Nat :=
+partial def solveCore : Nat :=
   let rec initStates (x : Nat) (states : List (List Nat × Nat)) : List (List Nat × Nat) :=
     if x >= 1000 then
       states
@@ -112,12 +112,12 @@ example : isPandigitalSubstringProperty 1406357289 = true := by
   native_decide
 
 
-def sol (_n : Nat) :=
-  solve
+def solve (_n : Nat) :=
+  solveCore
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P43.naive = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P43.naive = solve n := sorry
 end ProjectEulerSolutions.P43
 open ProjectEulerSolutions.P43
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

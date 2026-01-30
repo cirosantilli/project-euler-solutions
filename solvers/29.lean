@@ -21,12 +21,12 @@ example : countDistinctPowers 5 5 = 15 := by
   native_decide
 
 
-def sol (_n : Nat) : Nat :=
+def solve (_n : Nat) : Nat :=
   countDistinctPowers 100 100
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P29.naive n n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P29.naive n n = solve n := sorry
 end ProjectEulerSolutions.P29
 open ProjectEulerSolutions.P29
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

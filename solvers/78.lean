@@ -46,12 +46,12 @@ example :
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   leastNPartitionDivisible 1000000
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P78.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P78.naive n = solve n := sorry
 end ProjectEulerSolutions.P78
 open ProjectEulerSolutions.P78
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

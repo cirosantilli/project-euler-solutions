@@ -58,13 +58,13 @@ example :
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   let fracs := findCuriousFractions
   reducedProductDenominator fracs
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P33.naive = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P33.naive = solve n := sorry
 end ProjectEulerSolutions.P33
 open ProjectEulerSolutions.P33
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

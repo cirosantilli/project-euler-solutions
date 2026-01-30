@@ -71,12 +71,12 @@ example : countSolutionsUpTo 100 = 2060 := by
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   leastMExceeding 1000000
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P86.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P86.naive n = solve n := sorry
 end ProjectEulerSolutions.P86
 open ProjectEulerSolutions.P86
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

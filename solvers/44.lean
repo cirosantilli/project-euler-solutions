@@ -71,13 +71,13 @@ example : isPentagonal (pentagonal 7 - pentagonal 4) = false := by
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   findMinDifference 10000
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P44.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P44.naive n = solve n := sorry
 end ProjectEulerSolutions.P44
 open ProjectEulerSolutions.P44
 
 def main : IO Unit := do
-  let ans := sol 0
+  let ans := solve 0
   IO.println ans

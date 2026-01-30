@@ -52,7 +52,7 @@ partial def amicableSumUnder (limit : Nat) : Nat :=
   loop 2 0
 
 
-def sol (limit : Nat) : Nat :=
+def solve (limit : Nat) : Nat :=
   amicableSumUnder limit
 
 example : properDivisorSumFactorization 220 = 284 := by
@@ -62,9 +62,9 @@ example : properDivisorSumFactorization 284 = 220 := by
   native_decide
 
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P21.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P21.naive n = solve n := sorry
 end ProjectEulerSolutions.P21
 open ProjectEulerSolutions.P21
 
 def main : IO Unit := do
-  IO.println (sol 10000)
+  IO.println (solve 10000)

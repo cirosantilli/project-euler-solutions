@@ -92,11 +92,11 @@ example : primeRatioCountsForSide 3 = (3, 5) := by
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   sideLengthWhenRatioBelow
 
 end ProjectEulerSolutions.P58
 open ProjectEulerSolutions.P58
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

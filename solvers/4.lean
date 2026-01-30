@@ -36,12 +36,12 @@ example : (largestPalindromeProduct 10 99).1 = 9009 := by
   native_decide
 
 
-def sol (_n : Nat) : Nat :=
+def solve (_n : Nat) : Nat :=
   (largestPalindromeProduct 100 999).1
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P4.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P4.naive n = solve n := sorry
 end ProjectEulerSolutions.P4
 open ProjectEulerSolutions.P4
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

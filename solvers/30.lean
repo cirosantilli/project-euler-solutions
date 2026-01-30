@@ -27,12 +27,12 @@ example : matchesList = [4150, 4151, 54748, 92727, 93084, 194979] := by
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   matchesList.foldl (fun acc n => acc + n) 0
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P30.naive n n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P30.naive n n = solve n := sorry
 end ProjectEulerSolutions.P30
 open ProjectEulerSolutions.P30
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)

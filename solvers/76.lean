@@ -23,12 +23,12 @@ example : countSummations 5 = 6 := by
   native_decide
 
 
-def sol (_n : Nat) :=
+def solve (_n : Nat) :=
   countSummations 100
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P76.naive n = sol n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P76.naive n = solve n := sorry
 end ProjectEulerSolutions.P76
 open ProjectEulerSolutions.P76
 
 def main : IO Unit := do
-  IO.println (sol 0)
+  IO.println (solve 0)
