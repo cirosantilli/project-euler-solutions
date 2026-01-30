@@ -69,7 +69,7 @@ def python_comment_or_string_hits(text: str, answer: str) -> list[int]:
             if tok.type in (tokenize.COMMENT, tokenize.STRING):
                 if answer in tok.string:
                     hits.append(tok.start[0])
-    except tokenize.TokenError:
+    except (tokenize.TokenError, IndentationError, SyntaxError):
         return hits
     return hits
 
@@ -157,6 +157,47 @@ def lint_paths(
         pid = parse_solver_id(path)
         if pid is None:
             continue
+        if path.suffix == ".lean":
+            try:
+                text = path.read_text()
+            except OSError as exc:
+                print(f"error: failed to read {path}: {exc}", file=sys.stderr)
+                continue
+            lines = text.splitlines()
+            theorem_re = re.compile(
+                rf"theorem equiv \(n : Nat\) : "
+                rf"ProjectEulerStatements\.P{pid}\.naive (\w+) = solve \1 :="
+            )
+            if not theorem_re.search(text):
+                context: list[tuple[int, str]] = []
+                for idx, line in enumerate(lines, 1):
+                    if "theorem equiv" in line:
+                        context = [(idx, line.rstrip())]
+                        break
+                violations.append(
+                    Violation(
+                        "lean",
+                        pid,
+                        path,
+                        "missing required theorem declaration",
+                        context,
+                    )
+                )
+            last_line = lines[-1] if lines else ""
+            if not re.match(r"^\s*IO\.println \(solve [^\s\)]", last_line):
+                context: list[tuple[int, str]] = []
+                if lines:
+                    context = [(len(lines), last_line.rstrip())]
+                violations.append(
+                    Violation(
+                        "lean",
+                        pid,
+                        path,
+                        "last line must start with 'IO.println (solve ' and include an argument",
+                        context,
+                    )
+                )
+            continue
         answer = answers.get(pid)
         if not answer or not should_scan_answer(answer):
             continue
@@ -202,7 +243,10 @@ def format_violations(violations: list[Violation], root: Path = ROOT) -> list[st
     if not violations:
         return ["ok: no forbidden content found in solver sources."]
     lines = ["error: forbidden content found in solver sources:"]
-    for violation in violations:
+    sorted_violations = sorted(
+        violations, key=lambda v: (v.puzzle_id, str(v.path), v.kind, v.answer)
+    )
+    for violation in sorted_violations:
         rel = violation.path
         try:
             rel = violation.path.relative_to(root)
@@ -210,6 +254,8 @@ def format_violations(violations: list[Violation], root: Path = ROOT) -> list[st
             rel = violation.path
         if violation.kind == "forbidden":
             detail = f"contains forbidden token {violation.answer!r}"
+        elif violation.kind == "lean":
+            detail = violation.answer
         else:
             detail = f"contains reference answer {violation.answer!r}"
         lines.append(f"- {violation.puzzle_id}: {rel} {detail}")
@@ -221,6 +267,12 @@ def format_violations(violations: list[Violation], root: Path = ROOT) -> list[st
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Check solver sources for forbidden content."
+    )
+    parser.add_argument(
+        "-l",
+        "--language",
+        choices=("py", "c", "cpp", "lean"),
+        help="Only lint a specific language.",
     )
     parser.add_argument(
         "paths",
@@ -237,6 +289,16 @@ def main() -> int:
         paths = sorted(args.paths)
     else:
         paths = iter_solver_sources()
+    if args.language == "lean":
+        if args.paths:
+            paths = [path for path in paths if path.suffix == ".lean"]
+        else:
+            paths = sorted(SOLVERS_DIR.glob("*.lean"))
+    elif args.language:
+        lang_ext = f".{args.language}"
+        paths = [path for path in paths if path.suffix == lang_ext]
+    else:
+        paths = [path for path in paths if path.suffix != ".lean"]
     violations = lint_paths(paths)
     output_lines = format_violations(violations)
     if violations:
