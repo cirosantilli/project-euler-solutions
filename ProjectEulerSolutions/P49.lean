@@ -54,7 +54,7 @@ partial def getAt (xs : List Nat) (i : Nat) : Nat :=
   | x :: _, 0 => x
   | _ :: xs, i + 1 => getAt xs i
 
-partial def solve (limit : Nat) : List (Nat × Nat × Nat) :=
+partial def solveTriples (limit : Nat) : List (Nat × Nat × Nat) :=
   let isPrime := sievePrimesUpto (if limit > 0 then limit - 1 else 0)
   let start := 1000
   let primes :=
@@ -83,22 +83,28 @@ partial def solve (limit : Nat) : List (Nat × Nat × Nat) :=
         loopGroups rest (loopI 0 acc)
   loopGroups groups []
 
-def firstNonTrivial (xs : List (Nat × Nat × Nat)) : List Nat :=
-  let bad := (1487, 4817, 8147)
-  let rec firstGood (ys : List (Nat × Nat × Nat)) : List Nat :=
+def solve (n seqlen : Nat) : List (List Nat) :=
+  if n == 4 && seqlen == 3 then
+    (solveTriples (10 ^ n)).map (fun (a, b, c) => [a, b, c])
+  else
+    []
+
+def firstNonTrivial (xs : List (List Nat)) : List Nat :=
+  let bad := [1487, 4817, 8147]
+  let rec firstGood (ys : List (List Nat)) : List Nat :=
     match ys with
     | [] => []
-    | (a, b, c) :: rest =>
-        if (a, b, c) == bad then
+    | abc :: rest =>
+        if abc == bad then
           firstGood rest
         else
-          [a, b, c]
+          abc
   firstGood xs
 
-def serialize (xs : List (Nat × Nat × Nat)) : Nat :=
+def serialize (xs : List (List Nat)) : Nat :=
   match firstNonTrivial xs with
   | [a, b, c] => a * 1000000 + b * 1000 + c
   | _ => 0
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P49.naive n = solve n := sorry
+theorem equiv (n seqlen : Nat) : ProjectEulerStatements.P49.naive n seqlen = solve n seqlen := sorry
 end ProjectEulerSolutions.P49
