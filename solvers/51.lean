@@ -75,7 +75,7 @@ partial def countPrimeFamilyForPositions (p : Nat) (idxs : List Nat) : Nat :=
                   loopR (r + 1) cnt
         loopR 0 0
 
-partial def findSmallestPrimeInFamily (target : Nat) : Nat :=
+partial def solve (target : Nat) : Nat :=
   let rec loopDigits (ndigits : Nat) : Nat :=
     if ndigits >= 10 then
       0
@@ -162,11 +162,8 @@ example : countPrimeFamilyForPositions 56003 [2, 3] = 7 := by
   native_decide
 
 
-def solve (_n : Nat) :=
-  findSmallestPrimeInFamily 8
-
 end ProjectEulerSolutions.P51
 open ProjectEulerSolutions.P51
 
 def main : IO Unit := do
-  IO.println (solve 0)
+  IO.println (solve 8)
