@@ -16,6 +16,7 @@ LEAN_SOLVERS_DIR = ROOT / "ProjectEulerSolutions"
 
 LINE_RE = re.compile(r"^(\d+)\.\s+(.*)$")
 FORBIDDEN_TOKENS = ("Solutions.md",)
+FORBIDDEN_LEAN_PATTERNS = (r"\bpartial\s+def\b",)
 
 
 @dataclass(frozen=True)
@@ -146,6 +147,23 @@ def lint_paths(
                 print(f"error: failed to read {path}: {exc}", file=sys.stderr)
                 continue
             lines = text.splitlines()
+            for pattern in FORBIDDEN_LEAN_PATTERNS:
+                hits = [
+                    idx
+                    for idx, line in enumerate(lines, 1)
+                    if re.search(pattern, line)
+                ]
+                if hits:
+                    context = [(line_no, lines[line_no - 1].rstrip()) for line_no in hits]
+                    violations.append(
+                        Violation(
+                            "lean",
+                            pid,
+                            path,
+                            "contains forbidden token 'partial def'",
+                            context,
+                        )
+                    )
             if path.parent == SOLVERS_DIR:
                 last_line = lines[-1] if lines else ""
                 if not re.match(
