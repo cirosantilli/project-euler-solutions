@@ -143,11 +143,12 @@ def lint_paths(
                 print(f"error: failed to read {path}: {exc}", file=sys.stderr)
                 continue
             lines = text.splitlines()
+            normalized_text = " ".join(text.split())
             theorem_re = re.compile(
-                rf"theorem equiv \(n : Nat\) : "
-                rf"ProjectEulerStatements\.P{pid}\.naive (\w+) = solve \1 :="
+                rf"theorem equiv\b .*? : "
+                rf"ProjectEulerStatements\.P{pid}\.naive (.+?) = solve \1 := "
             )
-            if not theorem_re.search(text):
+            if not theorem_re.search(normalized_text):
                 context: list[tuple[int, str]] = []
                 for idx, line in enumerate(lines, 1):
                     if "theorem equiv" in line:
