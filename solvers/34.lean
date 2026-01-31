@@ -19,15 +19,18 @@ partial def digitFactorialSum (n : Nat) (facts : Array Nat) : Nat :=
       loop (m / 10) (acc + facts[d]!)
   loop n 0
 
+partial def findNBound (nineFact n steps : Nat) : Nat :=
+  if steps == 0 then
+    n
+  else if n * nineFact >= Nat.pow 10 (n - 1) then
+    findNBound nineFact (n + 1) (steps - 1)
+  else
+    n
+
 partial def solve (limit : Nat) : Nat :=
   let facts := precomputeFactorials
   let nineFact := facts[9]!
-  let rec findN (n : Nat) : Nat :=
-    if n * nineFact >= Nat.pow 10 (n - 1) then
-      findN (n + 1)
-    else
-      n
-  let n := findN 1
+  let n := findNBound nineFact 1 10
   let upper := Nat.min limit ((n - 1) * nineFact)
   let rec loop (x total : Nat) : Nat :=
     if x > upper then
@@ -40,12 +43,7 @@ partial def solve (limit : Nat) : Nat :=
 def defaultLimit : Nat :=
   let facts := precomputeFactorials
   let nineFact := facts[9]!
-  let rec findN (n : Nat) : Nat :=
-    if n * nineFact >= Nat.pow 10 (n - 1) then
-      findN (n + 1)
-    else
-      n
-  let n := findN 1
+  let n := findNBound nineFact 1 10
   (n - 1) * nineFact
 
 

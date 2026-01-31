@@ -146,9 +146,12 @@ def lint_paths(
             normalized_text = " ".join(text.split())
             theorem_re = re.compile(
                 rf"theorem equiv\b .*? : "
-                rf"ProjectEulerStatements\.P{pid}\.naive (.+?) = solve \1 := "
+                rf"\(?ProjectEulerStatements\.P{pid}\.naive (.+?)\)? = "
+                rf"\(?(\w+) \1\)? := "
             )
-            if not theorem_re.search(normalized_text):
+            match = theorem_re.search(normalized_text)
+            allowed_solvers = {"solve", "solveTriangle"}
+            if not match or match.group(2) not in allowed_solvers:
                 context: list[tuple[int, str]] = []
                 for idx, line in enumerate(lines, 1):
                     if "theorem equiv" in line:
