@@ -107,16 +107,13 @@ partial def solveCore : Nat :=
         sumStates ss total
   sumStates states 0
 
-partial def solve (digits : List Nat) : Nat :=
-  if digits == (List.range 10) then
-    solveCore
-  else
-    0
+def solve : Nat :=
+  solveCore
 
 
 example : isPandigitalSubstringProperty 1406357289 = true := by
   native_decide
 
 
-theorem equiv : ProjectEulerStatements.P43.naive = solve (List.range 10) := sorry
+theorem equiv : ProjectEulerStatements.P43.naive = solve := sorry
 end ProjectEulerSolutions.P43

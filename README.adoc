@@ -18,7 +18,7 @@ This repo aims to solve **ALL** https://projecteuler.net[Project Euler] problems
 
 Tested on Python 3.13.7, PyPy 7.3.20, Ubuntu 25.10.
 
-**Ridiculous stretch goal**: solve as many problems as possible in <<lean>> with mathematically proven correctness! Status: TBD.
+**Ridiculous stretch goal**: solve the first 100 problems in <<lean>> with mathematically proven correctness! Status: TBD.
 
 .https://commons.wikimedia.org/wiki/File:Leonhard_Euler_2.jpg[Portrait of Leonard Euler by Jakob Emanuel Handmann c.1756] with https://knowyourmeme.com/memes/deal-with-it[Deal With It meme sunglasses] added on it by ChatGPT with prompt "Extract bust and add meme sunglasses."
 image::logo.jpg[]

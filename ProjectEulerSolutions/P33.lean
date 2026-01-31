@@ -61,5 +61,5 @@ example :
 def solve :=
   reducedProductDenominator findCuriousFractions
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P33.naive = solve := sorry
+theorem equiv : ProjectEulerStatements.P33.naive = solve := sorry
 end ProjectEulerSolutions.P33

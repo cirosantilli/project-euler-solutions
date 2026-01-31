@@ -54,7 +54,7 @@ partial def getAt (xs : List Nat) (i : Nat) : Nat :=
   | x :: _, 0 => x
   | _ :: xs, i + 1 => getAt xs i
 
-partial def findSequences (limit : Nat) : List (Nat × Nat × Nat) :=
+partial def solve (limit : Nat) : List (Nat × Nat × Nat) :=
   let isPrime := sievePrimesUpto (if limit > 0 then limit - 1 else 0)
   let start := 1000
   let primes :=
@@ -83,15 +83,22 @@ partial def findSequences (limit : Nat) : List (Nat × Nat × Nat) :=
         loopGroups rest (loopI 0 acc)
   loopGroups groups []
 
+def firstNonTrivial (xs : List (Nat × Nat × Nat)) : List Nat :=
+  let bad := (1487, 4817, 8147)
+  let rec firstGood (ys : List (Nat × Nat × Nat)) : List Nat :=
+    match ys with
+    | [] => []
+    | (a, b, c) :: rest =>
+        if (a, b, c) == bad then
+          firstGood rest
+        else
+          [a, b, c]
+  firstGood xs
 
+def serialize (xs : List (Nat × Nat × Nat)) : Nat :=
+  match firstNonTrivial xs with
+  | [a, b, c] => a * 1000000 + b * 1000 + c
+  | _ => 0
 
-def solveSeqs (limit : Nat) :=
-  findSequences limit
-
-def solve (limit : Nat) : String :=
-  match solveSeqs limit with
-  | [] => ""
-  | (a, b, c) :: _ => toString a ++ toString b ++ toString c
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P49.naive n = solveSeqs n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P49.naive n = solve n := sorry
 end ProjectEulerSolutions.P49

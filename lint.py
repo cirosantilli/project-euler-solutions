@@ -149,7 +149,7 @@ def lint_paths(
             if path.parent == SOLVERS_DIR:
                 last_line = lines[-1] if lines else ""
                 if not re.match(
-                    r"^\s*IO\.println \((?:solve|serialize \(solve)(?:\s+[^\s\)].*)?\)\s*$",
+                    r"^\s*IO\.println\s+\(?\s*(?:serialize\s+\(\s*)?solve\b",
                     last_line,
                 ):
                     context: list[tuple[int, str]] = []
@@ -167,13 +167,21 @@ def lint_paths(
             else:
                 normalized_text = " ".join(text.split())
                 theorem_re = re.compile(
-                    rf"theorem equiv\b .*? : "
-                    rf"\(?ProjectEulerStatements\.P{pid}\.naive (.+?)\)? = "
-                    rf"\(?(\w+) \1\)? := "
+                    rf"theorem equiv\b.*?: "
+                    rf"\(?ProjectEulerStatements\.P{pid}\.naive(?:\s+(.+?))?\)? = "
+                    rf"\(?(\w+)(?:\s+(.+?))?\)? := "
                 )
                 match = theorem_re.search(normalized_text)
                 allowed_solvers = {"solve", "solveTriangle"}
-                if not match or match.group(2) not in allowed_solvers:
+                args_ok = False
+                if match and match.group(2) in allowed_solvers:
+                    naive_args = match.group(1)
+                    solve_args = match.group(3)
+                    if naive_args is None and solve_args is None:
+                        args_ok = True
+                    elif naive_args is not None and solve_args is not None:
+                        args_ok = naive_args == solve_args
+                if not match or not args_ok:
                     context: list[tuple[int, str]] = []
                     for idx, line in enumerate(lines, 1):
                         if "theorem equiv" in line:
@@ -194,12 +202,11 @@ def lint_paths(
             continue
         if path.suffix not in (".py", ".c", ".cpp"):
             continue
-        if path.suffix != ".py":
-            try:
-                text = path.read_text()
-            except OSError as exc:
-                print(f"error: failed to read {path}: {exc}", file=sys.stderr)
-                continue
+        try:
+            text = path.read_text()
+        except OSError as exc:
+            print(f"error: failed to read {path}: {exc}", file=sys.stderr)
+            continue
         if answer and should_scan_answer(answer):
             if path.suffix == ".py":
                 line_hits = python_comment_or_string_hits(text, answer)
