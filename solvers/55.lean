@@ -1,3 +1,4 @@
+import ProjectEulerStatements.P55
 namespace ProjectEulerSolutions.P55
 
 partial def reverseInt (n : Nat) : Nat :=
@@ -21,22 +22,25 @@ partial def isLychrelCandidate (n : Nat) (maxIters : Nat) : Bool :=
         loop x (i + 1)
   loop n 0
 
-partial def solveCore (limit : Nat) : Nat :=
+partial def solveCore (limit maxIters : Nat) : Nat :=
   let rec loop (n : Nat) (acc : Nat) : Nat :=
     if n >= limit then
       acc
     else
-      let acc := if isLychrelCandidate n 50 then acc + 1 else acc
+      let acc := if isLychrelCandidate n maxIters then acc + 1 else acc
       loop (n + 1) acc
   loop 1 0
 
 
 
-def solve (_n : Nat) :=
-  solveCore 10000
+def solve (limit maxIters : Nat) :=
+  solveCore limit maxIters
+
+theorem equiv (limit maxIters : Nat) :
+    ProjectEulerStatements.P55.naive limit maxIters = solve limit maxIters := sorry
 
 end ProjectEulerSolutions.P55
 open ProjectEulerSolutions.P55
 
 def main : IO Unit := do
-  IO.println (solve 0)
+  IO.println (solve 10000 50)

@@ -1,3 +1,4 @@
+import ProjectEulerStatements.P52
 namespace ProjectEulerSolutions.P52
 
 partial def digitSignature (n : Nat) : Array Nat :=
@@ -38,11 +39,14 @@ partial def smallestPermutedMultiple (limitMul : Nat) : Nat :=
 
 
 
-def solve (_n : Nat) :=
-  smallestPermutedMultiple 6
+def solve (limitMul : Nat) :=
+  smallestPermutedMultiple limitMul
+
+theorem equiv (limitMul : Nat) :
+    ProjectEulerStatements.P52.naive limitMul = solve limitMul := sorry
 
 end ProjectEulerSolutions.P52
 open ProjectEulerSolutions.P52
 
 def main : IO Unit := do
-  IO.println (solve 0)
+  IO.println (solve 6)

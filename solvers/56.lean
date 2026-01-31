@@ -1,3 +1,4 @@
+import ProjectEulerStatements.P56
 namespace ProjectEulerSolutions.P56
 
 partial def digitSum (n : Nat) : Nat :=
@@ -29,11 +30,14 @@ example : digitSum (Nat.pow 2 15) = 26 := by
   native_decide
 
 
-def solve (_n : Nat) :=
-  (maxDigitalSum 100).1
+def solve (limit : Nat) :=
+  (maxDigitalSum limit).1
+
+theorem equiv (limit : Nat) :
+    ProjectEulerStatements.P56.naive limit = solve limit := sorry
 
 end ProjectEulerSolutions.P56
 open ProjectEulerSolutions.P56
 
 def main : IO Unit := do
-  IO.println (solve 0)
+  IO.println (solve 100)
