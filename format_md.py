@@ -31,6 +31,7 @@ def find_solver_files(pid: int) -> list[Path]:
         if path.suffix in {".md", ".json", ".out"}:
             continue
         candidates.append(path)
+
     def sort_key(path: Path) -> tuple[int, str, str]:
         suffix = path.suffix.lower()
         if suffix == ".py":

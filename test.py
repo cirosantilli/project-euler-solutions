@@ -1083,7 +1083,6 @@ def main() -> None:
         print(str(exc), file=sys.stderr)
         sys.exit(2)
     lang_filter = explicit_langs
-    lint_lean = bool(explicit_langs and "lean" in explicit_langs)
     ids_values = list(args.ids or [])
     if ids_values:
         ids_values, lang_hints = extract_lang_hints(ids_values)
@@ -1122,12 +1121,12 @@ def main() -> None:
                 language = detect_language(path)
                 if language is None:
                     continue
-                if language == "lean" and not lint_lean:
+                if language == "lean":
                     continue
                 lint_paths.add(source_from_target(path, language))
         else:
             for target in targets:
-                if target.language == "lean" and not lint_lean:
+                if target.language == "lean":
                     continue
                 lint_paths.add(source_from_target(target.path, target.language))
 

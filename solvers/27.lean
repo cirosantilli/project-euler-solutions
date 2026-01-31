@@ -61,24 +61,30 @@ partial def consecutivePrimeLength (a b : Int) (trial : Array Nat) : Nat :=
       n
   loop 0
 
-partial def solve : Int :=
-  let trial := sievePrimes 100000
-  let bCandidates := (sievePrimes 1000).toList
-  let rec loopB (bs : List Nat) (bestLen : Nat) (bestA bestB : Int) : Int :=
+partial def solve (limitA limitB : Nat) : Int :=
+  if limitA == 0 then
+    0
+  else
+    let offset := limitA - 1
+    let maxA := 2 * limitA - 2
+    let upper := limitA * limitA + limitA * limitB + limitB
+    let trial := sievePrimes (max 100000 upper)
+    let bCandidates := (sievePrimes limitB).toList
+    let rec loopB (bs : List Nat) (bestLen : Nat) (bestA bestB : Int) : Int :=
     match bs with
     | [] => bestA * bestB
     | bNat :: rest =>
         let b := Int.ofNat bNat
         let rec loopA (i : Nat) (bestLen : Nat) (bestA bestB : Int) : Nat × Int × Int :=
-          if i > 1998 then
+          if i > maxA then
             (bestLen, bestA, bestB)
           else
-            let a := (Int.ofNat i) - 999
+            let a := (Int.ofNat i) - (Int.ofNat offset)
             let parityOk :=
               if bNat != 2 then
-                i % 2 == 0
+                (i + offset) % 2 == 1
               else
-                i % 2 == 1
+                (i + offset) % 2 == 0
             if !parityOk then
               loopA (i + 1) bestLen bestA bestB
             else
@@ -93,13 +99,12 @@ partial def solve : Int :=
                   loopA (i + 1) bestLen bestA bestB
         let (bestLen', bestA', bestB') := loopA 0 bestLen bestA bestB
         loopB rest bestLen' bestA' bestB'
-  loopB bCandidates 0 0 0
+    loopB bCandidates 0 0 0
 
-
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P27.naive n n n = solve := sorry
+theorem equiv (limitA limitB : Nat) :
+    ProjectEulerStatements.P27.naive limitA limitB = solve limitA limitB := sorry
 end ProjectEulerSolutions.P27
 open ProjectEulerSolutions.P27
 
 def main : IO Unit := do
-  IO.println solve
+  IO.println (solve 1000 1000)
