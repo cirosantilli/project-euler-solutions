@@ -77,12 +77,12 @@ example :
   native_decide
 
 
-def solve (_n : Nat) :=
-  countEndingAt89 10000000
+def solve (limit : Nat) :=
+  countEndingAt89 limit
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P92.naive n n = solve n := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P92.naive n = solve n := sorry
 end ProjectEulerSolutions.P92
 open ProjectEulerSolutions.P92
 
 def main : IO Unit := do
-  IO.println (solve 0)
+  IO.println (solve 10000000)

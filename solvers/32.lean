@@ -19,9 +19,11 @@ partial def digitMask (n : Nat) : Bool × Nat × Nat :=
           loop (m / 10) (mask ||| bit) (len + 1)
   loop n 0 0
 
-partial def case1 (products : Array Bool) : Array Bool :=
+partial def case1 (maxA maxB : Nat) (products : Array Bool) : Array Bool :=
+  let maxA := Nat.min maxA 9
+  let maxB := Nat.min maxB 9999
   let rec loopA1 (a : Nat) (products : Array Bool) : Array Bool :=
-    if a > 9 then
+    if a > maxA then
       products
     else
       let (okA, ma, la) := digitMask a
@@ -33,7 +35,10 @@ partial def case1 (products : Array Bool) : Array Bool :=
           if t < 1000 then 1000 else t
         let bMax :=
           let t := 9999 / a
-          if t > 9999 then 9999 else t
+          if t > maxB then maxB else t
+        if bMin > bMax then
+          loopA1 (a + 1) products
+        else
         let rec loopB1 (b : Nat) (products : Array Bool) : Array Bool :=
           if b > bMax then
             products
@@ -56,9 +61,11 @@ partial def case1 (products : Array Bool) : Array Bool :=
         loopA1 (a + 1) (loopB1 bMin products)
   loopA1 1 products
 
-partial def case2 (products : Array Bool) : Array Bool :=
+partial def case2 (maxA maxB : Nat) (products : Array Bool) : Array Bool :=
+  let maxA := Nat.min maxA 99
+  let maxB := Nat.min maxB 999
   let rec loopA2 (a : Nat) (products : Array Bool) : Array Bool :=
-    if a > 99 then
+    if a > maxA then
       products
     else
       let (okA, ma, la) := digitMask a
@@ -70,7 +77,10 @@ partial def case2 (products : Array Bool) : Array Bool :=
           if t < 100 then 100 else t
         let bMax :=
           let t := 9999 / a
-          if t > 999 then 999 else t
+          if t > maxB then maxB else t
+        if bMin > bMax then
+          loopA2 (a + 1) products
+        else
         let rec loopB2 (b : Nat) (products : Array Bool) : Array Bool :=
           if b > bMax then
             products
@@ -93,10 +103,10 @@ partial def case2 (products : Array Bool) : Array Bool :=
         loopA2 (a + 1) (loopB2 bMin products)
   loopA2 10 products
 
-partial def solve : Nat :=
+partial def solve (maxA maxB : Nat) : Nat :=
   let products := Array.replicate 10000 false
-  let products := case1 products
-  let products := case2 products
+  let products := case1 maxA maxB products
+  let products := case2 maxA maxB products
   let rec sum (i acc : Nat) : Nat :=
     if i >= products.size then
       acc
@@ -107,9 +117,9 @@ partial def solve : Nat :=
 
 
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P32.naive n n = solve := sorry
+theorem equiv (maxA maxB : Nat) : ProjectEulerStatements.P32.naive maxA maxB = solve maxA maxB := sorry
 end ProjectEulerSolutions.P32
 open ProjectEulerSolutions.P32
 
 def main : IO Unit := do
-  IO.println solve
+  IO.println (solve 99 9999)

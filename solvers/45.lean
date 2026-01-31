@@ -34,14 +34,22 @@ partial def isPentagonal (x : Nat) : Bool :=
   let s := sqrtIfSquare d
   s != 0 && (1 + s) % 6 == 0
 
-partial def solve : Nat :=
+partial def isHexagonal (x : Nat) : Bool :=
+  let d := 1 + 8 * x
+  let s := sqrtIfSquare d
+  s != 0 && (1 + s) % 4 == 0
+
+partial def solve (start limit : Nat) : Nat :=
   let _ := triangle 285
   let _ := pentagonal 165
   let _ := hexagonal 143
-  let rec loop (n : Nat) : Nat :=
-    let h := hexagonal n
-    if isPentagonal h then h else loop (n + 1)
-  loop 144
+  let rec loop (i : Nat) : Nat :=
+    if i > limit then
+      0
+    else
+      let t := triangle (start + i)
+      if isPentagonal t && isHexagonal t then t else loop (i + 1)
+  loop 0
 
 
 example : triangle 285 = 40755 := by
@@ -54,9 +62,9 @@ example : hexagonal 143 = 40755 := by
   native_decide
 
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P45.naive n n = solve := sorry
+theorem equiv (start limit : Nat) : ProjectEulerStatements.P45.naive start limit = solve start limit := sorry
 end ProjectEulerSolutions.P45
 open ProjectEulerSolutions.P45
 
 def main : IO Unit := do
-  IO.println solve
+  IO.println (solve 286 100000)

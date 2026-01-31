@@ -20,32 +20,35 @@ partial def isPerfectSquare (n : Nat) : Bool :=
   let r := sqrtFloor n
   r * r == n
 
-partial def digitSumFirst100DigitsOfSqrt (n : Nat) : Nat :=
-  let scale := Nat.pow 10 198
-  let scaled := n * scale
-  let rootScaled := sqrtFloor scaled
-  let s := toString rootScaled
-  s.data.foldl (fun acc c => acc + (c.toNat - '0'.toNat)) 0
+partial def digitSumDigitsOfSqrt (n digits : Nat) : Nat :=
+  if digits == 0 then
+    0
+  else
+    let scale := Nat.pow 10 (2 * (digits - 1))
+    let scaled := n * scale
+    let rootScaled := sqrtFloor scaled
+    let s := toString rootScaled
+    s.data.foldl (fun acc c => acc + (c.toNat - '0'.toNat)) 0
 
-partial def solve : Nat :=
+partial def solve (limit digits : Nat) : Nat :=
   let rec loop (n : Nat) (total : Nat) : Nat :=
-    if n > 100 then
+    if n > limit then
       total
     else
       if isPerfectSquare n then
         loop (n + 1) total
       else
-        loop (n + 1) (total + digitSumFirst100DigitsOfSqrt n)
+        loop (n + 1) (total + digitSumDigitsOfSqrt n digits)
   loop 1 0
 
 
-example : digitSumFirst100DigitsOfSqrt 2 = 475 := by
+example : digitSumDigitsOfSqrt 2 100 = 475 := by
   native_decide
 
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P80.naive n n = solve := sorry
+theorem equiv (n digits : Nat) : ProjectEulerStatements.P80.naive n digits = solve n digits := sorry
 end ProjectEulerSolutions.P80
 open ProjectEulerSolutions.P80
 
 def main : IO Unit := do
-  IO.println solve
+  IO.println (solve 100 100)

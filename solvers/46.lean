@@ -57,8 +57,11 @@ partial def canBeWritten (n : Nat) (primes : List Nat) : Bool :=
               loop ps
   loop primes
 
-partial def solve : Nat :=
+partial def solve (limit : Nat) : Nat :=
   let rec loop (n : Nat) (primes : List Nat) : Nat :=
+    if n >= limit then
+      0
+    else
     let primes := ensurePrimesUpTo n primes
     if !isPrimeWithList n primes && !canBeWritten n primes then
       n
@@ -72,9 +75,9 @@ example :
   native_decide
 
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P46.naive n = solve := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P46.naive n = solve n := sorry
 end ProjectEulerSolutions.P46
 open ProjectEulerSolutions.P46
 
 def main : IO Unit := do
-  IO.println solve
+  IO.println (solve 10000)

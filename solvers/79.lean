@@ -65,14 +65,17 @@ partial def derivePasscode (attempts : List String) : String :=
   let digits := topoSort adj indeg present
   digits.foldl (fun acc d => acc ++ toString d) ""
 
-def solve (attempts : List String) : List Char :=
+def solveChars (attempts : List String) : List Char :=
   (derivePasscode attempts).data
 
-theorem equiv (attempts : List String) : ProjectEulerStatements.P79.naive attempts = solve attempts := sorry
+def solve (attempts : List String) : String :=
+  derivePasscode attempts
+
+theorem equiv (attempts : List String) : ProjectEulerStatements.P79.naive attempts = solveChars attempts := sorry
 end ProjectEulerSolutions.P79
 open ProjectEulerSolutions.P79
 
 def main : IO Unit := do
   let text ← IO.FS.readFile "0079_keylog.txt"
   let attempts := text.splitOn "\n" |>.filter (fun ln => ln != "")
-  IO.println (String.mk (solve attempts))
+  IO.println (solve attempts)

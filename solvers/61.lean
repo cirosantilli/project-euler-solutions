@@ -11,12 +11,12 @@ partial def polygonal (s n : Nat) : Nat :=
   | 8 => n * (3 * n - 2)
   | _ => 0
 
-partial def generate4DigitPolygonals (s : Nat) : List Nat :=
+partial def generate4DigitPolygonals (s limit : Nat) : List Nat :=
   let rec loop (n : Nat) (acc : List Nat) : List Nat :=
-    let val := polygonal s n
-    if val >= 10000 then
+    if n > limit then
       acc.reverse
     else
+      let val := polygonal s n
       let acc :=
         if val >= 1000 && val <= 9999 && val % 100 >= 10 then
           val :: acc
@@ -49,10 +49,10 @@ partial def lastOr (xs : List (Nat × Nat)) (default : Nat × Nat) : Nat × Nat 
   | [] => default
   | x :: _ => x
 
-partial def solve : Nat :=
+partial def solve (limit : Nat) : Nat :=
   let types : List Nat := [3,4,5,6,7,8]
   let numsByType :=
-    types.foldl (fun arr t => arr.set! t (generate4DigitPolygonals t)) (Array.replicate 9 [])
+    types.foldl (fun arr t => arr.set! t (generate4DigitPolygonals t limit)) (Array.replicate 9 [])
   let prefMaps :=
     types.foldl (fun arr t => arr.set! t (buildPrefixMap (numsByType[t]!)))
       (Array.replicate 9 (Array.replicate 100 []))
@@ -106,9 +106,9 @@ example : polygonal 5 44 = 2882 := by
   native_decide
 
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P61.naive n = solve := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P61.naive n = solve n := sorry
 end ProjectEulerSolutions.P61
 open ProjectEulerSolutions.P61
 
 def main : IO Unit := do
-  IO.println solve
+  IO.println (solve 200)

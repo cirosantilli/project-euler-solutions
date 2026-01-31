@@ -54,48 +54,48 @@ partial def getAt (xs : List Nat) (i : Nat) : Nat :=
   | x :: _, 0 => x
   | _ :: xs, i + 1 => getAt xs i
 
-partial def findSequence : Nat × Nat × Nat :=
-  let isPrime := sievePrimesUpto 9999
-  let primes := (List.range 9000).map (fun k => k + 1000) |>.filter (fun p => isPrime[p]!)
+partial def findSequences (limit : Nat) : List (Nat × Nat × Nat) :=
+  let isPrime := sievePrimesUpto (if limit > 0 then limit - 1 else 0)
+  let start := 1000
+  let primes :=
+    (List.range (if limit > start then limit - start else 0)).map (fun k => k + start)
+      |>.filter (fun p => isPrime[p]!)
   let groups := groupPrimes primes
-  let targetKnown : Nat × Nat × Nat := (1487, 4817, 8147)
-  let rec loopGroups (gs : List (Nat × List Nat)) : Nat × Nat × Nat :=
+  let rec loopGroups (gs : List (Nat × List Nat)) (acc : List (Nat × Nat × Nat))
+      : List (Nat × Nat × Nat) :=
     match gs with
-    | [] => (0, 0, 0)
+    | [] => acc
     | (_, arr) :: rest =>
         let arr := sortList arr
         let s := arr
-        let rec loopI (i : Nat) : Nat × Nat × Nat :=
-          if i >= arr.length then (0, 0, 0) else
+        let rec loopI (i : Nat) (acc : List (Nat × Nat × Nat)) : List (Nat × Nat × Nat) :=
+          if i >= arr.length then acc else
             let a := getAt arr i
-            let rec loopJ (j : Nat) : Nat × Nat × Nat :=
-              if j >= arr.length then (0, 0, 0) else
+            let rec loopJ (j : Nat) (acc : List (Nat × Nat × Nat)) : List (Nat × Nat × Nat) :=
+              if j >= arr.length then acc else
                 let b := getAt arr j
                 let d := b - a
                 let c := b + d
-                if s.contains c then
-                  let seq := (a, b, c)
-                  if seq != targetKnown then seq else loopJ (j + 1)
-                else
-                  loopJ (j + 1)
-            let res := loopJ (i + 1)
-            if res != (0, 0, 0) then res else loopI (i + 1)
-        let res := loopI 0
-        if res != (0, 0, 0) then res else loopGroups rest
-  loopGroups groups
+                let acc :=
+                  if c < limit && s.contains c then (a, b, c) :: acc else acc
+                loopJ (j + 1) acc
+            loopI (i + 1) (loopJ (i + 1) acc)
+        loopGroups rest (loopI 0 acc)
+  loopGroups groups []
 
 
 
-def solve (_n : Nat) :=
-  [findSequence]
+def solveSeqs (limit : Nat) :=
+  findSequences limit
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P49.naive n = solve n := sorry
+def solve (limit : Nat) : String :=
+  match solveSeqs limit with
+  | [] => ""
+  | (a, b, c) :: _ => toString a ++ toString b ++ toString c
+
+theorem equiv (n : Nat) : ProjectEulerStatements.P49.naive n = solveSeqs n := sorry
 end ProjectEulerSolutions.P49
 open ProjectEulerSolutions.P49
 
 def main : IO Unit := do
-  let seqs := solve 0
-  match seqs with
-  | [] => IO.println ""
-  | (a, b, c) :: _ =>
-      IO.println (toString a ++ toString b ++ toString c)
+  IO.println (solve 10000)

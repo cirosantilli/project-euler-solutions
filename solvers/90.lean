@@ -23,7 +23,7 @@ partial def expand6_9 (mask : Nat) : Nat :=
   else
     mask
 
-partial def canDisplayAllSquares (maskA maskB : Nat) : Bool :=
+partial def canDisplayAllSquares (pairs : List (Nat × Nat)) (maskA maskB : Nat) : Bool :=
   let rec loop (ps : List (Nat × Nat)) : Bool :=
     match ps with
     | [] => true
@@ -34,9 +34,9 @@ partial def canDisplayAllSquares (maskA maskB : Nat) : Bool :=
           loop ps
         else
           false
-  loop squarePairs
+  loop pairs
 
-partial def solve : Nat :=
+partial def solve (pairs : List (Nat × Nat)) : Nat :=
   let masks :=
     (combinations 6 (List.range 10)).map (fun comb =>
       comb.foldl (fun acc d => acc ||| Nat.pow 2 d) 0)
@@ -49,16 +49,20 @@ partial def solve : Nat :=
         if j >= masks.length then
           count
         else
-          let count := if canDisplayAllSquares (expanded.getD i 0) (expanded.getD j 0) then count + 1 else count
+          let count :=
+            if canDisplayAllSquares pairs (expanded.getD i 0) (expanded.getD j 0) then
+              count + 1
+            else
+              count
           loopJ (j + 1) count
       loopI (i + 1) (loopJ i count)
   loopI 0 0
 
 
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P90.naive = solve := sorry
+theorem equiv : ProjectEulerStatements.P90.naive = solve squarePairs := sorry
 end ProjectEulerSolutions.P90
 open ProjectEulerSolutions.P90
 
 def main : IO Unit := do
-  IO.println solve
+  IO.println (solve squarePairs)

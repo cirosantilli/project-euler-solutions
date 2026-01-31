@@ -27,9 +27,9 @@ partial def isPandigital (s : String) : Bool :=
           if (mask &&& bit) != 0 then false else loop cs (mask ||| bit)
     loop s.data 0
 
-partial def solve : Nat :=
+partial def solve (limit : Nat) : Nat :=
   let rec loop (x best : Nat) : Nat :=
-    if x >= 10000 then
+    if x > limit then
       best
     else
       let (s, n) := concatenatedProduct x
@@ -57,9 +57,9 @@ example : concatUpTo 9 5 = "918273645" := by
 example : isPandigital "918273645" = true := by
   native_decide
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P38.naive n = solve := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P38.naive n = solve n := sorry
 end ProjectEulerSolutions.P38
 open ProjectEulerSolutions.P38
 
 def main : IO Unit := do
-  IO.println solve
+  IO.println (solve 9999)

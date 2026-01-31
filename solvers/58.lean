@@ -53,19 +53,22 @@ partial def isPrime (n : Nat) : Bool :=
         | a :: bs => if millerCheck a n d s then loop bs else false
       loop bases
 
-partial def solve : Nat :=
-  let rec loop (k primeCount totalDiag : Nat) : Nat :=
-    let side := 2 * k + 1
-    let step := side - 1
-    let sq := side * side
-    let corners := [sq - step, sq - 2 * step, sq - 3 * step]
-    let primeCount := primeCount + corners.foldl (fun acc x => if isPrime x then acc + 1 else acc) 0
-    let totalDiag := totalDiag + 4
-    if primeCount * 10 < totalDiag then
-      side
-    else
-      loop (k + 1) primeCount totalDiag
-  loop 1 0 1
+partial def solve (ratioNum ratioDen : Nat) : Nat :=
+  if ratioDen == 0 then
+    0
+  else
+    let rec loop (k primeCount totalDiag : Nat) : Nat :=
+      let side := 2 * k + 1
+      let step := side - 1
+      let sq := side * side
+      let corners := [sq - step, sq - 2 * step, sq - 3 * step]
+      let primeCount := primeCount + corners.foldl (fun acc x => if isPrime x then acc + 1 else acc) 0
+      let totalDiag := totalDiag + 4
+      if primeCount * ratioDen < totalDiag * ratioNum then
+        side
+      else
+        loop (k + 1) primeCount totalDiag
+    loop 1 0 1
 
 partial def countDiagPrimes (side : Nat) : Nat × Nat :=
   let rec loop (k : Nat) (primeCount totalDiag : Nat) : Nat × Nat :=
@@ -94,4 +97,4 @@ end ProjectEulerSolutions.P58
 open ProjectEulerSolutions.P58
 
 def main : IO Unit := do
-  IO.println solve
+  IO.println (solve 1 10)

@@ -24,6 +24,18 @@ abbrev grid : Array (Array Nat) := #[
    #[1, 70, 54, 71, 83, 51, 54, 69, 16, 92, 33, 48, 61, 43, 52, 1, 89, 19, 67, 48]
 ]
 
+def arrayToList {α} (arr : Array α) : List α :=
+  arr.foldr (fun x acc => x :: acc) []
+
+def listToArray (xs : List Nat) : Array Nat :=
+  xs.foldl (fun acc v => acc.push v) #[]
+
+def gridToArray (grid : List (List Nat)) : Array (Array Nat) :=
+  grid.foldl (fun acc row => acc.push (listToArray row)) #[]
+
+def gridList : List (List Nat) :=
+  arrayToList (grid.map arrayToList)
+
 partial def prodRight (g : Array (Array Nat)) (i j k : Nat) : Nat :=
   let rec loop (t acc : Nat) : Nat :=
     if t == k then
@@ -96,16 +108,17 @@ partial def maxAdjacentProduct (g : Array (Array Nat)) (k : Nat) : Nat :=
   loopI 0 0
 
 
-def solve (k : Nat) : Nat :=
-  maxAdjacentProduct grid k
+def solve (grid : List (List Nat)) (k : Nat) : Nat :=
+  maxAdjacentProduct (gridToArray grid) k
 
 example : 26 * 63 * 78 * 14 = 1788696 := by
   native_decide
 
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P11.naive = solve n := sorry
+theorem equiv (grid : List (List Nat)) (n : Nat) :
+    ProjectEulerStatements.P11.naive grid n = solve grid n := sorry
 end ProjectEulerSolutions.P11
 open ProjectEulerSolutions.P11
 
 def main : IO Unit := do
-  IO.println (solve 4)
+  IO.println (solve gridList 4)

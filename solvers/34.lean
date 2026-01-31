@@ -19,7 +19,7 @@ partial def digitFactorialSum (n : Nat) (facts : Array Nat) : Nat :=
       loop (m / 10) (acc + facts[d]!)
   loop n 0
 
-partial def solve : Nat :=
+partial def solve (limit : Nat) : Nat :=
   let facts := precomputeFactorials
   let nineFact := facts[9]!
   let rec findN (n : Nat) : Nat :=
@@ -28,7 +28,7 @@ partial def solve : Nat :=
     else
       n
   let n := findN 1
-  let upper := (n - 1) * nineFact
+  let upper := Nat.min limit ((n - 1) * nineFact)
   let rec loop (x total : Nat) : Nat :=
     if x > upper then
       total
@@ -37,11 +37,21 @@ partial def solve : Nat :=
       loop (x + 1) total'
   loop 3 0
 
+def defaultLimit : Nat :=
+  let facts := precomputeFactorials
+  let nineFact := facts[9]!
+  let rec findN (n : Nat) : Nat :=
+    if n * nineFact >= Nat.pow 10 (n - 1) then
+      findN (n + 1)
+    else
+      n
+  let n := findN 1
+  (n - 1) * nineFact
 
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P34.naive n = solve := sorry
+theorem equiv (n : Nat) : ProjectEulerStatements.P34.naive n = solve n := sorry
 end ProjectEulerSolutions.P34
 open ProjectEulerSolutions.P34
 
 def main : IO Unit := do
-  IO.println solve
+  IO.println (solve defaultLimit)
