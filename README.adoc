@@ -366,6 +366,15 @@ Run the proof of of a single solver e.g. link:solvers/1.lean[]:
 lake env lean solvers/1.lean
 ----
 
+Build just one solver:
+
+[source,shell]
+----
+lake build p1
+----
+
+TODO we wanted `lake build 1` but Codex doesn't know how, it gives some errors.
+
 The way things are organize is that link:data/project-euler-statements[] will contain a Lean formalization of each problem statement, for example:
 
 * link:data/project-euler-statements/data/lean/ProjectEulerStatements/P1.lean[]: defines a `ProjectEulerStatements.P1.naive` function, possibly non-computable, which we believe matches the problem definition

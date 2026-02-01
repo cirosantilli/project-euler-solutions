@@ -17,16 +17,28 @@ The executable is named `{stem}` and uses `root := {stem}`.
 -/
 elab "lean_exes_from " dir:str : command => do
   let dirStr := dir.getString
-  liftIO (exeFiles dirStr) >>= fun paths => do
-    for path in paths do
-      match path.fileStem with
-      | none => pure ()
-      | some stem =>
-        let exeName := s!"«{stem}»"
-        let exeCmdStr :=
-          s!"lean_exe {exeName} where\n" ++
-          s!"  root := Name.mkSimple \"{stem}\"\n"
-        match runParserCategory (← getEnv) `command exeCmdStr with
+  let paths ← liftIO (exeFiles dirStr)
+  for path in paths do
+    match path.fileStem with
+    | none => pure ()
+    | some stem =>
+      let exeName := Name.mkSimple stem
+      let nameStx : Ident :=
+        ⟨Syntax.ident SourceInfo.none stem.toSubstring exeName []⟩
+      let rootId : Ident :=
+        ⟨Syntax.ident SourceInfo.none "root".toSubstring (Name.mkSimple "root") []⟩
+      let stemLit : TSyntax `term := ⟨Syntax.mkStrLit stem⟩
+      let cmd ← `(lean_exe $nameStx:ident where
+        $rootId:ident := Name.mkSimple $stemLit)
+      elabCommand cmd
+      if stem.toNat?.isSome then
+        let targetCmdStr :=
+          s!"target p{stem} pkg : Unit := do\n" ++
+          s!"  let some exe := pkg.findLeanExe? (Name.mkSimple \"{stem}\")\n" ++
+          s!"    | error \"lean_exe {stem} not found\"\n" ++
+          s!"  let _ ← exe.fetch\n" ++
+          s!"  return Job.nil\n"
+        match runParserCategory (← getEnv) `command targetCmdStr with
         | .error err => throwError err
         | .ok stx => elabCommand stx
 
