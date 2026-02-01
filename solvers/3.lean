@@ -1,5 +1,5 @@
 import ProjectEulerStatements.P3
-namespace ProjectEulerStatements.P3
+namespace ProjectEulerSolutions.P3
 
 partial def stripTwos (n : Nat) (largest : Nat) : Nat × Nat :=
   if n % 2 == 0 then
@@ -16,17 +16,18 @@ partial def oddLoop (n f largest : Nat) : Nat :=
   else
     if n > 1 then n else largest
 
-def solve (n : Nat) : Nat :=
-  let (n', largest') := stripTwos n 1
+def solve (n : ProjectEulerStatements.P3.NatGE2) : Nat :=
+  let (n', largest') := stripTwos n.1 1
   oddLoop n' 3 largest'
 
-example : solve 13195 = 29 := by
+example : solve ⟨13195, by decide⟩ = 29 := by
   native_decide
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P3.naive ⟨2, by decide⟩ = solve n := sorry
+theorem equiv (n : ProjectEulerStatements.P3.NatGE2) :
+    ProjectEulerStatements.P3.naive n = solve n := sorry
 
-end ProjectEulerStatements.P3
-open ProjectEulerStatements.P3
+end ProjectEulerSolutions.P3
+open ProjectEulerSolutions.P3
 
 def main : IO Unit := do
-  IO.println (solve 600851475143)
+  IO.println (solve ⟨600851475143, by decide⟩)
