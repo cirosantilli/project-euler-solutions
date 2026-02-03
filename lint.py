@@ -12,6 +12,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 SOLUTIONS_PATH = ROOT / "data/projecteuler-solutions/Solutions.md"
 SOLVERS_DIR = ROOT / "solvers"
+LEAN_SOLVERS_DIR = ROOT / "ProjectEulerSolutions"
 
 LINE_RE = re.compile(r"^(\d+)\.\s+(.*)$")
 FORBIDDEN_TOKENS = ("Solutions.md",)
@@ -43,6 +44,8 @@ def parse_solver_id(path: Path) -> int | None:
     stem = path.stem
     if stem.isdigit():
         return int(stem)
+    if stem.startswith("P") and stem[1:].isdigit():
+        return int(stem[1:])
     if "_" in stem:
         prefix = stem.split("_", 1)[0]
         if prefix.isdigit():
@@ -143,45 +146,48 @@ def lint_paths(
                 print(f"error: failed to read {path}: {exc}", file=sys.stderr)
                 continue
             lines = text.splitlines()
-            normalized_text = " ".join(text.split())
-            theorem_re = re.compile(
-                rf"theorem equiv\b .*? : "
-                rf"\(?ProjectEulerStatements\.P{pid}\.naive (.+?)\)? = "
-                rf"\(?(\w+) \1\)? := "
-            )
-            match = theorem_re.search(normalized_text)
-            allowed_solvers = {"solve", "solveTriangle"}
-            if not match or match.group(2) not in allowed_solvers:
-                context: list[tuple[int, str]] = []
-                for idx, line in enumerate(lines, 1):
-                    if "theorem equiv" in line:
-                        context = [(idx, line.rstrip())]
-                        break
-                violations.append(
-                    Violation(
-                        "lean",
-                        pid,
-                        path,
-                        "missing required theorem declaration",
-                        context,
+            if path.parent == SOLVERS_DIR:
+                last_line = lines[-1] if lines else ""
+                if not re.match(
+                    r"^\s*IO\.println \((?:solve|serialize \(solve)(?:\s+[^\s\)].*)?\)\s*$",
+                    last_line,
+                ):
+                    context: list[tuple[int, str]] = []
+                    if lines:
+                        context = [(len(lines), last_line.rstrip())]
+                    violations.append(
+                        Violation(
+                            "lean",
+                            pid,
+                            path,
+                            "last line must start with 'IO.println (solve ' and include an argument",
+                            context,
+                        )
                     )
+            else:
+                normalized_text = " ".join(text.split())
+                theorem_re = re.compile(
+                    rf"theorem equiv\b .*? : "
+                    rf"\(?ProjectEulerStatements\.P{pid}\.naive (.+?)\)? = "
+                    rf"\(?(\w+) \1\)? := "
                 )
-            last_line = lines[-1] if lines else ""
-            if not re.match(
-                r"^\s*IO\.println \((?:solve|serialize \(solve) [^\s\)]", last_line
-            ):
-                context: list[tuple[int, str]] = []
-                if lines:
-                    context = [(len(lines), last_line.rstrip())]
-                violations.append(
-                    Violation(
-                        "lean",
-                        pid,
-                        path,
-                        "last line must start with 'IO.println (solve ' and include an argument",
-                        context,
+                match = theorem_re.search(normalized_text)
+                allowed_solvers = {"solve", "solveTriangle"}
+                if not match or match.group(2) not in allowed_solvers:
+                    context: list[tuple[int, str]] = []
+                    for idx, line in enumerate(lines, 1):
+                        if "theorem equiv" in line:
+                            context = [(idx, line.rstrip())]
+                            break
+                    violations.append(
+                        Violation(
+                            "lean",
+                            pid,
+                            path,
+                            "missing required theorem declaration",
+                            context,
+                        )
                     )
-                )
             continue
         answer = answers.get(pid)
         if not answer or not should_scan_answer(answer):
@@ -278,7 +284,8 @@ def main() -> int:
         if args.paths:
             paths = [path for path in paths if path.suffix == ".lean"]
         else:
-            paths = sorted(SOLVERS_DIR.glob("*.lean"))
+            paths = sorted(LEAN_SOLVERS_DIR.glob("*.lean"))
+            paths.extend(sorted(SOLVERS_DIR.glob("*.lean")))
     elif args.language:
         lang_ext = f".{args.language}"
         paths = [path for path in paths if path.suffix == lang_ext]
