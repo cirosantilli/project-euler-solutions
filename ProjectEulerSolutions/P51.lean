@@ -76,7 +76,7 @@ partial def countPrimeFamilyForPositions (p : Nat) (idxs : List Nat) : Nat :=
                   loopR (r + 1) cnt
         loopR 0 0
 
-partial def solve (target limit : Nat) : Nat :=
+partial def solveCore (target limit : Nat) : Nat :=
   let rec loopDigits (ndigits : Nat) : Nat :=
     if ndigits >= 10 then
       0
@@ -166,6 +166,9 @@ example : countPrimeFamilyForPositions 56003 [2, 3] = 7 := by
   native_decide
 
 
-theorem equiv (target limit : Nat) :
-    ProjectEulerStatements.P51.naive target limit = solve target limit := sorry
+def solve (target : Nat) : Nat :=
+  solveCore target 1000000
+
+theorem equiv (target : Nat) :
+    ProjectEulerStatements.P51.naive target = solve target := sorry
 end ProjectEulerSolutions.P51

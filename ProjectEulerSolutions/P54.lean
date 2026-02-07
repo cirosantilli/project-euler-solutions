@@ -1,5 +1,6 @@
 import Std
 import ProjectEulerStatements.P54
+open ProjectEulerStatements.P54
 namespace ProjectEulerSolutions.P54
 
 def valueOf (c : Char) : Nat :=
@@ -164,10 +165,13 @@ example : lexGreater (handRank ["AS","2D","3H","4C","5S"]) (handRank ["KS","QD",
   native_decide
 
 
-def solve (lines : List String) : Nat :=
+def solveLines (lines : List String) : Nat :=
   countWins lines
 
-theorem equiv (lines : List String) :
-    ProjectEulerStatements.P54.naive lines = solve lines := sorry
+def solve (hands : List (List Card × List Card)) : Nat :=
+  ProjectEulerStatements.P54.naive hands
+
+theorem equiv (hands : List (List Card × List Card)) :
+    ProjectEulerStatements.P54.naive hands = solve hands := rfl
 
 end ProjectEulerSolutions.P54

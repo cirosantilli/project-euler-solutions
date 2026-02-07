@@ -34,6 +34,6 @@ def solve (n : Nat) :=
   (maxDigitalSum n).1
 
 theorem equiv (n : Nat) :
-    ProjectEulerStatements.P56.naive limit n = solve n := sorry
+    ProjectEulerStatements.P56.naive n = solve n := sorry
 
 end ProjectEulerSolutions.P56
