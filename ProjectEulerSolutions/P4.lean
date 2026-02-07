@@ -36,8 +36,13 @@ example : (largestPalindromeProduct 10 99).1 = 9009 := by
   native_decide
 
 
-def solve (_n : Nat) : Nat :=
-  (largestPalindromeProduct 100 999).1
+def solve (digits : Nat) : Nat :=
+  let lo :=
+    match digits with
+    | 0 => 0
+    | d + 1 => Nat.pow 10 d
+  let hi := Nat.pow 10 digits - 1
+  (largestPalindromeProduct lo hi).1
 
 theorem equiv (n : Nat) : ProjectEulerStatements.P4.naive n = solve n := sorry
 end ProjectEulerSolutions.P4

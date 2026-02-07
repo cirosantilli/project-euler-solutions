@@ -72,8 +72,8 @@ example : countFor 1000 120 = 3 := by
   native_decide
 
 
-def solve (_n : Nat) :=
-  maxSolutionsPerimeter 1000
+def solve (limit : Nat) :=
+  maxSolutionsPerimeter limit
 
 theorem equiv (n : Nat) : ProjectEulerStatements.P39.naive n = solve n := sorry
 end ProjectEulerSolutions.P39

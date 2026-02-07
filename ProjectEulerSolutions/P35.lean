@@ -112,8 +112,8 @@ example : isCircularPrime 197 (primeSieve 1000) = true := by
   native_decide
 
 
-def solve (_n : Nat) :=
-  circularPrimeCount 1000000
+def solve (limit : Nat) :=
+  circularPrimeCount limit
 
 theorem equiv (n : Nat) : ProjectEulerStatements.P35.naive n = solve n := sorry
 end ProjectEulerSolutions.P35

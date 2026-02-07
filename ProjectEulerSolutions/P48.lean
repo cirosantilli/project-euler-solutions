@@ -34,8 +34,8 @@ example : lastKDigitsSelfPowers 10 10 = "0405071317" := by
   native_decide
 
 
-def solve (_n : Nat) :=
-  (lastKDigitsSelfPowers 1000 10).toNat!
+def solve (n : Nat) :=
+  (lastKDigitsSelfPowers n 10).toNat!
 
 theorem equiv (n : Nat) : ProjectEulerStatements.P48.naive n = solve n := sorry
 end ProjectEulerSolutions.P48
