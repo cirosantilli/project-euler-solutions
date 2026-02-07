@@ -30,10 +30,10 @@ example : digitSum (Nat.pow 2 15) = 26 := by
   native_decide
 
 
-def solve (limit : Nat) :=
-  (maxDigitalSum limit).1
+def solve (n : Nat) :=
+  (maxDigitalSum n).1
 
-theorem equiv (limit : Nat) :
-    ProjectEulerStatements.P56.naive limit = solve limit := sorry
+theorem equiv (n : Nat) :
+    ProjectEulerStatements.P56.naive limit n = solve n := sorry
 
 end ProjectEulerSolutions.P56
