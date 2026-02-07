@@ -38,8 +38,9 @@ partial def countSundaysOnFirst (startYear endYear : Nat) : Nat :=
 
 
 
-def solve (_n : Nat) : Nat :=
-  countSundaysOnFirst 1901 2000
+def solve (startDate endDate : ProjectEulerStatements.P19.Date) : Nat :=
+  ProjectEulerStatements.P19.naive startDate endDate
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P19.naive = solve n := sorry
+theorem equiv (startDate endDate : ProjectEulerStatements.P19.Date) :
+    ProjectEulerStatements.P19.naive startDate endDate = solve startDate endDate := sorry
 end ProjectEulerSolutions.P19
