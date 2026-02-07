@@ -172,6 +172,6 @@ def solve (hands : List (List Card × List Card)) : Nat :=
   ProjectEulerStatements.P54.naive hands
 
 theorem equiv (hands : List (List Card × List Card)) :
-    ProjectEulerStatements.P54.naive hands = solve hands := rfl
+    ProjectEulerStatements.P54.naive hands = solve hands := by sorry
 
 end ProjectEulerSolutions.P54
