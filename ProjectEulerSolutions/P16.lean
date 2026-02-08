@@ -10,8 +10,8 @@ example : digitSum (Nat.pow 2 15) = 26 := by
   native_decide
 
 
-def solve (_n : Nat) :=
-  digitSum (Nat.pow 2 1000)
+def solve (n : Nat) :=
+  digitSum (Nat.pow 2 n)
 
 theorem equiv (n : Nat) : ProjectEulerStatements.P16.naive n = solve n := sorry
 end ProjectEulerSolutions.P16

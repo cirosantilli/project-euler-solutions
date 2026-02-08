@@ -3,4 +3,4 @@ import ProjectEulerSolutions.P35
 open ProjectEulerSolutions.P35
 
 def main : IO Unit := do
-  IO.println (solve 0)
+  IO.println (solve 1000000)

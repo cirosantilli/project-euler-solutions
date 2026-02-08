@@ -48,8 +48,8 @@ example : isPalindromeBase2 585 = true := by
   native_decide
 
 
-def solve (_n : Nat) :=
-  solveCore 1000000
+def solve (limit : Nat) :=
+  solveCore limit
 
 theorem equiv (n : Nat) : ProjectEulerStatements.P36.naive n = solve n := sorry
 end ProjectEulerSolutions.P36

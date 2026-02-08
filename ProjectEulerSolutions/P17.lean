@@ -37,8 +37,8 @@ example : lettersInNumber 115 = 20 := by
   native_decide
 
 
-def solve (_n : Nat) :=
-  (List.range 1000).foldl (fun acc i => acc + lettersInNumber (i + 1)) 0
+def solve (n : Nat) :=
+  (List.range (n + 1)).foldl (fun acc i => acc + lettersInNumber i) 0
 
 theorem equiv (n : Nat) : ProjectEulerStatements.P17.naive n = solve n := sorry
 end ProjectEulerSolutions.P17
