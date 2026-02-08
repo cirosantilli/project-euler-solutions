@@ -116,8 +116,8 @@ def firstTenDigits (nums : List String) : String :=
 
 
 
-def solve (_n : Nat) :=
+def solve :=
   (firstTenDigits numbers).toNat!
 
-theorem equiv (n : Nat) : ProjectEulerStatements.P13.naive = solve n := sorry
+theorem equiv : ProjectEulerStatements.P13.naive = solve := sorry
 end ProjectEulerSolutions.P13
