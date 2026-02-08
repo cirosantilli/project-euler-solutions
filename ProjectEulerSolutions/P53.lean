@@ -21,10 +21,13 @@ partial def countCombinatoricSelections (limitN threshold : Nat) : Nat :=
 
 
 
-def solve (limitN threshold : Nat) :=
+def solveCore (limitN threshold : Nat) :=
   countCombinatoricSelections limitN threshold
 
-theorem equiv (limitN threshold : Nat) :
-    ProjectEulerStatements.P53.naive limitN threshold = solve limitN threshold := sorry
+def solve : Nat :=
+  solveCore 100 1000000
+
+theorem equiv :
+    ProjectEulerStatements.P53.naive = solve := sorry
 
 end ProjectEulerSolutions.P53

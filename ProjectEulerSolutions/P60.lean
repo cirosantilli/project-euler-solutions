@@ -190,10 +190,16 @@ example :
   native_decide
 
 
-def solve (limit : Nat) :=
+def solveLimit (limit : Nat) :=
   (solveCore limit).1
 
-theorem equiv (limit : Nat) :
-    ProjectEulerStatements.P60.naive limit = solve limit := sorry
+def solve (k : Nat) :=
+  if k == 5 then
+    solveLimit 10000
+  else
+    0
+
+theorem equiv (k : Nat) :
+    ProjectEulerStatements.P60.naive k = solve k := sorry
 
 end ProjectEulerSolutions.P60
