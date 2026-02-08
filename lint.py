@@ -17,6 +17,7 @@ LEAN_SOLVERS_DIR = ROOT / "ProjectEulerSolutions"
 LINE_RE = re.compile(r"^(\d+)\.\s+(.*)$")
 FORBIDDEN_TOKENS = ("Solutions.md",)
 FORBIDDEN_LEAN_PATTERNS = (r"\bpartial\s+def\b",)
+FORBIDDEN_LEAN_DEF_ARG_RE = re.compile(r"\bdef\s+\w+[^\n]*\b_[A-Za-z0-9_]*\b")
 
 
 @dataclass(frozen=True)
@@ -164,6 +165,24 @@ def lint_paths(
                             context,
                         )
                     )
+            def_arg_hits = [
+                idx for idx, line in enumerate(lines, 1)
+                if FORBIDDEN_LEAN_DEF_ARG_RE.search(line)
+            ]
+            if def_arg_hits:
+                context = [
+                    (line_no, lines[line_no - 1].rstrip())
+                    for line_no in def_arg_hits
+                ]
+                violations.append(
+                    Violation(
+                        "lean",
+                        pid,
+                        path,
+                        "def arguments must not start with '_'",
+                        context,
+                    )
+                )
             if path.parent == SOLVERS_DIR:
                 last_line = lines[-1] if lines else ""
                 if not re.match(
