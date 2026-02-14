@@ -14,7 +14,7 @@ This repo aims to solve **ALL** https://projecteuler.net[Project Euler] problems
 
 // STATUS TABLE
 * **1-900**: done
-* **901-983**: 78/83 (TODO: 979, 980, 981, 982, 983)
+* **901-984**: 78/84 (TODO: 979, 980, 981, 982, 983, 984)
 
 Tested on Python 3.13.7, PyPy 7.3.20, Ubuntu 25.10.
 
@@ -1462,6 +1462,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/981.py[981.py] | link:solvers/981.md[981.md] | 0.242 | gpt-5.2-thinking |  | 794963735 | error: missing reference answer
 | link:solvers/982.py[982.py] | link:solvers/982.md[982.md] | 0.199 |  |  | 4.381944 | error: missing reference answer
 | link:solvers/983.py[983.py] | link:solvers/983.md[983.md] | 52.845 |  |  | 6725 | error: missing reference answer
+| link:solvers/984.py[984.py] | link:solvers/984.md[984.md] | 20.581 |  |  | 885722296 | error: missing reference answer
 |===
 
 === Non-Python solvers
@@ -1480,6 +1481,8 @@ We have placed non-Python solvers in this separate table for the following reaso
 | link:solvers/2.lean[2.lean] | 0.021 | 4613732 |
 | ID | Runtime (s) | Output | Error
 // SLOWEST PYTHON SOLVERS TABLE
+| ID | Runtime (s) | Output | Error
+| link:solvers/476.py[476.py] | 25.504
 |===
 | ID | Runtime (s)
 | link:solvers/507.py[507.py] | 177.141
