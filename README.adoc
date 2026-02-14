@@ -1460,7 +1460,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/979.py[979.py] | link:solvers/979.md[979.md] | 0.126 | gpt-5.2-thinking |  | 189306828278449 | error: missing reference answer
 | link:solvers/980.py[980.py] | link:solvers/980.md[980.md] | 0.508 | gpt-5.2-thinking |  | 124999683766 | error: missing reference answer
 | link:solvers/981.py[981.py] | link:solvers/981.md[981.md] | 0.242 | gpt-5.2-thinking |  | 794963735 | error: missing reference answer
-| link:solvers/982.py[982.py] | link:solvers/982.md[982.md] | 0.199 |  |  | 4.381944 | error: missing reference answer
+| link:solvers/982.py[982.py] | link:solvers/982.md[982.md] | 0.183 |  |  | 4.381944 | error: missing reference answer
 | link:solvers/983.py[983.py] | link:solvers/983.md[983.md] | 52.845 |  |  | 6725 | error: missing reference answer
 | link:solvers/984.py[984.py] | link:solvers/984.md[984.md] | 20.581 |  |  | 885722296 | error: missing reference answer
 |===
