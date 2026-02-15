@@ -47,7 +47,9 @@ def _even_masks(k: int) -> List[int]:
     return [mask for mask in range(1 << k) if (mask.bit_count() & 1) == 0]
 
 
-def _centers_from_vectors(vectors: Sequence[Point], masks: Sequence[int]) -> List[Point]:
+def _centers_from_vectors(
+    vectors: Sequence[Point], masks: Sequence[int]
+) -> List[Point]:
     centers: List[Point] = []
     for mask in masks:
         x = 0
@@ -64,7 +66,9 @@ def _centers_from_vectors(vectors: Sequence[Point], masks: Sequence[int]) -> Lis
     return centers
 
 
-def _quick_harmony_count_equals_n(centers: Sequence[Point], circle_points: Sequence[Point], n: int) -> bool:
+def _quick_harmony_count_equals_n(
+    centers: Sequence[Point], circle_points: Sequence[Point], n: int
+) -> bool:
     # Count only points touched by at least two circles; stop early if too many.
     counts: Dict[int, int] = {}
     harmony_count = 0
@@ -84,7 +88,9 @@ def _quick_harmony_count_equals_n(centers: Sequence[Point], circle_points: Seque
     return harmony_count == n
 
 
-def _strict_perfect_check(centers: Sequence[Point], circle_points: Sequence[Point], n: int) -> bool:
+def _strict_perfect_check(
+    centers: Sequence[Point], circle_points: Sequence[Point], n: int
+) -> bool:
     center_codes = [_encode(x, y) for x, y in centers]
     center_set = set(center_codes)
 
