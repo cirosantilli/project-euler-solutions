@@ -479,7 +479,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 // RESULTS TABLE
 |===
 | ID | Explanation | Runtime (s) | Model | Out Tokens | Output | Error
-| link:solvers/1.py[1.py] |  | 0.059 |  |  | 233168 |
+| link:solvers/1.py[1.py] |  | 0.092 |  |  | 233168 |
 | link:solvers/2.py[2.py] | link:solvers/2.md[2.md] | 0.153 | gpt-5.2-2025-12-11 | 432 | 4613732 |
 | link:solvers/3.py[3.py] | link:solvers/3.md[3.md] | 0.134 | gpt-5.2-2025-12-11 | 585 | 6857 |
 | link:solvers/4.py[4.py] | link:solvers/4.md[4.md] | 0.140 | gpt-5.2-2025-12-11 | 992 | 906609 |
@@ -1473,16 +1473,27 @@ We have placed non-Python solvers in this separate table for the following reaso
 * non-Python solvers will mostly be vibe-translated, and as such auto-generation metadata such as number of tokens and model doesn't matter so much for them
 
 // RESULTS TABLE OTHER
+|===
 | ID | Runtime (s) | Output | Error
-| link:solvers/1.c[1.c] | 0.002 | 233168 |
-| link:solvers/1.cpp[1.cpp] | 0.002 | 233168 |
-| link:solvers/1.lean[1.lean] | 0.007 | 233168 |
+| link:solvers/1.c[1.c] | 0.010 | 233168 |
+| link:solvers/1.cpp[1.cpp] | 0.003 | 233168 |
+| link:solvers/1.lean[1.lean] | 0.389 | 233168 |
 | link:solvers/2.lean[2.lean] | 0.021 | 4613732 |
-| link:solvers/2.lean[2.lean] | 0.021 | 4613732 |
-| ID | Runtime (s) | Output | Error
+|===
+
+=== Slowest solvers
+
+This section lists the slowest solvers we have. Anything incredibly slower than most problems is likely to have important missing optimizations which we should ideally find.
+
+A bar plot of solver times can be generated with link:plot.py[] but I couldn't be bothered showing it here:
+
+----
+./plot.py
+----
+
+50 slowest Python solvers which give the correct answer:
+
 // SLOWEST PYTHON SOLVERS TABLE
-| ID | Runtime (s) | Output | Error
-| link:solvers/476.py[476.py] | 25.504
 |===
 | ID | Runtime (s)
 | link:solvers/507.py[507.py] | 177.141
