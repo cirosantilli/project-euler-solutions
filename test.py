@@ -582,13 +582,43 @@ def normalize_other_row_fields(output_cell: str, error_cell: str) -> tuple[str, 
     return normalize_output_error_cells(output_cell, error_cell)
 
 
+def find_marker_index(lines: list[str], marker: str) -> int:
+    try:
+        return next(i for i, line in enumerate(lines) if line.strip() == marker)
+    except StopIteration as exc:
+        raise RuntimeError(f"Could not find {marker} marker in README.adoc") from exc
+
+
+def marker_section_limit(lines: list[str], marker_idx: int) -> int:
+    for i in range(marker_idx + 1, len(lines)):
+        stripped = lines[i].strip()
+        if stripped.startswith("// ") or stripped.startswith("=="):
+            return i
+    return len(lines)
+
+
+def table_line_span_after_marker(lines: list[str], marker: str) -> tuple[int, int]:
+    marker_idx = find_marker_index(lines, marker)
+    limit = marker_section_limit(lines, marker_idx)
+    start = marker_idx + 1
+    while start < limit and not lines[start].strip():
+        start += 1
+    end = start
+    while end < limit and lines[end].strip().startswith("|"):
+        end += 1
+    return start, end
+
+
+def replace_table_after_marker(lines: list[str], marker: str, table_lines: list[str]) -> None:
+    start, end = table_line_span_after_marker(lines, marker)
+    lines[start:end] = table_lines
+
+
 def update_readme(results: list[Result]) -> None:
     readme_path = ROOT / "README.adoc"
     lines = readme_path.read_text().splitlines()
     start, end = readme_tables.find_table_block(lines, "// RESULTS TABLE")
-    other_start, other_end = readme_tables.find_table_block(
-        lines, "// RESULTS TABLE OTHER"
-    )
+    other_start, other_end = table_line_span_after_marker(lines, "// RESULTS TABLE OTHER")
 
     header_line = (
         "| ID | Explanation | Runtime (s) | Model | Out Tokens | Output | Error"
@@ -676,7 +706,7 @@ def update_readme(results: list[Result]) -> None:
             error_cell,
         )
 
-    for i in range(other_start + 1, other_end):
+    for i in range(other_start, other_end):
         line = lines[i]
         match = row_re.match(line)
         language = ""
@@ -723,31 +753,11 @@ def update_readme(results: list[Result]) -> None:
     sorted_other_rows = [
         other_row_map[key] for key in sorted(other_row_map, key=lambda k: (k[0], k[1]))
     ]
-    lines[other_start + 1 : other_end] = [other_header_line, *sorted_other_rows]
-
-    slow_marker = "// SLOWEST PYTHON SOLVERS TABLE"
-    try:
-        slow_idx = next(
-            i for i, line in enumerate(lines) if line.strip() == slow_marker
-        )
-    except StopIteration:
-        raise RuntimeError("Could not find SLOWEST PYTHON SOLVERS TABLE marker")
-
-    slow_start = None
-    slow_end = None
-    for i in range(slow_idx + 1, len(lines)):
-        if lines[i].strip() == "|===":
-            if slow_start is None:
-                slow_start = i
-            else:
-                slow_end = i
-                break
-        elif slow_start is not None and not lines[i].strip():
-            slow_end = i - 1
-            break
-    if slow_start is None or slow_end is None:
-        slow_start = slow_idx + 1
-        slow_end = slow_start - 1
+    replace_table_after_marker(
+        lines,
+        "// RESULTS TABLE OTHER",
+        ["|===", other_header_line, *sorted_other_rows, "|==="],
+    )
 
     slow_candidates: list[tuple[float, str, str]] = []
     for (pid, language), row in row_map.items():
@@ -776,8 +786,11 @@ def update_readme(results: list[Result]) -> None:
 
     slowest = sorted(slow_candidates, key=lambda item: item[0], reverse=True)[:50]
     slow_rows = [f"| {id_cell} | {time_cell}" for _rt, id_cell, time_cell in slowest]
-    slow_table = ["|===", "| ID | Runtime (s)", *slow_rows, "|==="]
-    lines[slow_start : slow_end + 1] = slow_table
+    replace_table_after_marker(
+        lines,
+        "// SLOWEST PYTHON SOLVERS TABLE",
+        ["|===", "| ID | Runtime (s)", *slow_rows, "|==="],
+    )
 
     readme_path.write_text("\n".join(lines) + "\n")
 
@@ -852,9 +865,7 @@ def update_readme_not_found() -> None:
     readme_path = ROOT / "README.adoc"
     lines = readme_path.read_text().splitlines()
     start, end = readme_tables.find_table_block(lines, "// RESULTS TABLE")
-    other_start, other_end = readme_tables.find_table_block(
-        lines, "// RESULTS TABLE OTHER"
-    )
+    other_start, other_end = table_line_span_after_marker(lines, "// RESULTS TABLE OTHER")
 
     row_re = re.compile(r"^\|\s+link:([^\[]+)\[")
     plain_re = re.compile(r"^\|\s+(\d+)\.py\s+\|")
@@ -927,7 +938,7 @@ def update_readme_not_found() -> None:
         )
         result_map[result_key(res)] = format_row(res)
 
-    for i in range(other_start + 1, other_end):
+    for i in range(other_start, other_end):
         line = lines[i]
         match = row_re.match(line)
         if match:
@@ -1010,34 +1021,11 @@ def update_readme_not_found() -> None:
     sorted_other_rows = [
         other_row_map[key] for key in sorted(other_row_map, key=lambda k: (k[0], k[1]))
     ]
-    lines[other_start + 1 : other_end] = [
-        "| ID | Runtime (s) | Output | Error",
-        *sorted_other_rows,
-    ]
-
-    slow_marker = "// SLOWEST PYTHON SOLVERS TABLE"
-    try:
-        slow_idx = next(
-            i for i, line in enumerate(lines) if line.strip() == slow_marker
-        )
-    except StopIteration:
-        raise RuntimeError("Could not find SLOWEST PYTHON SOLVERS TABLE marker")
-
-    slow_start = None
-    slow_end = None
-    for i in range(slow_idx + 1, len(lines)):
-        if lines[i].strip() == "|===":
-            if slow_start is None:
-                slow_start = i
-            else:
-                slow_end = i
-                break
-        elif slow_start is not None and not lines[i].strip():
-            slow_end = i - 1
-            break
-    if slow_start is None or slow_end is None:
-        slow_start = slow_idx + 1
-        slow_end = slow_start - 1
+    replace_table_after_marker(
+        lines,
+        "// RESULTS TABLE OTHER",
+        ["|===", "| ID | Runtime (s) | Output | Error", *sorted_other_rows, "|==="],
+    )
 
     slow_candidates = [
         res
@@ -1046,8 +1034,11 @@ def update_readme_not_found() -> None:
     ]
     slowest = sorted(slow_candidates, key=lambda r: r.elapsed or 0.0, reverse=True)[:50]
     slow_rows = [f"| {format_id_cell(res)} | {res.elapsed:.3f}" for res in slowest]
-    slow_table = ["|===", "| ID | Runtime (s)", *slow_rows, "|==="]
-    lines[slow_start : slow_end + 1] = slow_table
+    replace_table_after_marker(
+        lines,
+        "// SLOWEST PYTHON SOLVERS TABLE",
+        ["|===", "| ID | Runtime (s)", *slow_rows, "|==="],
+    )
 
     readme_path.write_text("\n".join(lines) + "\n")
 
