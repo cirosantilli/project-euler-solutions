@@ -150,12 +150,12 @@ def lint_paths(
             lines = text.splitlines()
             for pattern in FORBIDDEN_LEAN_PATTERNS:
                 hits = [
-                    idx
-                    for idx, line in enumerate(lines, 1)
-                    if re.search(pattern, line)
+                    idx for idx, line in enumerate(lines, 1) if re.search(pattern, line)
                 ]
                 if hits:
-                    context = [(line_no, lines[line_no - 1].rstrip()) for line_no in hits]
+                    context = [
+                        (line_no, lines[line_no - 1].rstrip()) for line_no in hits
+                    ]
                     violations.append(
                         Violation(
                             "lean",
@@ -166,13 +166,13 @@ def lint_paths(
                         )
                     )
             def_arg_hits = [
-                idx for idx, line in enumerate(lines, 1)
+                idx
+                for idx, line in enumerate(lines, 1)
                 if FORBIDDEN_LEAN_DEF_ARG_RE.search(line)
             ]
             if def_arg_hits:
                 context = [
-                    (line_no, lines[line_no - 1].rstrip())
-                    for line_no in def_arg_hits
+                    (line_no, lines[line_no - 1].rstrip()) for line_no in def_arg_hits
                 ]
                 violations.append(
                     Violation(
@@ -230,6 +230,29 @@ def lint_paths(
                             pid,
                             path,
                             "missing required theorem declaration",
+                            context,
+                        )
+                    )
+                naive_re = re.compile(rf"\bProjectEulerStatements\.P{pid}\.naive\b")
+                naive_hits = [
+                    idx for idx, line in enumerate(lines, 1) if naive_re.search(line)
+                ]
+                if len(naive_hits) != 1:
+                    if naive_hits:
+                        context = [
+                            (line_no, lines[line_no - 1].rstrip())
+                            for line_no in naive_hits
+                        ]
+                    elif lines:
+                        context = [(1, lines[0].rstrip())]
+                    else:
+                        context = []
+                    violations.append(
+                        Violation(
+                            "lean",
+                            pid,
+                            path,
+                            "must reference ProjectEulerStatements.P<n>.naive exactly once",
                             context,
                         )
                     )
