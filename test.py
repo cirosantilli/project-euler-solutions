@@ -614,6 +614,43 @@ def replace_table_after_marker(lines: list[str], marker: str, table_lines: list[
     lines[start:end] = table_lines
 
 
+def replace_slowest_python_table(
+    lines: list[str], row_map: dict[tuple[int, str], str]
+) -> None:
+    slow_candidates: list[tuple[float, str, str]] = []
+    for (pid, language), row in row_map.items():
+        if language != "py":
+            continue
+        cells = trim_trailing_empty_cells(readme_tables.split_table_row(row))
+        normalized = normalize_row_fields(pid, cells)
+        if normalized is None:
+            continue
+        (
+            id_cell,
+            _statement_cell,
+            time_cell,
+            _model_cell,
+            _tokens_cell,
+            _output_cell,
+            error_cell,
+        ) = normalized
+        if error_cell or not time_cell:
+            continue
+        try:
+            runtime = float(time_cell)
+        except ValueError:
+            continue
+        slow_candidates.append((runtime, id_cell, time_cell))
+
+    slowest = sorted(slow_candidates, key=lambda item: item[0], reverse=True)[:50]
+    slow_rows = [f"| {id_cell} | {time_cell}" for _rt, id_cell, time_cell in slowest]
+    replace_table_after_marker(
+        lines,
+        "// SLOWEST PYTHON SOLVERS TABLE",
+        ["|===", "| ID | Runtime (s)", *slow_rows, "|==="],
+    )
+
+
 def update_readme(results: list[Result]) -> None:
     readme_path = ROOT / "README.adoc"
     lines = readme_path.read_text().splitlines()
@@ -759,38 +796,7 @@ def update_readme(results: list[Result]) -> None:
         ["|===", other_header_line, *sorted_other_rows, "|==="],
     )
 
-    slow_candidates: list[tuple[float, str, str]] = []
-    for (pid, language), row in row_map.items():
-        if language != "py":
-            continue
-        cells = trim_trailing_empty_cells(readme_tables.split_table_row(row))
-        normalized = normalize_row_fields(pid, cells)
-        if normalized is None:
-            continue
-        (
-            id_cell,
-            _statement_cell,
-            time_cell,
-            _model_cell,
-            _tokens_cell,
-            _output_cell,
-            error_cell,
-        ) = normalized
-        if error_cell or not time_cell:
-            continue
-        try:
-            runtime = float(time_cell)
-        except ValueError:
-            continue
-        slow_candidates.append((runtime, id_cell, time_cell))
-
-    slowest = sorted(slow_candidates, key=lambda item: item[0], reverse=True)[:50]
-    slow_rows = [f"| {id_cell} | {time_cell}" for _rt, id_cell, time_cell in slowest]
-    replace_table_after_marker(
-        lines,
-        "// SLOWEST PYTHON SOLVERS TABLE",
-        ["|===", "| ID | Runtime (s)", *slow_rows, "|==="],
-    )
+    replace_slowest_python_table(lines, row_map)
 
     readme_path.write_text("\n".join(lines) + "\n")
 
@@ -853,6 +859,7 @@ def update_readme_links() -> None:
 
     sorted_rows = [row_map[key] for key in sorted(row_map, key=lambda k: (k[0], k[1]))]
     lines[start + 1 : end] = [header_line, *sorted_rows]
+    replace_slowest_python_table(lines, row_map)
     readme_path.write_text("\n".join(lines) + "\n")
 
 
@@ -1027,18 +1034,7 @@ def update_readme_not_found() -> None:
         ["|===", "| ID | Runtime (s) | Output | Error", *sorted_other_rows, "|==="],
     )
 
-    slow_candidates = [
-        res
-        for res in results
-        if res.correct and res.language == "py" and res.elapsed is not None
-    ]
-    slowest = sorted(slow_candidates, key=lambda r: r.elapsed or 0.0, reverse=True)[:50]
-    slow_rows = [f"| {format_id_cell(res)} | {res.elapsed:.3f}" for res in slowest]
-    replace_table_after_marker(
-        lines,
-        "// SLOWEST PYTHON SOLVERS TABLE",
-        ["|===", "| ID | Runtime (s)", *slow_rows, "|==="],
-    )
+    replace_slowest_python_table(lines, row_map)
 
     readme_path.write_text("\n".join(lines) + "\n")
 
