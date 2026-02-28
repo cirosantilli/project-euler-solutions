@@ -35,6 +35,8 @@ There are a few solution collections out there such as:
 
 but we couldn't find any complete ones, and the reason is obvious: there's no single human who's had both the patience and the willingness to spoil problems and get banned from the leaderboards forever. The existing solution repos are also partially a showcase of users's skills rather than pure a mass collaborative effort to get it done. Contributors of this project however have attained Buddhahood and completely freed themselves of their own ego: we do stupid things and we are not proud. As such, we have come closer to the more fundamental reason for doing PE problems: autism.
 
+After this repo was published, https://eulersolve.org/[] was published, which also contains all solutions. The license of that repo are an informal "you can use it but you can't", so it is better to treat it as fully copyrighted: https://x.com/cirosantilli/status/2028156201662402629[]. It's programs are very fast, terminating in 3s according to author. However they use threading heavily, which we have avoided.
+
 We also have https://github.com/lucky-bai/projecteuler-solutions which contains the numerical solutions. And of course, once you have the numerical solution you can enter the private forum threads where people freely share their solutions. But they don't use open licenses, so we can't republish them openly.
 
 But with the advent of https://matharena.ai/?comp=euler--euler&task=4&model=GPT-5+%28high%29&view=problem&run=1[LLMs being able to solve a large number of them], this project has become a possibility.
@@ -58,9 +60,9 @@ May this repo free unsuspecting nerds from the ambition to solve some useless pr
 
 Each Python solution file should be completely self contained and have no dependencies outside of the Python standard library.
 
-Solutions must run on a single CPU core, multithreading or accelerators like GPUs are not allowed.
+Solutions must run on a single CPU core, multithreading or accelerators like GPUs are not allowed. The reason to forbid multithreading is so as to put greater focus on algorithmic improvements rather than micro-optimizations and hardware parallelism. Yes, serial execution speed on a single core varies across CPUs, but parallel execution varies much more even across CPUs. So having everything on a single core makes it much easier to estimate algorithm quality even across CPUs.
 
-We are initially striving strongly for a 10 minute maximum runtime of each solution. This number is semi arbitrary, but it feels like a ridiculously high ceiling above which a non-bruteforce algorithm with the key insight should never ever go above, and we are yet to see a compelling case of the contrary. A few seconds is much much more common and pleasant. One minute starts to feel bad. Five is already basically hopeless. So ten feels like beyond reasonable. The following problems may be exceptions ot this rule as people in the forums were suffering, optimizing this would be great. The slowest known solvers are listed at: <<slowest-solvers>>.
+We are initially striving strongly for a 10 minute maximum runtime of each solution. This number is semi arbitrary, but it feels like a ridiculously high ceiling above which a non-bruteforce algorithm with the key insight should never ever go above, and we are yet to see a compelling case of the contrary. A few seconds is much much more common and pleasant. One minute starts to feel bad. Five is already basically hopeless. So ten feels like beyond reasonable. The slowest known solvers are listed at: <<slowest-solvers>>.
 
 We want to avoid any magic pre-computed constants used as intermediate results as much as possible, and especially large precomputed number tables. Ideally the program should compute anything it needs from scratch. Well known mathematical constants that appear in the Python stlib like Pi are fine though. One particular example of what to avoid is hardcoding OEIS sequences: it is fine to know about them and mention them in comments, but the final code should calculate them from scratch. This is hard to enforce this rule automatically except in the case where large precomputed tables are present and the file becomes huge. But we will do our best. The following simple link:numerical-consts.sh[] helper lists files sorted by those having the most hardcoded constants in them and can help find such failures:
 
@@ -1464,6 +1466,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/983.py[983.py] | link:solvers/983.md[983.md] | 52.845 |  |  | 6725 | error: missing reference answer
 | link:solvers/984.py[984.py] | link:solvers/984.md[984.md] | 20.581 |  |  | 885722296 | error: missing reference answer
 | link:solvers/985.py[985.py] | link:solvers/985.md[985.md] | 0.255 | gpt-5.2-thinking |  | 1734334 | error: missing reference answer
+| link:solvers/986.py[986.py] | link:solvers/986.md[986.md] | 471.960 |  |  | 15418494040 | error: missing reference answer 
 |===
 
 === Non-Python solvers
