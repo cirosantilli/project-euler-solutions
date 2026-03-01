@@ -36,8 +36,6 @@ partial def countSundaysOnFirst (startYear endYear : Nat) : Nat :=
       loopMonth 1 dow count
   loopYear 1900 0 0
 
-
-
 def solve (startDate endDate : ProjectEulerStatements.P19.Date) : Nat :=
   ProjectEulerStatements.P19.naive startDate endDate
 

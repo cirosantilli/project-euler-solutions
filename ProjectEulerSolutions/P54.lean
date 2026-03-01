@@ -31,6 +31,34 @@ def parseCard (token : String) : Nat × Char :=
   let s := getAtChar cs 1
   (v, s)
 
+def parseSuit (c : Char) : Suit :=
+  match c with
+  | 'H' => Suit.H
+  | 'D' => Suit.D
+  | 'C' => Suit.C
+  | 'S' => Suit.S
+  | _ => Suit.H
+
+def parseRank (v : Nat) : Rank :=
+  match v with
+  | 2 => Rank.r2
+  | 3 => Rank.r3
+  | 4 => Rank.r4
+  | 5 => Rank.r5
+  | 6 => Rank.r6
+  | 7 => Rank.r7
+  | 8 => Rank.r8
+  | 9 => Rank.r9
+  | 10 => Rank.r10
+  | 11 => Rank.J
+  | 12 => Rank.Q
+  | 13 => Rank.K
+  | _ => Rank.A
+
+def parseStmtCard (token : String) : Card :=
+  let (v, s) := parseCard token
+  (parseRank v, parseSuit s)
+
 partial def insertDesc (x : Nat) (xs : List Nat) : List Nat :=
   match xs with
   | [] => [x]
@@ -143,6 +171,15 @@ def player1Wins (line : String) : Bool :=
 def parseLines (s : String) : List String :=
   s.splitOn "\n" |>.filter (fun ln => ln != "")
 
+def parseLineHands (line : String) : List Card × List Card :=
+  let parts := line.splitOn " " |>.filter (fun s => s != "")
+  let h1 := parts.take 5 |>.map parseStmtCard
+  let h2 := parts.drop 5 |>.take 5 |>.map parseStmtCard
+  (h1, h2)
+
+def parseHands (lines : List String) : List (List Card × List Card) :=
+  lines.map parseLineHands
+
 def countWins (lines : List String) : Nat :=
   lines.foldl (fun acc ln => if player1Wins ln then acc + 1 else acc) 0
 
@@ -165,13 +202,13 @@ example : lexGreater (handRank ["AS","2D","3H","4C","5S"]) (handRank ["KS","QD",
   native_decide
 
 
-def solveLines (lines : List String) : Nat :=
-  countWins lines
-
 def solve (hands : List (List Card × List Card)) : Nat :=
   ProjectEulerStatements.P54.naive hands
 
+def solveLines (lines : List String) : Nat :=
+  solve (parseHands lines)
+
 theorem equiv (hands : List (List Card × List Card)) :
-    ProjectEulerStatements.P54.naive hands = solve hands := by sorry
+    ProjectEulerStatements.P54.naive hands = solve hands := rfl
 
 end ProjectEulerSolutions.P54

@@ -41,23 +41,19 @@ def main() -> int:
     lines.append("")
     lines.append("open Lean Elab Command Meta")
     lines.append("")
-    lines.append(
-        "private def isSolveApp (e : Expr) (solveName : Name) : Bool :="
-    )
+    lines.append("private def isSolveApp (e : Expr) (solveName : Name) : Bool :=")
     lines.append("  let e := e.consumeMData")
     lines.append("  match e.getAppFn with")
     lines.append("  | Expr.const name _ => name == solveName")
     lines.append("  | _ => false")
     lines.append("")
-    lines.append(
-        "private def isSerializeSolve (e : Expr) (solveName : Name) : Bool :="
-    )
+    lines.append("private def isSerializeSolve (e : Expr) (solveName : Name) : Bool :=")
     lines.append("  let e := e.consumeMData")
     lines.append("  match e.getAppFn with")
     lines.append("  | Expr.const name _ =>")
     lines.append("      let nameStr := name.toString")
     lines.append(
-        "      if !nameStr.endsWith \".serialize\" && nameStr != \"serialize\" then"
+        '      if !nameStr.endsWith ".serialize" && nameStr != "serialize" then'
     )
     lines.append("        false")
     lines.append("      else")
@@ -70,12 +66,8 @@ def main() -> int:
     lines.append(
         "/- Check that `main` prints either `solve ...` or `serialize (solve ...)`"
     )
-    lines.append(
-        "   without caring about the number of arguments to `solve`. -/"
-    )
-    lines.append(
-        "private def isPrintSolve (e : Expr) (solveName : Name) : Bool :="
-    )
+    lines.append("   without caring about the number of arguments to `solve`. -/")
+    lines.append("private def isPrintSolve (e : Expr) (solveName : Name) : Bool :=")
     lines.append("  let e := e.consumeMData")
     lines.append("  match e.getAppFn with")
     lines.append("  | Expr.const name _ =>")
@@ -91,7 +83,7 @@ def main() -> int:
     lines.append("  | _ => false")
     lines.append("")
     lines.append(
-        "syntax (name := checkMainPrintsSolve) \"check_main_prints_solve \" term \" with \" term : command"
+        'syntax (name := checkMainPrintsSolve) "check_main_prints_solve " term " with " term : command'
     )
     lines.append("")
     lines.append("elab_rules : command")
@@ -102,16 +94,14 @@ def main() -> int:
     lines.append("        let mainName ←")
     lines.append("          match mainExpr with")
     lines.append("          | Expr.const name _ => pure name")
-    lines.append("          | _ => throwError \"main must be a constant name\"")
+    lines.append('          | _ => throwError "main must be a constant name"')
     lines.append("        let solveName ←")
     lines.append("          match solveExpr with")
     lines.append("          | Expr.const name _ => pure name")
-    lines.append("          | _ => throwError \"solve must be a constant name\"")
+    lines.append('          | _ => throwError "solve must be a constant name"')
     lines.append("        let env ← getEnv")
     lines.append("        let some mainDecl := env.find? mainName")
-    lines.append(
-        "          | throwError m!\"unknown main definition '{mainName}'\""
-    )
+    lines.append("          | throwError m!\"unknown main definition '{mainName}'\"")
     lines.append("        let some mainVal := mainDecl.value?")
     lines.append("          | throwError m!\"main '{mainName}' has no value\"")
     lines.append("        let mainBody := mainVal")
@@ -132,9 +122,7 @@ def main() -> int:
             f"def p{n}equiv : ProjectEulerStatements.P{n}.naive = p{n}solve := by"
         )
         lines.append("  apply (funext_iff).2")
-        lines.append(
-            f"  simpa [funext_iff] using ProjectEulerSolutions.P{n}.equiv"
-        )
+        lines.append(f"  simpa [funext_iff] using ProjectEulerSolutions.P{n}.equiv")
         lines.append("")
 
     OUTPUT.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
