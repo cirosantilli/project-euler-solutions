@@ -18,56 +18,93 @@ EXCEPTION_H: Dict[int, int] = {
     10: 31,
 }
 
+PREDICT_START_N = 33
+SEARCH_WINDOW = 4096
 
-def eventual_constant(c: int, d: int, h0: int) -> int:
-    """
-    Reverse-process carry recurrence:
-        t_n = floor((t_{n-d} + t_{n-(c+d)}) / 2), t_0 = h0, t_n = 0 for n < 0.
-    Returns the eventual constant value of t_n (0 means halting).
-    """
-    w = c + d
-    ring: List[int] = [0] * w
-    ring[0] = h0
-    counts: Dict[int, int] = {h0: 1}
 
-    n = 0
+def extinct_for_k1(n: int, k: int) -> bool:
+    """
+    Decide whether H(1, n) with initial h = k halts (eventual constant 0).
+    Uses a dedicated in-place cyclic kernel for c=1, d=n.
+    """
+    if k == 0:
+        return True
+
+    size = n + 1
+    last = size - 1
+    cells: List[int] = [0] * size
+    cells[last] = k
+    zero_count = last
+
     while True:
-        n += 1
-        pos = n % w
+        for i in range(last):
+            old = cells[i]
+            nxt = (old + cells[i + 1]) >> 1
+            cells[i] = nxt
+            if old:
+                if not nxt:
+                    zero_count += 1
+            elif nxt:
+                zero_count -= 1
 
-        a = ring[(n - d) % w] if n >= d else 0
-        b = ring[pos] if n >= w else 0
-        v = (a + b) // 2
+        old = cells[last]
+        nxt = (old + cells[0]) >> 1
+        cells[last] = nxt
+        if old:
+            if not nxt:
+                zero_count += 1
+        elif nxt:
+            zero_count -= 1
 
-        if n >= w:
-            old = ring[pos]
-            cnt = counts[old]
-            if cnt == 1:
-                del counts[old]
-            else:
-                counts[old] = cnt - 1
-
-        ring[pos] = v
-        counts[v] = counts.get(v, 0) + 1
-
-        # Once the last w values are all equal, the sequence is fixed forever.
-        if n >= w - 1 and len(counts) == 1:
-            return next(iter(counts))
+        # All-zero and all-positive states are forward-invariant.
+        if zero_count == size:
+            return True
+        if zero_count == 0:
+            return False
 
 
-def threshold_h(c: int, d: int) -> int:
-    """
-    Maximum h such that eventual_constant(c, d, h) == 0.
-    """
+def threshold_k1_plain(n: int) -> int:
     lo = 0
     hi = 1
-    while eventual_constant(c, d, hi) == 0:
+    while extinct_for_k1(n, hi):
         lo = hi
         hi *= 2
 
     while lo + 1 < hi:
         mid = (lo + hi) // 2
-        if eventual_constant(c, d, mid) == 0:
+        if extinct_for_k1(n, mid):
+            lo = mid
+        else:
+            hi = mid
+    return lo
+
+
+def predict_k1_from_previous(s: List[int], n: int) -> int:
+    """
+    Residue-class cubic extrapolation on n mod 8 from the previous four points.
+    """
+    a = s[n - 32]
+    b = s[n - 24]
+    c = s[n - 16]
+    d = s[n - 8]
+    return d + (d - c) + (d - 2 * c + b) + (d - 3 * c + 3 * b - a)
+
+
+def threshold_k1_with_guess(n: int, guess: int) -> int:
+    lo = max(0, guess - SEARCH_WINDOW)
+    hi = guess + SEARCH_WINDOW
+
+    while lo > 0 and not extinct_for_k1(n, lo):
+        hi = lo
+        lo //= 2
+
+    while extinct_for_k1(n, hi):
+        lo = hi
+        hi *= 2
+
+    while lo + 1 < hi:
+        mid = (lo + hi) // 2
+        if extinct_for_k1(n, mid):
             lo = mid
         else:
             hi = mid
@@ -80,7 +117,11 @@ def build_s_sequence(max_n: int) -> List[int]:
     """
     s = [0] * (max_n + 1)
     for n in range(1, max_n + 1):
-        s[n] = threshold_h(1, n)
+        if n < PREDICT_START_N:
+            s[n] = threshold_k1_plain(n)
+        else:
+            guess = predict_k1_from_previous(s, n)
+            s[n] = threshold_k1_with_guess(n, guess)
     return s
 
 
@@ -134,4 +175,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
