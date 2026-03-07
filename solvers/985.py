@@ -165,8 +165,8 @@ def solve_main_problem(target_steps: int = 20):
     while True:
         # Two almost-equilateral families
         candidates = [
-            (n, n, n + 1),     # type 1
-            (n, n + 1, n + 1), # type 2
+            (n, n, n + 1),  # type 1
+            (n, n + 1, n + 1),  # type 2
         ]
 
         for a, b, c in candidates:
@@ -209,7 +209,11 @@ def main():
     # the smallest perimeter is 10 with sides (3,3,4).
     min_p_2, tris_2 = find_min_perimeter_for_steps(2, max_perimeter=50)
     assert min_p_2 == 10, f"Expected perimeter 10 for target_steps=2, got {min_p_2}"
-    assert (3, 3, 4) in tris_2, "Expected triangle (3,3,4) to be among minimisers for target_steps=2"
+    assert (
+        3,
+        3,
+        4,
+    ) in tris_2, "Expected triangle (3,3,4) to be among minimisers for target_steps=2"
 
     # ------------------------------------------------------------------
     # Solve the main problem for 20 steps
