@@ -609,7 +609,9 @@ def table_line_span_after_marker(lines: list[str], marker: str) -> tuple[int, in
     return start, end
 
 
-def replace_table_after_marker(lines: list[str], marker: str, table_lines: list[str]) -> None:
+def replace_table_after_marker(
+    lines: list[str], marker: str, table_lines: list[str]
+) -> None:
     start, end = table_line_span_after_marker(lines, marker)
     lines[start:end] = table_lines
 
@@ -655,7 +657,9 @@ def update_readme(results: list[Result]) -> None:
     readme_path = ROOT / "README.adoc"
     lines = readme_path.read_text().splitlines()
     start, end = readme_tables.find_table_block(lines, "// RESULTS TABLE")
-    other_start, other_end = table_line_span_after_marker(lines, "// RESULTS TABLE OTHER")
+    other_start, other_end = table_line_span_after_marker(
+        lines, "// RESULTS TABLE OTHER"
+    )
 
     header_line = (
         "| ID | Explanation | Runtime (s) | Model | Out Tokens | Output | Error"
@@ -872,7 +876,9 @@ def update_readme_not_found() -> None:
     readme_path = ROOT / "README.adoc"
     lines = readme_path.read_text().splitlines()
     start, end = readme_tables.find_table_block(lines, "// RESULTS TABLE")
-    other_start, other_end = table_line_span_after_marker(lines, "// RESULTS TABLE OTHER")
+    other_start, other_end = table_line_span_after_marker(
+        lines, "// RESULTS TABLE OTHER"
+    )
 
     row_re = re.compile(r"^\|\s+link:([^\[]+)\[")
     plain_re = re.compile(r"^\|\s+(\d+)\.py\s+\|")

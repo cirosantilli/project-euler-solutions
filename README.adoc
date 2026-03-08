@@ -14,7 +14,7 @@ This repo aims to solve **ALL** https://projecteuler.net[Project Euler] problems
 
 // STATUS TABLE
 * **1-900**: done
-* **901-986**: 78/86 (TODO: 979, 980, 981, 982, 983, 984, 985, 986)
+* **901-987**: 78/87 (TODO: 979, 980, 981, 982, 983, 984, 985, 986, 987)
 
 Tested on Python 3.13.7, PyPy 7.3.20, Ubuntu 25.10.
 
@@ -1467,6 +1467,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/984.py[984.py] | link:solvers/984.md[984.md] | 20.581 |  |  | 885722296 | error: missing reference answer
 | link:solvers/985.py[985.py] | link:solvers/985.md[985.md] | 0.255 | gpt-5.2-thinking |  | 1734334 | error: missing reference answer
 | link:solvers/986.py[986.py] | link:solvers/986.md[986.md] | 8.882 |  |  | 15418494040 | error: missing reference answer
+| link:solvers/987.py[987.py] | link:solvers/987.md[987.md] | 0.656 | gpt-5.2-thinking |  | 11044580082199135512 | error: missing reference answer
 |===
 
 === Non-Python solvers
