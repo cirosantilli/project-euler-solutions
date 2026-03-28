@@ -35,7 +35,7 @@ There are a few solution collections out there such as:
 
 but we couldn't find any complete ones, and the reason is obvious: there's no single human who's had both the patience and the willingness to spoil problems and get banned from the leaderboards forever. The existing solution repos are also partially a showcase of users's skills rather than pure a mass collaborative effort to get it done. Contributors of this project however have attained Buddhahood and completely freed themselves of their own ego: we do stupid things and we are not proud. As such, we have come closer to the more fundamental reason for doing PE problems: autism.
 
-After this repo was published, https://eulersolve.org/[] was published, which also contains all solutions. The license of that repo are an informal "you can use it but you can't", so it is better to treat it as fully copyrighted: https://x.com/cirosantilli/status/2028156201662402629[]. Its programs are very fast, terminating in 3s according to author. However they use threading heavily, which we have avoided. Quick scraper for it at link:scrape-eulersolve-org.sh[] but given it's license status, I'm not in the mood to touch it now.
+After this repo was published, https://eulersolve.org/[] was published, which also contained all solutions to date. The license of that repo are an informal "you can use it but you can't", so it is better to treat it as fully copyrighted: https://x.com/cirosantilli/status/2028156201662402629[]. Its programs are very fast, terminating in 3s according to author. However they use threading heavily, which we have avoided. Quick scraper for it at link:scrape-eulersolve-org.sh[] but given it's license status, I'm not in the mood to touch it now. The good thing about that project is that it provides the solution summary which we can raid if needed rather than having to raid PE forums.
 
 We also have https://github.com/lucky-bai/projecteuler-solutions which contains the numerical solutions. And of course, once you have the numerical solution you can enter the private forum threads where people freely share their solutions. But they don't use open licenses, so we can't republish them openly.
 
@@ -1469,6 +1469,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/986.py[986.py] | link:solvers/986.md[986.md] | 8.882 |  |  | 15418494040 | error: missing reference answer
 | link:solvers/987.py[987.py] | link:solvers/987.md[987.md] | 0.656 | gpt-5.2-thinking |  | 11044580082199135512 | error: missing reference answer
 | link:solvers/988.py[988.py] | link:solvers/988.md[988.md] | 0.104 | gpt-5.2-thinking |  | 2727531976556215755 | error: missing reference answer
+| link:solvers/989.py[989.py] | link:solvers/989.md[989.md] | 16.822 |  |  | 697845151 | error: missing reference answer
 | link:solvers/990.py[990.py] | link:solvers/990.md[990.md] | 2.524 | gpt-5.2-thinking |  | 50322750 | error: missing reference answer
 |===
 
