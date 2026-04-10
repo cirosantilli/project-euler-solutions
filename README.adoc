@@ -13,8 +13,7 @@
 This repo aims to solve **ALL** https://projecteuler.net[Project Euler] problems in openly licensed Python code, mostly using LLMs to generate the bulk of the solutions. Status:
 
 // STATUS TABLE
-* **1-900**: done
-* **901-991**: 78/91 (TODO: 979, 980, 981, 982, 983, 984, 985, 986, 987, 988, 989, 990, 991)
+* **1-991**: done
 
 Tested on Python 3.13.7, PyPy 7.3.20, Ubuntu 25.10.
 
@@ -83,25 +82,6 @@ The above was after we have vibe ported all solutions from the following reposit
 
 * https://github.com/stbrumme/euler
 * https://github.com/igorvanloo/Project-Euler-Explained/tree/master/Finished%20Problems
-
-Holdouts, what we did beyond the basic chatgpt.com attempt so we don't try it again:
-
-* 660: codex produced code but it timed out. Geometry.
-* 665: codex produced code but it timed out Game theory.
-* 667: codex cheats by reading Solutions.md. Geometry.
-* 747: codex. Geometry.
-* 780: codex. Geometry problem with many images. This one could be trouble. Codex fails with:
-+
-....
-I could not derive a correct algorithm consistent with the problem’s geometry and the provided sample values.
-
-Key blocking issues:
-- The standard derivation (quotients of the regular triangular tiling by a translation sublattice) gives "'`F(6)=4`, which contradicts the statement’s `F(6)=8`.
-- Alternative interpretations (rectangular tori only, or mirror-chirality adjustments) still failed to match the given totals, including `G(100)=8090`.
-....
-* 867. Geometry.
-* 883
-* 888
 
 Here is a description of how we previously tried to more automatically tackle things but mostly failed:
 
