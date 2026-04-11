@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Project Euler 484 - Arithmetic Derivative
 

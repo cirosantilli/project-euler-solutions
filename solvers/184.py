@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 import math
 from collections import defaultdict
 from functools import cmp_to_key

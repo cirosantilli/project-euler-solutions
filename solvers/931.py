@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 931: Totient Graph
 
 Compute T(10^12) modulo 715827883.

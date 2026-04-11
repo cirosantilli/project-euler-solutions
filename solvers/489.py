@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 489 - Common Factors Between Two Sequences
 
 Let G(a,b) be the smallest non-negative integer n for which

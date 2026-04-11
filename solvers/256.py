@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """Project Euler 256: Tatami-Free Rooms.
 
 We use a fast characterization of when an a×b rectangle is *tatami-free* (cannot

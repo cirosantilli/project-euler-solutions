@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Project Euler 350
 Constraining the Least Greatest and the Greatest Least

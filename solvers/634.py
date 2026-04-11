@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Project Euler 634 - Numbers of the Form a^2 b^3
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 671: Colouring a Loop.
 
 We tile a 2×n loop with tiles of size 1×1, 1×2, 1×3 (horizontal only) in k colours.

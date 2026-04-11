@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # Project Euler 415: Titanic Sets
 # Uses Mustonen's f(n,k) and Lj(n) second-difference formula + Du Jiao recursion
 # Works modulo 10^8.

@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parent
 SOLUTIONS_PATH = ROOT / "data/projecteuler-solutions/Solutions.md"
 SOLVERS_DIR = ROOT / "solvers"
 LEAN_SOLVERS_DIR = ROOT / "ProjectEulerSolutions"
+VALID_PYTHON_SHEBANG = "#!/usr/bin/env python"
 
 LINE_RE = re.compile(r"^(\d+)\.\s+(.*)$")
 FORBIDDEN_TOKENS = ("Solutions.md",)
@@ -129,6 +130,23 @@ def c_line_hits(text: str, answer: str) -> list[int]:
 
 def forbidden_hits(text: str, token: str) -> list[int]:
     return [idx for idx, line in enumerate(text.splitlines(), 1) if token in line]
+
+
+def python_shebang_violation(
+    path: Path, pid: int, lines: list[str]
+) -> Violation | None:
+    if path.parent != SOLVERS_DIR or path.suffix != ".py":
+        return None
+    first_line = lines[0] if lines else ""
+    if first_line == VALID_PYTHON_SHEBANG:
+        return None
+    if first_line.startswith("#!"):
+        message = f"must start with {VALID_PYTHON_SHEBANG!r}"
+        context = [(1, first_line.rstrip())]
+    else:
+        message = f"missing shebang {VALID_PYTHON_SHEBANG!r}"
+        context = [(1, first_line.rstrip())] if lines else []
+    return Violation("shebang", pid, path, message, context)
 
 
 def lint_paths(
@@ -257,9 +275,6 @@ def lint_paths(
                         )
                     )
             continue
-        answer = answers.get(pid)
-        if not answer or not should_scan_answer(answer):
-            continue
         if path.suffix not in (".py", ".c", ".cpp"):
             continue
         try:
@@ -267,6 +282,11 @@ def lint_paths(
         except OSError as exc:
             print(f"error: failed to read {path}: {exc}", file=sys.stderr)
             continue
+        lines = text.splitlines()
+        shebang_violation = python_shebang_violation(path, pid, lines)
+        if shebang_violation is not None:
+            violations.append(shebang_violation)
+        answer = answers.get(pid)
         if answer and should_scan_answer(answer):
             if path.suffix == ".py":
                 line_hits = python_comment_or_string_hits(text, answer)
@@ -274,7 +294,6 @@ def lint_paths(
                 line_hits = c_comment_hits(text, answer)
                 line_hits += c_line_hits(text, answer)
             if line_hits:
-                lines = text.splitlines()
                 hit_lines = sorted(set(line_hits))
                 context = [
                     (line_no, lines[line_no - 1].rstrip())
@@ -286,7 +305,6 @@ def lint_paths(
             token_hits = forbidden_hits(text, token)
             if not token_hits:
                 continue
-            lines = text.splitlines()
             hit_lines = sorted(set(token_hits))
             context = [
                 (line_no, lines[line_no - 1].rstrip())
@@ -299,8 +317,8 @@ def lint_paths(
 
 def format_violations(violations: list[Violation], root: Path = ROOT) -> list[str]:
     if not violations:
-        return ["ok: no forbidden content found in solver sources."]
-    lines = ["error: forbidden content found in solver sources:"]
+        return ["ok: no lint violations found in solver sources."]
+    lines = ["error: lint violations found in solver sources:"]
     sorted_violations = sorted(
         violations, key=lambda v: (v.puzzle_id, str(v.path), v.kind, v.answer)
     )
@@ -312,7 +330,7 @@ def format_violations(violations: list[Violation], root: Path = ROOT) -> list[st
             rel = violation.path
         if violation.kind == "forbidden":
             detail = f"contains forbidden token {violation.answer!r}"
-        elif violation.kind == "lean":
+        elif violation.kind in ("lean", "shebang"):
             detail = violation.answer
         else:
             detail = f"contains reference answer {violation.answer!r}"
@@ -324,7 +342,7 @@ def format_violations(violations: list[Violation], root: Path = ROOT) -> list[st
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Check solver sources for forbidden content."
+        description="Check solver sources for lint violations."
     )
     parser.add_argument(
         "-l",

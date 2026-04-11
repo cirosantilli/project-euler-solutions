@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 911 - Khinchin Exceptions
 
 We need the geometric mean of k_∞(ρ_n) for 0 <= n <= 50, where

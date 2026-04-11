@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 885: Sorted Digits
 
 For a positive integer d, define f(d) as the number formed by sorting the digits

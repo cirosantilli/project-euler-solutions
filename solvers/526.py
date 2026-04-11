@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Project Euler 526: Largest Prime Factors of Consecutive Numbers
 

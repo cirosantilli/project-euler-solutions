@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 856: Waiting for a Pair
 
 Compute the expected number of cards drawn from a standard 52-card deck until two

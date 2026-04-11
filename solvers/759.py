@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # Project Euler 759: A Squared Recurrence Relation
 #
 # We use the identity f(n) = n * popcount(n), then compute

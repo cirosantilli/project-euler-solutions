@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from array import array
 
 MOD = 10**18

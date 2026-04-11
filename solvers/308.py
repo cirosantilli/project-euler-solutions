@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Project Euler 308: An amazing prime-generating automaton (Conway's FRACTRAN PRIMEGAME)
 

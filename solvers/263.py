@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 263: An Engineers' Dream Come True.
 
 Compute and print the sum of the first four *engineers' paradises*.

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Project Euler 746 - A Messy Dinner
 Compute S(2021) = sum_{k=2..2021} M(k) (mod 1_000_000_007).

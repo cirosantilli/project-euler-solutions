@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 670: Colouring a Strip
 
 We tile a 2×n rectangle with tiles of size 1×1, 1×2, 1×3 (horizontal), and the

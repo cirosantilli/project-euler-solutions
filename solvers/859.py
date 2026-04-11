@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 859: Cookie Game
 
 Odd (Left) and Even (Right) play on piles of cookies.

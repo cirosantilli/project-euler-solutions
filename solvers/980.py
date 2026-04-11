@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Build 50-letter strings over {x,y,z} from a modular recurrence and count how many
 ordered pairs (i, j) with 0 <= i,j < N give a neutral concatenation c(i)c(j).

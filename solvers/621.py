@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Project Euler 621: Expressing an Integer as the Sum of Triangular Numbers
 

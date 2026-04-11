@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 857: Beautiful Graphs.
 
 Prints G(10^7) mod (10^9+7) and asserts the sample values from the statement.

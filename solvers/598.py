@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 598: Split Divisibilities
 
 We need C(100!) where C(n) counts pairs (a,b) with a*b=n, a<=b and

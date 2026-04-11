@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Project Euler 547: Distance of Random Points Within Hollow Square Laminae
 

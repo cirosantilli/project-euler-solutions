@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 MOD = 10**9 + 7
 XOR_SIZE = 64  # since k-1 <= 61 when w=64, fits in 6 bits

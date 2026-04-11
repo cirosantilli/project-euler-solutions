@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 257: Angular Bisectors
 
 We count integer-sided triangles ABC (a <= b <= c, with AB=c, BC=a, AC=b)

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 916: Restricted Permutations
 
 Let P(n) be the number of permutations of {1,2,...,2n} such that:

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 840: Sum of Products
 
 Computes S(5*10^4) mod 999676999.

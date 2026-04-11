@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 324: Building a Tower
 
 Let f(n) be the number of ways to fill a 3×3×n tower with 2×1×1 blocks.

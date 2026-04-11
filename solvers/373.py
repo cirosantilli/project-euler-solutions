@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 373: Circumscribed Circles
 
 We need S(n) = sum of circumradii r (with multiplicity) over all integer-sided

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 914 - Triangles inside Circles
 
 We consider primitive Pythagorean right triangles with integer sides (a,b,c).

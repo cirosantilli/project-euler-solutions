@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 951: A Game of Chance
 
 We count how many starting configurations are *fair* (first player wins with

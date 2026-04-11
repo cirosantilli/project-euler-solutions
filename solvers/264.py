@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """Project Euler 264: Triangle Centres.
 
 We need all lattice triangles ABC with:

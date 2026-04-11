@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 877: XOR-Equation A
 
 We work with the XOR-product (carryless multiplication over GF(2)).

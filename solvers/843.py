@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 843: Periodic Circles
 
 This is an optimized pure-Python solution (no external libraries).

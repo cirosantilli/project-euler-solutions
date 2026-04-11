@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 927: Prime-ary Tree
 
 We have the recurrence

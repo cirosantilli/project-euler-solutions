@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Project Euler 763
 # Amoebas in a 3D Grid (monster splitting)
 #

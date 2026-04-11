@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 829: Integral Fusion
 
 We define a deterministic binary factor tree T(n): split n into a*b where

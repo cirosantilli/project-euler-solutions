@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 901: Well Drilling
 
 A driller chooses depths d1, d2, ... (positive reals). Each attempt drills from

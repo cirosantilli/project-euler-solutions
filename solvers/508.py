@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 508: Integers in Base i-1
 
 We need B(L) = sum of f(a+bi) over all integers a,b with |a|<=L, |b|<=L,

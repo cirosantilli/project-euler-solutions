@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Project Euler 796: A Grand Shuffle
 #
 # We compute an expected stopping time for drawing cards without replacement until

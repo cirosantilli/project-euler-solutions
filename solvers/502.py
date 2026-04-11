@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # Project Euler 502: Counting Castles
 # Pure Python, no external libraries.
 

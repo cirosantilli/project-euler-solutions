@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 847 - Jack's Bean
 
 Compute H(R_19) modulo 1_000_000_007.

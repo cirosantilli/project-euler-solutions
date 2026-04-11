@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 871: Drifting Subsets
 
 Let f be a function from a finite set S to itself.

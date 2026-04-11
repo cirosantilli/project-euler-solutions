@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 673: Beds and Desks
 
 We have n students labeled 1..n.

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 865 - Triplicate Numbers
 
 A "triplicate" digit string can be reduced to the empty string by repeatedly

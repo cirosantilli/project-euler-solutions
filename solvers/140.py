@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from math import isqrt, sqrt
 from fractions import Fraction
 

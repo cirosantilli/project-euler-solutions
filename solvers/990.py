@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from functools import lru_cache
 
 MOD = 10**9 + 7

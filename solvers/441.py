@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 441: The inverse summation of coprime couples.
 
 No external libraries are used.

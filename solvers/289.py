@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """Project Euler 289: Eulerian Cycles
 
 We count Eulerian *non-crossing* cycles on the circle arrangement E(m,n).

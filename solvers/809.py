@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 809: Rational Recurrence Relation
 
 We need f(22/7) (mod 10^15) for the function:

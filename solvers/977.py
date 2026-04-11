@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Compute the number of functions f:[n]->[n] with f^{(x)}(y)=f^{(y)}(x)."""
 
 MOD = 1_000_000_007

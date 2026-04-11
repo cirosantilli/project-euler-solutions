@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 732 - Standing on the Shoulders of Trolls
 
 Compute Q(N): maximum total IQ of trolls that can escape.

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Project Euler 283
 Integer sided triangles for which the area/perimeter ratio is integral

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 619 - Square Subsets
 
 For the integer interval {a, a+1, ..., b}, define C(a,b) as the number of

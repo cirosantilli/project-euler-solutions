@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Project Euler 564 - Maximal Polygons
 https://projecteuler.net/problem=564

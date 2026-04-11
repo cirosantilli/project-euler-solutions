@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Project Euler 395: Pythagorean Tree
 Find the area of the smallest axis-aligned rectangle (parallel to the initial square)

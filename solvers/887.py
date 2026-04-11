@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 887: Bounded Binary Search.
 
 We search for a secret x in {1..N} by repeatedly choosing y and asking:

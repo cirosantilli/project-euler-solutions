@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 868: Belfry Maths
 
 The bell-ringers' procedure generates all permutations by adjacent swaps.

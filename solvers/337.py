@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 337: Totient Stairstep Sequences
 
 We count sequences {a1, a2, ..., an} such that:

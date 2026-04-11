@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 422: Sequence of Points on a Hyperbola.
 
 Problem:

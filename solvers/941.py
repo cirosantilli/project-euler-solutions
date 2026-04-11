@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 941: de Bruijn's Combination Lock
 
 This program computes F(N) as defined in the problem statement, and prints

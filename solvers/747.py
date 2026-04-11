@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 747
 
 Count all valid ways to cut a triangular pizza into equal-area triangular pieces.

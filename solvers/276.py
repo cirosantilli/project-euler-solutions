@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 276: Primitive Triangles.
 
 Consider integer-sided triangles (a, b, c) with a <= b <= c.

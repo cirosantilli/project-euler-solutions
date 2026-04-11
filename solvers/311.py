@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """Project Euler 311: Biclinic Integral Quadrilaterals.
 
 This repository is intended to be runnable as a standalone script.

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 863: Different Dice
 
 We want an optimal procedure (minimum expected rolls) to emulate a fair n-sided die

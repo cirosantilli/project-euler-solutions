@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Project Euler 332 - Spherical Triangles
 https://projecteuler.net/problem=332

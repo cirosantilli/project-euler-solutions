@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 834: Add and Divide
 
 We define a sequence starting from n, and at the m-th step we add (n+m).

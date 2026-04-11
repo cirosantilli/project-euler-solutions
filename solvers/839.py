@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 839: Beans in Bowls
 
 We have N bowls with initial counts S_0..S_{N-1}:

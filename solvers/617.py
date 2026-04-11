@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 617: Mirror Power Sequence
 
 For integers n,e>1 define an (n,e)-MPS as an infinite integer sequence (a_i) with:

@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+valid_shebang='#!/usr/bin/env python'
+updated=0
+
+while IFS= read -r -d '' path; do
+    first_line=''
+    if IFS= read -r first_line < "$path"; then
+        :
+    fi
+    if [[ "$first_line" == "$valid_shebang" ]]; then
+        continue
+    fi
+    tmp="$(mktemp)"
+    if [[ "$first_line" == '#!'* ]]; then
+        {
+            printf '%s\n' "$valid_shebang"
+            tail -n +2 "$path"
+        } > "$tmp"
+    else
+        {
+            printf '%s\n' "$valid_shebang"
+            cat "$path"
+        } > "$tmp"
+    fi
+    chmod --reference="$path" "$tmp"
+    mv "$tmp" "$path"
+    printf 'updated %s\n' "$path"
+    updated=$((updated + 1))
+done < <(find solvers -maxdepth 1 -type f -name '*.py' -print0 | sort -z)
+
+printf 'normalized %d solver Python files\n' "$updated"

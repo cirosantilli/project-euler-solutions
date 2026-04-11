@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """Project Euler 270 - Cutting Squares.
 
 Print C(30) mod 10^8.

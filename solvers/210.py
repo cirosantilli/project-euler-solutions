@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Project Euler 210: Obtuse Angled Triangles
 #
 # Key idea:

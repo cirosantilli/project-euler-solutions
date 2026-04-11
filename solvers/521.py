@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Project Euler 521 - Smallest Prime Factor
 Compute S(10^12) mod 10^9.

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 714 — Duodigits
 
 We call a natural number a duodigit if its decimal representation uses no more than

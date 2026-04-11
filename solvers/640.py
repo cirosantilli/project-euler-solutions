@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 640: Shut the Box
 
 Compute the optimal expected number of turns to win.

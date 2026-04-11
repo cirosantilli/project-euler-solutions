@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 419: Look and Say Sequence
 
 Compute A(n), B(n), C(n) = counts of digits 1,2,3 in the n-th term (starting at 1).

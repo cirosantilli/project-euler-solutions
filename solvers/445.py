@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 445: Retractions A
 
 We define affine functions on Z/nZ:

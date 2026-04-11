@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 # Converted to Python from: https://github.com/lucky-bai/projecteuler-solutions/issues/100#issuecomment-3552252592
 

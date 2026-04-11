@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 572: Idempotent Matrices
 
 Count 3x3 integer matrices M with M^2 = M and all entries in [-n, n].

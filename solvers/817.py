@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 817
 
 Define m = M(n, d) to be the smallest positive integer such that when m^2 is
