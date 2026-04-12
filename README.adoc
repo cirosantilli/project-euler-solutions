@@ -13,7 +13,8 @@
 This repo aims to solve **ALL** https://projecteuler.net[Project Euler] problems in openly licensed Python code, mostly using LLMs to generate the bulk of the solutions. Status:
 
 // STATUS TABLE
-* **1-991**: done
+* **1-900**: done
+* **901-992**: 78/92 (TODO: 979, 980, 981, 982, 983, 984, 985, 986, 987, 988, 989, 990, 991, 992)
 
 Tested on Python 3.13.7, PyPy 7.3.20, Ubuntu 25.10.
 
@@ -1452,6 +1453,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/989.py[989.py] | link:solvers/989.md[989.md] | 16.822 |  |  | 697845151 | error: missing reference answer
 | link:solvers/990.py[990.py] | link:solvers/990.md[990.md] | 2.524 | gpt-5.2-thinking |  | 50322750 | error: missing reference answer
 | link:solvers/991.py[991.py] | link:solvers/991.md[991.md] | 0.246 | gpt-5.2-thinking |  | 23871972654940 | error: missing reference answer
+| link:solvers/992.py[992.py] | link:solvers/992.md[992.md] | 0.235 | gpt-5.2-thinking |  | 568021234 | error: missing reference answer
 |===
 
 === Non-Python solvers
