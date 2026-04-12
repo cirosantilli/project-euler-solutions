@@ -81,7 +81,9 @@ def primitive_solutions(limit: int) -> list[int]:
             low += 1
 
         high_pos = int(beta * k)
-        while high_pos > 0 and not (-high_pos * high_pos + 5 * high_pos * k - k * k > 0):
+        while high_pos > 0 and not (
+            -high_pos * high_pos + 5 * high_pos * k - k * k > 0
+        ):
             high_pos -= 1
 
         high_sum = (limit + k * k) // (5 * k)
@@ -123,6 +125,7 @@ def solve(limit: int = LIMIT) -> int:
 # Self-checks
 # -----------------------------
 
+
 def brute_force(limit: int) -> int:
     total = 0
     for a in range(1, limit + 1):
@@ -138,8 +141,16 @@ def brute_force(limit: int) -> int:
 
 def run_tests() -> None:
     # Primitive examples from the parameterization.
-    assert (4 * 4 * 4 - 7 * 7, 5 * 4 * 4 - 7 * 7 - 4 * 7, 7 * 7 - 3 * 4 * 4) == (15, 3, 1)
-    assert (4 * 4 * 4 - 7 * 7, 5 * 4 * 4 - 7 * 7 + 4 * 7, 7 * 7 - 3 * 4 * 4) == (15, 59, 1)
+    assert (4 * 4 * 4 - 7 * 7, 5 * 4 * 4 - 7 * 7 - 4 * 7, 7 * 7 - 3 * 4 * 4) == (
+        15,
+        3,
+        1,
+    )
+    assert (4 * 4 * 4 - 7 * 7, 5 * 4 * 4 - 7 * 7 + 4 * 7, 7 * 7 - 3 * 4 * 4) == (
+        15,
+        59,
+        1,
+    )
 
     # Small-range exact cross-checks against brute force.
     assert solve(18) == 0

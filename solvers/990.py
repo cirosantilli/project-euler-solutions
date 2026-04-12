@@ -53,7 +53,9 @@ SUM_TABLES = build_sum_tables(2 * MAX_TERMS)
 
 
 @lru_cache(maxsize=None)
-def transitions(active_left: int, active_right: int, carry: int) -> tuple[tuple[int, int, int, int], ...]:
+def transitions(
+    active_left: int, active_right: int, carry: int
+) -> tuple[tuple[int, int, int, int], ...]:
     """
     Return all transitions for one decimal column.
 
@@ -130,7 +132,9 @@ def solve(limit: int) -> int:
                 continue
 
             bucket = dp[next_length]
-            for next_left, next_right, next_carry, weight in transitions(active_left, active_right, carry):
+            for next_left, next_right, next_carry, weight in transitions(
+                active_left, active_right, carry
+            ):
                 state = (next_left, next_right, next_carry)
                 bucket[state] = (bucket.get(state, 0) + ways_so_far * weight) % MOD
 

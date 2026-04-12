@@ -23,7 +23,9 @@ class Comb:
     def __call__(self, n: int, r: int) -> int:
         if r < 0 or r > n:
             return 0
-        return self.fact[n] * self.inv_fact[r] % self.mod * self.inv_fact[n - r] % self.mod
+        return (
+            self.fact[n] * self.inv_fact[r] % self.mod * self.inv_fact[n - r] % self.mod
+        )
 
 
 def endpoint_count(n: int, k: int, end: int, comb: Comb, mod: int) -> int:
