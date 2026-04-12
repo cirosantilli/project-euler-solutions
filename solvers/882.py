@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 882: Removing Bits
 
 We model the position as a disjoint sum of independent components (each number in the multiset).

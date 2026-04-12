@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 227: The Chase
 
 We compute the expected number of turns until the game ends.

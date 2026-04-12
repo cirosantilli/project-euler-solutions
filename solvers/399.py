@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 399: Squarefree Fibonacci Numbers
 
 Computes the 100,000,000th squarefree Fibonacci number under the assumption

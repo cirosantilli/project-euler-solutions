@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """Project Euler 322: Binomial Coefficients Divisible by 10.
 
 Let T(m, n) be the number of binomial coefficients iCn that are divisible by 10

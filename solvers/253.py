@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 253: Tidying Up A
 
 We have a line of N positions (pieces 1..N in the final caterpillar).

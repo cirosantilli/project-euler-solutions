@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 656 - Palindromic Sequences
 
 We use a continued-fraction characterization of palindromic prefixes of the

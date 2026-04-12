@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 849 - The Tournament
 
 We count distinct final point-multisets (teams indistinguishable) for a double

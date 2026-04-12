@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Project Euler 369 - Badugi
 https://projecteuler.net/problem=369

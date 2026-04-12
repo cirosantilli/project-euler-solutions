@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 881: Divisor Graph Width
 
 We model the divisor graph in terms of the exponent vector of n.

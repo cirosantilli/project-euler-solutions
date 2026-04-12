@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 936: Peerless Trees
 
 A peerless tree is a tree with no edge between two vertices of the same degree.

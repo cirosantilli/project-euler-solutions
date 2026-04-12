@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # Project Euler 917
 #
 # We have an N x N matrix M where M[i,j] = a_i + b_j.

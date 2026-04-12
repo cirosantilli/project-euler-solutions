@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Project Euler 582: Nearly Isosceles 120 Degree Triangles
 

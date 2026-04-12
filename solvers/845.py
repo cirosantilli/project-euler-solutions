@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 845: Prime Digit Sum
 
 Let D(n) be the n-th positive integer whose sum of digits is prime.

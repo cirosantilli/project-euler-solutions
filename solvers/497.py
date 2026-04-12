@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 497: Drunken Tower of Hanoi
 
 Compute the last nine digits of:

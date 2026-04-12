@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """Project Euler 307: Chip Defects
 
 k defects are independently and uniformly assigned to n chips.

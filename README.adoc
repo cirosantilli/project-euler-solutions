@@ -248,7 +248,7 @@ We have basic linting with link:lint.py[]:
 ./lint.py
 ....
 
-Currently the only thing that this script does it to check that the output answers don't show up on implementations to help prevent cheating by directly printing or returning hardcoded values. ChatGPT 5.2 does that sometimes when it can't find a decent solution.
+This script checks that output answers don't show up in implementations to help prevent cheating by directly printing or returning hardcoded values. It also requires every Python solver in link:solvers/[] to start with `#!/usr/bin/env python`.
 
 Note that this linting does not affect languages where you can actually formally prove your algorithm such as Lean. That's their beauty!
 
@@ -262,6 +262,7 @@ In the age of LLM code generation, autoformaters have become even sweeter:
 
 [source,shell]
 ----
+./format-py
 black .
 ./format_md.py
 ----

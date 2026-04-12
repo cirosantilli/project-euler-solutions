@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 921: Golden Recurrence
 
 Computes S(1618034) modulo 398874989.

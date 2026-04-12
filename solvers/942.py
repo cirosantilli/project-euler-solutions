@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 942: Mersenne's Square Root
 
 We need R(q): the minimal x > 0 such that x^2 \equiv q (mod p) where p = 2^q - 1.

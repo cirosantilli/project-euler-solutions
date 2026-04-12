@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 898: Claire Voyant
 
 We compute the optimal probability that Claire guesses the coin toss.

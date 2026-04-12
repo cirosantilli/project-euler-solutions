@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Project Euler 495
 W(n, k): number of ways to write n as the product of k distinct positive integers.

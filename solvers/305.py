@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 305 - Reflexive Position
 
 Let S be the infinite string formed by concatenating the positive integers:

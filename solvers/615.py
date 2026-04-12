@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Project Euler 615
 The millionth number with at least one million prime factors (with multiplicity).

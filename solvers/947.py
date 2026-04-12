@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 947: Fibonacci Residues
 
 Compute S(10^6) modulo 999,999,893.

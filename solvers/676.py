@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 676: Matching Digit Sums
 
 Let d(i, b) be the digit sum of i written in base b.

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Project Euler 608
 Compute D(200!, 10^12) mod 1_000_000_007

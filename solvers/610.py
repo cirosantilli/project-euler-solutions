@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 610: Roman Numerals II
 
 We repeatedly sample symbols from {I, V, X, L, C, D, M, #} with

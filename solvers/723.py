@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Project Euler 723 - Pythagorean Quadrilaterals
 Pure Python, no external libraries.

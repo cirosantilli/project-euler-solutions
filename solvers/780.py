@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 780 — fast computation of G(N) modulo 1_000_000_007.
 
 This program is self-contained (pure Python) and single-core.

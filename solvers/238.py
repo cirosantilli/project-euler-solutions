@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 238: Infinite string tour.
 
 We generate one full period of the digit stream, build a bitset of all prefix-sum

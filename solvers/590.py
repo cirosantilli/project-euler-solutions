@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 590: Sets with a Given Least Common Multiple
 
 Compute HL(50000) = H(L(50000)) modulo 1e9.

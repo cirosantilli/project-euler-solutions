@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Project Euler 589 - Poohsticks Marathon
 Hybrid solver (iterative + direct linear solve fallback), no external libraries.

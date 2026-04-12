@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 789: Minimal Pairing Modulo p
 
 Given an odd prime p, put the numbers 1..p-1 into (p-1)/2 pairs (each number used once).

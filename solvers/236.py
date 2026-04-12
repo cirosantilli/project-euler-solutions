@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Project Euler 236: Luxury Hampers
 #
 # We have 5 products. Supplier A supplied A_i units, supplier B supplied B_i units.

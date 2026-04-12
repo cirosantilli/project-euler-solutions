@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 596: Number of lattice points in a hyperball.
 
 Let T(r) be the number of integer quadruplets (x,y,z,t) such that

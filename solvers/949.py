@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 # Adapted from https://github.com/lucky-bai/projecteuler-solutions/issues/105
 # Runtime: 0m1.709s for final solution only (comment out others) on pypy3 3.11.13, Ubuntu 25.10, Lenovo ThinkPad P14s.

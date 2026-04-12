@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 MOD = 987_898_789
 
 

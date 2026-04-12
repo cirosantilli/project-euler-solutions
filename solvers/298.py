@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 298: Selective Amnesia
 
 We compute the expected value of |L-R| after 50 turns.

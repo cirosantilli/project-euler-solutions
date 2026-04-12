@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 831: Triple Product
 
 We need the first ten (most significant) base-7 digits of g(142857), where

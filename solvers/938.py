@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 938: Exhausting a Colour
 
 We need P(R,B): the probability that the game ends with only black cards

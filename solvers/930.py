@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 930 - The Gathering
 
 We model the process on relative positions of the balls.

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # Project Euler 765 — Trillionaire
 #
 # No external libraries are used.

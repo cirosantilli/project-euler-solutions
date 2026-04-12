@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 926: Total Roundness
 
 Computes R(10_000_000!) modulo 1_000_000_007.

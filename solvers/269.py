@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """Project Euler #269: Polynomials with at Least One Integer Root.
 
 We define P_n(x) as the polynomial whose coefficients are the digits of n.

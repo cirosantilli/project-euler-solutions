@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 979: Hyperbolic frog on the {7,3} heptagon tiling.
 
 We work on the adjacency graph of heptagons (each tile has 7 neighbors;

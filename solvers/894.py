@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 894: Spiral of Circles.
 
 C_k is produced from C_{k-1} by the same scaling (factor s, 0 < s < 1) and

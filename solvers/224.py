@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # solution.py
 # Project Euler 224: Almost right-angled triangles II
 #

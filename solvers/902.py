@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 902: Permutation Powers
 
 Compute P(m) and print P(100) modulo 1_000_000_007.

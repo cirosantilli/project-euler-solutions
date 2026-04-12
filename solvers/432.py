@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 432: Totient Sum
 
 Let S(n, m) = \sum_{i=1..m} phi(n*i).

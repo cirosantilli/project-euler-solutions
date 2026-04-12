@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 825: Chasing Game
 
 Computes T(10^14) and prints it rounded to 8 digits after the decimal point.

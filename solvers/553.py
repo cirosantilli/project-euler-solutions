@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Project Euler 553: Power Sets of Power Sets
 Compute C(10^4, 10) mod 1_000_000_007.

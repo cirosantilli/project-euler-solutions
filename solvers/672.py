@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 672: One More One
 
 We must compute H(10^9) modulo 1_117_117_717.

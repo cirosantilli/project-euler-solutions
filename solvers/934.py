@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 934: Unlucky Primes
 
 We define u(n) as the smallest prime p such that (n mod p) is NOT a multiple of 7.

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 884: Removing Cubes
 
 Compute S(10^17) where D(n) is the number of steps obtained by repeatedly

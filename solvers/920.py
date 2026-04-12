@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 920: Tau Numbers
 
 We use the divisor-count function tau(n).

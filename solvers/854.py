@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 854: Pisano Periods 2
 
 We need P(N) = \prod_{p=1..N} M(p) (mod MOD), where M(p) is the largest n with

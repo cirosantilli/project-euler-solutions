@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Project Euler 584 — Birthday Problem Revisited (pure Python, no external libraries)
 

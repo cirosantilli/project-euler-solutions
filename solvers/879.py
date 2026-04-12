@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 879: Touch-screen Password
 
 Counts the number of distinct passwords on an n x n grid under the rules:

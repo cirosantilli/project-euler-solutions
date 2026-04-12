@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # Computes F(N) for the Project Euler-style problem:
 # count 2x2 positive-integer matrices A with tr(A)<N that have TWO different
 # positive-integer square roots.

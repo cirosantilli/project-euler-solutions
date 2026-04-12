@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 529: 10-substrings.
 
 A 10-substring is a contiguous substring whose digit-sum is 10.

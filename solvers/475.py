@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 475: Music Festival
 
 12n musicians first form 3n fixed quartets (a fixed partition into groups of 4).

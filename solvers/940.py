@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 940: Two-Dimensional Recurrence
 
 Compute S(50) mod 1123581313.

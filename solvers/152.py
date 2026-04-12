@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Project Euler 152: Writing 1/2 as a sum of inverse squares.
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 447: Retractions C
 
 For every integer n > 1, define the family of functions

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 764: Asymmetric Diophantine Equation
 
 We need S(N) = sum(x+y+z) over all primitive solutions (x,y,z) with

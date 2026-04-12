@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 908: Clock Sequence II
 
 A clock sequence is a periodic sequence of positive integers that can be broken into

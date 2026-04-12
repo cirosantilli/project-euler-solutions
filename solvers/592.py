@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 592: Factorial trailing digits 2
 
 For any N, let f(N) be the last twelve hexadecimal digits before the trailing

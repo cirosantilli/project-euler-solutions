@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Project Euler 424 - Kakuro
 Solve 200 "cryptic kakuro" puzzles and print the sum of the decoded A..J numbers.

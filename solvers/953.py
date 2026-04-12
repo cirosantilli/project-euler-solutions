@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 By GPT-5.1. Runtime: 1.22s on pypy3 3.11.13, Ubuntu 25.10, Lenovo ThinkPad P14s.
 """

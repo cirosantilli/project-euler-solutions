@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 952: Order Modulo Factorial
 
 Compute R(p, n): the multiplicative order of prime p modulo n! (with n < p).

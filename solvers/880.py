@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 880: Nested Radicals
 
 Compute H(10^15) mod (1031^3 + 2).

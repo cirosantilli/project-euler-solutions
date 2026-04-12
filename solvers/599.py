@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Project Euler 599: Distinct Colourings of a Rubik's Cube (2x2x2)
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # Project Euler 812 - Dynamical Polynomials
 # Computes S(10_000) mod 998244353, with sanity checks from the statement.
 # No external libraries are used.

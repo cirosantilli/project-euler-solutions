@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import math
 from array import array
 from typing import List, Tuple

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 939 - Partisan Nim
 
 Compute E(N) mod 1234567891 for N=5000.

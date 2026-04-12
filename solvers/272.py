@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 272: Modular Cubes, Part 2
 
 Find the sum of all positive integers n <= 10^11 such that

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 913: Row-major vs Column-major
 
 Let S(n, m) be the minimal number of swaps (swapping any two entries at a time)

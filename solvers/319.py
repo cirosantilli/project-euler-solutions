@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 319: Bounded Sequences
 
 Let x_1, x_2, ..., x_n be a sequence of length n of integers such that:

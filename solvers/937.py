@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 937: Equiproduct Partition
 
 This program computes G(10^8) modulo 1_000_000_007.

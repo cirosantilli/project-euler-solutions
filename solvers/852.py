@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 852: Coins in a Box
 
 Computes S(N) (expected final score with optimal play), rounded to 6 decimals.

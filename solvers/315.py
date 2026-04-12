@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 315: Digital Root Clocks.
 
 We compare two 7-segment display strategies while repeatedly summing digits

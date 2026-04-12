@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 912: Where are the Odds?
 
 Let s_n be the n-th positive integer whose binary representation does not

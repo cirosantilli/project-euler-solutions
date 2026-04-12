@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 def count_combinatoric_selections(limit_n: int, threshold: int) -> int:
     total = 0
     for n in range(1, limit_n + 1):

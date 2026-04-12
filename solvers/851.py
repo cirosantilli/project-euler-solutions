@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Project Euler 851: SOP and POS
 
 We need R_6(10000!) mod 1e9+7.

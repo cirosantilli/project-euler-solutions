@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Project Euler 367 - Bozo Sort (variant with 3-element shuffle)
 

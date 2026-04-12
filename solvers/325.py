@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """Project Euler 325: Stone Game II
 
 We need S(N) = sum_{(x,y) losing, 0<x<y<=N} (x+y), and finally S(10^16) mod 7^10.
