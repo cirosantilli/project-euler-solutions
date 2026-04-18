@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from __future__ import annotations
 
 # Eventual periodicity of the first-difference sequence BB(n+1) - BB(n):
