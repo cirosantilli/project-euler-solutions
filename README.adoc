@@ -239,6 +239,16 @@ One extremely convenient automation to `./test.py` is the -A --autoupdate flag w
 ./test.py -A -t60 400-410
 ----
 
+Benchmark Python solvers from another directory without changing the default `./test.py` suite by using `--set`. The flag is repeatable, which is useful for comparing this repository against another solver set:
+
+[source,shell]
+----
+./test.py --set solvers/eulersolve 1-10
+./test.py --set solvers --set solvers/eulersolve 1-10
+----
+
+With `-A`, correct Python timings are recorded in the <<other-solvers>> comparison table and added as extra columns in <<slowest-solvers>>. Missing solvers and incorrect answers are left blank in those comparison cells.
+
 === Linting
 
 We have basic linting with link:lint.py[]:
