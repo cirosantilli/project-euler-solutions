@@ -24,11 +24,12 @@ LINE_RE = re.compile(r"^(\d+)\.\s+(.*)$")
 NUMERIC_RE = re.compile(r"^\d+(?:\.\d+)?$")
 EXPECTED_GOT_RE = re.compile(r"expected (.+), got (.+)")
 LANG_HINT_RE = re.compile(r"^(\d+)\.(py|c|cpp|lean)$")
+TestId = int | str
 
 
 @dataclass
 class Result:
-    puzzle_id: int
+    puzzle_id: TestId
     correct: bool
     elapsed: float | None
     model: str | None
@@ -37,13 +38,28 @@ class Result:
     message: str
     language: str | None
     source_path: Path | None
+    reference_answer_checked: bool = True
 
 
 @dataclass
 class SolverTarget:
-    puzzle_id: int
+    puzzle_id: TestId
     path: Path
     language: str
+    checks_reference_answer: bool = True
+
+
+EXPLICIT_ONLY_TESTS: dict[str, SolverTarget] = {
+    "secret": SolverTarget(
+        puzzle_id="secret",
+        path=SOLVERS_DIR / "secret.py",
+        language="py",
+        checks_reference_answer=False,
+    ),
+}
+EXPLICIT_ONLY_PATHS = {
+    target.path.resolve(): name for name, target in EXPLICIT_ONLY_TESTS.items()
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -54,7 +70,10 @@ def parse_args() -> argparse.Namespace:
         "ids",
         nargs="*",
         type=str,
-        help="IDs or ranges to run (e.g. 2-4 6). Defaults to every solver.",
+        help=(
+            "IDs, ranges, or explicit-only test names to run "
+            "(e.g. 2-4 6 secret). Defaults to every standard solver."
+        ),
     )
     parser.add_argument(
         "-t",
@@ -95,10 +114,74 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def expand_ids(values: list[str]) -> tuple[list[int], dict[int, list[Path]]]:
-    ids: list[int] = []
-    overrides: dict[int, list[Path]] = {}
+def test_id_sort_key(value: TestId) -> tuple[int, int, str]:
+    if isinstance(value, int):
+        return (0, value, "")
+    return (1, 0, value)
+
+
+def sort_test_ids(values: list[TestId]) -> list[TestId]:
+    return sorted(set(values), key=test_id_sort_key)
+
+
+def table_sort_key(
+    test_id: TestId, language: str = "", checks_reference_answer: bool = True
+) -> tuple[int, int, int, str, str]:
+    if not checks_reference_answer:
+        return (1, 0, 0, str(test_id), language)
+    type_rank, numeric_id, text_id = test_id_sort_key(test_id)
+    return (0, type_rank, numeric_id, text_id, language)
+
+
+def checks_reference_answer_for_id(test_id: TestId) -> bool:
+    if isinstance(test_id, str):
+        target = EXPLICIT_ONLY_TESTS.get(test_id)
+        if target is not None:
+            return target.checks_reference_answer
+    return True
+
+
+def row_sort_key(key: tuple[TestId, str]) -> tuple[int, int, int, str, str]:
+    test_id, language = key
+    return table_sort_key(test_id, language, checks_reference_answer_for_id(test_id))
+
+
+def result_sort_key(res: Result) -> tuple[int, int, int, str, str]:
+    return table_sort_key(
+        res.puzzle_id, res.language or "", res.reference_answer_checked
+    )
+
+
+def resolve_cli_path(value: str) -> Path:
+    path = Path(value)
+    if path.exists():
+        return path
+    if "/" not in value and path.parent == Path("."):
+        candidate = SOLVERS_DIR / value
+        if candidate.exists():
+            return candidate
+    return path
+
+
+def explicit_only_name_for_path(path: Path) -> str | None:
+    return EXPLICIT_ONLY_PATHS.get(path.resolve())
+
+
+def test_id_from_link_target(link_target: str) -> TestId | None:
+    path = Path(link_target)
+    pid = parse_solver_id(path)
+    if pid is not None:
+        return pid
+    return explicit_only_name_for_path(path)
+
+
+def expand_ids(values: list[str]) -> tuple[list[TestId], dict[TestId, list[Path]]]:
+    ids: list[TestId] = []
+    overrides: dict[TestId, list[Path]] = {}
     for value in values:
+        if value in EXPLICIT_ONLY_TESTS:
+            ids.append(value)
+            continue
         if (
             "_" in value
             and not value.endswith(".py")
@@ -115,9 +198,13 @@ def expand_ids(values: list[str]) -> tuple[list[int], dict[int, list[Path]]]:
             overrides.setdefault(pid, []).append(candidate)
             continue
         if value.endswith(".py") or value.endswith(".out") or "/" in value:
-            path = Path(value)
+            path = resolve_cli_path(value)
             if not path.exists():
                 raise ValueError(f"solver not found: {value}")
+            explicit_name = explicit_only_name_for_path(path)
+            if explicit_name is not None:
+                ids.append(explicit_name)
+                continue
             pid = parse_solver_id(path)
             if pid is None:
                 raise ValueError(f"invalid solver path: {value}")
@@ -183,11 +270,35 @@ def load_statement_ids() -> set[int]:
     return ids
 
 
+def collect_explicit_only_targets(
+    lang_filter: set[str] | None,
+) -> dict[str, SolverTarget]:
+    targets: dict[str, SolverTarget] = {}
+    for name, target in EXPLICIT_ONLY_TESTS.items():
+        if lang_filter and target.language not in lang_filter:
+            continue
+        targets[name] = target
+    return targets
+
+
+def targets_for_id(
+    test_id: TestId,
+    solver_targets: dict[int, list[SolverTarget]],
+    explicit_only_targets: dict[str, SolverTarget],
+) -> list[SolverTarget]:
+    if isinstance(test_id, int):
+        return solver_targets.get(test_id, [])
+    target = explicit_only_targets.get(test_id)
+    return [target] if target is not None else []
+
+
 def collect_solver_targets(
     lang_filter: set[str] | None,
 ) -> dict[int, list[SolverTarget]]:
     targets: dict[int, list[SolverTarget]] = {}
     for path in SOLVERS_DIR.glob("*.py"):
+        if explicit_only_name_for_path(path) is not None:
+            continue
         lang = detect_language(path)
         if lang is None or (lang_filter and lang not in lang_filter):
             continue
@@ -196,6 +307,8 @@ def collect_solver_targets(
             continue
         targets.setdefault(pid, []).append(SolverTarget(pid, path, lang))
     for path in SOLVERS_DIR.glob("*.out"):
+        if explicit_only_name_for_path(path) is not None:
+            continue
         lang = detect_language(path)
         if lang is None or (lang_filter and lang not in lang_filter):
             continue
@@ -212,6 +325,8 @@ def collect_solver_targets(
 def collect_solver_entries() -> dict[tuple[int, str], Path]:
     entries: dict[tuple[int, str], Path] = {}
     for path in SOLVERS_DIR.glob("*"):
+        if explicit_only_name_for_path(path) is not None:
+            continue
         language = detect_language(path)
         if language is None:
             continue
@@ -310,7 +425,7 @@ def source_from_target(path: Path, language: str) -> Path:
 
 
 def load_solver_metadata(
-    puzzle_id: int, language: str | None
+    puzzle_id: TestId, language: str | None
 ) -> tuple[str | None, int | None]:
     if not language:
         return None, None
@@ -408,7 +523,7 @@ def format_id_cell(res: Result) -> str:
     return f"link:{rel_path.as_posix()}[{rel_path.name}]"
 
 
-def result_key(res: Result) -> tuple[int, str]:
+def result_key(res: Result) -> tuple[TestId, str]:
     if res.source_path is not None:
         link_path = res.source_path
     else:
@@ -417,7 +532,7 @@ def result_key(res: Result) -> tuple[int, str]:
     return res.puzzle_id, language
 
 
-def explanation_link(puzzle_id: int) -> str:
+def explanation_link(puzzle_id: TestId) -> str:
     md_path = SOLVERS_DIR / f"{puzzle_id}.md"
     if not md_path.exists():
         return ""
@@ -451,7 +566,7 @@ def row_has_statement(cells: list[str]) -> bool:
 
 
 def normalize_row_fields(
-    pid: int, cells: list[str]
+    pid: TestId, cells: list[str]
 ) -> tuple[str, str, str, str, str, str, str] | None:
     if (
         len(cells) >= 7
@@ -547,6 +662,8 @@ def normalize_output_error_cells(output_cell: str, error_cell: str) -> tuple[str
 
 
 def format_output_cell(res: Result) -> str:
+    if not res.reference_answer_checked and res.correct:
+        return "ignored"
     if res.output is None or res.output == "":
         return ""
     if not res.correct and res.message.startswith("expected "):
@@ -617,11 +734,11 @@ def replace_table_after_marker(
 
 
 def replace_slowest_python_table(
-    lines: list[str], row_map: dict[tuple[int, str], str]
+    lines: list[str], row_map: dict[tuple[TestId, str], str]
 ) -> None:
     slow_candidates: list[tuple[float, str, str]] = []
     for (pid, language), row in row_map.items():
-        if language != "py":
+        if not isinstance(pid, int) or language != "py":
             continue
         cells = trim_trailing_empty_cells(readme_tables.split_table_row(row))
         normalized = normalize_row_fields(pid, cells)
@@ -668,10 +785,10 @@ def update_readme(results: list[Result]) -> None:
     row_re = re.compile(r"^\|\s+link:([^\[]+)\[")
     plain_re = re.compile(r"^\|\s+(\d+)\.py\s+\|")
     other_plain_re = re.compile(r"^\|\s+(\d+)\.(c|cpp|lean)\s+\|")
-    result_map: dict[tuple[int, str], str] = {}
-    other_result_map: dict[tuple[int, str], str] = {}
-    row_map: dict[tuple[int, str], str] = {}
-    other_row_map: dict[tuple[int, str], str] = {}
+    result_map: dict[tuple[TestId, str], str] = {}
+    other_result_map: dict[tuple[TestId, str], str] = {}
+    row_map: dict[tuple[TestId, str], str] = {}
+    other_row_map: dict[tuple[TestId, str], str] = {}
 
     for res in results:
         language = res.language or ""
@@ -685,7 +802,7 @@ def update_readme(results: list[Result]) -> None:
         match = row_re.match(line)
         if match:
             link_target = match.group(1)
-            pid = parse_solver_id(Path(link_target))
+            pid = test_id_from_link_target(link_target)
             if pid is None:
                 id_match = re.search(r"\\[(\\d+)\\]", line)
                 if not id_match:
@@ -753,7 +870,7 @@ def update_readme(results: list[Result]) -> None:
         language = ""
         if match:
             link_target = match.group(1)
-            pid = parse_solver_id(Path(link_target))
+            pid = test_id_from_link_target(link_target)
             if pid is None:
                 continue
             language = detect_language(Path(link_target)) or ""
@@ -785,14 +902,14 @@ def update_readme(results: list[Result]) -> None:
     for key, row in result_map.items():
         row_map[key] = row
 
-    sorted_rows = [row_map[key] for key in sorted(row_map, key=lambda k: (k[0], k[1]))]
+    sorted_rows = [row_map[key] for key in sorted(row_map, key=row_sort_key)]
     new_block = [header_line, *sorted_rows]
     lines[start + 1 : end] = new_block
 
     for key, row in other_result_map.items():
         other_row_map[key] = row
     sorted_other_rows = [
-        other_row_map[key] for key in sorted(other_row_map, key=lambda k: (k[0], k[1]))
+        other_row_map[key] for key in sorted(other_row_map, key=row_sort_key)
     ]
     replace_table_after_marker(
         lines,
@@ -815,14 +932,14 @@ def update_readme_links() -> None:
     )
     row_re = re.compile(r"^\|\s+link:([^\[]+)\[")
     plain_re = re.compile(r"^\|\s+(\d+)\.py\s+\|")
-    row_map: dict[tuple[int, str], str] = {}
+    row_map: dict[tuple[TestId, str], str] = {}
 
     for i in range(start + 1, end):
         line = lines[i]
         match = row_re.match(line)
         if match:
             link_target = match.group(1)
-            pid = parse_solver_id(Path(link_target))
+            pid = test_id_from_link_target(link_target)
             if pid is None:
                 continue
             language = detect_language(Path(link_target)) or ""
@@ -861,7 +978,7 @@ def update_readme_links() -> None:
             error_cell,
         )
 
-    sorted_rows = [row_map[key] for key in sorted(row_map, key=lambda k: (k[0], k[1]))]
+    sorted_rows = [row_map[key] for key in sorted(row_map, key=row_sort_key)]
     lines[start + 1 : end] = [header_line, *sorted_rows]
     replace_slowest_python_table(lines, row_map)
     readme_path.write_text("\n".join(lines) + "\n")
@@ -883,10 +1000,10 @@ def update_readme_not_found() -> None:
     row_re = re.compile(r"^\|\s+link:([^\[]+)\[")
     plain_re = re.compile(r"^\|\s+(\d+)\.py\s+\|")
     other_plain_re = re.compile(r"^\|\s+(\d+)\.(c|cpp|lean)\s+\|")
-    row_map: dict[tuple[int, str], str] = {}
-    other_row_map: dict[tuple[int, str], str] = {}
-    result_map: dict[tuple[int, str], str] = {}
-    other_result_map: dict[tuple[int, str], str] = {}
+    row_map: dict[tuple[TestId, str], str] = {}
+    other_row_map: dict[tuple[TestId, str], str] = {}
+    result_map: dict[tuple[TestId, str], str] = {}
+    other_result_map: dict[tuple[TestId, str], str] = {}
     seen_ids: set[int] = set()
 
     for i in range(start + 1, end):
@@ -895,7 +1012,9 @@ def update_readme_not_found() -> None:
         link_target = None
         if match:
             link_target = match.group(1)
-            pid = parse_solver_id(Path(link_target))
+            pid = test_id_from_link_target(link_target)
+            if pid is None:
+                continue
             language = detect_language(Path(link_target)) or ""
         else:
             plain_match = plain_re.match(line)
@@ -909,7 +1028,8 @@ def update_readme_not_found() -> None:
         if language != "py":
             continue
 
-        seen_ids.add(pid)
+        if isinstance(pid, int):
+            seen_ids.add(pid)
         cells = trim_trailing_empty_cells(readme_tables.split_table_row(line))
         normalized = normalize_row_fields(pid, cells)
         if normalized is None:
@@ -956,7 +1076,7 @@ def update_readme_not_found() -> None:
         match = row_re.match(line)
         if match:
             link_target = match.group(1)
-            pid = parse_solver_id(Path(link_target))
+            pid = test_id_from_link_target(link_target)
             if pid is None:
                 continue
             language = detect_language(Path(link_target)) or ""
@@ -1005,6 +1125,27 @@ def update_readme_not_found() -> None:
         else:
             other_result_map[result_key(res)] = format_row_other(res)
 
+    for name, target in EXPLICIT_ONLY_TESTS.items():
+        key = (name, target.language)
+        if key in row_map or key in other_row_map:
+            continue
+        res = Result(
+            puzzle_id=name,
+            correct=False,
+            elapsed=None,
+            model=None,
+            output_tokens=None,
+            output=None,
+            message="untested",
+            language=target.language,
+            source_path=target.path,
+            reference_answer_checked=target.checks_reference_answer,
+        )
+        if target.language == "py":
+            result_map[result_key(res)] = format_row(res)
+        else:
+            other_result_map[result_key(res)] = format_row_other(res)
+
     for pid in sorted(known_ids):
         if pid in seen_ids or pid in solver_ids:
             continue
@@ -1026,13 +1167,13 @@ def update_readme_not_found() -> None:
     for key, row in other_result_map.items():
         other_row_map[key] = row
 
-    sorted_rows = [row_map[key] for key in sorted(row_map, key=lambda k: (k[0], k[1]))]
+    sorted_rows = [row_map[key] for key in sorted(row_map, key=row_sort_key)]
     lines[start + 1 : end] = [
         "| ID | Explanation | Runtime (s) | Model | Out Tokens | Output | Error",
         *sorted_rows,
     ]
     sorted_other_rows = [
-        other_row_map[key] for key in sorted(other_row_map, key=lambda k: (k[0], k[1]))
+        other_row_map[key] for key in sorted(other_row_map, key=row_sort_key)
     ]
     replace_table_after_marker(
         lines,
@@ -1084,8 +1225,9 @@ def main() -> None:
                 lang_filter = set()
             lang_filter |= lang_hints
     solver_targets = collect_solver_targets(lang_filter)
+    explicit_only_targets = collect_explicit_only_targets(lang_filter)
 
-    path_overrides: dict[int, list[Path]] = {}
+    path_overrides: dict[TestId, list[Path]] = {}
     if args.uncommitted:
         try:
             target_ids = collect_uncommitted_solvers()
@@ -1095,7 +1237,7 @@ def main() -> None:
     elif ids_values:
         try:
             target_ids, path_overrides = expand_ids(ids_values)
-            target_ids = sorted(set(target_ids))
+            target_ids = sort_test_ids(target_ids)
         except ValueError as exc:
             print(str(exc), file=sys.stderr)
             sys.exit(2)
@@ -1108,7 +1250,7 @@ def main() -> None:
     lint_paths: set[Path] = set()
     for pid in target_ids:
         override_paths = path_overrides.get(pid)
-        targets = solver_targets.get(pid, [])
+        targets = targets_for_id(pid, solver_targets, explicit_only_targets)
         if override_paths:
             for path in override_paths:
                 language = detect_language(path)
@@ -1147,7 +1289,7 @@ def main() -> None:
             )
         print("\n|===")
         print("| ID | Explanation | Runtime (s) | Model | Out Tokens | Output | Error")
-        for res in sorted(lint_results, key=lambda r: (r.puzzle_id, r.language or "")):
+        for res in sorted(lint_results, key=result_sort_key):
             print(format_row(res))
         print("|===")
         if args.autoupdate:
@@ -1177,7 +1319,7 @@ def main() -> None:
                     sys.exit(2)
                 targets.append(SolverTarget(pid, path, language))
         else:
-            targets = solver_targets.get(pid, [])
+            targets = targets_for_id(pid, solver_targets, explicit_only_targets)
         if not targets:
             results.append(
                 Result(
@@ -1195,9 +1337,11 @@ def main() -> None:
             print(f"[{pid}] skipped: solver not found", file=sys.stderr)
             continue
 
-        expected = reference.get(pid)
-        missing_reference = expected is None
         for target in targets:
+            expected = None
+            if target.checks_reference_answer and isinstance(pid, int):
+                expected = reference.get(pid)
+            missing_reference = target.checks_reference_answer and expected is None
             model, output_tokens = load_solver_metadata(pid, target.language)
             label = f"{target.language}" if target.language else "unknown"
             print(f"[{pid}] running {target.path} ({label})")
@@ -1217,6 +1361,7 @@ def main() -> None:
                         message=f"timed out after {limit:.3f}s",
                         language=target.language,
                         source_path=source_from_target(target.path, target.language),
+                        reference_answer_checked=target.checks_reference_answer,
                     )
                 )
                 print(f"[{pid}] timed out after {limit:.3f}s", file=sys.stderr)
@@ -1236,6 +1381,7 @@ def main() -> None:
                         message=f"failed (exit {rc})",
                         language=target.language,
                         source_path=source_from_target(target.path, target.language),
+                        reference_answer_checked=target.checks_reference_answer,
                     )
                 )
                 print(f"[{pid}] failed (exit {rc})", file=sys.stderr)
@@ -1243,6 +1389,23 @@ def main() -> None:
 
             output_lines = extract_output_lines(stdout)
             actual, display_output = normalize_output_lines(output_lines)
+            if not target.checks_reference_answer:
+                results.append(
+                    Result(
+                        pid,
+                        correct=True,
+                        elapsed=elapsed,
+                        model=model,
+                        output_tokens=output_tokens,
+                        output=None,
+                        message="output ignored",
+                        language=target.language,
+                        source_path=source_from_target(target.path, target.language),
+                        reference_answer_checked=False,
+                    )
+                )
+                print(f"[{pid}] ok ({elapsed:.3f}s; output ignored)")
+                continue
             if missing_reference:
                 results.append(
                     Result(
@@ -1255,6 +1418,7 @@ def main() -> None:
                         message="missing reference answer",
                         language=target.language,
                         source_path=source_from_target(target.path, target.language),
+                        reference_answer_checked=target.checks_reference_answer,
                     )
                 )
                 print(f"[{pid}] missing reference answer", file=sys.stderr)
@@ -1272,6 +1436,7 @@ def main() -> None:
                         message="ok",
                         language=target.language,
                         source_path=source_from_target(target.path, target.language),
+                        reference_answer_checked=target.checks_reference_answer,
                     )
                 )
                 print(f"[{pid}] ok ({elapsed:.3f}s)")
@@ -1288,6 +1453,7 @@ def main() -> None:
                         message=msg,
                         language=target.language,
                         source_path=source_from_target(target.path, target.language),
+                        reference_answer_checked=target.checks_reference_answer,
                     )
                 )
                 print(f"[{pid}] wrong answer: {msg}", file=sys.stderr)
@@ -1302,18 +1468,18 @@ def main() -> None:
     if py_results:
         print("\n|===")
         print("| ID | Explanation | Runtime (s) | Model | Out Tokens | Output | Error")
-        for res in sorted(py_results, key=lambda r: (r.puzzle_id, r.language or "")):
+        for res in sorted(py_results, key=result_sort_key):
             print(format_row(res))
         print("|===")
 
     if other_results:
-        py_runtime: dict[int, float] = {}
+        py_runtime: dict[TestId, float] = {}
         for res in py_results:
             if res.elapsed is not None:
                 py_runtime[res.puzzle_id] = res.elapsed
         print("\n|===")
         print("| ID | Runtime (s) | Python runtime x | Output | Error")
-        for res in sorted(other_results, key=lambda r: (r.puzzle_id, r.language or "")):
+        for res in sorted(other_results, key=result_sort_key):
             ratio = ""
             py_time = py_runtime.get(res.puzzle_id)
             if res.elapsed is not None and py_time:
