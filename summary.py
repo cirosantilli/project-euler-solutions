@@ -10,6 +10,8 @@ ROOT = Path(__file__).resolve().parent
 README_PATH = ROOT / "README.adoc"
 
 ID_RE = re.compile(r"(\d+)")
+LINK_RE = re.compile(r"link:([^\[]+)\[")
+MISSING_REFERENCE_ERROR = "error: missing reference answer"
 
 
 def iter_table_rows(lines: list[str]) -> list[list[str]]:
@@ -36,6 +38,21 @@ def iter_table_rows(lines: list[str]) -> list[list[str]]:
     return rows
 
 
+def row_has_solver(id_cell: str) -> bool:
+    match = LINK_RE.search(id_cell)
+    if not match:
+        return False
+    path = ROOT / match.group(1)
+    return path.exists()
+
+
+def row_is_solved(parts: list[str]) -> bool:
+    error = parts[6].strip()
+    return not error or (
+        error == MISSING_REFERENCE_ERROR and row_has_solver(parts[0])
+    )
+
+
 def parse_rows(rows: list[list[str]]) -> tuple[dict[int, int], int, dict[int, bool]]:
     solved_by_group: dict[int, int] = {}
     solved_by_pid: dict[int, bool] = {}
@@ -46,10 +63,9 @@ def parse_rows(rows: list[list[str]]) -> tuple[dict[int, int], int, dict[int, bo
             continue
         pid = int(match.group(1))
         max_pid = max(max_pid, pid)
-        error = parts[6].strip()
         if pid not in solved_by_pid:
             solved_by_pid[pid] = False
-        if not error:
+        if row_is_solved(parts):
             solved_by_pid[pid] = True
 
     for pid, solved in solved_by_pid.items():
@@ -82,14 +98,14 @@ def build_summary(
     done_prefix_end = 0
     for start, end, solved, total, _missing in groups:
         expected_start = done_prefix_end + 1
-        if start != expected_start or solved != total or total != 100:
+        if start != expected_start or solved != total:
             break
         done_prefix_end = end
 
     output: list[str] = []
     if done_prefix_end >= 200:
         output.append(f"* **1-{done_prefix_end}**: done")
-        groups = groups[done_prefix_end // 100 :]
+        groups = [group for group in groups if group[0] > done_prefix_end]
 
     for start, end, solved, total, missing in groups:
         line = f"* **{start}-{end}**: {solved}/{total}"

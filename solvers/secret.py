@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
 
 '''
+Run as:
+
 wget -O data/project-euler-statements/data/images/bonus_secret_statement.png secret.png https://projecteuler.net/resources/images/bonus_secret_statement.png?1738588439
 pypy3 secret.py
+
+The output image is placed at:
+
+data/project-euler-statements/data/documents/secret.pgm
 '''
 
 import hashlib
