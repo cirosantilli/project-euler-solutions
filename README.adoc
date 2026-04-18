@@ -1488,7 +1488,7 @@ A bar plot of solver times can be generated with link:plot.py[] but I couldn't b
 
 // SLOWEST PYTHON SOLVERS TABLE
 |===
-| ID | Runtime (s)
+| ID | Runtime (s) | solvers/eulersolve (s)
 | link:solvers/507.py[507.py] | 177.141
 | link:solvers/501.py[501.py] | 126.958
 | link:solvers/681.py[681.py] | 122.323
@@ -1545,3 +1545,12 @@ We've put some effort into optimizing the following above further but failed so 
 
 * 507
 * 715
+
+=== Other solvers
+
+In this section we benchmark other large solution sets that have become available to us to try and see if any of them have fundamentally better algorithms than ours.
+
+// OTHER RESULTS TABLE
+|===
+| solvers | solvers/eulersolve
+|===

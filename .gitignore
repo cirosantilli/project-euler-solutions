@@ -9,3 +9,4 @@ tmp.*
 .lean-build-stamp
 .lean-build-stamp.*
 plot.png
+/solvers/eulersolve

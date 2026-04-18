@@ -4,5 +4,10 @@
 			"path": "."
 		}
     ],
-    "settings": {}
+    "settings": {
+        "files.associations": {
+            "code.C": "cpp",
+            "main.C": "cpp"
+        }
+    }
 }
