@@ -25,6 +25,12 @@ printf 'Deleted %d cheat Python/Java files containing "%s".\n' "$deleted" "$need
 # Normalize generated solvers so CPU-count based defaults resolve to one worker.
 find "$d" -maxdepth 1 -type f \( -name '*.cpp' -o -name '*.py' -o -name '*.java' \) -print0 |
   xargs -0r perl -0pi \
+    -e 's{os\.path\.join\(\s*script_dir\s*,\s*["'\'']\.\.["'\'']\s*,\s*["'\'']resources["'\'']\s*,\s*["'\'']documents["'\'']\s*,\s*(["'\''][^"'\'']+\.(?:txt|pgm)["'\''])\s*\)}{$1}g;' \
+    -e 's{os\.path\.join\(\s*os\.path\.dirname\(os\.path\.dirname\(__file__\)\)\s*,\s*["'\'']solutionsCpp["'\'']\s*,\s*["'\'']p424_kakuro200\.txt["'\'']\s*\)}{"0424_kakuro200.txt"}g;' \
+    -e 's{\.\./resources/documents/}{}g;' \
+    -e 's{resources/documents/}{}g;' \
+    -e 's{solutionsCpp/I-expressions\.txt|(?:\.\./)?I-expressions\.txt}{0674_i_expressions.txt}g;' \
+    -e 's{solutionsCpp/p424_kakuro200\.txt|p424_kakuro200\.txt}{0424_kakuro200.txt}g;' \
     -e 's/std::thread::hardware_concurrency\(\)/1U/g;' \
     -e 's/\bthread::hardware_concurrency\(\)/1U/g;' \
     -e 's/::sysconf\(_SC_NPROCESSORS_ONLN\)/1/g;' \

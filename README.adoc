@@ -247,7 +247,7 @@ Benchmark Python solvers from another directory without changing the default `./
 ./test.py --set solvers --set solvers/eulersolve 1-10
 ----
 
-With `-A`, correct Python timings are recorded in the <<other-solvers>> comparison table and added as extra columns in <<slowest-solvers>>. Missing solvers and incorrect answers are left blank in those comparison cells.
+With `-A`, correct Python timings are recorded in the <<other-solvers>> comparison table and added as extra columns in <<slowest-solvers>>. Timings with missing reference answers are kept as unverified timings; missing solvers and incorrect answers are left blank in those comparison cells.
 
 === Linting
 
@@ -1498,57 +1498,57 @@ A bar plot of solver times can be generated with link:plot.py[] but I couldn't b
 
 // SLOWEST PYTHON SOLVERS TABLE
 |===
-| ID | Runtime (s) | solvers/eulersolve (s)
-| link:solvers/507.py[507.py] | 177.141
-| link:solvers/501.py[501.py] | 126.958
-| link:solvers/681.py[681.py] | 122.323
-| link:solvers/259.py[259.py] | 115.037
-| link:solvers/505.py[505.py] | 106.445
-| link:solvers/680.py[680.py] | 105.370
-| link:solvers/754.py[754.py] | 105.190
-| link:solvers/558.py[558.py] | 102.015
-| link:solvers/415.py[415.py] | 100.317
-| link:solvers/712.py[712.py] | 95.006
-| link:solvers/662.py[662.py] | 94.847
-| link:solvers/953.py[953.py] | 86.836
-| link:solvers/216.py[216.py] | 82.069
-| link:solvers/296.py[296.py] | 80.048
-| link:solvers/931.py[931.py] | 78.821
-| link:solvers/715.py[715.py] | 77.257
-| link:solvers/954.py[954.py] | 76.641
-| link:solvers/451.py[451.py] | 74.218
-| link:solvers/552.py[552.py] | 66.467
-| link:solvers/705.py[705.py] | 65.249
-| link:solvers/729.py[729.py] | 62.867
-| link:solvers/348.py[348.py] | 59.633
-| link:solvers/886.py[886.py] | 53.376
-| link:solvers/941.py[941.py] | 53.237
-| link:solvers/983.py[983.py] | 52.648
-| link:solvers/810.py[810.py] | 51.788
-| link:solvers/534.py[534.py] | 51.208
-| link:solvers/972.py[972.py] | 50.921
-| link:solvers/642.py[642.py] | 47.987
-| link:solvers/675.py[675.py] | 46.059
-| link:solvers/275.py[275.py] | 43.817
-| link:solvers/526.py[526.py] | 41.979
-| link:solvers/474.py[474.py] | 41.171
-| link:solvers/701.py[701.py] | 40.357
-| link:solvers/910.py[910.py] | 39.422
-| link:solvers/655.py[655.py] | 38.562
-| link:solvers/155.py[155.py] | 37.908
-| link:solvers/571.py[571.py] | 37.492
-| link:solvers/966.py[966.py] | 36.829
-| link:solvers/459.py[459.py] | 36.174
-| link:solvers/521.py[521.py] | 35.023
-| link:solvers/730.py[730.py] | 34.591
-| link:solvers/549.py[549.py] | 31.523
-| link:solvers/650.py[650.py] | 30.908
-| link:solvers/757.py[757.py] | 28.238
-| link:solvers/320.py[320.py] | 28.163
-| link:solvers/962.py[962.py] | 27.947
-| link:solvers/343.py[343.py] | 27.787
-| link:solvers/637.py[637.py] | 26.787
-| link:solvers/925.py[925.py] | 26.061
+| ID | solvers (s) | solvers/eulersolve (s)
+| link:solvers/507.py[507.py] | 177.141 | 
+| link:solvers/501.py[501.py] | 126.958 | 3.131
+| link:solvers/681.py[681.py] | 122.323 | 
+| link:solvers/259.py[259.py] | 115.037 | 
+| link:solvers/505.py[505.py] | 106.445 | 
+| link:solvers/680.py[680.py] | 105.370 | 
+| link:solvers/754.py[754.py] | 105.190 | 5.390
+| link:solvers/558.py[558.py] | 102.015 | 
+| link:solvers/415.py[415.py] | 100.317 | 
+| link:solvers/712.py[712.py] | 95.006 | 34.800
+| link:solvers/662.py[662.py] | 94.847 | 
+| link:solvers/953.py[953.py] | 86.836 | 0.059
+| link:solvers/216.py[216.py] | 82.069 | 4.586
+| link:solvers/296.py[296.py] | 80.048 | 
+| link:solvers/931.py[931.py] | 78.821 | 17.064
+| link:solvers/715.py[715.py] | 77.257 | 
+| link:solvers/954.py[954.py] | 76.641 | 0.167
+| link:solvers/451.py[451.py] | 74.218 | 11.053
+| link:solvers/552.py[552.py] | 66.467 | 2.993
+| link:solvers/705.py[705.py] | 65.249 | 
+| link:solvers/729.py[729.py] | 62.867 | 
+| link:solvers/348.py[348.py] | 59.633 | 4.060
+| link:solvers/886.py[886.py] | 53.376 | 9.035
+| link:solvers/941.py[941.py] | 53.237 | 0.073
+| link:solvers/983.py[983.py] | 52.648 | 1.079
+| link:solvers/810.py[810.py] | 51.788 | 2.099
+| link:solvers/534.py[534.py] | 51.208 | 
+| link:solvers/972.py[972.py] | 50.921 | 24.337
+| link:solvers/642.py[642.py] | 47.987 | 
+| link:solvers/675.py[675.py] | 46.059 | 2.108
+| link:solvers/275.py[275.py] | 43.817 | 
+| link:solvers/526.py[526.py] | 41.979 | 
+| link:solvers/474.py[474.py] | 41.171 | 
+| link:solvers/701.py[701.py] | 40.357 | 
+| link:solvers/910.py[910.py] | 39.422 | 0.422
+| link:solvers/655.py[655.py] | 38.562 | 
+| link:solvers/155.py[155.py] | 37.908 | 17.431
+| link:solvers/571.py[571.py] | 37.492 | 
+| link:solvers/966.py[966.py] | 36.829 | 
+| link:solvers/459.py[459.py] | 36.174 | 
+| link:solvers/521.py[521.py] | 35.023 | 
+| link:solvers/730.py[730.py] | 34.591 | 
+| link:solvers/549.py[549.py] | 31.523 | 5.282
+| link:solvers/650.py[650.py] | 30.908 | 0.603
+| link:solvers/757.py[757.py] | 28.238 | 82.959
+| link:solvers/320.py[320.py] | 28.163 | 3.557
+| link:solvers/962.py[962.py] | 27.947 | 12.542
+| link:solvers/343.py[343.py] | 27.787 | 0.369
+| link:solvers/637.py[637.py] | 26.787 | 
+| link:solvers/925.py[925.py] | 26.061 | 9.158
 |===
 
 We've put some effort into optimizing the following above further but failed so far:
@@ -1562,5 +1562,998 @@ In this section we benchmark other large solution sets that have become availabl
 
 // OTHER RESULTS TABLE
 |===
-| solvers | solvers/eulersolve
+| ID | solvers | solvers/eulersolve
+| link:solvers/1.py[1.py] | 0.092 | 0.081
+| link:solvers/2.py[2.py] | 0.153 | 0.075
+| link:solvers/3.py[3.py] | 0.134 | 0.077
+| link:solvers/4.py[4.py] | 0.140 | 0.068
+| link:solvers/5.py[5.py] | 0.149 | 0.064
+| link:solvers/6.py[6.py] | 0.132 | 0.060
+| link:solvers/7.py[7.py] | 0.152 | 0.061
+| link:solvers/8.py[8.py] | 0.137 | 0.062
+| link:solvers/9.py[9.py] | 0.068 | 0.061
+| link:solvers/10.py[10.py] | 0.081 | 0.107
+| link:solvers/11.py[11.py] | 0.081 | 0.066
+| link:solvers/12.py[12.py] | 0.110 | 0.080
+| link:solvers/13.py[13.py] | 0.069 | 0.059
+| link:solvers/14.py[14.py] | 0.520 | 0.851
+| link:solvers/15.py[15.py] | 0.077 | 0.057
+| link:solvers/16.py[16.py] | 0.066 | 0.057
+| link:solvers/17.py[17.py] | 0.069 | 0.058
+| link:solvers/18.py[18.py] | 0.069 | 0.056
+| link:solvers/19.py[19.py] | 0.079 | 0.068
+| link:solvers/20.py[20.py] | 0.065 | 0.060
+| link:solvers/21.py[21.py] | 0.077 | 0.067
+| link:solvers/22.py[22.py] | 0.082 | 0.072
+| link:solvers/23.py[23.py] | 0.136 | 0.140
+| link:solvers/24.py[24.py] | 0.068 | 0.063
+| link:solvers/25.py[25.py] | 0.089 | 0.057
+| link:solvers/26.py[26.py] | 0.073 | 0.061
+| link:solvers/27.py[27.py] | 0.091 | 0.150
+| link:solvers/28.py[28.py] | 0.069 | 0.057
+| link:solvers/29.py[29.py] | 0.076 | 0.061
+| link:solvers/30.py[30.py] | 0.085 | 0.066
+| link:solvers/31.py[31.py] | 0.070 | 0.057
+| link:solvers/32.py[32.py] | 0.145 | 0.103
+| link:solvers/33.py[33.py] | 0.076 | 0.066
+| link:solvers/34.py[34.py] | 0.164 | 0.145
+| link:solvers/35.py[35.py] | 0.103 | 0.095
+| link:solvers/36.py[36.py] | 0.083 | 0.083
+| link:solvers/37.py[37.py] | 0.086 | 0.146
+| link:solvers/38.py[38.py] | 0.082 | 0.064
+| link:solvers/39.py[39.py] | 0.068 | 0.076
+| link:solvers/40.py[40.py] | 0.066 | 0.067
+| link:solvers/41.py[41.py] | 0.083 | 0.060
+| link:solvers/42.py[42.py] | 0.135 | 0.075
+| link:solvers/43.py[43.py] | 0.070 | 0.603
+| link:solvers/44.py[44.py] | 0.494 | 0.398
+| link:solvers/45.py[45.py] | 0.080 | 0.061
+| link:solvers/46.py[46.py] | 0.095 | 0.070
+| link:solvers/47.py[47.py] | 0.075 | 0.094
+| link:solvers/48.py[48.py] | 0.080 | 0.064
+| link:solvers/49.py[49.py] | 0.073 | 0.065
+| link:solvers/50.py[50.py] | 0.090 | 0.086
+| link:solvers/51.py[51.py] | 0.110 | 0.238
+| link:solvers/52.py[52.py] | 0.083 | 0.107
+| link:solvers/53.py[53.py] | 0.063 | 0.058
+| link:solvers/54.py[54.py] | 0.128 | 0.131
+| link:solvers/55.py[55.py] | 0.095 | 0.101
+| link:solvers/56.py[56.py] | 0.112 | 0.076
+| link:solvers/57.py[57.py] | 0.062 | 0.067
+| link:solvers/58.py[58.py] | 0.152 | 0.166
+| link:solvers/59.py[59.py] | 0.099 | 0.538
+| link:solvers/60.py[60.py] | 0.366 | 0.444
+| link:solvers/61.py[61.py] | 0.061 | 0.073
+| link:solvers/62.py[62.py] | 0.075 | 0.073
+| link:solvers/63.py[63.py] | 0.060 | 0.058
+| link:solvers/64.py[64.py] | 0.079 | 0.073
+| link:solvers/65.py[65.py] | 0.059 | 0.056
+| link:solvers/66.py[66.py] | 0.070 | 0.064
+| link:solvers/67.py[67.py] | 0.093 | 0.069
+| link:solvers/68.py[68.py] | 0.072 | 0.090
+| link:solvers/69.py[69.py] | 0.067 | 0.060
+| link:solvers/70.py[70.py] | 0.488 | 3.750
+| link:solvers/71.py[71.py] | 0.166 | 0.160
+| link:solvers/72.py[72.py] | 0.094 | 0.085
+| link:solvers/73.py[73.py] | 0.897 | 0.219
+| link:solvers/74.py[74.py] | 0.176 | 0.418
+| link:solvers/75.py[75.py] | 0.143 | 0.094
+| link:solvers/76.py[76.py] | 0.118 | 0.054
+| link:solvers/77.py[77.py] | 0.074 | 0.056
+| link:solvers/78.py[78.py] | 0.162 | 0.125
+| link:solvers/79.py[79.py] | 0.098 | 0.064
+| link:solvers/80.py[80.py] | 0.066 | 0.078
+| link:solvers/81.py[81.py] | 0.079 | 0.065
+| link:solvers/82.py[82.py] | 0.070 | 0.062
+| link:solvers/83.py[83.py] | 0.152 | 0.090
+| link:solvers/84.py[84.py] | 0.121 | 0.549
+| link:solvers/85.py[85.py] | 0.078 | 0.058
+| link:solvers/86.py[86.py] | 0.294 | 0.277
+| link:solvers/87.py[87.py] | 0.304 | 0.291
+| link:solvers/88.py[88.py] | 0.097 | 0.088
+| link:solvers/89.py[89.py] | 0.089 | 0.078
+| link:solvers/90.py[90.py] | 0.090 | 0.117
+| link:solvers/91.py[91.py] | 0.082 | 0.095
+| link:solvers/92.py[92.py] | 0.139 | 4.123
+| link:solvers/93.py[93.py] | 1.685 | 1.264
+| link:solvers/94.py[94.py] | 0.080 | 0.057
+| link:solvers/95.py[95.py] | 0.309 | 0.228
+| link:solvers/96.py[96.py] | 0.134 | 0.872
+| link:solvers/97.py[97.py] | 0.076 | 0.057
+| link:solvers/98.py[98.py] | 0.177 | 0.104
+| link:solvers/99.py[99.py] | 0.080 | 0.062
+| link:solvers/100.py[100.py] | 0.076 | 0.056
+| link:solvers/101.py[101.py] | 0.107 | 0.056
+| link:solvers/102.py[102.py] | 0.080 | 0.074
+| link:solvers/103.py[103.py] | 1.410 | 1.323
+| link:solvers/104.py[104.py] | 0.171 | 0.193
+| link:solvers/105.py[105.py] | 0.077 | 0.464
+| link:solvers/106.py[106.py] | 0.063 | 0.227
+| link:solvers/107.py[107.py] | 0.064 | 0.069
+| link:solvers/108.py[108.py] | 0.061 | 0.054
+| link:solvers/109.py[109.py] | 0.083 | 0.061
+| link:solvers/110.py[110.py] | 0.112 | 0.098
+| link:solvers/111.py[111.py] | 0.114 | 1.233
+| link:solvers/112.py[112.py] | 0.133 | 0.275
+| link:solvers/113.py[113.py] | 0.070 | 0.071
+| link:solvers/114.py[114.py] | 0.058 | 0.069
+| link:solvers/115.py[115.py] | 0.087 | 0.072
+| link:solvers/116.py[116.py] | 0.056 | 0.061
+| link:solvers/117.py[117.py] | 0.054 | 0.058
+| link:solvers/118.py[118.py] | 0.731 | 1.409
+| link:solvers/119.py[119.py] | 0.114 | 0.061
+| link:solvers/120.py[120.py] | 0.055 | 0.058
+| link:solvers/121.py[121.py] | 0.054 | 0.069
+| link:solvers/122.py[122.py] | 0.316 | 0.092
+| link:solvers/123.py[123.py] | 0.085 | 1.239
+| link:solvers/124.py[124.py] | 0.143 | 0.156
+| link:solvers/125.py[125.py] | 0.079 | 0.086
+| link:solvers/126.py[126.py] | 0.075 | 0.132
+| link:solvers/127.py[127.py] | 4.041 | 0.278
+| link:solvers/128.py[128.py] | 0.086 | 0.852
+| link:solvers/129.py[129.py] | 0.068 | 0.071
+| link:solvers/130.py[130.py] | 0.072 | 0.772
+| link:solvers/131.py[131.py] | 0.059 | 0.059
+| link:solvers/132.py[132.py] | 0.074 | 0.077
+| link:solvers/133.py[133.py] | 0.103 | 0.111
+| link:solvers/134.py[134.py] | 0.158 | 0.792
+| link:solvers/135.py[135.py] | 0.095 | 0.090
+| link:solvers/136.py[136.py] | 2.980 | 3.000
+| link:solvers/137.py[137.py] | 0.062 | 0.057
+| link:solvers/138.py[138.py] | 0.058 | 0.056
+| link:solvers/139.py[139.py] | 1.011 | 0.904
+| link:solvers/140.py[140.py] | 0.089 | 0.061
+| link:solvers/141.py[141.py] | 0.577 | 4.277
+| link:solvers/142.py[142.py] | 0.163 | 0.149
+| link:solvers/143.py[143.py] | 0.341 | 0.311
+| link:solvers/144.py[144.py] | 0.068 | 0.059
+| link:solvers/145.py[145.py] | 2.390 | 0.152
+| link:solvers/146.py[146.py] | 1.918 | 18.562
+| link:solvers/147.py[147.py] | 1.693 | 0.232
+| link:solvers/148.py[148.py] | 17.783 | 0.055
+| link:solvers/149.py[149.py] | 0.180 | 0.208
+| link:solvers/150.py[150.py] | 2.430 | 1.399
+| link:solvers/151.py[151.py] | 0.091 | 0.058
+| link:solvers/152.py[152.py] | 0.452 | 0.155
+| link:solvers/153.py[153.py] | 3.061 | 5.600
+| link:solvers/154.py[154.py] | 19.986 | 35.476
+| link:solvers/155.py[155.py] | 37.908 | 17.431
+| link:solvers/156.py[156.py] | 0.142 | 0.134
+| link:solvers/157.py[157.py] | 0.089 | 0.061
+| link:solvers/158.py[158.py] | 0.059 | 0.058
+| link:solvers/159.py[159.py] | 0.214 | 0.137
+| link:solvers/160.py[160.py] | 0.088 | 0.056
+| link:solvers/161.py[161.py] | 0.395 | 2.496
+| link:solvers/162.py[162.py] | 0.107 | 0.054
+| link:solvers/163.py[163.py] | 0.269 | 0.106
+| link:solvers/164.py[164.py] | 0.083 | 0.059
+| link:solvers/165.py[165.py] | 7.962 | 3.417
+| link:solvers/166.py[166.py] | 2.932 | 2.365
+| link:solvers/167.py[167.py] | 0.233 | 0.744
+| link:solvers/168.py[168.py] | 0.065 | 0.067
+| link:solvers/169.py[169.py] | 0.054 | 0.054
+| link:solvers/170.py[170.py] | 0.131 | 4.374
+| link:solvers/171.py[171.py] | 1.801 | 0.067
+| link:solvers/172.py[172.py] | 4.334 | 0.122
+| link:solvers/173.py[173.py] | 0.061 | 0.060
+| link:solvers/174.py[174.py] | 0.100 | 0.079
+| link:solvers/175.py[175.py] | 0.059 | 0.054
+| link:solvers/176.py[176.py] | 0.064 | 0.060
+| link:solvers/177.py[177.py] | 2.431 | 4.267
+| link:solvers/178.py[178.py] | 0.092 | 0.067
+| link:solvers/179.py[179.py] | 1.397 | 1.380
+| link:solvers/180.py[180.py] | 0.375 | 0.711
+| link:solvers/181.py[181.py] | 0.162 | 0.207
+| link:solvers/182.py[182.py] | 0.416 | 0.587
+| link:solvers/183.py[183.py] | 0.069 | 0.062
+| link:solvers/184.py[184.py] | 0.133 | 0.066
+| link:solvers/185.py[185.py] | 3.334 | 1.449
+| link:solvers/186.py[186.py] | 3.443 | 0.984
+| link:solvers/187.py[187.py] | 0.464 | 0.738
+| link:solvers/188.py[188.py] | 0.054 | 0.055
+| link:solvers/189.py[189.py] | 0.248 | 0.183
+| link:solvers/190.py[190.py] | 0.054 | 0.054
+| link:solvers/191.py[191.py] | 0.055 | 0.054
+| link:solvers/192.py[192.py] | 0.133 | 0.110
+| link:solvers/193.py[193.py] | 1.960 | 1.209
+| link:solvers/194.py[194.py] | 0.067 | 0.053
+| link:solvers/195.py[195.py] | 1.432 | 1.118
+| link:solvers/196.py[196.py] | 3.518 | 1.737
+| link:solvers/197.py[197.py] | 0.055 | 0.054
+| link:solvers/198.py[198.py] | 0.100 | 1.107
+| link:solvers/199.py[199.py] | 0.071 | 0.064
+| link:solvers/200.py[200.py] | 2.155 | 0.205
+| link:solvers/201.py[201.py] | 10.043 | 2.758
+| link:solvers/202.py[202.py] | 0.115 | 0.055
+| link:solvers/203.py[203.py] | 0.058 | 0.084
+| link:solvers/204.py[204.py] | 0.190 | 0.810
+| link:solvers/205.py[205.py] | 0.158 | 0.056
+| link:solvers/206.py[206.py] | 0.087 | 0.163
+| link:solvers/207.py[207.py] | 0.078 | 0.054
+| link:solvers/208.py[208.py] | 0.433 | 5.627
+| link:solvers/209.py[209.py] | 0.078 | 0.053
+| link:solvers/210.py[210.py] | 4.211 | 0.971
+| link:solvers/211.py[211.py] | 18.066 | 7.832
+| link:solvers/212.py[212.py] | 1.794 | 
+| link:solvers/213.py[213.py] | 0.186 | 0.344
+| link:solvers/214.py[214.py] | 2.658 | 1.719
+| link:solvers/215.py[215.py] | 0.212 | 0.104
+| link:solvers/216.py[216.py] | 82.069 | 4.586
+| link:solvers/217.py[217.py] | 0.082 | 0.098
+| link:solvers/218.py[218.py] | 0.058 | 0.054
+| link:solvers/219.py[219.py] | 0.057 | 0.055
+| link:solvers/220.py[220.py] | 0.088 | 0.057
+| link:solvers/221.py[221.py] | 8.239 | 1.086
+| link:solvers/222.py[222.py] | 0.558 | 12.662
+| link:solvers/223.py[223.py] | 1.447 | 11.141
+| link:solvers/224.py[224.py] | 0.245 | 0.783
+| link:solvers/225.py[225.py] | 0.074 | 0.125
+| link:solvers/226.py[226.py] | 0.080 | 2.444
+| link:solvers/227.py[227.py] | 0.380 | 
+| link:solvers/228.py[228.py] | 0.075 | 0.058
+| link:solvers/229.py[229.py] | 14.078 | 13.915
+| link:solvers/230.py[230.py] | 0.053 | 0.056
+| link:solvers/231.py[231.py] | 0.176 | 0.412
+| link:solvers/232.py[232.py] | 0.093 | 0.062
+| link:solvers/233.py[233.py] | 0.141 | 0.291
+| link:solvers/234.py[234.py] | 0.074 | 0.084
+| link:solvers/235.py[235.py] | 0.068 | 0.056
+| link:solvers/236.py[236.py] | 0.283 | 1.693
+| link:solvers/237.py[237.py] | 0.080 | 0.058
+| link:solvers/238.py[238.py] | 2.616 | 6.582
+| link:solvers/239.py[239.py] | 0.082 | 0.053
+| link:solvers/240.py[240.py] | 0.465 | 0.069
+| link:solvers/241.py[241.py] | 5.802 | 0.301
+| link:solvers/242.py[242.py] | 0.072 | 0.056
+| link:solvers/243.py[243.py] | 0.057 | 0.060
+| link:solvers/244.py[244.py] | 0.201 | 0.314
+| link:solvers/245.py[245.py] | 1.612 | 
+| link:solvers/246.py[246.py] | 0.106 | 0.128
+| link:solvers/247.py[247.py] | 1.026 | 0.622
+| link:solvers/248.py[248.py] | 1.402 | 3.090
+| link:solvers/249.py[249.py] | 0.791 | 1.093
+| link:solvers/250.py[250.py] | 0.405 | 0.396
+| link:solvers/251.py[251.py] | 23.087 | 
+| link:solvers/252.py[252.py] | 8.775 | 
+| link:solvers/253.py[253.py] | 23.854 | 1.850
+| link:solvers/254.py[254.py] | 0.642 | 
+| link:solvers/255.py[255.py] | 1.105 | 4.053
+| link:solvers/256.py[256.py] | 1.786 | 0.205
+| link:solvers/257.py[257.py] | 2.900 | 7.403
+| link:solvers/258.py[258.py] | 1.565 | 1.739
+| link:solvers/259.py[259.py] | 115.037 | 
+| link:solvers/260.py[260.py] | 0.965 | 1.711
+| link:solvers/261.py[261.py] | 0.162 | 0.238
+| link:solvers/262.py[262.py] | 0.554 | 1.070
+| link:solvers/263.py[263.py] | 6.522 | 7.213
+| link:solvers/264.py[264.py] | 1.089 | 
+| link:solvers/265.py[265.py] | 0.106 | 0.088
+| link:solvers/266.py[266.py] | 9.873 | 11.161
+| link:solvers/267.py[267.py] | 0.151 | 0.056
+| link:solvers/268.py[268.py] | 1.479 | 0.636
+| link:solvers/269.py[269.py] | 0.356 | 0.746
+| link:solvers/270.py[270.py] | 0.278 | 0.072
+| link:solvers/271.py[271.py] | 0.068 | 0.066
+| link:solvers/272.py[272.py] | 0.652 | 1.558
+| link:solvers/273.py[273.py] | 0.326 | 0.719
+| link:solvers/274.py[274.py] | 0.254 | 0.344
+| link:solvers/275.py[275.py] | 43.817 | 
+| link:solvers/276.py[276.py] | 0.466 | 0.529
+| link:solvers/277.py[277.py] | 0.056 | 0.054
+| link:solvers/278.py[278.py] | 0.209 | 0.153
+| link:solvers/279.py[279.py] | 4.793 | 8.493
+| link:solvers/280.py[280.py] | 0.782 | 0.090
+| link:solvers/281.py[281.py] | 0.125 | 0.060
+| link:solvers/282.py[282.py] | 0.076 | 0.078
+| link:solvers/283.py[283.py] | 10.757 | 7.906
+| link:solvers/284.py[284.py] | 2.351 | 0.280
+| link:solvers/285.py[285.py] | 0.125 | 0.064
+| link:solvers/286.py[286.py] | 0.080 | 0.059
+| link:solvers/287.py[287.py] | 4.865 | 
+| link:solvers/288.py[288.py] | 0.895 | 0.115
+| link:solvers/289.py[289.py] | 0.176 | 0.057
+| link:solvers/290.py[290.py] | 0.135 | 0.173
+| link:solvers/291.py[291.py] | 22.839 | 4.942
+| link:solvers/292.py[292.py] | 1.841 | 0.842
+| link:solvers/293.py[293.py] | 0.173 | 0.099
+| link:solvers/294.py[294.py] | 0.204 | 0.065
+| link:solvers/295.py[295.py] | 4.636 | 1.892
+| link:solvers/296.py[296.py] | 80.048 | 
+| link:solvers/297.py[297.py] | 0.065 | 0.057
+| link:solvers/298.py[298.py] | 0.538 | 
+| link:solvers/299.py[299.py] | 1.066 | 2.745
+| link:solvers/300.py[300.py] | 1.036 | 3.337
+| link:solvers/301.py[301.py] | 0.062 | 0.053
+| link:solvers/302.py[302.py] | 2.369 | 1.231
+| link:solvers/303.py[303.py] | 0.619 | 1.267
+| link:solvers/304.py[304.py] | 0.571 | 0.996
+| link:solvers/305.py[305.py] | 0.229 | 0.170
+| link:solvers/306.py[306.py] | 0.058 | 0.068
+| link:solvers/307.py[307.py] | 0.112 | 0.063
+| link:solvers/308.py[308.py] | 0.217 | 1.089
+| link:solvers/309.py[309.py] | 1.503 | 6.390
+| link:solvers/310.py[310.py] | 6.476 | 0.109
+| link:solvers/311.py[311.py] | 0.293 | 
+| link:solvers/312.py[312.py] | 0.409 | 0.056
+| link:solvers/313.py[313.py] | 0.071 | 0.075
+| link:solvers/314.py[314.py] | 1.835 | 
+| link:solvers/315.py[315.py] | 0.244 | 3.099
+| link:solvers/316.py[316.py] | 11.613 | 0.200
+| link:solvers/317.py[317.py] | 0.057 | 0.054
+| link:solvers/318.py[318.py] | 0.074 | 0.071
+| link:solvers/319.py[319.py] | 0.715 | 0.585
+| link:solvers/320.py[320.py] | 28.163 | 3.557
+| link:solvers/321.py[321.py] | 0.060 | 0.055
+| link:solvers/322.py[322.py] | 0.118 | 1.847
+| link:solvers/323.py[323.py] | 0.055 | 0.097
+| link:solvers/324.py[324.py] | 0.381 | 0.322
+| link:solvers/325.py[325.py] | 0.137 | 0.054
+| link:solvers/326.py[326.py] | 0.682 | 0.282
+| link:solvers/327.py[327.py] | 0.077 | 0.054
+| link:solvers/328.py[328.py] | 0.208 | 0.827
+| link:solvers/329.py[329.py] | 0.098 | 0.058
+| link:solvers/330.py[330.py] | 0.103 | 0.484
+| link:solvers/331.py[331.py] | 0.225 | 
+| link:solvers/332.py[332.py] | 0.406 | 1.673
+| link:solvers/333.py[333.py] | 2.909 | 6.669
+| link:solvers/334.py[334.py] | 0.640 | 0.056
+| link:solvers/335.py[335.py] | 0.072 | 0.057
+| link:solvers/336.py[336.py] | 0.252 | 0.210
+| link:solvers/337.py[337.py] | 11.549 | 
+| link:solvers/338.py[338.py] | 0.110 | 5.001
+| link:solvers/339.py[339.py] | 0.113 | 2.031
+| link:solvers/340.py[340.py] | 0.062 | 0.054
+| link:solvers/341.py[341.py] | 0.702 | 0.702
+| link:solvers/342.py[342.py] | 11.835 | 0.438
+| link:solvers/343.py[343.py] | 27.787 | 0.369
+| link:solvers/344.py[344.py] | 1.638 | 0.126
+| link:solvers/345.py[345.py] | 0.095 | 0.070
+| link:solvers/346.py[346.py] | 0.152 | 0.266
+| link:solvers/347.py[347.py] | 0.199 | 0.309
+| link:solvers/348.py[348.py] | 59.633 | 4.060
+| link:solvers/349.py[349.py] | 0.057 | 0.084
+| link:solvers/350.py[350.py] | 0.192 | 0.140
+| link:solvers/351.py[351.py] | 0.095 | 0.123
+| link:solvers/352.py[352.py] | 0.658 | 
+| link:solvers/353.py[353.py] | 8.820 | 7.246
+| link:solvers/354.py[354.py] | 1.617 | 3.361
+| link:solvers/355.py[355.py] | 0.720 | 0.106
+| link:solvers/356.py[356.py] | 0.110 | 0.064
+| link:solvers/357.py[357.py] | 5.254 | 2.383
+| link:solvers/358.py[358.py] | 13.951 | 0.055
+| link:solvers/359.py[359.py] | 0.055 | 0.074
+| link:solvers/360.py[360.py] | 0.112 | 2.802
+| link:solvers/361.py[361.py] | 0.222 | 0.147
+| link:solvers/362.py[362.py] | 2.600 | 
+| link:solvers/363.py[363.py] | 0.131 | 0.064
+| link:solvers/364.py[364.py] | 0.169 | 0.142
+| link:solvers/365.py[365.py] | 0.420 | 0.386
+| link:solvers/366.py[366.py] | 0.106 | 0.054
+| link:solvers/367.py[367.py] | 0.276 | 0.111
+| link:solvers/368.py[368.py] | 0.691 | 0.956
+| link:solvers/369.py[369.py] | 0.127 | 0.078
+| link:solvers/370.py[370.py] | 0.133 | 
+| link:solvers/371.py[371.py] | 0.053 | 0.058
+| link:solvers/372.py[372.py] | 1.705 | 6.476
+| link:solvers/373.py[373.py] | 1.098 | 
+| link:solvers/374.py[374.py] | 0.618 | 0.782
+| link:solvers/375.py[375.py] | 1.304 | 1.396
+| link:solvers/376.py[376.py] | 4.841 | 0.353
+| link:solvers/377.py[377.py] | 0.105 | 0.071
+| link:solvers/378.py[378.py] | 13.007 | 
+| link:solvers/379.py[379.py] | 5.745 | 
+| link:solvers/380.py[380.py] | 0.098 | 0.057
+| link:solvers/381.py[381.py] | 2.832 | 1.616
+| link:solvers/382.py[382.py] | 0.087 | 0.061
+| link:solvers/383.py[383.py] | 0.179 | 0.062
+| link:solvers/384.py[384.py] | 0.094 | 0.144
+| link:solvers/385.py[385.py] | 0.134 | 0.061
+| link:solvers/386.py[386.py] | 0.834 | 9.767
+| link:solvers/387.py[387.py] | 0.122 | 0.111
+| link:solvers/388.py[388.py] | 0.561 | 0.496
+| link:solvers/389.py[389.py] | 0.131 | 0.054
+| link:solvers/390.py[390.py] | 0.127 | 0.061
+| link:solvers/391.py[391.py] | 1.027 | 0.252
+| link:solvers/392.py[392.py] | 0.080 | 0.061
+| link:solvers/393.py[393.py] | 13.176 | 0.752
+| link:solvers/394.py[394.py] | 0.088 | 0.055
+| link:solvers/395.py[395.py] | 0.245 | 0.097
+| link:solvers/396.py[396.py] | 0.116 | 0.083
+| link:solvers/397.py[397.py] | 3.560 | 
+| link:solvers/398.py[398.py] | 0.328 | 0.098
+| link:solvers/399.py[399.py] | 4.903 | 
+| link:solvers/400.py[400.py] | 0.342 | 14.936
+| link:solvers/401.py[401.py] | 2.009 | 3.227
+| link:solvers/402.py[402.py] | 0.127 | 0.081
+| link:solvers/403.py[403.py] | 1.094 | 0.645
+| link:solvers/404.py[404.py] | 9.342 | 36.533
+| link:solvers/405.py[405.py] | 0.083 | 0.055
+| link:solvers/406.py[406.py] | 1.002 | 0.124
+| link:solvers/407.py[407.py] | 8.929 | 9.299
+| link:solvers/408.py[408.py] | 2.705 | 2.115
+| link:solvers/409.py[409.py] | 0.329 | 0.180
+| link:solvers/410.py[410.py] | 1.995 | 4.231
+| link:solvers/411.py[411.py] | 13.880 | 
+| link:solvers/412.py[412.py] | 0.578 | 0.592
+| link:solvers/413.py[413.py] | 18.845 | 
+| link:solvers/414.py[414.py] | 13.126 | 
+| link:solvers/415.py[415.py] | 100.317 | 
+| link:solvers/416.py[416.py] | 6.503 | 
+| link:solvers/417.py[417.py] | 11.211 | 
+| link:solvers/418.py[418.py] | 2.043 | 7.337
+| link:solvers/419.py[419.py] | 0.326 | 0.300
+| link:solvers/420.py[420.py] | 0.982 | 0.960
+| link:solvers/421.py[421.py] | 2.073 | 3.541
+| link:solvers/422.py[422.py] | 0.109 | 0.061
+| link:solvers/423.py[423.py] | 2.134 | 2.467
+| link:solvers/424.py[424.py] | 0.844 | 0.633
+| link:solvers/425.py[425.py] | 4.366 | 1.680
+| link:solvers/426.py[426.py] | 0.496 | 1.261
+| link:solvers/427.py[427.py] | 3.178 | 
+| link:solvers/428.py[428.py] | 2.022 | 1.152
+| link:solvers/429.py[429.py] | 1.636 | 2.027
+| link:solvers/430.py[430.py] | 0.108 | 0.913
+| link:solvers/431.py[431.py] | 0.146 | 0.145
+| link:solvers/432.py[432.py] | 1.240 | 
+| link:solvers/433.py[433.py] | 0.105 | 1.992
+| link:solvers/434.py[434.py] | 0.739 | 0.354
+| link:solvers/435.py[435.py] | 0.068 | 0.082
+| link:solvers/436.py[436.py] | 0.115 | 0.053
+| link:solvers/437.py[437.py] | 6.854 | 7.815
+| link:solvers/438.py[438.py] | 19.389 | 
+| link:solvers/439.py[439.py] | 12.590 | 
+| link:solvers/440.py[440.py] | 0.993 | 1.343
+| link:solvers/441.py[441.py] | 0.675 | 3.805
+| link:solvers/442.py[442.py] | 0.464 | 0.090
+| link:solvers/443.py[443.py] | 2.064 | 0.171
+| link:solvers/444.py[444.py] | 0.142 | 0.069
+| link:solvers/445.py[445.py] | 4.030 | 5.750
+| link:solvers/446.py[446.py] | 3.014 | 3.193
+| link:solvers/447.py[447.py] | 0.545 | 3.681
+| link:solvers/448.py[448.py] | 2.785 | 6.147
+| link:solvers/449.py[449.py] | 0.100 | 0.072
+| link:solvers/450.py[450.py] | 0.602 | 0.810
+| link:solvers/451.py[451.py] | 74.218 | 11.053
+| link:solvers/452.py[452.py] | 2.987 | 9.271
+| link:solvers/453.py[453.py] | 0.229 | 7.141
+| link:solvers/454.py[454.py] | 3.694 | 9.723
+| link:solvers/455.py[455.py] | 1.458 | 1.947
+| link:solvers/456.py[456.py] | 7.393 | 20.095
+| link:solvers/457.py[457.py] | 1.024 | 0.584
+| link:solvers/458.py[458.py] | 0.067 | 8.135
+| link:solvers/459.py[459.py] | 36.174 | 
+| link:solvers/460.py[460.py] | 1.552 | 4.990
+| link:solvers/461.py[461.py] | 0.162 | 4.498
+| link:solvers/462.py[462.py] | 0.099 | 0.068
+| link:solvers/463.py[463.py] | 0.127 | 0.057
+| link:solvers/464.py[464.py] | 10.824 | 5.196
+| link:solvers/465.py[465.py] | 7.407 | 2.259
+| link:solvers/466.py[466.py] | 7.379 | 12.348
+| link:solvers/467.py[467.py] | 0.233 | 2.193
+| link:solvers/468.py[468.py] | 0.225 | 
+| link:solvers/469.py[469.py] | 0.145 | 0.054
+| link:solvers/470.py[470.py] | 1.820 | 4.057
+| link:solvers/471.py[471.py] | 0.156 | 0.068
+| link:solvers/472.py[472.py] | 0.103 | 0.057
+| link:solvers/473.py[473.py] | 0.585 | 0.235
+| link:solvers/474.py[474.py] | 41.171 | 
+| link:solvers/475.py[475.py] | 0.168 | 9.543
+| link:solvers/476.py[476.py] | 25.504 | 
+| link:solvers/477.py[477.py] | 0.465 | 0.081
+| link:solvers/478.py[478.py] | 0.119 | 3.890
+| link:solvers/479.py[479.py] | 0.515 | 0.492
+| link:solvers/480.py[480.py] | 0.133 | 0.137
+| link:solvers/481.py[481.py] | 0.755 | 0.313
+| link:solvers/482.py[482.py] | 3.574 | 4.583
+| link:solvers/483.py[483.py] | 8.307 | 
+| link:solvers/484.py[484.py] | 1.523 | 1.836
+| link:solvers/485.py[485.py] | 2.056 | 9.202
+| link:solvers/486.py[486.py] | 0.296 | 6.795
+| link:solvers/487.py[487.py] | 0.362 | 0.359
+| link:solvers/488.py[488.py] | 0.125 | 0.073
+| link:solvers/489.py[489.py] | 0.893 | 0.562
+| link:solvers/490.py[490.py] | 0.160 | 0.118
+| link:solvers/491.py[491.py] | 0.066 | 0.107
+| link:solvers/492.py[492.py] | 1.367 | 1.075
+| link:solvers/493.py[493.py] | 0.097 | 0.056
+| link:solvers/494.py[494.py] | 0.083 | 25.700
+| link:solvers/495.py[495.py] | 1.424 | 2.174
+| link:solvers/496.py[496.py] | 0.370 | 0.255
+| link:solvers/497.py[497.py] | 0.243 | 0.123
+| link:solvers/498.py[498.py] | 0.140 | 0.054
+| link:solvers/499.py[499.py] | 0.116 | 
+| link:solvers/500.py[500.py] | 1.463 | 0.451
+| link:solvers/501.py[501.py] | 126.958 | 3.131
+| link:solvers/502.py[502.py] | 2.903 | 
+| link:solvers/503.py[503.py] | 0.137 | 0.079
+| link:solvers/504.py[504.py] | 0.645 | 2.253
+| link:solvers/505.py[505.py] | 106.445 | 
+| link:solvers/506.py[506.py] | 0.101 | 0.057
+| link:solvers/507.py[507.py] | 177.141 | 
+| link:solvers/508.py[508.py] | 0.211 | 0.069
+| link:solvers/509.py[509.py] | 0.107 | 0.059
+| link:solvers/510.py[510.py] | 1.384 | 0.059
+| link:solvers/511.py[511.py] | 1.665 | 
+| link:solvers/512.py[512.py] | 18.230 | 0.278
+| link:solvers/513.py[513.py] | 15.445 | 0.495
+| link:solvers/514.py[514.py] | 0.522 | 
+| link:solvers/515.py[515.py] | 0.132 | 0.092
+| link:solvers/516.py[516.py] | 0.941 | 0.330
+| link:solvers/517.py[517.py] | 0.705 | 0.540
+| link:solvers/518.py[518.py] | 4.163 | 9.347
+| link:solvers/519.py[519.py] | 0.200 | 6.871
+| link:solvers/520.py[520.py] | 0.108 | 0.056
+| link:solvers/521.py[521.py] | 35.023 | 
+| link:solvers/522.py[522.py] | 2.453 | 3.048
+| link:solvers/523.py[523.py] | 0.060 | 0.053
+| link:solvers/524.py[524.py] | 11.384 | 0.058
+| link:solvers/525.py[525.py] | 0.167 | 0.065
+| link:solvers/526.py[526.py] | 41.979 | 
+| link:solvers/527.py[527.py] | 0.120 | 0.057
+| link:solvers/528.py[528.py] | 0.126 | 0.065
+| link:solvers/529.py[529.py] | 9.143 | 
+| link:solvers/530.py[530.py] | 5.856 | 
+| link:solvers/531.py[531.py] | 1.608 | 2.996
+| link:solvers/532.py[532.py] | 0.132 | 0.441
+| link:solvers/533.py[533.py] | 1.071 | 0.365
+| link:solvers/534.py[534.py] | 51.208 | 
+| link:solvers/535.py[535.py] | 0.568 | 0.074
+| link:solvers/536.py[536.py] | 10.601 | 
+| link:solvers/537.py[537.py] | 23.167 | 0.559
+| link:solvers/538.py[538.py] | 1.363 | 3.517
+| link:solvers/539.py[539.py] | 0.104 | 0.056
+| link:solvers/540.py[540.py] | 9.710 | 2.185
+| link:solvers/541.py[541.py] | 0.154 | 0.063
+| link:solvers/542.py[542.py] | 1.065 | 0.162
+| link:solvers/543.py[543.py] | 0.706 | 0.316
+| link:solvers/544.py[544.py] | 2.921 | 
+| link:solvers/545.py[545.py] | 0.878 | 0.651
+| link:solvers/546.py[546.py] | 0.112 | 0.086
+| link:solvers/547.py[547.py] | 0.543 | 5.872
+| link:solvers/548.py[548.py] | 0.795 | 0.505
+| link:solvers/549.py[549.py] | 31.523 | 5.282
+| link:solvers/550.py[550.py] | 0.692 | 2.329
+| link:solvers/551.py[551.py] | 0.154 | 0.628
+| link:solvers/552.py[552.py] | 66.467 | 2.993
+| link:solvers/553.py[553.py] | 0.891 | 5.183
+| link:solvers/554.py[554.py] | 0.791 | 0.731
+| link:solvers/555.py[555.py] | 0.273 | 0.060
+| link:solvers/556.py[556.py] | 1.137 | 1.288
+| link:solvers/557.py[557.py] | 13.987 | 
+| link:solvers/558.py[558.py] | 102.015 | 
+| link:solvers/559.py[559.py] | 3.744 | 
+| link:solvers/560.py[560.py] | 0.397 | 0.698
+| link:solvers/561.py[561.py] | 0.065 | 0.054
+| link:solvers/562.py[562.py] | 0.416 | 
+| link:solvers/563.py[563.py] | 4.428 | 21.935
+| link:solvers/564.py[564.py] | 2.307 | 
+| link:solvers/565.py[565.py] | 16.009 | 
+| link:solvers/566.py[566.py] | 0.101 | 
+| link:solvers/567.py[567.py] | 0.101 | 0.054
+| link:solvers/568.py[568.py] | 0.122 | 0.065
+| link:solvers/569.py[569.py] | 2.061 | 
+| link:solvers/570.py[570.py] | 3.488 | 3.745
+| link:solvers/571.py[571.py] | 37.492 | 
+| link:solvers/572.py[572.py] | 1.163 | 
+| link:solvers/573.py[573.py] | 0.105 | 0.107
+| link:solvers/574.py[574.py] | 0.247 | 2.407
+| link:solvers/575.py[575.py] | 0.072 | 0.055
+| link:solvers/576.py[576.py] | 6.163 | 
+| link:solvers/577.py[577.py] | 0.105 | 0.055
+| link:solvers/578.py[578.py] | 24.776 | 
+| link:solvers/579.py[579.py] | 1.650 | 
+| link:solvers/580.py[580.py] | 3.210 | 3.675
+| link:solvers/581.py[581.py] | 3.398 | 5.309
+| link:solvers/582.py[582.py] | 0.159 | 0.095
+| link:solvers/583.py[583.py] | 25.482 | 46.388
+| link:solvers/584.py[584.py] | 1.663 | 3.530
+| link:solvers/585.py[585.py] | 0.523 | 15.058
+| link:solvers/586.py[586.py] | 0.397 | 0.560
+| link:solvers/587.py[587.py] | 0.075 | 0.058
+| link:solvers/588.py[588.py] | 0.102 | 0.060
+| link:solvers/589.py[589.py] | 3.219 | 
+| link:solvers/590.py[590.py] | 0.263 | 0.869
+| link:solvers/591.py[591.py] | 0.755 | 69.090
+| link:solvers/592.py[592.py] | 0.168 | 1.281
+| link:solvers/593.py[593.py] | 1.373 | 6.167
+| link:solvers/594.py[594.py] | 0.178 | 3.313
+| link:solvers/595.py[595.py] | 0.237 | 0.160
+| link:solvers/596.py[596.py] | 5.341 | 4.495
+| link:solvers/597.py[597.py] | 0.117 | 0.190
+| link:solvers/598.py[598.py] | 0.681 | 0.374
+| link:solvers/599.py[599.py] | 0.099 | 0.069
+| link:solvers/600.py[600.py] | 0.084 | 0.064
+| link:solvers/601.py[601.py] | 0.056 | 0.056
+| link:solvers/602.py[602.py] | 0.797 | 0.712
+| link:solvers/603.py[603.py] | 0.352 | 1.165
+| link:solvers/604.py[604.py] | 0.183 | 0.203
+| link:solvers/605.py[605.py] | 0.093 | 0.054
+| link:solvers/606.py[606.py] | 6.217 | 
+| link:solvers/607.py[607.py] | 0.088 | 0.058
+| link:solvers/608.py[608.py] | 3.452 | 2.123
+| link:solvers/609.py[609.py] | 13.965 | 2.665
+| link:solvers/610.py[610.py] | 0.173 | 0.089
+| link:solvers/611.py[611.py] | 12.964 | 
+| link:solvers/612.py[612.py] | 0.122 | 0.063
+| link:solvers/613.py[613.py] | 0.061 | 0.106
+| link:solvers/614.py[614.py] | 0.066 | 
+| link:solvers/615.py[615.py] | 10.299 | 0.457
+| link:solvers/616.py[616.py] | 0.416 | 0.300
+| link:solvers/617.py[617.py] | 0.111 | 0.059
+| link:solvers/618.py[618.py] | 0.616 | 0.300
+| link:solvers/619.py[619.py] | 0.526 | 0.562
+| link:solvers/620.py[620.py] | 1.225 | 0.422
+| link:solvers/621.py[621.py] | 0.303 | 0.144
+| link:solvers/622.py[622.py] | 2.659 | 0.089
+| link:solvers/623.py[623.py] | 8.766 | 2.869
+| link:solvers/624.py[624.py] | 0.127 | 0.055
+| link:solvers/625.py[625.py] | 1.877 | 2.999
+| link:solvers/626.py[626.py] | 0.216 | 1.683
+| link:solvers/627.py[627.py] | 0.122 | 0.057
+| link:solvers/628.py[628.py] | 0.785 | 0.520
+| link:solvers/629.py[629.py] | 0.164 | 0.096
+| link:solvers/630.py[630.py] | 1.051 | 14.458
+| link:solvers/631.py[631.py] | 1.760 | 0.110
+| link:solvers/632.py[632.py] | 5.078 | 4.430
+| link:solvers/633.py[633.py] | 0.246 | 0.307
+| link:solvers/634.py[634.py] | 0.213 | 0.151
+| link:solvers/635.py[635.py] | 6.251 | 6.509
+| link:solvers/636.py[636.py] | 3.425 | 
+| link:solvers/637.py[637.py] | 26.787 | 
+| link:solvers/638.py[638.py] | 0.270 | 0.188
+| link:solvers/639.py[639.py] | 4.653 | 1.626
+| link:solvers/640.py[640.py] | 1.630 | 
+| link:solvers/641.py[641.py] | 1.280 | 1.670
+| link:solvers/642.py[642.py] | 47.987 | 
+| link:solvers/643.py[643.py] | 1.146 | 1.370
+| link:solvers/644.py[644.py] | 3.547 | 
+| link:solvers/645.py[645.py] | 0.117 | 0.075
+| link:solvers/646.py[646.py] | 14.765 | 14.088
+| link:solvers/647.py[647.py] | 0.119 | 0.070
+| link:solvers/648.py[648.py] | 1.187 | 0.969
+| link:solvers/649.py[649.py] | 0.146 | 0.546
+| link:solvers/650.py[650.py] | 30.908 | 0.603
+| link:solvers/651.py[651.py] | 0.202 | 0.106
+| link:solvers/652.py[652.py] | 0.081 | 0.064
+| link:solvers/653.py[653.py] | 0.148 | 0.139
+| link:solvers/654.py[654.py] | 1.801 | 
+| link:solvers/655.py[655.py] | 38.562 | 
+| link:solvers/656.py[656.py] | 0.107 | 0.089
+| link:solvers/657.py[657.py] | 0.089 | 3.658
+| link:solvers/658.py[658.py] | 1.087 | 3.616
+| link:solvers/659.py[659.py] | 1.456 | 2.289
+| link:solvers/660.py[660.py] | 6.946 | 
+| link:solvers/661.py[661.py] | 0.063 | 0.101
+| link:solvers/662.py[662.py] | 94.847 | 
+| link:solvers/663.py[663.py] | 2.536 | 
+| link:solvers/664.py[664.py] | 0.115 | 5.975
+| link:solvers/665.py[665.py] | 2.510 | 46.631
+| link:solvers/666.py[666.py] | 0.121 | 0.065
+| link:solvers/667.py[667.py] | 6.725 | 
+| link:solvers/668.py[668.py] | 0.387 | 0.643
+| link:solvers/669.py[669.py] | 0.085 | 0.053
+| link:solvers/670.py[670.py] | 1.598 | 1.446
+| link:solvers/671.py[671.py] | 0.198 | 5.494
+| link:solvers/672.py[672.py] | 0.102 | 0.063
+| link:solvers/673.py[673.py] | 0.104 | 0.065
+| link:solvers/674.py[674.py] | 3.307 | 1.637
+| link:solvers/675.py[675.py] | 46.059 | 2.108
+| link:solvers/676.py[676.py] | 0.095 | 0.072
+| link:solvers/677.py[677.py] | 2.102 | 2.102
+| link:solvers/678.py[678.py] | 5.441 | 21.819
+| link:solvers/679.py[679.py] | 0.102 | 0.066
+| link:solvers/680.py[680.py] | 105.370 | 
+| link:solvers/681.py[681.py] | 122.323 | 
+| link:solvers/682.py[682.py] | 0.070 | 0.190
+| link:solvers/683.py[683.py] | 0.152 | 
+| link:solvers/684.py[684.py] | 0.066 | 0.057
+| link:solvers/685.py[685.py] | 0.272 | 0.286
+| link:solvers/686.py[686.py] | 0.718 | 0.400
+| link:solvers/687.py[687.py] | 0.108 | 0.572
+| link:solvers/688.py[688.py] | 6.874 | 3.741
+| link:solvers/689.py[689.py] | 0.195 | 
+| link:solvers/690.py[690.py] | 0.185 | 0.132
+| link:solvers/691.py[691.py] | 2.168 | 7.817
+| link:solvers/692.py[692.py] | 0.077 | 0.058
+| link:solvers/693.py[693.py] | 6.818 | 5.494
+| link:solvers/694.py[694.py] | 0.592 | 0.254
+| link:solvers/695.py[695.py] | 0.220 | 
+| link:solvers/696.py[696.py] | 0.286 | 0.371
+| link:solvers/697.py[697.py] | 0.113 | 0.055
+| link:solvers/698.py[698.py] | 0.090 | 0.073
+| link:solvers/699.py[699.py] | 0.968 | 0.804
+| link:solvers/700.py[700.py] | 1.233 | 0.407
+| link:solvers/701.py[701.py] | 40.357 | 
+| link:solvers/702.py[702.py] | 0.079 | 0.053
+| link:solvers/703.py[703.py] | 0.227 | 0.414
+| link:solvers/704.py[704.py] | 0.133 | 0.054
+| link:solvers/705.py[705.py] | 65.249 | 
+| link:solvers/706.py[706.py] | 0.124 | 0.187
+| link:solvers/707.py[707.py] | 0.228 | 1.573
+| link:solvers/708.py[708.py] | 3.549 | 3.545
+| link:solvers/709.py[709.py] | 3.460 | 1.956
+| link:solvers/710.py[710.py] | 0.276 | 0.074
+| link:solvers/711.py[711.py] | 0.244 | 0.145
+| link:solvers/712.py[712.py] | 95.006 | 34.800
+| link:solvers/713.py[713.py] | 0.068 | 0.086
+| link:solvers/714.py[714.py] | 5.339 | 
+| link:solvers/715.py[715.py] | 77.257 | 
+| link:solvers/716.py[716.py] | 0.091 | 0.055
+| link:solvers/717.py[717.py] | 0.906 | 0.505
+| link:solvers/718.py[718.py] | 1.549 | 24.809
+| link:solvers/719.py[719.py] | 1.035 | 0.786
+| link:solvers/720.py[720.py] | 0.634 | 1.565
+| link:solvers/721.py[721.py] | 9.884 | 9.910
+| link:solvers/722.py[722.py] | 0.086 | 0.067
+| link:solvers/723.py[723.py] | 1.192 | 0.056
+| link:solvers/724.py[724.py] | 0.190 | 0.065
+| link:solvers/725.py[725.py] | 0.168 | 0.101
+| link:solvers/726.py[726.py] | 0.511 | 0.381
+| link:solvers/727.py[727.py] | 0.214 | 0.114
+| link:solvers/728.py[728.py] | 0.754 | 2.086
+| link:solvers/729.py[729.py] | 62.867 | 
+| link:solvers/730.py[730.py] | 34.591 | 
+| link:solvers/731.py[731.py] | 0.084 | 0.058
+| link:solvers/732.py[732.py] | 0.382 | 0.184
+| link:solvers/733.py[733.py] | 8.167 | 2.615
+| link:solvers/734.py[734.py] | 0.689 | 0.332
+| link:solvers/735.py[735.py] | 16.234 | 
+| link:solvers/736.py[736.py] | 0.158 | 0.073
+| link:solvers/737.py[737.py] | 0.165 | 0.090
+| link:solvers/738.py[738.py] | 3.772 | 2.544
+| link:solvers/739.py[739.py] | 2.505 | 4.973
+| link:solvers/740.py[740.py] | 1.920 | 6.539
+| link:solvers/741.py[741.py] | 0.868 | 1.374
+| link:solvers/742.py[742.py] | 0.898 | 1.746
+| link:solvers/743.py[743.py] | 3.036 | 2.675
+| link:solvers/744.py[744.py] | 0.135 | 0.058
+| link:solvers/745.py[745.py] | 2.681 | 0.688
+| link:solvers/746.py[746.py] | 0.210 | 6.527
+| link:solvers/747.py[747.py] | 17.801 | 
+| link:solvers/748.py[748.py] | 2.359 | 5.037
+| link:solvers/749.py[749.py] | 1.652 | 
+| link:solvers/750.py[750.py] | 1.133 | 0.770
+| link:solvers/751.py[751.py] | 0.089 | 
+| link:solvers/752.py[752.py] | 5.407 | 0.378
+| link:solvers/753.py[753.py] | 0.203 | 5.597
+| link:solvers/754.py[754.py] | 105.190 | 5.390
+| link:solvers/755.py[755.py] | 0.098 | 0.056
+| link:solvers/756.py[756.py] | 0.108 | 0.586
+| link:solvers/757.py[757.py] | 28.238 | 82.959
+| link:solvers/758.py[758.py] | 0.408 | 
+| link:solvers/759.py[759.py] | 0.092 | 0.057
+| link:solvers/760.py[760.py] | 0.113 | 0.055
+| link:solvers/761.py[761.py] | 1.908 | 0.054
+| link:solvers/762.py[762.py] | 0.217 | 0.071
+| link:solvers/763.py[763.py] | 1.871 | 
+| link:solvers/764.py[764.py] | 0.312 | 2.356
+| link:solvers/765.py[765.py] | 0.104 | 0.174
+| link:solvers/766.py[766.py] | 12.830 | 11.055
+| link:solvers/767.py[767.py] | 1.240 | 1.069
+| link:solvers/768.py[768.py] | 0.113 | 0.147
+| link:solvers/769.py[769.py] | 5.687 | 7.639
+| link:solvers/770.py[770.py] | 0.097 | 0.059
+| link:solvers/771.py[771.py] | 1.992 | 0.075
+| link:solvers/772.py[772.py] | 0.633 | 0.976
+| link:solvers/773.py[773.py] | 0.074 | 0.060
+| link:solvers/774.py[774.py] | 19.126 | 2.793
+| link:solvers/775.py[775.py] | 0.263 | 0.166
+| link:solvers/776.py[776.py] | 0.173 | 
+| link:solvers/777.py[777.py] | 0.195 | 0.653
+| link:solvers/778.py[778.py] | 0.108 | 0.066
+| link:solvers/779.py[779.py] | 0.184 | 1.767
+| link:solvers/780.py[780.py] | 4.671 | 1.785
+| link:solvers/781.py[781.py] | 0.653 | 
+| link:solvers/782.py[782.py] | 4.005 | 17.137
+| link:solvers/783.py[783.py] | 0.127 | 27.479
+| link:solvers/784.py[784.py] | 5.414 | 13.721
+| link:solvers/785.py[785.py] | 1.492 | 10.731
+| link:solvers/786.py[786.py] | 0.977 | 0.743
+| link:solvers/787.py[787.py] | 0.364 | 0.277
+| link:solvers/788.py[788.py] | 0.914 | 0.069
+| link:solvers/789.py[789.py] | 4.265 | 7.162
+| link:solvers/790.py[790.py] | 9.579 | 5.056
+| link:solvers/791.py[791.py] | 4.156 | 6.511
+| link:solvers/792.py[792.py] | 0.549 | 
+| link:solvers/793.py[793.py] | 2.609 | 0.462
+| link:solvers/794.py[794.py] | 0.340 | 0.138
+| link:solvers/795.py[795.py] | 1.103 | 0.709
+| link:solvers/796.py[796.py] | 0.419 | 0.059
+| link:solvers/797.py[797.py] | 6.615 | 4.320
+| link:solvers/798.py[798.py] | 5.988 | 
+| link:solvers/799.py[799.py] | 2.430 | 7.195
+| link:solvers/800.py[800.py] | 1.119 | 0.250
+| link:solvers/801.py[801.py] | 2.727 | 2.912
+| link:solvers/802.py[802.py] | 0.503 | 0.566
+| link:solvers/803.py[803.py] | 0.730 | 4.355
+| link:solvers/804.py[804.py] | 1.553 | 2.764
+| link:solvers/805.py[805.py] | 0.421 | 2.672
+| link:solvers/806.py[806.py] | 0.327 | 0.211
+| link:solvers/807.py[807.py] | 0.116 | 17.869
+| link:solvers/808.py[808.py] | 2.932 | 1.512
+| link:solvers/809.py[809.py] | 0.101 | 0.059
+| link:solvers/810.py[810.py] | 51.788 | 2.099
+| link:solvers/811.py[811.py] | 0.097 | 
+| link:solvers/812.py[812.py] | 0.334 | 1.072
+| link:solvers/813.py[813.py] | 0.103 | 0.062
+| link:solvers/814.py[814.py] | 1.466 | 1.246
+| link:solvers/815.py[815.py] | 0.862 | 2.178
+| link:solvers/816.py[816.py] | 9.427 | 6.484
+| link:solvers/817.py[817.py] | 0.217 | 0.142
+| link:solvers/818.py[818.py] | 0.575 | 
+| link:solvers/819.py[819.py] | 0.112 | 0.071
+| link:solvers/820.py[820.py] | 1.803 | 2.179
+| link:solvers/821.py[821.py] | 0.135 | 0.059
+| link:solvers/822.py[822.py] | 0.113 | 0.075
+| link:solvers/823.py[823.py] | 2.639 | 0.937
+| link:solvers/824.py[824.py] | 3.781 | 5.806
+| link:solvers/825.py[825.py] | 0.187 | 0.057
+| link:solvers/826.py[826.py] | 0.221 | 0.064
+| link:solvers/827.py[827.py] | 0.871 | 0.617
+| link:solvers/828.py[828.py] | 1.234 | 0.447
+| link:solvers/829.py[829.py] | 5.043 | 2.937
+| link:solvers/830.py[830.py] | 0.108 | 0.088
+| link:solvers/831.py[831.py] | 0.099 | 0.057
+| link:solvers/832.py[832.py] | 0.096 | 0.058
+| link:solvers/833.py[833.py] | 0.149 | 1.308
+| link:solvers/834.py[834.py] | 1.494 | 5.189
+| link:solvers/835.py[835.py] | 0.095 | 0.056
+| link:solvers/836.py[836.py] | 0.096 | 0.059
+| link:solvers/837.py[837.py] | 12.890 | 
+| link:solvers/838.py[838.py] | 0.167 | 0.232
+| link:solvers/839.py[839.py] | 2.525 | 0.612
+| link:solvers/840.py[840.py] | 1.390 | 
+| link:solvers/841.py[841.py] | 0.572 | 0.092
+| link:solvers/842.py[842.py] | 3.067 | 
+| link:solvers/843.py[843.py] | 0.558 | 0.413
+| link:solvers/844.py[844.py] | 0.270 | 0.214
+| link:solvers/845.py[845.py] | 0.127 | 0.071
+| link:solvers/846.py[846.py] | 5.091 | 0.382
+| link:solvers/847.py[847.py] | 0.107 | 0.061
+| link:solvers/848.py[848.py] | 0.094 | 0.094
+| link:solvers/849.py[849.py] | 2.254 | 8.662
+| link:solvers/850.py[850.py] | 15.404 | 2.027
+| link:solvers/851.py[851.py] | 0.327 | 0.388
+| link:solvers/852.py[852.py] | 0.367 | 1.105
+| link:solvers/853.py[853.py] | 0.134 | 0.119
+| link:solvers/854.py[854.py] | 0.081 | 0.063
+| link:solvers/855.py[855.py] | 0.077 | 0.058
+| link:solvers/856.py[856.py] | 1.177 | 0.079
+| link:solvers/857.py[857.py] | 0.288 | 0.511
+| link:solvers/858.py[858.py] | 0.711 | 0.509
+| link:solvers/859.py[859.py] | 0.148 | 0.637
+| link:solvers/860.py[860.py] | 0.127 | 6.205
+| link:solvers/861.py[861.py] | 2.722 | 
+| link:solvers/862.py[862.py] | 0.183 | 0.122
+| link:solvers/863.py[863.py] | 0.293 | 0.200
+| link:solvers/864.py[864.py] | 3.488 | 5.092
+| link:solvers/865.py[865.py] | 2.250 | 0.663
+| link:solvers/866.py[866.py] | 0.173 | 0.059
+| link:solvers/867.py[867.py] | 0.384 | 0.203
+| link:solvers/868.py[868.py] | 0.142 | 0.057
+| link:solvers/869.py[869.py] | 15.440 | 39.376
+| link:solvers/870.py[870.py] | 11.637 | 
+| link:solvers/871.py[871.py] | 0.659 | 2.807
+| link:solvers/872.py[872.py] | 0.068 | 0.058
+| link:solvers/873.py[873.py] | 0.381 | 0.507
+| link:solvers/874.py[874.py] | 0.295 | 4.875
+| link:solvers/875.py[875.py] | 1.062 | 3.675
+| link:solvers/876.py[876.py] | 0.313 | 0.086
+| link:solvers/877.py[877.py] | 0.095 | 0.055
+| link:solvers/878.py[878.py] | 19.465 | 0.602
+| link:solvers/879.py[879.py] | 0.214 | 0.772
+| link:solvers/880.py[880.py] | 10.848 | 1.080
+| link:solvers/881.py[881.py] | 0.139 | 0.151
+| link:solvers/882.py[882.py] | 0.149 | 0.169
+| link:solvers/883.py[883.py] | 3.323 | 
+| link:solvers/884.py[884.py] | 0.708 | 0.760
+| link:solvers/885.py[885.py] | 0.094 | 0.357
+| link:solvers/886.py[886.py] | 53.376 | 9.035
+| link:solvers/887.py[887.py] | 0.062 | 0.058
+| link:solvers/888.py[888.py] | 0.333 | 0.385
+| link:solvers/889.py[889.py] | 0.112 | 0.117
+| link:solvers/890.py[890.py] | 5.698 | 
+| link:solvers/891.py[891.py] | 1.364 | 0.803
+| link:solvers/892.py[892.py] | 0.290 | 0.881
+| link:solvers/893.py[893.py] | 4.899 | 5.095
+| link:solvers/894.py[894.py] | 0.090 | 0.068
+| link:solvers/895.py[895.py] | 0.531 | 0.070
+| link:solvers/896.py[896.py] | 0.258 | 6.163
+| link:solvers/897.py[897.py] | 0.086 | 0.160
+| link:solvers/898.py[898.py] | 6.089 | 12.706
+| link:solvers/899.py[899.py] | 0.059 | 0.057
+| link:solvers/900.py[900.py] | 0.258 | 0.056
+| link:solvers/901.py[901.py] | 2.435 | 0.059
+| link:solvers/902.py[902.py] | 1.294 | 0.810
+| link:solvers/903.py[903.py] | 0.856 | 0.255
+| link:solvers/904.py[904.py] | 1.566 | 0.338
+| link:solvers/905.py[905.py] | 0.062 | 2.216
+| link:solvers/906.py[906.py] | 0.195 | 0.714
+| link:solvers/907.py[907.py] | 0.676 | 0.661
+| link:solvers/908.py[908.py] | 4.928 | 2.672
+| link:solvers/909.py[909.py] | 0.147 | 0.057
+| link:solvers/910.py[910.py] | 39.422 | 0.422
+| link:solvers/911.py[911.py] | 0.644 | 0.059
+| link:solvers/912.py[912.py] | 0.117 | 0.061
+| link:solvers/913.py[913.py] | 0.576 | 0.398
+| link:solvers/914.py[914.py] | 0.477 | 0.081
+| link:solvers/915.py[915.py] | 0.199 | 2.740
+| link:solvers/916.py[916.py] | 0.312 | 0.983
+| link:solvers/917.py[917.py] | 0.821 | 1.417
+| link:solvers/918.py[918.py] | 0.061 | 0.056
+| link:solvers/919.py[919.py] | 5.171 | 6.489
+| link:solvers/920.py[920.py] | 0.801 | 1.454
+| link:solvers/921.py[921.py] | 2.152 | 1.493
+| link:solvers/922.py[922.py] | 0.475 | 0.497
+| link:solvers/923.py[923.py] | 0.814 | 
+| link:solvers/924.py[924.py] | 0.855 | 4.803
+| link:solvers/925.py[925.py] | 26.061 | 9.158
+| link:solvers/926.py[926.py] | 0.963 | 0.852
+| link:solvers/927.py[927.py] | 8.991 | 
+| link:solvers/928.py[928.py] | 9.830 | 
+| link:solvers/929.py[929.py] | 4.290 | 
+| link:solvers/930.py[930.py] | 1.150 | 0.639
+| link:solvers/931.py[931.py] | 78.821 | 17.064
+| link:solvers/932.py[932.py] | 4.977 | 1.357
+| link:solvers/933.py[933.py] | 16.853 | 
+| link:solvers/934.py[934.py] | 0.337 | 0.326
+| link:solvers/935.py[935.py] | 0.419 | 
+| link:solvers/936.py[936.py] | 0.138 | 0.883
+| link:solvers/937.py[937.py] | 20.411 | 
+| link:solvers/938.py[938.py] | 0.124 | 1.493
+| link:solvers/939.py[939.py] | 1.069 | 1.276
+| link:solvers/940.py[940.py] | 0.118 | 0.072
+| link:solvers/941.py[941.py] | 53.237 | 0.073
+| link:solvers/942.py[942.py] | 3.238 | 1.590
+| link:solvers/943.py[943.py] | 25.158 | 31.625
+| link:solvers/944.py[944.py] | 0.458 | 1.699
+| link:solvers/945.py[945.py] | 0.563 | 0.061
+| link:solvers/946.py[946.py] | 0.221 | 0.059
+| link:solvers/947.py[947.py] | 2.281 | 0.061
+| link:solvers/948.py[948.py] | 0.191 | 0.113
+| link:solvers/949.py[949.py] | 4.876 | 1.340
+| link:solvers/950.py[950.py] | 0.251 | 8.552
+| link:solvers/951.py[951.py] | 0.147 | 6.969
+| link:solvers/952.py[952.py] | 2.243 | 1.105
+| link:solvers/953.py[953.py] | 86.836 | 0.059
+| link:solvers/954.py[954.py] | 76.641 | 0.167
+| link:solvers/955.py[955.py] | 0.482 | 0.126
+| link:solvers/956.py[956.py] | 0.151 | 0.987
+| link:solvers/957.py[957.py] | 0.193 | 0.060
+| link:solvers/958.py[958.py] | 13.233 | 0.434
+| link:solvers/959.py[959.py] | 2.264 | 0.825
+| link:solvers/960.py[960.py] | 0.061 | 0.059
+| link:solvers/961.py[961.py] | 1.306 | 0.396
+| link:solvers/962.py[962.py] | 27.947 | 12.542
+| link:solvers/963.py[963.py] | 15.752 | 10.881
+| link:solvers/964.py[964.py] | 0.114 | 0.077
+| link:solvers/965.py[965.py] | 0.708 | 0.284
+| link:solvers/966.py[966.py] | 36.829 | 
+| link:solvers/967.py[967.py] | 1.591 | 6.411
+| link:solvers/968.py[968.py] | 0.932 | 
+| link:solvers/969.py[969.py] | 0.065 | 0.073
+| link:solvers/970.py[970.py] | 0.125 | 0.084
+| link:solvers/971.py[971.py] | 3.249 | 3.777
+| link:solvers/972.py[972.py] | 50.921 | 24.337
+| link:solvers/973.py[973.py] | 0.423 | 0.147
+| link:solvers/974.py[974.py] | 0.320 | 0.553
+| link:solvers/975.py[975.py] | 18.081 | 
+| link:solvers/976.py[976.py] | 0.706 | 0.562
+| link:solvers/977.py[977.py] | 1.616 | 0.753
+| link:solvers/978.py[978.py] | 0.070 | 0.057
+| link:solvers/979.py[979.py] | 0.189 | 0.154
+| link:solvers/980.py[980.py] | 0.435 | 0.782
+| link:solvers/981.py[981.py] | 0.124 | 0.122
+| link:solvers/982.py[982.py] | 0.111 | 0.091
+| link:solvers/983.py[983.py] | 52.648 | 1.079
+| link:solvers/984.py[984.py] | 20.317 | 0.058
+| link:solvers/985.py[985.py] | 0.224 | 0.067
+| link:solvers/986.py[986.py] | 8.944 | 28.918
+| link:solvers/987.py[987.py] | 0.456 | 22.461
+| link:solvers/988.py[988.py] | 0.071 | 0.072
+| link:solvers/989.py[989.py] | 16.737 | 43.790
+| link:solvers/990.py[990.py] | 2.503 | 2.914
+| link:solvers/991.py[991.py] | 0.180 | 0.924
+| link:solvers/992.py[992.py] | 0.095 | 0.476
+| link:solvers/993.py[993.py] | 0.092 | 0.085
 |===

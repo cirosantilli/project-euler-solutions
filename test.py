@@ -24,6 +24,8 @@ LINE_RE = re.compile(r"^(\d+)\.\s+(.*)$")
 NUMERIC_RE = re.compile(r"^\d+(?:\.\d+)?$")
 EXPECTED_GOT_RE = re.compile(r"expected (.+), got (.+)")
 LANG_HINT_RE = re.compile(r"^(\d+)\.(py|c|cpp|lean)$")
+MISSING_REFERENCE_MESSAGE = "missing reference answer"
+MISSING_REFERENCE_ERROR = f"error: {MISSING_REFERENCE_MESSAGE}"
 TestId = int | str
 
 
@@ -789,6 +791,21 @@ def normalize_other_row_fields(output_cell: str, error_cell: str) -> tuple[str, 
     return normalize_output_error_cells(output_cell, error_cell)
 
 
+def is_missing_reference_error_cell(error_cell: str) -> bool:
+    normalized = normalize_error_cell(error_cell.strip())
+    return normalized == MISSING_REFERENCE_ERROR
+
+
+def has_comparison_runtime(res: Result) -> bool:
+    return res.correct or res.message == MISSING_REFERENCE_MESSAGE
+
+
+def comparison_runtime_cell(res: Result) -> str | None:
+    if res.elapsed is None or not has_comparison_runtime(res):
+        return None
+    return f"{res.elapsed:.3f}"
+
+
 def find_marker_index(lines: list[str], marker: str) -> int:
     try:
         return next(i for i, line in enumerate(lines) if line.strip() == marker)
@@ -864,7 +881,7 @@ def runtime_cell_from_primary_row(pid: TestId, row: str) -> str:
         _output_cell,
         error_cell,
     ) = normalized
-    if error_cell:
+    if error_cell and not is_missing_reference_error_cell(error_cell):
         return ""
     return time_cell
 
@@ -1008,8 +1025,8 @@ def upsert_other_results_table(
         if label not in suite_labels:
             suite_labels.append(label)
         key = (res.puzzle_id, label)
-        if res.correct and res.elapsed is not None:
-            cell = f"{res.elapsed:.3f}"
+        cell = comparison_runtime_cell(res)
+        if cell is not None:
             existing = result_cells.get(key)
             if existing:
                 cell = f"{min(float(existing), float(cell)):.3f}"
@@ -1573,7 +1590,7 @@ def run_solver_set_target(
             model=model,
             output_tokens=output_tokens,
             output=display_output,
-            message="missing reference answer",
+            message=MISSING_REFERENCE_MESSAGE,
             language=target.language,
             source_path=source_path,
         )
@@ -1612,8 +1629,8 @@ def suite_result_cells(results: list[Result]) -> dict[tuple[int, str], str]:
         if not isinstance(res.puzzle_id, int) or res.language != "py":
             continue
         key = (res.puzzle_id, result_suite_label(res))
-        if res.correct and res.elapsed is not None:
-            cell = f"{res.elapsed:.3f}"
+        cell = comparison_runtime_cell(res)
+        if cell is not None:
             existing = cells.get(key)
             if existing:
                 cell = f"{min(float(existing), float(cell)):.3f}"
@@ -1927,7 +1944,7 @@ def main() -> None:
                         model=model,
                         output_tokens=output_tokens,
                         output=display_output,
-                        message="missing reference answer",
+                        message=MISSING_REFERENCE_MESSAGE,
                         language=target.language,
                         source_path=source_from_target(target.path, target.language),
                         reference_answer_checked=target.checks_reference_answer,
