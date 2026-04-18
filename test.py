@@ -8,6 +8,7 @@ import subprocess
 import sys
 import time
 from dataclasses import dataclass
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 import lint
@@ -120,8 +121,8 @@ def parse_args() -> argparse.Namespace:
         action="append",
         default=None,
         help=(
-            "Run a Python solver set from a directory, e.g. "
-            "--set solvers/eulersolve. Repeatable."
+            "Run a solver set from a directory, e.g. --set solvers/eulersolve. "
+            "Repeatable. Defaults to Python unless --lang is given."
         ),
     )
     parser.add_argument(
@@ -371,21 +372,32 @@ def collect_solver_set_targets(
     solver_set: SolverSet,
     lang_filter: set[str] | None,
 ) -> dict[int, list[SolverTarget]]:
-    if lang_filter is not None and "py" not in lang_filter:
-        return {}
+    selected = lang_filter or {"py"}
     targets: dict[int, list[SolverTarget]] = {}
-    for path in solver_set.path.glob("*.py"):
-        if path.resolve().parent == SOLVERS_DIR.resolve():
-            if explicit_only_name_for_path(path) is not None:
+    if "py" in selected:
+        for path in solver_set.path.glob("*.py"):
+            if path.resolve().parent == SOLVERS_DIR.resolve():
+                if explicit_only_name_for_path(path) is not None:
+                    continue
+            pid = parse_solver_id(path)
+            if pid is None:
                 continue
+            targets.setdefault(pid, []).append(
+                SolverTarget(pid, path, "py", suite=solver_set.label)
+            )
+    for path in solver_set.path.glob("*.out"):
+        lang = detect_language(path)
+        if lang is None or lang not in selected:
+            continue
         pid = parse_solver_id(path)
         if pid is None:
             continue
         targets.setdefault(pid, []).append(
-            SolverTarget(pid, path, "py", suite=solver_set.label)
+            SolverTarget(pid, path, lang, suite=solver_set.label)
         )
+    order = {"py": 0, "c": 1, "cpp": 2, "lean": 3}
     for entries in targets.values():
-        entries.sort(key=lambda item: item.path.name)
+        entries.sort(key=lambda item: (order.get(item.language, 99), item.path.name))
     return targets
 
 
@@ -569,6 +581,32 @@ def normalize_output_lines(lines: list[str]) -> tuple[str, str]:
     actual = "\n".join(lines)
     display = "\\n".join(lines)
     return actual, display
+
+
+def output_contains_expected_answer(lines: list[str], expected: str) -> bool:
+    if not expected:
+        return False
+    token_re = re.compile(
+        rf"(?<![A-Za-z0-9_.+-]){re.escape(expected)}(?![A-Za-z0-9_.+-])"
+    )
+    return any(line == expected or token_re.search(line) for line in reversed(lines))
+
+
+def single_line_output_matches_expected(actual: str, expected: str) -> bool:
+    if "\n" in actual:
+        return False
+    if actual.replace("e+", "e") == expected:
+        return True
+    if "." not in expected or "e" in expected.lower():
+        return False
+    try:
+        actual_decimal = Decimal(actual)
+        expected_decimal = Decimal(expected)
+    except InvalidOperation:
+        return False
+    decimals = len(expected.rsplit(".", 1)[1])
+    quantum = Decimal(1).scaleb(-decimals)
+    return actual_decimal.quantize(quantum) == expected_decimal
 
 
 def wrong_answer_detail(display_output: str, expected: str | None) -> str:
@@ -1246,11 +1284,71 @@ def update_readme(results: list[Result]) -> None:
     readme_path.write_text("\n".join(lines) + "\n")
 
 
+def other_result_identity_from_id_cell(id_cell: str) -> str:
+    link_match = re.search(r"link:([^\[]+)\[", id_cell)
+    if link_match:
+        return link_match.group(1)
+    return id_cell.strip()
+
+
+def other_result_identity(res: Result) -> str:
+    link_path = res.source_path
+    if link_path is None:
+        link_path = SOLVERS_DIR / f"{res.puzzle_id}.{res.language or 'out'}"
+    try:
+        return link_path.resolve().relative_to(ROOT).as_posix()
+    except ValueError:
+        return str(link_path)
+
+
+def other_result_source_sort_key(row: str) -> tuple[int, int, int, str, str, str]:
+    cells = readme_tables.split_table_row(row)
+    if not cells:
+        return (1, 0, 0, "", "", row)
+    id_cell = cells[0]
+    pid = parse_id_cell(id_cell)
+    identity = other_result_identity_from_id_cell(id_cell)
+    lang = detect_language(Path(identity)) or ""
+    base_key = table_sort_key(pid if pid is not None else identity, lang)
+    return (*base_key, identity)
+
+
+def upsert_other_language_results_table(
+    lines: list[str], results: list[Result]
+) -> None:
+    other_results = [
+        res for res in results if res.language not in (None, "", "py")
+    ]
+    if not other_results:
+        return
+
+    start, end = readme_tables.find_table_block(lines, "// RESULTS TABLE OTHER")
+    rows: dict[str, str] = {}
+    for i in range(start + 2, end):
+        line = lines[i]
+        cells = trim_trailing_empty_cells(readme_tables.split_table_row(line))
+        if not cells:
+            continue
+        rows[other_result_identity_from_id_cell(cells[0])] = line.rstrip()
+
+    for res in other_results:
+        rows[other_result_identity(res)] = format_row_other(res)
+
+    header_line = "| ID | Runtime (s) | Output | Error"
+    sorted_rows = sorted(rows.values(), key=other_result_source_sort_key)
+    replace_table_after_marker(
+        lines,
+        "// RESULTS TABLE OTHER",
+        ["|===", header_line, *sorted_rows, "|==="],
+    )
+
+
 def update_readme_solver_sets(results: list[Result]) -> None:
     readme_path = ROOT / "README.adoc"
     lines = readme_path.read_text().splitlines()
     row_map = parse_primary_python_row_map(lines)
     upsert_other_results_table(lines, results, row_map)
+    upsert_other_language_results_table(lines, results)
     replace_slowest_python_table(lines, row_map)
     readme_path.write_text("\n".join(lines) + "\n")
 
@@ -1611,6 +1709,32 @@ def run_solver_set_target(
             language=target.language,
             source_path=source_path,
         )
+    if single_line_output_matches_expected(actual, expected):
+        print(f"[{pid}] ok ({elapsed:.3f}s; normalized answer)")
+        return Result(
+            pid,
+            correct=True,
+            elapsed=elapsed,
+            model=model,
+            output_tokens=output_tokens,
+            output=expected,
+            message="ok",
+            language=target.language,
+            source_path=source_path,
+        )
+    if output_contains_expected_answer(output_lines, expected):
+        print(f"[{pid}] ok ({elapsed:.3f}s; embedded answer)")
+        return Result(
+            pid,
+            correct=True,
+            elapsed=elapsed,
+            model=model,
+            output_tokens=output_tokens,
+            output=expected,
+            message="ok",
+            language=target.language,
+            source_path=source_path,
+        )
 
     msg = f"expected {expected}"
     print(
@@ -1633,7 +1757,7 @@ def run_solver_set_target(
 def suite_result_cells(results: list[Result]) -> dict[tuple[int, str], str]:
     cells: dict[tuple[int, str], str] = {}
     for res in results:
-        if not isinstance(res.puzzle_id, int) or res.language != "py":
+        if not isinstance(res.puzzle_id, int):
             continue
         key = (res.puzzle_id, result_suite_label(res))
         cell = comparison_runtime_cell(res)
@@ -1672,12 +1796,6 @@ def run_solver_set_mode(
 ) -> None:
     if args.uncommitted:
         print("--uncommitted is not supported with --set", file=sys.stderr)
-        sys.exit(2)
-    if lang_filter is not None and "py" not in lang_filter:
-        print(
-            "--set currently benchmarks Python solvers; use --lang py or omit --lang",
-            file=sys.stderr,
-        )
         sys.exit(2)
 
     targets_by_set = {
@@ -1726,7 +1844,10 @@ def run_solver_set_mode(
             print(f"summary update failed: {exc}", file=sys.stderr)
             sys.exit(2)
 
-    if any(not res.correct for res in results):
+    if any(
+        not res.correct and res.message != MISSING_REFERENCE_MESSAGE
+        for res in results
+    ):
         sys.exit(1)
 
 

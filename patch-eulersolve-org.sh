@@ -4,48 +4,15 @@ set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
 d=solvers/eulersolve
-needle='No C++ compiler found'
-deleted=0
 
 if ! [ -d "$d" ]; then
   echo "No $d directory; nothing to patch."
   exit 0
 fi
 
-rm -f "$d/Makefile"
-cat > "$d/Makefile" <<'MAKEFILE'
-CC := gcc
-CXX := g++
-
-BOOST_INCLUDEDIR ?= ../../tmp/boost/usr/include
-BOOST_CPPFLAGS := $(if $(wildcard $(BOOST_INCLUDEDIR)/boost),-I$(BOOST_INCLUDEDIR),)
-
-CFLAGS := -O3 -std=c11 -Wall -Wextra -Wno-error
-CXXFLAGS := -O3 -std=c++17 -Wall -Wextra -Wno-error -Wno-unknown-pragmas -fopenmp $(BOOST_CPPFLAGS)
-
-C_SOURCES := $(filter-out %.lean.c, $(wildcard *.c))
-CPP_SOURCES := $(wildcard *.cpp)
-
-C_OUTPUTS := $(C_SOURCES:.c=_c.out)
-CPP_OUTPUTS := $(CPP_SOURCES:.cpp=_cpp.out)
-
-.PHONY: all c cpp clean
-
-all: $(C_OUTPUTS) $(CPP_OUTPUTS)
-c: $(C_OUTPUTS)
-cpp: $(CPP_OUTPUTS)
-
-%_c.out: %.c
-	$(CC) $(CFLAGS) -o $@ $<
-
-%_cpp.out: %.cpp
-	$(CXX) $(CXXFLAGS) -o $@ $<
-
-clean:
-	rm -f $(C_OUTPUTS) $(CPP_OUTPUTS) *.lean.c
-MAKEFILE
-echo "Wrote $d/Makefile for generated eulersolve solvers."
-
+# Delete python/java cheats
+needle='No C++ compiler found'
+deleted=0
 while IFS= read -r -d '' f; do
   if grep -qF "$needle" "$f"; then
     rm -f -- "$f"
@@ -104,7 +71,7 @@ find "$d" -maxdepth 1 -type f \( -name '*.cpp' -o -name '*.py' -o -name '*.java'
     -e 's/\bint requested_threads = 0\b/int requested_threads = 1/g;' \
     -e 's/\brequested_threads = 0\b/requested_threads = 1/g;' \
     -e 's/\bself\.requested_threads = 0\b/self.requested_threads = 1/g;' \
-    -e 's/(\badd_argument\(["'\'']--threads["'\''][^)]*\bdefault\s*=\s*)0\b/${1}1/g;'
+    -e 's{(\badd_argument\(["'\'']--threads["'\''][^)]*\bdefault\s*=\s*)0\b}{${1}1}g;'
 
 ensure_include() {
   local f=$1
@@ -120,6 +87,12 @@ ensure_include "$d/155.cpp" limits iostream
 ensure_include "$d/640.cpp" cstdint cmath
 ensure_include "$d/695.cpp" atomic algorithm
 
+if [ -f "$d/210.cpp" ]; then
+  perl -0pi \
+    -e 's#u64 isqrt_u64\(u64 n\) \{\n(?!\s*if \(n == 0ULL\))#u64 isqrt_u64(u64 n) {\n    if (n == 0ULL) {\n        return 0ULL;\n    }\n#g;' \
+    "$d/210.cpp"
+fi
+
 if [ -f "$d/229.cpp" ]; then
   perl -0pi \
     -e 's{std::min\(segment_low \+ segment_size - 1ULL, high\)}{std::min<u64>(segment_low + segment_size - 1ULL, high)}g;' \
@@ -132,6 +105,18 @@ if [ -f "$d/397.cpp" ]; then
     -e 's{std::max\(\{-x_bound, v - x_bound, floor_div\(u, 2LL\) \+ 1LL\}\)}{std::max<i64>({-x_bound, v - x_bound, floor_div(u, static_cast<i64>(2)) + static_cast<i64>(1)})}g;' \
     -e 's{std::max\(\{-x_bound, v - x_bound, floor_div\(v, 2LL\) \+ 1LL\}\)}{std::max<i64>({-x_bound, v - x_bound, floor_div(v, static_cast<i64>(2)) + static_cast<i64>(1)})}g;' \
     "$d/397.cpp"
+fi
+
+if [ -f "$d/298.cpp" ]; then
+  perl -0pi \
+    -e 's{constexpr long double kToleranceTight = 1e-15L;}{constexpr long double kToleranceTight = 5e-14L;}g;' \
+    "$d/298.cpp"
+fi
+
+if [ -f "$d/521.cpp" ]; then
+  perl -0pi \
+    -e "s{std::cout << std::setw\\(9\\) << std::setfill\\('0'\\) << answer << '\\\\n';}{std::cout << answer << '\\\\n';}g;" \
+    "$d/521.cpp"
 fi
 
 if [ -f "$d/664.cpp" ]; then
