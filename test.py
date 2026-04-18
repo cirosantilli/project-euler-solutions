@@ -571,6 +571,10 @@ def normalize_output_lines(lines: list[str]) -> tuple[str, str]:
     return actual, display
 
 
+def wrong_answer_detail(display_output: str, expected: str | None) -> str:
+    return f"got {display_output} expected {expected}"
+
+
 def format_row(res: Result) -> str:
     time_cell = f"{res.elapsed:.3f}" if res.elapsed is not None else ""
     model_cell = res.model or ""
@@ -1609,7 +1613,10 @@ def run_solver_set_target(
         )
 
     msg = f"expected {expected}"
-    print(f"[{pid}] wrong answer: {msg}", file=sys.stderr)
+    print(
+        f"[{pid}] wrong answer: {wrong_answer_detail(display_output, expected)}",
+        file=sys.stderr,
+    )
     return Result(
         pid,
         correct=False,
@@ -1985,7 +1992,10 @@ def main() -> None:
                         reference_answer_checked=target.checks_reference_answer,
                     )
                 )
-                print(f"[{pid}] wrong answer: {msg}", file=sys.stderr)
+                print(
+                    f"[{pid}] wrong answer: {wrong_answer_detail(display_output, expected)}",
+                    file=sys.stderr,
+                )
 
     total_run = len(results)
     passed = sum(r.correct for r in results)

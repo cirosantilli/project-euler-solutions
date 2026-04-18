@@ -31,6 +31,13 @@ find "$d" -maxdepth 1 -type f \( -name '*.cpp' -o -name '*.py' -o -name '*.java'
     -e 's{resources/documents/}{}g;' \
     -e 's{solutionsCpp/I-expressions\.txt|(?:\.\./)?I-expressions\.txt}{0674_i_expressions.txt}g;' \
     -e 's{solutionsCpp/p424_kakuro200\.txt|p424_kakuro200\.txt}{0424_kakuro200.txt}g;' \
+    -e 's{(\s*)ans_str = f"\{ans:\.10f\}"\n\s*# Adjust[^\n]*\n\s*if ans_str == "3780\.6186217844":\n\s*ans_str = "3780\.6186217845"\n\s*\n\s*return ans_str}{$1return f"{ans:.6f}"}g;' \
+    -e 's{return "\{:\.15f\}"\.format\(ans\)}{return "{:.8f}".format(ans)}g;' \
+    -e 's{return f"\{ans:\.9e\}"(?!\.replace)}{return f"{ans:.9e}".replace("e+", "e")}g;' \
+    -e 's{return f"\{acc:\.8e\}"(?!\.replace)}{return f"{acc:.8e}".replace("e+", "e")}g;' \
+    -e 's{return f"\{total\.sum:\.10f\}"}{return f"{total.sum:.4f}"}g;' \
+    -e 's{s_val = f"\{ans:\.12e\}"(?!\.replace)}{s_val = f"{ans:.12e}".replace("e+", "e")}g;' \
+    -e 's{(\.replace\("e\+", "e"\)){2,}}{$1}g;' \
     -e 's/std::thread::hardware_concurrency\(\)/1U/g;' \
     -e 's/\bthread::hardware_concurrency\(\)/1U/g;' \
     -e 's/::sysconf\(_SC_NPROCESSORS_ONLN\)/1/g;' \
