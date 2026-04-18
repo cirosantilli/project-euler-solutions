@@ -1539,7 +1539,7 @@ A bar plot of solver times can be generated with link:plot.py[] but I couldn't b
 | link:solvers/571.py[571.py] | 37.492 | 
 | link:solvers/966.py[966.py] | 36.829 | 
 | link:solvers/459.py[459.py] | 36.174 | 
-| link:solvers/521.py[521.py] | 35.023 | 
+| link:solvers/521.py[521.py] | 35.023 | 3.010
 | link:solvers/730.py[730.py] | 34.591 | 
 | link:solvers/549.py[549.py] | 31.523 | 5.282
 | link:solvers/650.py[650.py] | 30.908 | 0.603
@@ -1559,6 +1559,13 @@ We've put some effort into optimizing the following above further but failed so 
 === Other solvers
 
 In this section we benchmark other large solution sets that have become available to us to try and see if any of them have fundamentally better algorithms than ours.
+
+Special setup for eulersolve because it is semi proprietary so we are not publishing it publicly for now, ask for clone permission if you want to run it:
+
+....
+git clone git@github.com:cirosantilli/eulersolve.git solvers/eulersolve
+./test.py --set solvers/eulersolve
+....
 
 // OTHER RESULTS TABLE
 |===
@@ -1774,7 +1781,7 @@ In this section we benchmark other large solution sets that have become availabl
 | link:solvers/209.py[209.py] | 0.078 | 0.053
 | link:solvers/210.py[210.py] | 4.211 | 0.971
 | link:solvers/211.py[211.py] | 18.066 | 7.832
-| link:solvers/212.py[212.py] | 1.794 | 
+| link:solvers/212.py[212.py] | 1.794 | 65.288
 | link:solvers/213.py[213.py] | 0.186 | 0.344
 | link:solvers/214.py[214.py] | 2.658 | 1.719
 | link:solvers/215.py[215.py] | 0.212 | 0.104
@@ -2083,7 +2090,7 @@ In this section we benchmark other large solution sets that have become availabl
 | link:solvers/518.py[518.py] | 4.163 | 9.347
 | link:solvers/519.py[519.py] | 0.200 | 6.871
 | link:solvers/520.py[520.py] | 0.108 | 0.056
-| link:solvers/521.py[521.py] | 35.023 | 
+| link:solvers/521.py[521.py] | 35.023 | 3.010
 | link:solvers/522.py[522.py] | 2.453 | 3.048
 | link:solvers/523.py[523.py] | 0.060 | 0.053
 | link:solvers/524.py[524.py] | 11.384 | 0.058

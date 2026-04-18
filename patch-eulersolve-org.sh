@@ -45,8 +45,12 @@ find "$d" -maxdepth 1 -type f \( -name '*.cpp' -o -name '*.py' -o -name '*.java'
     -e 's/\bmp\.cpu_count\(\)/1/g;' \
     -e 's/\bos\.cpu_count\(\)/1/g;' \
     -e 's/\bcpu_count\(\)/1/g;' \
+    -e 's{^(\s*with\s+(?:(?:concurrent\.futures\.)?ProcessPoolExecutor|ThreadPoolExecutor))\(max_workers=1\),(\n(\s*)(?:mp_context|initializer|initargs)\s*=)}{$1(\n$3max_workers=1,$2}mg;' \
     -e 's/\b(concurrent\.futures\.ProcessPoolExecutor|ProcessPoolExecutor|ThreadPoolExecutor)\(\s*\)/$1(max_workers=1)/g;' \
-    -e 's/\b(concurrent\.futures\.ProcessPoolExecutor|ProcessPoolExecutor|ThreadPoolExecutor)\(\s*max_workers\s*=\s*[^,\)]+/$1(max_workers=1/g;' \
+    -e 's{(\bmax_workers\s*=\s*)(?:max|min)\([^)\n]*\)}{${1}1}g;' \
+    -e 's{(\bmax_workers\s*=\s*)(?:[A-Za-z_][A-Za-z0-9_]*|\d+)}{${1}1}g;' \
+    -e 's{\b(concurrent\.futures\.ProcessPoolExecutor|ProcessPoolExecutor|ThreadPoolExecutor)\(\s*(?:[A-Za-z_][A-Za-z0-9_]*|\d+)\s*,}{$1(max_workers=1,}g;' \
+    -e 's{\b(concurrent\.futures\.ProcessPoolExecutor|ProcessPoolExecutor|ThreadPoolExecutor)\(\s*(?:[A-Za-z_][A-Za-z0-9_]*|\d+)\s*\)}{$1(max_workers=1)}g;' \
     -e 's/\b(multiprocessing\.Pool|mp\.Pool|ctx\.Pool|Pool)\(\s*len\([^)]+\)\s*\)/$1(1)/g;' \
     -e 's/\b(multiprocessing\.Pool|mp\.Pool|ctx\.Pool|Pool)\(\s*processes\s*=\s*[^,\)]+/$1(1/g;' \
     -e 's/\b(multiprocessing\.Pool|mp\.Pool|ctx\.Pool|Pool)\(\s*[^,\)\n]+/$1(1/g;' \
