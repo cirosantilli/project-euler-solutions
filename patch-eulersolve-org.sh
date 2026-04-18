@@ -12,6 +12,40 @@ if ! [ -d "$d" ]; then
   exit 0
 fi
 
+rm -f "$d/Makefile"
+cat > "$d/Makefile" <<'MAKEFILE'
+CC := gcc
+CXX := g++
+
+BOOST_INCLUDEDIR ?= ../../tmp/boost/usr/include
+BOOST_CPPFLAGS := $(if $(wildcard $(BOOST_INCLUDEDIR)/boost),-I$(BOOST_INCLUDEDIR),)
+
+CFLAGS := -O3 -std=c11 -Wall -Wextra -Wno-error
+CXXFLAGS := -O3 -std=c++17 -Wall -Wextra -Wno-error -Wno-unknown-pragmas -fopenmp $(BOOST_CPPFLAGS)
+
+C_SOURCES := $(filter-out %.lean.c, $(wildcard *.c))
+CPP_SOURCES := $(wildcard *.cpp)
+
+C_OUTPUTS := $(C_SOURCES:.c=_c.out)
+CPP_OUTPUTS := $(CPP_SOURCES:.cpp=_cpp.out)
+
+.PHONY: all c cpp clean
+
+all: $(C_OUTPUTS) $(CPP_OUTPUTS)
+c: $(C_OUTPUTS)
+cpp: $(CPP_OUTPUTS)
+
+%_c.out: %.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+%_cpp.out: %.cpp
+	$(CXX) $(CXXFLAGS) -o $@ $<
+
+clean:
+	rm -f $(C_OUTPUTS) $(CPP_OUTPUTS) *.lean.c
+MAKEFILE
+echo "Wrote $d/Makefile for generated eulersolve solvers."
+
 while IFS= read -r -d '' f; do
   if grep -qF "$needle" "$f"; then
     rm -f -- "$f"
@@ -25,6 +59,7 @@ printf 'Deleted %d cheat Python/Java files containing "%s".\n' "$deleted" "$need
 # Normalize generated solvers so CPU-count based defaults resolve to one worker.
 find "$d" -maxdepth 1 -type f \( -name '*.cpp' -o -name '*.py' -o -name '*.java' \) -print0 |
   xargs -0r perl -0pi \
+    -e 's/\xEF\xBB\xBF//g;' \
     -e 's{os\.path\.join\(\s*script_dir\s*,\s*["'\'']\.\.["'\'']\s*,\s*["'\'']resources["'\'']\s*,\s*["'\'']documents["'\'']\s*,\s*(["'\''][^"'\'']+\.(?:txt|pgm)["'\''])\s*\)}{$1}g;' \
     -e 's{os\.path\.join\(\s*os\.path\.dirname\(os\.path\.dirname\(__file__\)\)\s*,\s*["'\'']solutionsCpp["'\'']\s*,\s*["'\'']p424_kakuro200\.txt["'\'']\s*\)}{"0424_kakuro200.txt"}g;' \
     -e 's{\.\./resources/documents/}{}g;' \
@@ -70,5 +105,39 @@ find "$d" -maxdepth 1 -type f \( -name '*.cpp' -o -name '*.py' -o -name '*.java'
     -e 's/\brequested_threads = 0\b/requested_threads = 1/g;' \
     -e 's/\bself\.requested_threads = 0\b/self.requested_threads = 1/g;' \
     -e 's/(\badd_argument\(["'\'']--threads["'\''][^)]*\bdefault\s*=\s*)0\b/${1}1/g;'
+
+ensure_include() {
+  local f=$1
+  local include=$2
+  local after=$3
+
+  if [ -f "$f" ] && ! grep -qF "#include <$include>" "$f"; then
+    perl -0pi -e "s{#include <${after}>\\n}{#include <${after}>\\n#include <${include}>\\n}" "$f"
+  fi
+}
+
+ensure_include "$d/155.cpp" limits iostream
+ensure_include "$d/640.cpp" cstdint cmath
+ensure_include "$d/695.cpp" atomic algorithm
+
+if [ -f "$d/229.cpp" ]; then
+  perl -0pi \
+    -e 's{std::min\(segment_low \+ segment_size - 1ULL, high\)}{std::min<u64>(segment_low + segment_size - 1ULL, high)}g;' \
+    -e 's{std::min\(last, low \+ block - 1ULL\)}{std::min<u64>(last, low + block - 1ULL)}g;' \
+    "$d/229.cpp"
+fi
+
+if [ -f "$d/397.cpp" ]; then
+  perl -0pi \
+    -e 's{std::max\(\{-x_bound, v - x_bound, floor_div\(u, 2LL\) \+ 1LL\}\)}{std::max<i64>({-x_bound, v - x_bound, floor_div(u, static_cast<i64>(2)) + static_cast<i64>(1)})}g;' \
+    -e 's{std::max\(\{-x_bound, v - x_bound, floor_div\(v, 2LL\) \+ 1LL\}\)}{std::max<i64>({-x_bound, v - x_bound, floor_div(v, static_cast<i64>(2)) + static_cast<i64>(1)})}g;' \
+    "$d/397.cpp"
+fi
+
+if [ -f "$d/664.cpp" ]; then
+  perl -0pi \
+    -e 's{std::min\(right, begin \+ kChunk - 1ULL\)}{std::min<u64>(right, begin + kChunk - 1ULL)}g;' \
+    "$d/664.cpp"
+fi
 
 echo 'Patched eulersolve C++/Python/Java solvers to default to one worker thread.'
