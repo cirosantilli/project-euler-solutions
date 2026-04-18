@@ -1455,7 +1455,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/991.py[991.py] | link:solvers/991.md[991.md] | 0.180 | gpt-5.2-thinking |  | 23871972654940 |
 | link:solvers/992.py[992.py] | link:solvers/992.md[992.md] | 0.095 | gpt-5.2-thinking |  | 568021234 | error: missing reference answer
 | link:solvers/993.py[993.py] | link:solvers/993.md[993.md] | 0.092 | gpt-5.2-thinking |  | 1661971830985915304 | error: missing reference answer
-| link:solvers/secret.py[secret.py] | link:solvers/secret.md[secret.md] | 0.421 | gpt-5.2-thinking |  | ignored |
+| link:solvers/secret.py[secret.py] | link:solvers/secret.md[secret.md] | 0.411 | gpt-5.2-thinking |  |  |
 |===
 
 === Non-Python solvers

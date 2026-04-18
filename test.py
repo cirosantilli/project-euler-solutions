@@ -663,7 +663,7 @@ def normalize_output_error_cells(output_cell: str, error_cell: str) -> tuple[str
 
 def format_output_cell(res: Result) -> str:
     if not res.reference_answer_checked and res.correct:
-        return "ignored"
+        return ""
     if res.output is None or res.output == "":
         return ""
     if not res.correct and res.message.startswith("expected "):
