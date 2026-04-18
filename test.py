@@ -829,10 +829,6 @@ def format_row_fields_other(
     return f"| {id_cell} | {time_cell} | {output_cell} | {error_cell}".rstrip()
 
 
-def normalize_other_row_fields(output_cell: str, error_cell: str) -> tuple[str, str]:
-    return normalize_output_error_cells(output_cell, error_cell)
-
-
 def is_missing_reference_error_cell(error_cell: str) -> bool:
     normalized = normalize_error_cell(error_cell.strip())
     return normalized == MISSING_REFERENCE_ERROR
@@ -882,10 +878,17 @@ def replace_table_after_marker(
     lines[start:end] = table_lines
 
 
+def link_target_from_cell(cell: str) -> str | None:
+    link_match = re.search(r"(?:link:)?([^\[]+)\[[^\]]*\]", cell)
+    if not link_match:
+        return None
+    return link_match.group(1).strip()
+
+
 def parse_id_cell(cell: str) -> int | None:
-    link_match = re.search(r"link:([^\[]+)\[[^\]]+\]", cell)
-    if link_match:
-        pid = test_id_from_link_target(link_match.group(1))
+    link_target = link_target_from_cell(cell)
+    if link_target is not None:
+        pid = test_id_from_link_target(link_target)
         return pid if isinstance(pid, int) else None
     plain = cell.strip()
     if plain.isdigit():
@@ -894,19 +897,6 @@ def parse_id_cell(cell: str) -> int | None:
     if plain_match:
         return int(plain_match.group(1))
     return None
-
-
-def format_suite_id_cell(pid: int) -> str:
-    path = SOLVERS_DIR / f"{pid}.py"
-    if path.exists():
-        try:
-            rel_path = path.resolve().relative_to(ROOT)
-        except ValueError:
-            rel_path = path
-        return f"link:{rel_path.as_posix()}[{rel_path.name}]"
-    return str(pid)
-
-
 def runtime_cell_from_primary_row(pid: TestId, row: str) -> str:
     if not isinstance(pid, int):
         return ""
@@ -975,26 +965,48 @@ def parse_primary_python_row_map(lines: list[str]) -> dict[tuple[TestId, str], s
     return row_map
 
 
-def parse_other_results_table(
-    lines: list[str],
-) -> tuple[list[str], dict[int, dict[str, str]]]:
+def other_results_block_span(lines: list[str]) -> tuple[int, int]:
+    marker_idx = find_marker_index(lines, "// OTHER RESULTS TABLE")
+    limit = marker_section_limit(lines, marker_idx)
+    start = marker_idx + 1
+    while start < limit and not lines[start].strip():
+        start += 1
+    if start < limit and lines[start].strip() == "|===":
+        table_start, table_end = readme_tables.find_table_block(
+            lines, "// OTHER RESULTS TABLE"
+        )
+        return table_start, table_end + 1
+    end = start
+    while end < limit and lines[end].strip().startswith("*"):
+        end += 1
+    return start, end
+
+
+def relative_readme_path(path: Path) -> str:
     try:
-        start, end = readme_tables.find_table_block(lines, "// OTHER RESULTS TABLE")
-    except RuntimeError:
-        return [], {}
+        return path.resolve().relative_to(ROOT).as_posix()
+    except ValueError:
+        return str(path)
+
+
+def other_result_path_for_suite(pid: int, suite_label: str, language: str) -> str:
+    return f"{suite_label.rstrip('/')}/{pid}.{language}"
+
+
+def parse_legacy_other_results_table(
+    lines: list[str], start: int, end: int
+) -> dict[int, dict[str, str]]:
     if start + 1 >= end:
-        return [], {}
+        return {}
     header_cells = readme_tables.split_table_row(lines[start + 1])
     if not header_cells:
-        return [], {}
+        return {}
     if header_cells[0] == "ID":
         suite_labels = header_cells[1:]
-        row_start = start + 2
     else:
         suite_labels = header_cells
-        row_start = start + 2
     rows: dict[int, dict[str, str]] = {}
-    for i in range(row_start, end):
+    for i in range(start + 2, end - 1):
         cells = readme_tables.split_table_row(lines[i])
         if not cells:
             continue
@@ -1003,41 +1015,157 @@ def parse_other_results_table(
             continue
         row_values = rows.setdefault(pid, {})
         for label, cell in zip(suite_labels, cells[1:]):
-            row_values[label] = cell.strip()
-    return suite_labels, rows
+            cell = cell.strip()
+            if not label or not cell:
+                continue
+            row_values[other_result_path_for_suite(pid, label, "py")] = cell
+    return rows
+
+
+def parse_other_results_table(lines: list[str]) -> dict[int, dict[str, str]]:
+    try:
+        start, end = other_results_block_span(lines)
+    except RuntimeError:
+        return {}
+    if start >= end:
+        return {}
+    if lines[start].strip() == "|===":
+        return parse_legacy_other_results_table(lines, start, end)
+
+    rows: dict[int, dict[str, str]] = {}
+    current_pid: int | None = None
+    group_re = re.compile(r"^\*\s+(\d+)\s*$")
+    entry_re = re.compile(r"^\*\*\s+(?:link:)?([^\[]+)\[[^\]]*\]:\s*(.*)$")
+    for i in range(start, end):
+        stripped = lines[i].strip()
+        group_match = group_re.match(stripped)
+        if group_match:
+            current_pid = int(group_match.group(1))
+            rows.setdefault(current_pid, {})
+            continue
+        entry_match = entry_re.match(stripped)
+        if not entry_match:
+            continue
+        path_text = entry_match.group(1).strip()
+        cell = entry_match.group(2).strip()
+        if not path_text or not cell:
+            continue
+        path_pid = parse_solver_id(Path(path_text))
+        pid = current_pid if current_pid is not None else path_pid
+        if pid is None:
+            continue
+        rows.setdefault(pid, {})[path_text] = cell
+    return rows
+
+
+def other_result_language(path_text: str) -> str:
+    return detect_language(Path(path_text)) or ""
+
+
+def other_result_path_sort_key(path_text: str) -> tuple[int, str, str]:
+    language = other_result_language(path_text)
+    if language == "py":
+        return (0, "", path_text)
+    return (1, language, path_text)
+
+
+def format_other_results_list(rows: dict[int, dict[str, str]]) -> list[str]:
+    list_lines: list[str] = []
+    for pid in sorted(rows):
+        row_values = {
+            path: cell.strip()
+            for path, cell in rows[pid].items()
+            if path.strip() and cell.strip()
+        }
+        if not row_values:
+            continue
+        list_lines.append(f"* {pid}")
+        for path in sorted(row_values, key=other_result_path_sort_key):
+            list_lines.append(f"** link:{path}[]: {row_values[path]}")
+    return list_lines
 
 
 def replace_other_results_table(
-    lines: list[str],
-    suite_labels: list[str],
-    rows: dict[int, dict[str, str]],
+    lines: list[str], rows: dict[int, dict[str, str]]
 ) -> None:
-    if "solvers" in suite_labels:
-        ordered_labels = [
-            "solvers",
-            *[label for label in suite_labels if label != "solvers"],
-        ]
-    else:
-        ordered_labels = suite_labels
-    table_lines = ["|===", "| ID | " + " | ".join(ordered_labels)]
-    for pid in sorted(rows):
-        row_values = rows[pid]
-        cells = [format_suite_id_cell(pid)]
-        cells.extend(row_values.get(label, "") for label in ordered_labels)
-        table_lines.append("| " + " | ".join(cells))
-    table_lines.append("|===")
-    start, end = readme_tables.find_table_block(lines, "// OTHER RESULTS TABLE")
-    lines[start : end + 1] = table_lines
+    start, end = other_results_block_span(lines)
+    lines[start:end] = format_other_results_list(rows)
 
 
 def result_suite_label(res: Result) -> str:
     if res.source_path is not None:
-        try:
-            rel_parent = res.source_path.resolve().parent.relative_to(ROOT)
-            return rel_parent.as_posix()
-        except ValueError:
-            return str(res.source_path.resolve().parent)
+        return relative_readme_path(res.source_path.parent)
     return "solvers"
+
+
+def other_result_identity(res: Result) -> str | None:
+    if not isinstance(res.puzzle_id, int) or res.source_path is None:
+        return None
+    return relative_readme_path(res.source_path)
+
+
+def merge_other_result_cells(existing: str | None, incoming: str) -> str:
+    if existing and looks_numeric(existing) and looks_numeric(incoming):
+        return f"{min(float(existing), float(incoming)):.3f}"
+    return incoming
+
+
+def other_result_cell_for_error(message: str, output: str | None) -> str:
+    if message.startswith("expected ") and output:
+        return normalize_error_cell(f"{message}, got {output}")
+    return normalize_error_cell(message)
+
+
+def other_result_cell(res: Result) -> str:
+    runtime_cell = comparison_runtime_cell(res)
+    if runtime_cell is not None:
+        return runtime_cell
+    return other_result_cell_for_error(res.message, res.output)
+
+
+def other_result_cell_from_row(
+    time_cell: str, output_cell: str, error_cell: str
+) -> str:
+    if error_cell and not is_missing_reference_error_cell(error_cell):
+        message = error_cell
+        if message.startswith("error: "):
+            message = message[len("error: ") :]
+        return other_result_cell_for_error(message, output_cell)
+    if time_cell:
+        return time_cell
+    if error_cell:
+        return normalize_error_cell(error_cell)
+    return ""
+
+
+def primary_row_other_result_entry(pid: TestId, row: str) -> tuple[str, str] | None:
+    if not isinstance(pid, int):
+        return None
+    cells = trim_trailing_empty_cells(readme_tables.split_table_row(row))
+    normalized = normalize_row_fields(pid, cells)
+    if normalized is None:
+        return None
+    (
+        id_cell,
+        _statement_cell,
+        time_cell,
+        _model_cell,
+        _tokens_cell,
+        output_cell,
+        error_cell,
+    ) = normalized
+    path_text = link_target_from_cell(id_cell)
+    if path_text is None:
+        candidate = SOLVERS_DIR / id_cell.strip()
+        if not candidate.exists():
+            return None
+        path_text = relative_readme_path(candidate)
+    if other_result_language(path_text) != "py":
+        return None
+    cell = other_result_cell_from_row(time_cell, output_cell, error_cell)
+    if not cell:
+        return None
+    return path_text, cell
 
 
 def upsert_other_results_table(
@@ -1045,54 +1173,66 @@ def upsert_other_results_table(
     results: list[Result],
     row_map: dict[tuple[TestId, str], str] | None = None,
 ) -> None:
-    suite_labels, rows = parse_other_results_table(lines)
-    if not suite_labels:
-        suite_labels = ["solvers"]
-    if "solvers" not in suite_labels:
-        suite_labels.insert(0, "solvers")
+    rows = parse_other_results_table(lines)
 
     if row_map is not None:
         for (pid, language), row in row_map.items():
-            if not isinstance(pid, int) or language != "py":
+            if language != "py":
                 continue
-            time_cell = runtime_cell_from_primary_row(pid, row)
-            if time_cell:
-                rows.setdefault(pid, {})["solvers"] = time_cell
+            entry = primary_row_other_result_entry(pid, row)
+            if entry is None:
+                continue
+            path_text, cell = entry
+            rows.setdefault(pid, {})[path_text] = cell
 
     result_cells: dict[tuple[int, str], str] = {}
     for res in results:
-        if not isinstance(res.puzzle_id, int) or res.language != "py":
+        path_text = other_result_identity(res)
+        if path_text is None or not isinstance(res.puzzle_id, int):
             continue
-        label = result_suite_label(res)
-        if label not in suite_labels:
-            suite_labels.append(label)
-        key = (res.puzzle_id, label)
-        cell = comparison_runtime_cell(res)
-        if cell is not None:
-            existing = result_cells.get(key)
-            if existing:
-                cell = f"{min(float(existing), float(cell)):.3f}"
-            result_cells[key] = cell
-        elif key not in result_cells:
-            result_cells[key] = ""
+        key = (res.puzzle_id, path_text)
+        cell = other_result_cell(res)
+        result_cells[key] = merge_other_result_cells(result_cells.get(key), cell)
 
-    for (pid, label), cell in result_cells.items():
-        rows.setdefault(pid, {})[label] = cell
+    for (pid, path_text), cell in result_cells.items():
+        rows.setdefault(pid, {})[path_text] = cell
 
-    replace_other_results_table(lines, suite_labels, rows)
+    replace_other_results_table(lines, rows)
+
+
+def other_result_suite_label(path_text: str) -> str:
+    parent = Path(path_text).parent.as_posix()
+    return parent if parent != "." else ""
+
+
+def ordered_suite_labels(labels: set[str]) -> list[str]:
+    ordered = ["solvers"]
+    ordered.extend(sorted(label for label in labels if label and label != "solvers"))
+    return ordered
+
+
+def parse_other_python_suite_results(
+    lines: list[str],
+) -> tuple[list[str], dict[int, dict[str, str]]]:
+    other_rows = parse_other_results_table(lines)
+    labels: set[str] = set()
+    suite_rows: dict[int, dict[str, str]] = {}
+    for pid, path_values in other_rows.items():
+        for path_text, cell in path_values.items():
+            if other_result_language(path_text) != "py" or not looks_numeric(cell):
+                continue
+            label = other_result_suite_label(path_text)
+            if not label:
+                continue
+            labels.add(label)
+            suite_rows.setdefault(pid, {})[label] = cell
+    return ordered_suite_labels(labels), suite_rows
 
 
 def replace_slowest_python_table(
     lines: list[str], row_map: dict[tuple[TestId, str], str]
 ) -> None:
-    suite_labels, suite_rows = parse_other_results_table(lines)
-    if "solvers" in suite_labels:
-        ordered_suite_labels = [
-            "solvers",
-            *[label for label in suite_labels if label != "solvers"],
-        ]
-    else:
-        ordered_suite_labels = ["solvers", *suite_labels]
+    ordered_labels, suite_rows = parse_other_python_suite_results(lines)
 
     slow_candidates: list[tuple[float, str, str]] = []
     for (pid, language), row in row_map.items():
@@ -1109,14 +1249,12 @@ def replace_slowest_python_table(
         slow_candidates.append((runtime, id_cell, time_cell))
 
     slowest = sorted(slow_candidates, key=lambda item: item[0], reverse=True)[:50]
-    header = "| ID | " + " | ".join(
-        f"{label} (s)" for label in ordered_suite_labels
-    )
+    header = "| ID | " + " | ".join(f"{label} (s)" for label in ordered_labels)
     slow_rows: list[str] = []
     for _rt, id_cell, time_cell in slowest:
         pid = parse_id_cell(id_cell)
         cells = [id_cell]
-        for label in ordered_suite_labels:
+        for label in ordered_labels:
             if label == "solvers":
                 cells.append(time_cell)
             elif pid is not None:
@@ -1135,28 +1273,19 @@ def update_readme(results: list[Result]) -> None:
     readme_path = ROOT / "README.adoc"
     lines = readme_path.read_text().splitlines()
     start, end = readme_tables.find_table_block(lines, "// RESULTS TABLE")
-    other_start, other_end = table_line_span_after_marker(
-        lines, "// RESULTS TABLE OTHER"
-    )
 
     header_line = (
         "| ID | Explanation | Runtime (s) | Model | Out Tokens | Output | Error"
     )
-    other_header_line = "| ID | Runtime (s) | Output | Error"
     row_re = re.compile(r"^\|\s+link:([^\[]+)\[")
     plain_re = re.compile(r"^\|\s+(\d+)\.py\s+\|")
-    other_plain_re = re.compile(r"^\|\s+(\d+)\.(c|cpp|lean)\s+\|")
     result_map: dict[tuple[TestId, str], str] = {}
-    other_result_map: dict[tuple[TestId, str], str] = {}
     row_map: dict[tuple[TestId, str], str] = {}
-    other_row_map: dict[tuple[TestId, str], str] = {}
 
     for res in results:
         language = res.language or ""
         if language == "" or language == "py":
             result_map[result_key(res)] = format_row(res)
-        else:
-            other_result_map[result_key(res)] = format_row_other(res)
 
     for i in range(start + 1, end):
         line = lines[i]
@@ -1165,7 +1294,7 @@ def update_readme(results: list[Result]) -> None:
             link_target = match.group(1)
             pid = test_id_from_link_target(link_target)
             if pid is None:
-                id_match = re.search(r"\\[(\\d+)\\]", line)
+                id_match = re.search(r"\[(\d+)\]", line)
                 if not id_match:
                     continue
                 pid = int(id_match.group(1))
@@ -1225,58 +1354,11 @@ def update_readme(results: list[Result]) -> None:
             error_cell,
         )
 
-    for i in range(other_start, other_end):
-        line = lines[i]
-        match = row_re.match(line)
-        language = ""
-        if match:
-            link_target = match.group(1)
-            pid = test_id_from_link_target(link_target)
-            if pid is None:
-                continue
-            language = detect_language(Path(link_target)) or ""
-        else:
-            plain_match = other_plain_re.match(line)
-            if not plain_match:
-                continue
-            pid = int(plain_match.group(1))
-            language = plain_match.group(2)
-        if language == "py":
-            continue
-        cells = trim_trailing_empty_cells(readme_tables.split_table_row(line))
-        if len(cells) < 2:
-            continue
-        if len(cells) >= 4:
-            id_cell, time_cell, output_cell, error_cell = cells[:4]
-        elif len(cells) == 3:
-            id_cell, time_cell, output_cell = cells
-            error_cell = ""
-        else:
-            id_cell, time_cell = cells
-            output_cell = ""
-            error_cell = ""
-        output_cell, error_cell = normalize_other_row_fields(output_cell, error_cell)
-        other_row_map[(pid, language)] = format_row_fields_other(
-            id_cell, time_cell, output_cell, error_cell
-        )
-
     for key, row in result_map.items():
         row_map[key] = row
 
     sorted_rows = [row_map[key] for key in sorted(row_map, key=row_sort_key)]
-    new_block = [header_line, *sorted_rows]
-    lines[start + 1 : end] = new_block
-
-    for key, row in other_result_map.items():
-        other_row_map[key] = row
-    sorted_other_rows = [
-        other_row_map[key] for key in sorted(other_row_map, key=row_sort_key)
-    ]
-    replace_table_after_marker(
-        lines,
-        "// RESULTS TABLE OTHER",
-        ["|===", other_header_line, *sorted_other_rows, "|==="],
-    )
+    lines[start + 1 : end] = [header_line, *sorted_rows]
 
     upsert_other_results_table(lines, results, row_map)
     replace_slowest_python_table(lines, row_map)
@@ -1284,71 +1366,11 @@ def update_readme(results: list[Result]) -> None:
     readme_path.write_text("\n".join(lines) + "\n")
 
 
-def other_result_identity_from_id_cell(id_cell: str) -> str:
-    link_match = re.search(r"link:([^\[]+)\[", id_cell)
-    if link_match:
-        return link_match.group(1)
-    return id_cell.strip()
-
-
-def other_result_identity(res: Result) -> str:
-    link_path = res.source_path
-    if link_path is None:
-        link_path = SOLVERS_DIR / f"{res.puzzle_id}.{res.language or 'out'}"
-    try:
-        return link_path.resolve().relative_to(ROOT).as_posix()
-    except ValueError:
-        return str(link_path)
-
-
-def other_result_source_sort_key(row: str) -> tuple[int, int, int, str, str, str]:
-    cells = readme_tables.split_table_row(row)
-    if not cells:
-        return (1, 0, 0, "", "", row)
-    id_cell = cells[0]
-    pid = parse_id_cell(id_cell)
-    identity = other_result_identity_from_id_cell(id_cell)
-    lang = detect_language(Path(identity)) or ""
-    base_key = table_sort_key(pid if pid is not None else identity, lang)
-    return (*base_key, identity)
-
-
-def upsert_other_language_results_table(
-    lines: list[str], results: list[Result]
-) -> None:
-    other_results = [
-        res for res in results if res.language not in (None, "", "py")
-    ]
-    if not other_results:
-        return
-
-    start, end = readme_tables.find_table_block(lines, "// RESULTS TABLE OTHER")
-    rows: dict[str, str] = {}
-    for i in range(start + 2, end):
-        line = lines[i]
-        cells = trim_trailing_empty_cells(readme_tables.split_table_row(line))
-        if not cells:
-            continue
-        rows[other_result_identity_from_id_cell(cells[0])] = line.rstrip()
-
-    for res in other_results:
-        rows[other_result_identity(res)] = format_row_other(res)
-
-    header_line = "| ID | Runtime (s) | Output | Error"
-    sorted_rows = sorted(rows.values(), key=other_result_source_sort_key)
-    replace_table_after_marker(
-        lines,
-        "// RESULTS TABLE OTHER",
-        ["|===", header_line, *sorted_rows, "|==="],
-    )
-
-
 def update_readme_solver_sets(results: list[Result]) -> None:
     readme_path = ROOT / "README.adoc"
     lines = readme_path.read_text().splitlines()
     row_map = parse_primary_python_row_map(lines)
     upsert_other_results_table(lines, results, row_map)
-    upsert_other_language_results_table(lines, results)
     replace_slowest_python_table(lines, row_map)
     readme_path.write_text("\n".join(lines) + "\n")
 
@@ -1424,17 +1446,18 @@ def update_readme_not_found() -> None:
     readme_path = ROOT / "README.adoc"
     lines = readme_path.read_text().splitlines()
     start, end = readme_tables.find_table_block(lines, "// RESULTS TABLE")
-    other_start, other_end = table_line_span_after_marker(
-        lines, "// RESULTS TABLE OTHER"
-    )
+    existing_other_rows = parse_other_results_table(lines)
+    existing_other_paths = {
+        path
+        for path_values in existing_other_rows.values()
+        for path in path_values
+    }
 
     row_re = re.compile(r"^\|\s+link:([^\[]+)\[")
     plain_re = re.compile(r"^\|\s+(\d+)\.py\s+\|")
-    other_plain_re = re.compile(r"^\|\s+(\d+)\.(c|cpp|lean)\s+\|")
     row_map: dict[tuple[TestId, str], str] = {}
-    other_row_map: dict[tuple[TestId, str], str] = {}
     result_map: dict[tuple[TestId, str], str] = {}
-    other_result_map: dict[tuple[TestId, str], str] = {}
+    other_results: list[Result] = []
     seen_ids: set[int] = set()
 
     for i in range(start + 1, end):
@@ -1502,44 +1525,13 @@ def update_readme_not_found() -> None:
         )
         result_map[result_key(res)] = format_row(res)
 
-    for i in range(other_start, other_end):
-        line = lines[i]
-        match = row_re.match(line)
-        if match:
-            link_target = match.group(1)
-            pid = test_id_from_link_target(link_target)
-            if pid is None:
-                continue
-            language = detect_language(Path(link_target)) or ""
-        else:
-            plain_match = other_plain_re.match(line)
-            if not plain_match:
-                continue
-            pid = int(plain_match.group(1))
-            language = plain_match.group(2)
-        if language == "py":
-            continue
-        cells = trim_trailing_empty_cells(readme_tables.split_table_row(line))
-        if len(cells) < 2:
-            continue
-        if len(cells) >= 4:
-            id_cell, time_cell, output_cell, error_cell = cells[:4]
-        elif len(cells) == 3:
-            id_cell, time_cell, output_cell = cells
-            error_cell = ""
-        else:
-            id_cell, time_cell = cells
-            output_cell = ""
-            error_cell = ""
-        output_cell, error_cell = normalize_other_row_fields(output_cell, error_cell)
-        other_row_map[(pid, language)] = format_row_fields_other(
-            id_cell, time_cell, output_cell, error_cell
-        )
-
     for key, path in solver_entries.items():
-        if key in row_map or key in other_row_map:
-            continue
         pid, language = key
+        if language == "py":
+            if key in row_map:
+                continue
+        elif relative_readme_path(path) in existing_other_paths:
+            continue
         res = Result(
             puzzle_id=pid,
             correct=False,
@@ -1554,11 +1546,14 @@ def update_readme_not_found() -> None:
         if language == "py":
             result_map[result_key(res)] = format_row(res)
         else:
-            other_result_map[result_key(res)] = format_row_other(res)
+            other_results.append(res)
 
     for name, target in EXPLICIT_ONLY_TESTS.items():
         key = (name, target.language)
-        if key in row_map or key in other_row_map:
+        if target.language == "py":
+            if key in row_map:
+                continue
+        elif relative_readme_path(target.path) in existing_other_paths:
             continue
         res = Result(
             puzzle_id=name,
@@ -1575,7 +1570,7 @@ def update_readme_not_found() -> None:
         if target.language == "py":
             result_map[result_key(res)] = format_row(res)
         else:
-            other_result_map[result_key(res)] = format_row_other(res)
+            other_results.append(res)
 
     for pid in sorted(known_ids):
         if pid in seen_ids or pid in solver_ids:
@@ -1595,23 +1590,14 @@ def update_readme_not_found() -> None:
 
     for key, row in result_map.items():
         row_map[key] = row
-    for key, row in other_result_map.items():
-        other_row_map[key] = row
 
     sorted_rows = [row_map[key] for key in sorted(row_map, key=row_sort_key)]
     lines[start + 1 : end] = [
         "| ID | Explanation | Runtime (s) | Model | Out Tokens | Output | Error",
         *sorted_rows,
     ]
-    sorted_other_rows = [
-        other_row_map[key] for key in sorted(other_row_map, key=row_sort_key)
-    ]
-    replace_table_after_marker(
-        lines,
-        "// RESULTS TABLE OTHER",
-        ["|===", "| ID | Runtime (s) | Output | Error", *sorted_other_rows, "|==="],
-    )
 
+    upsert_other_results_table(lines, other_results, row_map)
     replace_slowest_python_table(lines, row_map)
 
     readme_path.write_text("\n".join(lines) + "\n")
