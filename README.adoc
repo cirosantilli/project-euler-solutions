@@ -14,7 +14,7 @@ This repo aims to solve **ALL** https://projecteuler.net[Project Euler] problems
 
 // STATUS TABLE
 * **1-900**: done
-* **901-993**: 78/93 (TODO: 979, 980, 981, 982, 983, 984, 985, 986, 987, 988, 989, 990, 991, 992, 993)
+* **901-993**: 90/93 (TODO: 989, 992, 993)
 
 Tested on Python 3.13.7, PyPy 7.3.20, Ubuntu 25.10.
 
@@ -1441,21 +1441,21 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/976.py[976.py] |  | 0.706 | gpt-5.2-codex | 131264 | 675608326 |
 | link:solvers/977.py[977.py] | link:solvers/977.md[977.md] | 1.616 |  |  | 537945304 |
 | link:solvers/978.py[978.py] | link:solvers/978.md[978.md] | 0.070 | gpt-5.2-thinking |  | 254.54470757 |
-| link:solvers/979.py[979.py] | link:solvers/979.md[979.md] | 0.126 | gpt-5.2-thinking |  | 189306828278449 | error: missing reference answer
-| link:solvers/980.py[980.py] | link:solvers/980.md[980.md] | 0.508 | gpt-5.2-thinking |  | 124999683766 | error: missing reference answer
-| link:solvers/981.py[981.py] | link:solvers/981.md[981.md] | 0.242 | gpt-5.2-thinking |  | 794963735 | error: missing reference answer
-| link:solvers/982.py[982.py] | link:solvers/982.md[982.md] | 0.183 |  |  | 4.381944 | error: missing reference answer
-| link:solvers/983.py[983.py] | link:solvers/983.md[983.md] | 52.845 |  |  | 6725 | error: missing reference answer
-| link:solvers/984.py[984.py] | link:solvers/984.md[984.md] | 20.581 |  |  | 885722296 | error: missing reference answer
-| link:solvers/985.py[985.py] | link:solvers/985.md[985.md] | 0.255 | gpt-5.2-thinking |  | 1734334 | error: missing reference answer
-| link:solvers/986.py[986.py] | link:solvers/986.md[986.md] | 8.882 |  |  | 15418494040 | error: missing reference answer
-| link:solvers/987.py[987.py] | link:solvers/987.md[987.md] | 0.656 | gpt-5.2-thinking |  | 11044580082199135512 | error: missing reference answer
-| link:solvers/988.py[988.py] | link:solvers/988.md[988.md] | 0.104 | gpt-5.2-thinking |  | 2727531976556215755 | error: missing reference answer
-| link:solvers/989.py[989.py] | link:solvers/989.md[989.md] | 16.822 |  |  | 697845151 | error: missing reference answer
-| link:solvers/990.py[990.py] | link:solvers/990.md[990.md] | 2.524 | gpt-5.2-thinking |  | 50322750 | error: missing reference answer
-| link:solvers/991.py[991.py] | link:solvers/991.md[991.md] | 0.246 | gpt-5.2-thinking |  | 23871972654940 | error: missing reference answer
-| link:solvers/992.py[992.py] | link:solvers/992.md[992.md] | 0.235 | gpt-5.2-thinking |  | 568021234 | error: missing reference answer
-| link:solvers/993.py[993.py] | link:solvers/993.md[993.md] | 0.136 | gpt-5.2-thinking |  | 1661971830985915304 | error: missing reference answer
+| link:solvers/979.py[979.py] | link:solvers/979.md[979.md] | 0.189 | gpt-5.2-thinking |  | 189306828278449 |
+| link:solvers/980.py[980.py] | link:solvers/980.md[980.md] | 0.435 | gpt-5.2-thinking |  | 124999683766 |
+| link:solvers/981.py[981.py] | link:solvers/981.md[981.md] | 0.124 | gpt-5.2-thinking |  | 794963735 |
+| link:solvers/982.py[982.py] | link:solvers/982.md[982.md] | 0.111 |  |  | 4.381944 |
+| link:solvers/983.py[983.py] | link:solvers/983.md[983.md] | 52.648 |  |  | 6725 |
+| link:solvers/984.py[984.py] | link:solvers/984.md[984.md] | 20.317 |  |  | 885722296 |
+| link:solvers/985.py[985.py] | link:solvers/985.md[985.md] | 0.224 | gpt-5.2-thinking |  | 1734334 |
+| link:solvers/986.py[986.py] | link:solvers/986.md[986.md] | 8.944 |  |  | 15418494040 |
+| link:solvers/987.py[987.py] | link:solvers/987.md[987.md] | 0.456 | gpt-5.2-thinking |  | 11044580082199135512 |
+| link:solvers/988.py[988.py] | link:solvers/988.md[988.md] | 0.071 | gpt-5.2-thinking |  | 2727531976556215755 |
+| link:solvers/989.py[989.py] | link:solvers/989.md[989.md] | 16.737 |  |  | 697845151 | error: missing reference answer
+| link:solvers/990.py[990.py] | link:solvers/990.md[990.md] | 2.503 | gpt-5.2-thinking |  | 50322750 |
+| link:solvers/991.py[991.py] | link:solvers/991.md[991.md] | 0.180 | gpt-5.2-thinking |  | 23871972654940 |
+| link:solvers/992.py[992.py] | link:solvers/992.md[992.md] | 0.095 | gpt-5.2-thinking |  | 568021234 | error: missing reference answer
+| link:solvers/993.py[993.py] | link:solvers/993.md[993.md] | 0.092 | gpt-5.2-thinking |  | 1661971830985915304 | error: missing reference answer
 |===
 
 === Non-Python solvers
@@ -1513,6 +1513,7 @@ A bar plot of solver times can be generated with link:plot.py[] but I couldn't b
 | link:solvers/348.py[348.py] | 59.633
 | link:solvers/886.py[886.py] | 53.376
 | link:solvers/941.py[941.py] | 53.237
+| link:solvers/983.py[983.py] | 52.648
 | link:solvers/810.py[810.py] | 51.788
 | link:solvers/534.py[534.py] | 51.208
 | link:solvers/972.py[972.py] | 50.921
@@ -1538,7 +1539,6 @@ A bar plot of solver times can be generated with link:plot.py[] but I couldn't b
 | link:solvers/343.py[343.py] | 27.787
 | link:solvers/637.py[637.py] | 26.787
 | link:solvers/925.py[925.py] | 26.061
-| link:solvers/476.py[476.py] | 25.504
 |===
 
 We've put some effort into optimizing the following above further but failed so far:
