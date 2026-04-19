@@ -14,7 +14,7 @@ This repo aims to solve **ALL** https://projecteuler.net[Project Euler] problems
 
 // STATUS TABLE
 * **1-900**: done
-* **901-992**: 78/92 (TODO: 979, 980, 981, 982, 983, 984, 985, 986, 987, 988, 989, 990, 991, 992)
+* **901-993**: 78/93 (TODO: 979, 980, 981, 982, 983, 984, 985, 986, 987, 988, 989, 990, 991, 992, 993)
 
 Tested on Python 3.13.7, PyPy 7.3.20, Ubuntu 25.10.
 
@@ -248,11 +248,11 @@ We have basic linting with link:lint.py[]:
 ./lint.py
 ....
 
-This script checks that output answers don't show up in implementations to help prevent cheating by directly printing or returning hardcoded values. It also requires every Python solver in link:solvers/[] to start with `#!/usr/bin/env python`.
+This script checks that output answers don't show up in implementations to help prevent cheating by directly printing or returning hardcoded values. Those answer leaks and forbidden source tokens are critical lint failures. It also warns when Python solvers in link:solvers/[] do not start with `#!/usr/bin/env python`.
 
 Note that this linting does not affect languages where you can actually formally prove your algorithm such as Lean. That's their beauty!
 
-The functionality of link:lint.py[] is automatically called from link:test.py[] and tests just fail if the output string is present in them.
+The functionality of link:lint.py[] is automatically called from link:test.py[]. Critical lint failures stop execution before running solvers, while non-critical warnings are reported without blocking execution or README autoupdates.
 
 Of course, this does not rule out malice entirely, an evil LLM could simply obfuscate the cheating with string concatenation or addition. But this already greatly reduces the chances. There is only one solution to this problem: <<lean>> or other formal proof systems.
 
@@ -1455,6 +1455,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/990.py[990.py] | link:solvers/990.md[990.md] | 2.524 | gpt-5.2-thinking |  | 50322750 | error: missing reference answer
 | link:solvers/991.py[991.py] | link:solvers/991.md[991.md] | 0.246 | gpt-5.2-thinking |  | 23871972654940 | error: missing reference answer
 | link:solvers/992.py[992.py] | link:solvers/992.md[992.md] | 0.235 | gpt-5.2-thinking |  | 568021234 | error: missing reference answer
+| link:solvers/993.py[993.py] | link:solvers/993.md[993.md] | 0.151 | gpt-5.2-thinking |  | 1661971830985915304 | error: missing reference answer
 |===
 
 === Non-Python solvers
