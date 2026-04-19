@@ -252,7 +252,7 @@ This script checks that output answers don't show up in implementations to help 
 
 Note that this linting does not affect languages where you can actually formally prove your algorithm such as Lean. That's their beauty!
 
-The functionality of link:lint.py[] is automatically called from link:test.py[]. Critical lint failures stop execution before running solvers, while non-critical warnings are reported without blocking execution or README autoupdates.
+When run directly, link:lint.py[] exits non-zero for both critical and non-critical findings. The functionality is also automatically called from link:test.py[], where critical lint failures stop execution before running solvers, while non-critical warnings are reported without blocking execution or README autoupdates.
 
 Of course, this does not rule out malice entirely, an evil LLM could simply obfuscate the cheating with string concatenation or addition. But this already greatly reduces the chances. There is only one solution to this problem: <<lean>> or other formal proof systems.
 
@@ -1455,7 +1455,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/990.py[990.py] | link:solvers/990.md[990.md] | 2.524 | gpt-5.2-thinking |  | 50322750 | error: missing reference answer
 | link:solvers/991.py[991.py] | link:solvers/991.md[991.md] | 0.246 | gpt-5.2-thinking |  | 23871972654940 | error: missing reference answer
 | link:solvers/992.py[992.py] | link:solvers/992.md[992.md] | 0.235 | gpt-5.2-thinking |  | 568021234 | error: missing reference answer
-| link:solvers/993.py[993.py] | link:solvers/993.md[993.md] | 0.151 | gpt-5.2-thinking |  | 1661971830985915304 | error: missing reference answer
+| link:solvers/993.py[993.py] | link:solvers/993.md[993.md] | 0.136 | gpt-5.2-thinking |  | 1661971830985915304 | error: missing reference answer
 |===
 
 === Non-Python solvers

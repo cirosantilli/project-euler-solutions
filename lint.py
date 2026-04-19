@@ -8,6 +8,7 @@ import sys
 import tokenize
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 
 ROOT = Path(__file__).resolve().parent
 SOLUTIONS_PATH = ROOT / "data/projecteuler-solutions/Solutions.md"
@@ -19,6 +20,7 @@ LINE_RE = re.compile(r"^(\d+)\.\s+(.*)$")
 FORBIDDEN_TOKENS = ("Solutions.md",)
 FORBIDDEN_LEAN_PATTERNS = (r"\bpartial\s+def\b",)
 FORBIDDEN_LEAN_DEF_ARG_RE = re.compile(r"\bdef\s+\w+[^\n]*\b_[A-Za-z0-9_]*\b")
+ViolationSeverity = Literal["critical", "non-critical"]
 
 
 @dataclass(frozen=True)
@@ -28,6 +30,7 @@ class Violation:
     path: Path
     answer: str
     context: list[tuple[int, str]]
+    severity: ViolationSeverity = "critical"
 
 
 def load_reference_answers() -> dict[int, str]:
@@ -135,7 +138,7 @@ def forbidden_hits(text: str, token: str) -> list[int]:
 def python_shebang_violation(
     path: Path, pid: int, lines: list[str]
 ) -> Violation | None:
-    if path.parent != SOLVERS_DIR or path.suffix != ".py":
+    if path.resolve().parent != SOLVERS_DIR or path.suffix != ".py":
         return None
     first_line = lines[0] if lines else ""
     if first_line == VALID_PYTHON_SHEBANG:
@@ -146,7 +149,7 @@ def python_shebang_violation(
     else:
         message = f"missing shebang {VALID_PYTHON_SHEBANG!r}"
         context = [(1, first_line.rstrip())] if lines else []
-    return Violation("shebang", pid, path, message, context)
+    return Violation("shebang", pid, path, message, context, severity="non-critical")
 
 
 def lint_paths(
@@ -315,10 +318,18 @@ def lint_paths(
     return violations
 
 
-def format_violations(violations: list[Violation], root: Path = ROOT) -> list[str]:
-    if not violations:
-        return ["ok: no lint violations found in solver sources."]
-    lines = ["error: lint violations found in solver sources:"]
+def critical_violations(violations: list[Violation]) -> list[Violation]:
+    return [violation for violation in violations if violation.severity == "critical"]
+
+
+def non_critical_violations(violations: list[Violation]) -> list[Violation]:
+    return [violation for violation in violations if violation.severity != "critical"]
+
+
+def _format_violation_details(
+    violations: list[Violation], root: Path = ROOT
+) -> list[str]:
+    lines: list[str] = []
     sorted_violations = sorted(
         violations, key=lambda v: (v.puzzle_id, str(v.path), v.kind, v.answer)
     )
@@ -337,6 +348,23 @@ def format_violations(violations: list[Violation], root: Path = ROOT) -> list[st
         lines.append(f"- {violation.puzzle_id}: {rel} {detail}")
         for line_no, line in violation.context:
             lines.append(f"  line {line_no}: {line}")
+    return lines
+
+
+def format_violations(violations: list[Violation], root: Path = ROOT) -> list[str]:
+    if not violations:
+        return ["ok: no lint violations found in solver sources."]
+    critical = critical_violations(violations)
+    non_critical = non_critical_violations(violations)
+    lines: list[str] = []
+    if critical:
+        lines.append("error: critical lint violations found in solver sources:")
+        lines.extend(_format_violation_details(critical, root=root))
+    if non_critical:
+        if lines:
+            lines.append("")
+        lines.append("warning: non-critical lint violations found in solver sources:")
+        lines.extend(_format_violation_details(non_critical, root=root))
     return lines
 
 

@@ -1127,8 +1127,10 @@ def main() -> None:
     if violations:
         for line in lint.format_violations(violations, root=ROOT):
             print(line, file=sys.stderr)
+    critical_lint_violations = lint.critical_violations(violations)
+    if critical_lint_violations:
         lint_results: list[Result] = []
-        for violation in violations:
+        for violation in critical_lint_violations:
             language = detect_language(violation.path)
             lint_results.append(
                 Result(
@@ -1138,7 +1140,7 @@ def main() -> None:
                     model=None,
                     output_tokens=None,
                     output=None,
-                    message="lint failed",
+                    message="critical lint failed",
                     language=language,
                     source_path=violation.path,
                 )
