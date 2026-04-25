@@ -8,7 +8,6 @@ import subprocess
 import sys
 import time
 from dataclasses import dataclass
-from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 import lint
@@ -571,46 +570,20 @@ def run_solver(
         return None, exc.stdout or "", exc.stderr or "", elapsed, True
 
 
-def extract_output_lines(raw_output: str) -> list[str]:
-    return [line.strip() for line in raw_output.splitlines() if line.strip()]
+def format_stdout_for_display(stdout: str) -> str:
+    if not stdout:
+        return ""
+    if stdout.endswith("\n"):
+        stdout = stdout[:-1]
+    return stdout.replace("\n", "\\n")
 
 
-def normalize_output_lines(lines: list[str]) -> tuple[str, str]:
-    if not lines:
-        return "", ""
-    actual = "\n".join(lines)
-    display = "\\n".join(lines)
-    return actual, display
-
-
-def output_contains_expected_answer(lines: list[str], expected: str) -> bool:
-    if not expected:
-        return False
-    token_re = re.compile(
-        rf"(?<![A-Za-z0-9_.+-]){re.escape(expected)}(?![A-Za-z0-9_.+-])"
-    )
-    return any(line == expected or token_re.search(line) for line in reversed(lines))
-
-
-def single_line_output_matches_expected(actual: str, expected: str) -> bool:
-    if "\n" in actual:
-        return False
-    if actual.replace("e+", "e") == expected:
-        return True
-    if "." not in expected or "e" in expected.lower():
-        return False
-    try:
-        actual_decimal = Decimal(actual)
-        expected_decimal = Decimal(expected)
-    except InvalidOperation:
-        return False
-    decimals = len(expected.rsplit(".", 1)[1])
-    quantum = Decimal(1).scaleb(-decimals)
-    return actual_decimal.quantize(quantum) == expected_decimal
+def stdout_matches_expected(stdout: str, expected: str) -> bool:
+    return stdout == expected or stdout == f"{expected}\n"
 
 
 def wrong_answer_detail(display_output: str, expected: str | None) -> str:
-    return f"got {display_output} expected {expected}"
+    return f"got {display_output!r} expected {expected!r}"
 
 
 def format_row(res: Result) -> str:
@@ -1667,8 +1640,7 @@ def run_solver_set_target(
             source_path=source_path,
         )
 
-    output_lines = extract_output_lines(stdout)
-    actual, display_output = normalize_output_lines(output_lines)
+    display_output = format_stdout_for_display(stdout)
     if missing_reference:
         print(f"[{pid}] missing reference answer", file=sys.stderr)
         return Result(
@@ -1682,7 +1654,7 @@ def run_solver_set_target(
             language=target.language,
             source_path=source_path,
         )
-    if actual == expected:
+    if stdout_matches_expected(stdout, expected):
         print(f"[{pid}] ok ({elapsed:.3f}s)")
         return Result(
             pid,
@@ -1690,38 +1662,11 @@ def run_solver_set_target(
             elapsed=elapsed,
             model=model,
             output_tokens=output_tokens,
-            output=display_output,
-            message="ok",
-            language=target.language,
-            source_path=source_path,
-        )
-    if single_line_output_matches_expected(actual, expected):
-        print(f"[{pid}] ok ({elapsed:.3f}s; normalized answer)")
-        return Result(
-            pid,
-            correct=True,
-            elapsed=elapsed,
-            model=model,
-            output_tokens=output_tokens,
             output=expected,
             message="ok",
             language=target.language,
             source_path=source_path,
         )
-    if output_contains_expected_answer(output_lines, expected):
-        print(f"[{pid}] ok ({elapsed:.3f}s; embedded answer)")
-        return Result(
-            pid,
-            correct=True,
-            elapsed=elapsed,
-            model=model,
-            output_tokens=output_tokens,
-            output=expected,
-            message="ok",
-            language=target.language,
-            source_path=source_path,
-        )
-
     msg = f"expected {expected}"
     print(
         f"[{pid}] wrong answer: {wrong_answer_detail(display_output, expected)}",
@@ -2030,8 +1975,7 @@ def main() -> None:
                 print(f"[{pid}] failed (exit {rc})", file=sys.stderr)
                 continue
 
-            output_lines = extract_output_lines(stdout)
-            actual, display_output = normalize_output_lines(output_lines)
+            display_output = format_stdout_for_display(stdout)
             if not target.checks_reference_answer:
                 results.append(
                     Result(
@@ -2067,7 +2011,7 @@ def main() -> None:
                 print(f"[{pid}] missing reference answer", file=sys.stderr)
                 continue
 
-            if actual == expected:
+            if stdout_matches_expected(stdout, expected):
                 results.append(
                     Result(
                         pid,
@@ -2075,7 +2019,7 @@ def main() -> None:
                         elapsed=elapsed,
                         model=model,
                         output_tokens=output_tokens,
-                        output=display_output,
+                        output=expected,
                         message="ok",
                         language=target.language,
                         source_path=source_from_target(target.path, target.language),
