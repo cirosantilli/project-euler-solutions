@@ -15,6 +15,7 @@ SOLUTIONS_PATH = ROOT / "data/projecteuler-solutions/Solutions.md"
 SOLVERS_DIR = ROOT / "solvers"
 LEAN_SOLVERS_DIR = ROOT / "ProjectEulerSolutions"
 VALID_PYTHON_SHEBANG = "#!/usr/bin/env python"
+SOURCE_EXTENSIONS = (".py", ".c", ".cpp")
 
 LINE_RE = re.compile(r"^(\d+)\.\s+(.*)$")
 FORBIDDEN_TOKENS = ("Solutions.md",)
@@ -59,11 +60,21 @@ def parse_solver_id(path: Path) -> int | None:
     return None
 
 
-def iter_solver_sources() -> list[Path]:
+def iter_sources_in(source_dir: Path, extensions: tuple[str, ...]) -> list[Path]:
+    if not source_dir.is_absolute():
+        source_dir = ROOT / source_dir
     sources: list[Path] = []
-    for ext in (".py", ".c", ".cpp"):
-        sources.extend(SOLVERS_DIR.glob(f"*{ext}"))
+    for ext in extensions:
+        sources.extend(source_dir.glob(f"*{ext}"))
     return sorted(sources)
+
+
+def iter_solver_sources() -> list[Path]:
+    return iter_sources_in(SOLVERS_DIR, SOURCE_EXTENSIONS)
+
+
+def iter_source_set_sources(source_set: Path) -> list[Path]:
+    return iter_sources_in(source_set, SOURCE_EXTENSIONS + (".lean",))
 
 
 def should_scan_answer(answer: str) -> bool:
@@ -80,6 +91,26 @@ def python_comment_or_string_hits(text: str, answer: str) -> list[int]:
                     hits.append(tok.start[0])
     except (tokenize.TokenError, IndentationError, SyntaxError):
         return hits
+    return hits
+
+
+def python_line_hits(text: str, answer: str) -> list[int]:
+    hits: list[int] = []
+    answer_re = re.escape(answer)
+    action_re = re.compile(
+        rf"\b(?:return|print)\b.*"
+        rf"(?:['\"]{answer_re}['\"]|(?<![\w.]){answer_re}(?![\w.]))"
+    )
+    assignment_re = re.compile(
+        rf"(?<![!<>=])=\s*"
+        rf"(?:['\"]{answer_re}['\"]|(?<![\w.]){answer_re}(?![\w.]))"
+    )
+    for idx, line in enumerate(text.splitlines(), 1):
+        code = line.split("#", 1)[0]
+        if answer not in code:
+            continue
+        if action_re.search(code) or assignment_re.search(code):
+            hits.append(idx)
     return hits
 
 
@@ -153,7 +184,9 @@ def python_shebang_violation(
 
 
 def lint_paths(
-    paths: list[Path], answers: dict[int, str] | None = None
+    paths: list[Path],
+    answers: dict[int, str] | None = None,
+    scan_code_answers: bool = False,
 ) -> list[Violation]:
     if answers is None:
         answers = load_reference_answers()
@@ -293,6 +326,8 @@ def lint_paths(
         if answer and should_scan_answer(answer):
             if path.suffix == ".py":
                 line_hits = python_comment_or_string_hits(text, answer)
+                if scan_code_answers:
+                    line_hits += python_line_hits(text, answer)
             else:
                 line_hits = c_comment_hits(text, answer)
                 line_hits += c_line_hits(text, answer)
@@ -379,6 +414,15 @@ def parse_args() -> argparse.Namespace:
         help="Only lint a specific language.",
     )
     parser.add_argument(
+        "--set",
+        dest="source_set",
+        type=Path,
+        help=(
+            "Source directory to lint when no explicit paths are provided "
+            "(for example: solvers/eulersolve). Defaults to solvers."
+        ),
+    )
+    parser.add_argument(
         "paths",
         nargs="*",
         type=Path,
@@ -392,19 +436,25 @@ def main() -> int:
     if args.paths:
         paths = sorted(args.paths)
     else:
-        paths = iter_solver_sources()
+        paths = (
+            iter_source_set_sources(args.source_set)
+            if args.source_set is not None
+            else iter_solver_sources()
+        )
     if args.language == "lean":
         if args.paths:
             paths = [path for path in paths if path.suffix == ".lean"]
-        else:
+        elif args.source_set is None:
             paths = sorted(LEAN_SOLVERS_DIR.glob("*.lean"))
             paths.extend(sorted(SOLVERS_DIR.glob("*.lean")))
+        else:
+            paths = [path for path in paths if path.suffix == ".lean"]
     elif args.language:
         lang_ext = f".{args.language}"
         paths = [path for path in paths if path.suffix == lang_ext]
     else:
         paths = [path for path in paths if path.suffix != ".lean"]
-    violations = lint_paths(paths)
+    violations = lint_paths(paths, scan_code_answers=args.source_set is not None)
     output_lines = format_violations(violations)
     if violations:
         for line in output_lines:
