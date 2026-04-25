@@ -1,93 +1,69 @@
 #!/usr/bin/env python
-"""Adapted from: https://github.com/stbrumme/euler/blob/b426763514558c3b39f2ec507f271d322088d28a/euler-0259.cpp"""
+"""
+Project Euler 259: Reachable Numbers
+
+Use the digits 1..9 in order, allowing concatenation, binary arithmetic
+operations, and arbitrary parentheses.  Sum the distinct positive integers that
+can be reached exactly.
+"""
+
+from functools import cache
+from math import gcd
 
 
-class Fraction:
-    def __init__(self, numerator, denominator=1):
-        self.numerator = int(numerator)
-        self.denominator = int(denominator)
-
-    def __add__(self, other):
-        return Fraction(
-            self.numerator * other.denominator + other.numerator * self.denominator,
-            self.denominator * other.denominator,
-        )
-
-    def __mul__(self, other):
-        return Fraction(
-            self.numerator * other.numerator,
-            self.denominator * other.denominator,
-        )
-
-    def __truediv__(self, other):
-        return Fraction(
-            self.numerator * other.denominator,
-            self.denominator * other.numerator,
-        )
-
-    def __lt__(self, other):
-        return self.numerator * other.denominator < other.numerator * self.denominator
-
-    def __eq__(self, other):
-        return self.numerator * other.denominator == other.numerator * self.denominator
+DIGITS = "123456789"
 
 
-def search(digits):
-    result = [Fraction(int(digits))]
-
-    for split in range(1, len(digits)):
-        left = digits[:split]
-        right = digits[split:]
-
-        left_fractions = search(left)
-        right_fractions = search(right)
-
-        for x in left_fractions:
-            for y in right_fractions:
-                result.append(x + y)
-                result.append(x + Fraction(-y.numerator, y.denominator))
-                result.append(x * y)
-                if y.numerator != 0:
-                    result.append(x / y)
-
-    if len(result) > 1:
-        result.sort()
-        unique = [result[0]]
-        for current in result[1:]:
-            if not (current == unique[-1]):
-                unique.append(current)
-        result = unique
-
-    return result
+def normalize(num: int, den: int) -> tuple[int, int]:
+    if den < 0:
+        num = -num
+        den = -den
+    g = gcd(num, den)
+    return num // g, den // g
 
 
-def solve(last_digit: int) -> int:
-    digits = "123456789"[:last_digit]
+def add_values(
+    out: set[tuple[int, int]], left: tuple[int, int], right: tuple[int, int]
+) -> None:
+    an, ad = left
+    bn, bd = right
 
-    fractions = search(digits)
+    out.add(normalize(an * bd + bn * ad, ad * bd))
+    out.add(normalize(an * bd - bn * ad, ad * bd))
+    out.add(normalize(an * bn, ad * bd))
+    if bn:
+        out.add(normalize(an * bd, ad * bn))
 
-    found = []
-    for current in fractions:
-        if current.denominator < 0:
-            current.numerator *= -1
-            current.denominator *= -1
-        if current.numerator <= 0:
-            continue
-        if current.numerator % current.denominator == 0:
-            found.append(current.numerator // current.denominator)
 
-    found.sort()
-    unique = []
-    for value in found:
-        if not unique or value != unique[-1]:
-            unique.append(value)
+def reachable_values(digits: str) -> set[tuple[int, int]]:
+    @cache
+    def interval(lo: int, hi: int) -> frozenset[tuple[int, int]]:
+        values: set[tuple[int, int]] = {(int(digits[lo:hi]), 1)}
 
-    total = 0
-    for value in unique:
-        total += value
+        for split in range(lo + 1, hi):
+            left_values = interval(lo, split)
+            right_values = interval(split, hi)
+            for left in left_values:
+                for right in right_values:
+                    add_values(values, left, right)
 
-    return total
+        return frozenset(values)
+
+    return set(interval(0, len(digits)))
+
+
+def solve(last_digit: int = 9) -> int:
+    values = reachable_values(DIGITS[:last_digit])
+    integers = {num for num, den in values if den == 1 and num > 0}
+    return sum(integers)
+
+
+def main() -> None:
+    values = reachable_values(DIGITS)
+    assert (42, 1) in values
+
+    print(solve())
 
 
 if __name__ == "__main__":
-    print(solve(9))
+    main()

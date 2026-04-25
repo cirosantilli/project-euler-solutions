@@ -1,94 +1,133 @@
 #!/usr/bin/env python
-"""Adapted from https://github.com/igorvanloo/Project-Euler-Explained/blob/19f85895945a2c9b688f85da142bae13f37dab65/Finished%20Problems/pe00754%20-%20Product%20of%20Gauss%20Factorials.py"""
-
 """
-Created on Wed Dec 15 22:06:30 2021
+Project Euler 754: Product of Gauss Factorials
 
-@author: igorvanloo
+Compute the product of Gauss factorials GF(n), 1 <= n <= 10^8, modulo
+1_000_000_007.
 """
-"""
-Project Euler Problem 754
 
-After some brute force found
-
-g(n) = https://oeis.org/A001783
-
-g(n) = n^phi(n)*Product_{d|n} (d!/d^d)^mu(n/d)
-
-    517055464 ~ 10^4
-    516871211 ~ 10^5
-    557051244 ~ 10^6
-    623561178 ~ 10^7
-
-"""
-import math
+from math import gcd
 
 
-def totient_mobius_sieve(n):
-    phi = [i for i in range(n + 1)]
-    mob = [1] * (n + 1)
-    mob[0] = 0
-    for p in range(2, n + 1):
-        if phi[p] == p:
-            for i in range(p, n + 1, p):
-                phi[i] -= phi[i] // p
-                mob[i] *= -1
-            sq = p * p
-            if sq < n:
-                for j in range(sq, n + 1, sq):
-                    mob[j] = 0
-    return phi, mob
+LIMIT = 100_000_000
+MOD = 1_000_000_007
+EXP_MOD = MOD - 1
 
 
-def modfactorial(limit, mod):
-    factorial = [1] * (limit + 1)
-    for x in range(2, limit):
-        factorial[x] = x * factorial[x - 1]
-        factorial[x] %= mod
-    return factorial
+def gauss_factorial(n: int) -> int:
+    result = 1
+    for k in range(1, n):
+        if gcd(k, n) == 1:
+            result *= k
+    return result
 
 
-def ModDivision(a, b, m):
-    a = a % m
-    try:
-        inv = pow(b, -1, m)
-    except ValueError:
-        return "Division not defined"
-    else:
-        return (inv * a) % m
+def product_gauss_factorials(n: int) -> int:
+    result = 1
+    for k in range(1, n + 1):
+        result *= gauss_factorial(k)
+    return result
 
 
-def g(n):
-    total = 1
-    for i in range(1, n + 1):
-        if math.gcd(i, n) == 1:
-            total *= i
-    return total
+def mobius_sieve(n: int) -> bytearray:
+    # Encode mu as 0 -> 0, 1 -> +1, 2 -> -1.
+    mu = bytearray(n + 1)
+    mu[1] = 1
+    composite = bytearray(n + 1)
+    primes: list[int] = []
+
+    for x in range(2, n + 1):
+        if not composite[x]:
+            primes.append(x)
+            mu[x] = 2
+
+        mux = mu[x]
+        for p in primes:
+            y = x * p
+            if y > n:
+                break
+            composite[y] = 1
+            if x % p == 0:
+                break
+            if mux == 1:
+                mu[y] = 2
+            elif mux == 2:
+                mu[y] = 1
+
+    return mu
 
 
-def G_small(n):
-    total = 1
-    for i in range(1, n + 1):
-        total *= g(i)
-    return total
+def quotient_ranges(n: int) -> list[tuple[int, int, int]]:
+    ranges = []
+    lo = 1
+    while lo <= n:
+        q = n // lo
+        hi = n // q
+        ranges.append((lo, hi, q))
+        lo = hi + 1
+    return ranges
 
 
-def compute(limit, mod):
-    phi_sieve, mu_sieve = totient_mobius_sieve(limit)
-    factorial = modfactorial(limit, mod)
-    G = 1
-    for n in range(0, limit + 1):
-        G *= pow(n, phi_sieve[n], mod)
-        G %= mod
-    for d in range(2, limit + 1):
-        fac = ModDivision(factorial[d - 1], pow(d, d - 1, mod), mod)
-        mu_total = sum(mu_sieve[n // d] for n in range(d, limit + 1, d))
-        G *= pow(fac, mu_total, mod)
-        G %= mod
-    return G
+def superfactorials_at(keys: list[int]) -> dict[int, int]:
+    values: dict[int, int] = {}
+    keys = sorted(set(keys))
+    pos = 0
+    factorial = 1
+    superfactorial = 1
+
+    if keys and keys[0] == 0:
+        values[0] = 1
+        pos = 1
+
+    stop = keys[-1] if keys else 0
+    for x in range(1, stop + 1):
+        factorial = factorial * x % MOD
+        superfactorial = superfactorial * factorial % MOD
+        while pos < len(keys) and keys[pos] == x:
+            values[x] = superfactorial
+            pos += 1
+    return values
+
+
+def solve(limit: int = LIMIT) -> int:
+    mu = mobius_sieve(limit)
+    ranges = quotient_ranges(limit)
+    superfactorial = superfactorials_at([q - 1 for _, _, q in ranges])
+
+    result = 1
+    for lo, hi, q in ranges:
+        exponent = q * (q - 1) // 2 % EXP_MOD
+        pos_product = 1
+        neg_product = 1
+        mu_sum = 0
+
+        for d in range(lo, hi + 1):
+            sign = mu[d]
+            if sign == 1:
+                pos_product = pos_product * d % MOD
+                mu_sum += 1
+            elif sign == 2:
+                neg_product = neg_product * d % MOD
+                mu_sum -= 1
+
+        if exponent:
+            result = result * pow(pos_product, exponent, MOD) % MOD
+            result = result * pow(neg_product, (-exponent) % EXP_MOD, MOD) % MOD
+
+        sf_power = mu_sum % EXP_MOD
+        if sf_power:
+            result = result * pow(superfactorial[q - 1], sf_power, MOD) % MOD
+
+    return result
+
+
+def main() -> None:
+    assert gauss_factorial(10) == 189
+    assert product_gauss_factorials(10) == 23044331520000
+    assert solve(10) == 331358692
+
+    print(solve())
 
 
 if __name__ == "__main__":
-    assert g(10) == 189
-    assert G_small(10) == 23044331520000
-    print(compute(10**8, 10**9 + 7))
+    main()

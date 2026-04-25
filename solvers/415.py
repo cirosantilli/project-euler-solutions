@@ -1,195 +1,252 @@
 #!/usr/bin/env python
-# Project Euler 415: Titanic Sets
-# Uses Mustonen's f(n,k) and Lj(n) second-difference formula + Du Jiao recursion
-# Works modulo 10^8.
+"""
+Project Euler 415: Titanic Sets
+
+Count titanic subsets of the (N+1) by (N+1) lattice grid modulo 10^8.
+The complement consists of the empty set, singletons, and collinear subsets.
+"""
+
 
 MOD = 100_000_000
-MOD2 = 2 * MOD  # compute collinear-subset sum mod 2*MOD, then divide by 2 safely
+DEFAULT_N = 100_000_000_000
+PRECOMPUTE = 25_000_000
 
 
-def partial_sum(n: int, k: int) -> int:
-    """Exact sum_{i=1..n} i^k for k in {0,1,2}."""
-    if k == 0:
-        return n
-    if k == 1:
-        return n * (n + 1) // 2
-    if k == 2:
-        return n * (n + 1) * (2 * n + 1) // 6
-    raise ValueError("k must be 0,1,2")
+def norm(x: int) -> int:
+    return x % MOD
 
 
-class CoprimeSums:
-    """
-    Du Jiao-style recursion computing:
-      F(n,a,b) = sum_{1<=i,j<=n, gcd(i,j)=1} i^a j^b   (mod mod)
-    for a,b in {0,1}.
-    """
-
-    def __init__(self, mod: int):
-        self.mod = mod
-        self.cache = [[{} for _ in range(2)] for __ in range(2)]
-        # base n=1
-        for a in (0, 1):
-            for b in (0, 1):
-                self.cache[a][b][1] = 1 % mod
-
-    def dfs(self, n: int, a: int, b: int) -> int:
-        mod = self.mod
-        ca = self.cache[a][b]
-        if n in ca:
-            return ca[n]
-
-        # G(n) = (sum i^a)(sum j^b)
-        S = (partial_sum(n, a) % mod) * (partial_sum(n, b) % mod) % mod
-
-        i = 2
-        last = partial_sum(1, a + b) % mod
-        while i <= n:
-            q = n // i
-            j = n // q + 1  # first index after this quotient block
-            coef = partial_sum(j - 1, a + b) % mod
-            S = (S - ((coef - last) % mod) * self.dfs(q, a, b)) % mod
-            last = coef
-            i = j
-
-        ca[n] = S
-        return S
+def mul(a: int, b: int) -> int:
+    return (a % MOD) * (b % MOD) % MOD
 
 
-# Closed-form prefix sums mod m:
-# S0(n)=sum_{k=0..n} 2^k
-# S1(n)=sum_{k=0..n} k*2^k
-# S2(n)=sum_{k=0..n} k^2*2^k
-def pref_pow2(n: int, m: int) -> int:
+def s1(n: int) -> int:
+    if n <= 0:
+        return 0
+    return n * (n + 1) // 2 % MOD
+
+
+def s2(n: int) -> int:
+    if n <= 0:
+        return 0
+    return n * (n + 1) * (2 * n + 1) // 6 % MOD
+
+
+def s3(n: int) -> int:
+    if n <= 0:
+        return 0
+    t = n * (n + 1) // 2
+    return t * t % MOD
+
+
+def range_s1(lo: int, hi: int) -> int:
+    return (s1(hi) - s1(lo - 1)) % MOD
+
+
+def range_s2(lo: int, hi: int) -> int:
+    return (s2(hi) - s2(lo - 1)) % MOD
+
+
+def range_s3(lo: int, hi: int) -> int:
+    return (s3(hi) - s3(lo - 1)) % MOD
+
+
+def pref_k_pow2(n: int, pow2_next: int) -> int:
     if n < 0:
         return 0
-    return (pow(2, n + 1, m) - 1) % m
+    return (((n - 1) % MOD) * pow2_next + 2) % MOD
 
 
-def pref_kpow2(n: int, m: int) -> int:
+def pref_k2_pow2(n: int, pow2_next: int) -> int:
     if n < 0:
         return 0
-    pow2 = pow(2, n + 1, m)
-    return (2 + ((n - 1) % m) * pow2) % m
+    k = n % MOD
+    return ((k * k - 2 * k + 3) % MOD * pow2_next - 6) % MOD
 
 
-def pref_k2pow2(n: int, m: int) -> int:
-    if n < 0:
-        return 0
-    pow2 = pow(2, n + 1, m)
-    a = (n * n - 2 * n + 3) % m
-    return (a * pow2 - 6) % m
+class TotientSums:
+    def __init__(self, max_n: int) -> None:
+        limit = min(max_n, PRECOMPUTE)
+        if limit < 1:
+            limit = 1
+        self.limit = limit
+
+        phi = [0] * (limit + 1)
+        phi[1] = 1
+        primes: list[int] = []
+        composite = bytearray(limit + 1)
+
+        for x in range(2, limit + 1):
+            if not composite[x]:
+                primes.append(x)
+                phi[x] = x - 1
+            phix = phi[x]
+            for p in primes:
+                y = x * p
+                if y > limit:
+                    break
+                composite[y] = 1
+                if x % p == 0:
+                    phi[y] = phix * p
+                    break
+                phi[y] = phix * (p - 1)
+
+        pref0 = [0] * (limit + 1)
+        pref1 = [0] * (limit + 1)
+        pref2 = [0] * (limit + 1)
+        for x in range(1, limit + 1):
+            ph = phi[x] % MOD
+            xm = x % MOD
+            pref0[x] = (pref0[x - 1] + ph) % MOD
+            pref1[x] = (pref1[x - 1] + xm * ph) % MOD
+            pref2[x] = (pref2[x - 1] + xm * xm % MOD * ph) % MOD
+
+        self.pref0 = pref0
+        self.pref1 = pref1
+        self.pref2 = pref2
+        self.cache0: dict[int, int] = {}
+        self.cache1: dict[int, int] = {}
+        self.cache2: dict[int, int] = {}
+
+    def phi(self, n: int) -> int:
+        if n <= self.limit:
+            return self.pref0[n]
+        cached = self.cache0.get(n)
+        if cached is not None:
+            return cached
+
+        total = s1(n)
+        lo = 2
+        while lo <= n:
+            q = n // lo
+            hi = n // q
+            total = (total - ((hi - lo + 1) % MOD) * self.phi(q)) % MOD
+            lo = hi + 1
+
+        self.cache0[n] = total
+        return total
+
+    def i_phi(self, n: int) -> int:
+        if n <= self.limit:
+            return self.pref1[n]
+        cached = self.cache1.get(n)
+        if cached is not None:
+            return cached
+
+        total = s2(n)
+        lo = 2
+        while lo <= n:
+            q = n // lo
+            hi = n // q
+            total = (total - range_s1(lo, hi) * self.i_phi(q)) % MOD
+            lo = hi + 1
+
+        self.cache1[n] = total
+        return total
+
+    def i2_phi(self, n: int) -> int:
+        if n <= self.limit:
+            return self.pref2[n]
+        cached = self.cache2.get(n)
+        if cached is not None:
+            return cached
+
+        total = s3(n)
+        lo = 2
+        while lo <= n:
+            q = n // lo
+            hi = n // q
+            total = (total - range_s2(lo, hi) * self.i2_phi(q)) % MOD
+            lo = hi + 1
+
+        self.cache2[n] = total
+        return total
 
 
-def range_sum(pref_fn, a: int, b: int, m: int) -> int:
-    return (pref_fn(b, m) - pref_fn(a - 1, m)) % m
+def direction_stats(sums: TotientSums, m: int) -> tuple[int, int, int]:
+    if m <= 0:
+        return 0, 0, 0
+    count = (2 * sums.phi(m) - 1) % MOD
+    coord_sum = (3 * sums.i_phi(m) - 1) % MOD
+    product_sum = sums.i2_phi(m)
+    return count, coord_sum, product_sum
 
 
-def sum_squares(a: int, b: int) -> int:
-    # sum_{k=a..b} k^2 = SS(b)-SS(a-1)
-    def SS(n: int) -> int:
-        return n * (n + 1) * (2 * n + 1) // 6
+def titanic_sets(n: int, sums: TotientSums) -> int:
+    side = n + 1
+    point_count = side * side
+    all_subsets = pow(2, point_count, MOD)
+    singleton_part = (1 + (point_count % MOD)) % MOD
 
-    return SS(b) - SS(a - 1)
+    if n < 2:
+        return (all_subsets - singleton_part) % MOD
 
+    blocks = []
+    needed: set[int] = set()
+    lo = 2
+    while lo <= n:
+        a = n // lo
+        b = n // (lo + 1) if lo < n else 0
+        hi_a = n // a
+        hi_b = n // b - 1 if b else n
+        hi = min(hi_a, hi_b)
+        blocks.append((lo, hi, a, b))
+        needed.add(a)
+        if b:
+            needed.add(b)
+        lo = hi + 1
 
-def block_contribution(n: int, L: int, R: int, q: int, cps: CoprimeSums) -> int:
-    """
-    Adds sum_{k=L..R} f(n,k) * (2^(k-1) - 1)   mod MOD2,
-    where q = floor((n-1)/k) is constant on [L,R].
-    """
-    mod = MOD2
+    stats = {m: direction_stats(sums, m) for m in needed}
+    side_mod = side % MOD
+    side2_mod = side_mod * side_mod % MOD
 
-    # Positive quadrant coprime sums:
-    Cpos = cps.dfs(q, 0, 0)  # count
-    SX = cps.dfs(q, 1, 0)  # sum of x over ordered coprime pairs
-    SXY = cps.dfs(q, 1, 1)  # sum of x*y over ordered coprime pairs
+    collinear = 0
+    for lo, hi, m1, m2 in blocks:
+        c1, xy1, pr1 = stats[m1]
+        c2, xy2, pr2 = stats[m2] if m2 else (0, 0, 0)
 
-    # Lift to full [-q..q]^2 primitive vectors, excluding (0,0), including axes:
-    # C = 4*Cpos + 4 axes
-    # Sabs = 8*SX + 4 axes contribution to |x|+|y|
-    # P = 4*SXY (axes contribute 0)
-    C = (4 * Cpos + 4) % mod
-    Sabs = (8 * SX + 4) % mod
-    P = (4 * SXY) % mod
+        q2 = (pr1 - pr2) % MOD
+        q1 = (side_mod * (xy2 - xy1) - 2 * pr2) % MOD
+        q0 = (side2_mod * (c1 - c2) + side_mod * xy2 - pr2) % MOD
 
-    nmod = n % mod
+        p2 = 2 * q2 % MOD
+        p1 = 2 * q1 % MOD
+        p0 = (2 * q0 + 2 * side_mod) % MOD
 
-    # f(n,k) = n^2*C - n*k*Sabs + k^2*P  (mod mod)
-    A0 = (nmod * nmod) % mod * C % mod
-    A1 = nmod * Sabs % mod
-    A2 = P
+        pow_lo = pow(2, lo, MOD)
+        pow_after_hi = pow(2, hi + 1, MOD)
+        e0 = (pow_after_hi - pow_lo) % MOD
+        e1 = (pref_k_pow2(hi, pow_after_hi) - pref_k_pow2(lo - 1, pow_lo)) % MOD
+        e2 = (pref_k2_pow2(hi, pow_after_hi) - pref_k2_pow2(lo - 1, pow_lo)) % MOD
 
-    # exponent part uses 2^(k-1): shift t=k-1
-    tL, tR = L - 1, R - 1
-    sum2 = range_sum(pref_pow2, tL, tR, mod)
-    sumt2 = range_sum(pref_kpow2, tL, tR, mod)
-    sumt22 = range_sum(pref_k2pow2, tL, tR, mod)
+        poly_exp = (p2 * e2 + p1 * e1 + p0 * e0) % MOD
 
-    sum_2km1 = sum2
-    sum_k_2km1 = (sumt2 + sum2) % mod  # (t+1)2^t
-    sum_k2_2km1 = (sumt22 + 2 * sumt2 + sum2) % mod  # (t+1)^2 2^t
+        r1 = range_s1(lo, hi)
+        r2 = range_s2(lo, hi)
+        r3 = range_s3(lo, hi)
+        length = (hi - lo + 1) % MOD
+        poly_plain = (
+            p2 * ((r3 + r2) % MOD)
+            + p1 * ((r2 + r1) % MOD)
+            + p0 * ((r1 + length) % MOD)
+        ) % MOD
 
-    length = R - L + 1
-    sumk = (L + R) * length // 2
-    sumk2 = sum_squares(L, R)
+        collinear = (collinear + poly_exp - poly_plain) % MOD
 
-    Sexpo = (A0 * sum_2km1 - A1 * sum_k_2km1 + A2 * sum_k2_2km1) % mod
-    Splain = (A0 * (length % mod) - A1 * (sumk % mod) + A2 * (sumk2 % mod)) % mod
-    return (Sexpo - Splain) % mod
-
-
-def collinear_subsets_ge3(N: int) -> int:
-    """
-    Returns (mod 1e8) the number of subsets of size >=3 that are collinear
-    in the (N+1)x(N+1) grid.
-
-    Uses:
-      B = (1/2) * sum_{k=2..n-1} f(n,k) * (2^(k-1) - 1)
-    where n=N+1, and f(n,k) is Mustonen's function.
-    """
-    n = N + 1
-    cps = CoprimeSums(MOD2)
-
-    total = 0
-    k = 2
-    kmax = n - 1
-    while k <= kmax:
-        q = (n - 1) // k
-        r = (n - 1) // q  # largest k with same q
-        if r > kmax:
-            r = kmax
-        total = (total + block_contribution(n, k, r, q, cps)) % MOD2
-        k = r + 1
-
-    # total should be even (we will divide by 2)
-    if total & 1:
-        raise AssertionError("Internal parity check failed; sum should be even.")
-    return (total // 2) % MOD
-
-
-def titanic_sets(N: int) -> int:
-    """
-    T(N) = total subsets - empty - singletons - (collinear subsets of size>=3), mod 1e8.
-    Problem statement uses 0<=x,y<=N, so number of points is (N+1)^2.
-    """
-    n = N + 1
-    P = n * n
-    total_subsets = pow(2, P, MOD)
-    bad = collinear_subsets_ge3(N)
-    return (total_subsets - 1 - (P % MOD) - bad) % MOD
+    return (all_subsets - singleton_part - collinear) % MOD
 
 
 def main() -> None:
-    # Asserts for all test cases given in the problem statement.
-    assert titanic_sets(1) == 11
-    assert titanic_sets(2) == 494
-    assert titanic_sets(4) == 33_554_178
-    assert titanic_sets(10) == 60_631_646
-    assert titanic_sets(20) == 74_363_930
+    sums = TotientSums(max(DEFAULT_N, 100_000))
+    assert titanic_sets(1, sums) == 11
+    assert titanic_sets(2, sums) == 494
+    assert titanic_sets(4, sums) == 33_554_178
+    assert titanic_sets(10, sums) == 60_631_646
+    assert titanic_sets(20, sums) == 74_363_930
+    assert titanic_sets(111, sums) == 13_500_401
+    assert titanic_sets(100_000, sums) == 63_259_062
 
-    N = 10**11
-    print(titanic_sets(N))
+    print(titanic_sets(DEFAULT_N, sums))
 
 
 if __name__ == "__main__":
