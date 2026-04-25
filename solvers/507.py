@@ -16,147 +16,56 @@ MOD = 10_000_000
 N = 20_000_000
 
 
-def _best_m(a1: int, a2: int, a3: int, b1: int, b2: int, b3: int, nb: int) -> int:
+def _best_reduction(
+    a1: int, a2: int, a3: int, b1: int, b2: int, b3: int, nb: int
+) -> tuple[int, int]:
     """
-    Choose integer m that minimizes ||(b1,b2,b3) - m*(a1,a2,a3)||_1.
+    Return the best integer m for B - m*A, and the resulting L1 norm.
 
-    For real m, this is a weighted median of the three ratios b_i/a_i with weights |a_i|.
-    We use that (in almost all calls) a1,a2,a3 are non-zero, and find the weighted median among 3 fractions
-    with a tiny sorting network. The integer minimizer is among floor/ceil of the median ratio (and possibly
-    the adjacent ratio in the rare tie case).
+    The norm as a function of real m is convex and piecewise linear.  Its
+    slopes can only change at b_i / a_i, so an integer minimizer is found by
+    testing the two neighboring integers for each defined coordinate ratio.
     """
-    bestm = 0
-    bestv = nb  # value at m=0
+    best_m = 0
+    best_v = nb
 
-    # Fast path: all three denominators non-zero (overwhelmingly common).
-    if a1 and a2 and a3:
-        # Normalize each fraction so denominator is positive.
-        n0, d0 = b1, a1
-        if d0 < 0:
-            d0 = -d0
-            n0 = -n0
-
-        n1, d1 = b2, a2
-        if d1 < 0:
-            d1 = -d1
-            n1 = -n1
-
-        n2, d2 = b3, a3
-        if d2 < 0:
-            d2 = -d2
-            n2 = -n2
-
-        # Sort by ratio n/d using a 3-item sorting network.
-        if n1 * d0 < n0 * d1:
-            n0, n1 = n1, n0
-            d0, d1 = d1, d0
-        if n2 * d1 < n1 * d2:
-            n1, n2 = n2, n1
-            d1, d2 = d2, d1
-            if n1 * d0 < n0 * d1:
-                n0, n1 = n1, n0
-                d0, d1 = d1, d0
-
-        # Here weights are |a_i|, and after normalization those equal the denominators d0,d1,d2.
-        tot = d0 + d1 + d2
-
-        # Identify the weighted median ratio (and the adjacent one if we land exactly on half).
-        candn1 = n0
-        candd1 = d0
-        candn2 = 0
-        candd2 = 0
-
-        cum = d0
-        if cum * 2 > tot:
-            candn1, candd1 = n0, d0
-        elif cum * 2 == tot:
-            candn1, candd1 = n0, d0
-            candn2, candd2 = n1, d1
-        else:
-            cum += d1
-            if cum * 2 > tot:
-                candn1, candd1 = n1, d1
-            elif cum * 2 == tot:
-                candn1, candd1 = n1, d1
-                candn2, candd2 = n2, d2
-            else:
-                candn1, candd1 = n2, d2
-
-        # Evaluate candidate integers around the median ratio.
-        q = candn1 // candd1
-        if q:
-            v = abs(b1 - q * a1) + abs(b2 - q * a2) + abs(b3 - q * a3)
-            if v < bestv:
-                bestv = v
-                bestm = q
-        qp = q + 1
-        if qp:
-            v = abs(b1 - qp * a1) + abs(b2 - qp * a2) + abs(b3 - qp * a3)
-            if v < bestv:
-                bestv = v
-                bestm = qp
-
-        if candd2:
-            q2 = candn2 // candd2
-            if q2 != q:
-                if q2:
-                    v = abs(b1 - q2 * a1) + abs(b2 - q2 * a2) + abs(b3 - q2 * a3)
-                    if v < bestv:
-                        bestv = v
-                        bestm = q2
-                q2p = q2 + 1
-                if q2p:
-                    v = abs(b1 - q2p * a1) + abs(b2 - q2p * a2) + abs(b3 - q2p * a3)
-                    if v < bestv:
-                        bestv = v
-                        bestm = q2p
-
-        return bestm
-
-    # Rare fallback: one or more a_i are zero. Just test floor/ceil of each defined ratio.
     if a1:
         q = b1 // a1
-        if q:
-            v = abs(b1 - q * a1) + abs(b2 - q * a2) + abs(b3 - q * a3)
-            if v < bestv:
-                bestv = v
-                bestm = q
-        qp = q + 1
-        if qp:
-            v = abs(b1 - qp * a1) + abs(b2 - qp * a2) + abs(b3 - qp * a3)
-            if v < bestv:
-                bestv = v
-                bestm = qp
+        v = abs(b1 - q * a1) + abs(b2 - q * a2) + abs(b3 - q * a3)
+        if v < best_v:
+            best_v = v
+            best_m = q
+        q += 1
+        v = abs(b1 - q * a1) + abs(b2 - q * a2) + abs(b3 - q * a3)
+        if v < best_v:
+            best_v = v
+            best_m = q
 
     if a2:
         q = b2 // a2
-        if q:
-            v = abs(b1 - q * a1) + abs(b2 - q * a2) + abs(b3 - q * a3)
-            if v < bestv:
-                bestv = v
-                bestm = q
-        qp = q + 1
-        if qp:
-            v = abs(b1 - qp * a1) + abs(b2 - qp * a2) + abs(b3 - qp * a3)
-            if v < bestv:
-                bestv = v
-                bestm = qp
+        v = abs(b1 - q * a1) + abs(b2 - q * a2) + abs(b3 - q * a3)
+        if v < best_v:
+            best_v = v
+            best_m = q
+        q += 1
+        v = abs(b1 - q * a1) + abs(b2 - q * a2) + abs(b3 - q * a3)
+        if v < best_v:
+            best_v = v
+            best_m = q
 
     if a3:
         q = b3 // a3
-        if q:
-            v = abs(b1 - q * a1) + abs(b2 - q * a2) + abs(b3 - q * a3)
-            if v < bestv:
-                bestv = v
-                bestm = q
-        qp = q + 1
-        if qp:
-            v = abs(b1 - qp * a1) + abs(b2 - qp * a2) + abs(b3 - qp * a3)
-            if v < bestv:
-                bestv = v
-                bestm = qp
+        v = abs(b1 - q * a1) + abs(b2 - q * a2) + abs(b3 - q * a3)
+        if v < best_v:
+            best_v = v
+            best_m = q
+        q += 1
+        v = abs(b1 - q * a1) + abs(b2 - q * a2) + abs(b3 - q * a3)
+        if v < best_v:
+            best_v = v
+            best_m = q
 
-    return bestm
+    return best_m, best_v
 
 
 def _shortest_l1(v1: int, v2: int, v3: int, w1: int, w2: int, w3: int) -> int:
@@ -173,8 +82,7 @@ def _shortest_l1(v1: int, v2: int, v3: int, w1: int, w2: int, w3: int) -> int:
         return abs(a1) + abs(a2) + abs(a3)
 
     # L1-analog of Lagrange/Minkowski reduction for rank-2 lattices.
-    # In practice, this converges in just a few iterations.
-    for _ in range(12):
+    while True:
         na = abs(a1) + abs(a2) + abs(a3)
         nb = abs(b1) + abs(b2) + abs(b3)
 
@@ -182,27 +90,16 @@ def _shortest_l1(v1: int, v2: int, v3: int, w1: int, w2: int, w3: int) -> int:
             a1, a2, a3, b1, b2, b3 = b1, b2, b3, a1, a2, a3
             na, nb = nb, na
 
-        m = _best_m(a1, a2, a3, b1, b2, b3, nb)
-        if m == 0:
+        m, reduced = _best_reduction(a1, a2, a3, b1, b2, b3, nb)
+        if reduced >= nb:
             break
 
         b1 -= m * a1
         b2 -= m * a2
         b3 -= m * a3
 
-    # In a reduced 2D basis, the shortest vector is among a, b, a+b, a-b.
     s = abs(a1) + abs(a2) + abs(a3)
     t = abs(b1) + abs(b2) + abs(b3)
-    if t and t < s:
-        s = t
-
-    p1, p2, p3 = a1 + b1, a2 + b2, a3 + b3
-    t = abs(p1) + abs(p2) + abs(p3)
-    if t and t < s:
-        s = t
-
-    p1, p2, p3 = a1 - b1, a2 - b2, a3 - b3
-    t = abs(p1) + abs(p2) + abs(p3)
     if t and t < s:
         s = t
 
@@ -210,68 +107,52 @@ def _shortest_l1(v1: int, v2: int, v3: int, w1: int, w2: int, w3: int) -> int:
 
 
 def solve(limit: int = N) -> int:
-    # Generate tribonacci residues r_i modulo MOD, streaming without storing.
-    # Residues always satisfy 0 <= r_i < MOD, so each next value is in [0, 3*MOD).
-    x0, x1, x2 = 0, 0, 1  # r0, r1, r2
+    if limit <= 0:
+        return 0
 
+    # Stream the residues in 12-value blocks.  The first emitted value is r1,
+    # and the recurrence is seeded by r_{-1}=1, r_0=0, r_1=0.
+    prev2, prev1, cur = 1, 0, 0
+    block = [0] * 12
+    pos = 0
+    count = 0
     total = 0
     sum10 = 0
-    s1 = None
+    s1 = 0
 
-    # First block uses r1 and r2 that already exist.
-    r1 = x1
-    r2 = x2
+    # Each next residue is below 3*MOD, so two subtractions replace modulo.
+    for _ in range(limit * 12):
+        block[pos] = cur
+        pos += 1
 
-    # Generate r3..r12 (10 steps). Use subtraction instead of % because sum < 3*MOD.
-    def step():
-        nonlocal x0, x1, x2
-        t = x0 + x1 + x2
-        if t >= MOD:
-            t -= MOD
-            if t >= MOD:
-                t -= MOD
-        x0, x1, x2 = x1, x2, t
-        return t
+        if pos == 12:
+            s = _shortest_l1(
+                block[0] - block[1],
+                block[2] + block[3],
+                block[4] * block[5],
+                block[6] - block[7],
+                block[8] + block[9],
+                block[10] * block[11],
+            )
+            total += s
+            count += 1
+            if count == 1:
+                s1 = s
+            if count <= 10:
+                sum10 += s
+            pos = 0
 
-    r3 = step()
-    r4 = step()
-    r5 = step()
-    r6 = step()
-    r7 = step()
-    r8 = step()
-    r9 = step()
-    r10 = step()
-    r11 = step()
-    r12 = step()
-
-    s = _shortest_l1(r1 - r2, r3 + r4, r5 * r6, r7 - r8, r9 + r10, r11 * r12)
-    total += s
-    sum10 += s
-    s1 = s
-
-    # Remaining blocks. Each block needs 12 new residues.
-    for n in range(2, limit + 1):
-        r1 = step()
-        r2 = step()
-        r3 = step()
-        r4 = step()
-        r5 = step()
-        r6 = step()
-        r7 = step()
-        r8 = step()
-        r9 = step()
-        r10 = step()
-        r11 = step()
-        r12 = step()
-
-        s = _shortest_l1(r1 - r2, r3 + r4, r5 * r6, r7 - r8, r9 + r10, r11 * r12)
-        total += s
-        if n <= 10:
-            sum10 += s
+        nxt = prev2 + prev1 + cur
+        if nxt >= MOD:
+            nxt -= MOD
+            if nxt >= MOD:
+                nxt -= MOD
+        prev2, prev1, cur = prev1, cur, nxt
 
     # Problem statement checks
     assert s1 == 32
-    assert sum10 == 130762273722
+    if limit >= 10:
+        assert sum10 == 130762273722
 
     return total
 

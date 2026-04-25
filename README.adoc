@@ -978,7 +978,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/504.py[504.py] |  | 0.645 |  |  | 694687 |
 | link:solvers/505.py[505.py] | link:solvers/505.md[505.md] | 106.445 | gpt-5.2-thinking |  | 714591308667615832 |
 | link:solvers/506.py[506.py] | link:solvers/506.md[506.md] | 0.101 | gpt-5.2-thinking |  | 18934502 |
-| link:solvers/507.py[507.py] | link:solvers/507.md[507.md] | 177.141 | gpt-5.2-thinking |  | 316558047002627270 |
+| link:solvers/507.py[507.py] | link:solvers/507.md[507.md] | 10.057 | gpt-5.2-thinking |  | 316558047002627270 |
 | link:solvers/508.py[508.py] | link:solvers/508.md[508.md] | 0.211 | gpt-5.2-thinking |  | 891874596 |
 | link:solvers/509.py[509.py] | link:solvers/509.md[509.md] | 0.107 | gpt-5.2-thinking |  | 151725678 |
 | link:solvers/510.py[510.py] |  | 1.384 |  |  | 315306518862563689 |
@@ -1483,7 +1483,6 @@ A bar plot of solver times can be generated with link:plot.py[] but I couldn't b
 // SLOWEST PYTHON SOLVERS TABLE
 |===
 | ID | solvers (s) | solvers/eulersolve (s)
-| link:solvers/507.py[507.py] | 177.141 | 22.785
 | link:solvers/501.py[501.py] | 126.958 | 2.181
 | link:solvers/681.py[681.py] | 122.323 | 94.303
 | link:solvers/259.py[259.py] | 115.037 | 20.416
@@ -1533,6 +1532,7 @@ A bar plot of solver times can be generated with link:plot.py[] but I couldn't b
 | link:solvers/343.py[343.py] | 27.787 | 0.374
 | link:solvers/637.py[637.py] | 26.787 | 58.593
 | link:solvers/925.py[925.py] | 26.061 | 9.217
+| link:solvers/476.py[476.py] | 25.504 | 6.439
 |===
 
 We've put some effort into optimizing the following above further but failed so far:
@@ -3612,7 +3612,7 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/eulersolve/506.py[]: 0.056
 ** link:solvers/eulersolve/506.cpp[]: 0.021
 * 507
-** link:solvers/507.py[]: 177.141
+** link:solvers/507.py[]: 10.057
 ** link:solvers/eulersolve/507.py[]: 22.785
 ** link:solvers/eulersolve/507.cpp[]: 5.440
 * 508
