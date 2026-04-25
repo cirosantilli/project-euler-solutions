@@ -97,19 +97,27 @@ def python_comment_or_string_hits(text: str, answer: str) -> list[int]:
 def python_line_hits(text: str, answer: str) -> list[int]:
     hits: list[int] = []
     answer_re = re.escape(answer)
-    action_re = re.compile(
-        rf"\b(?:return|print)\b.*"
+    answer_literal = (
         rf"(?:['\"]{answer_re}['\"]|(?<![\w.]){answer_re}(?![\w.]))"
     )
+    action_re = re.compile(
+        rf"\b(?:return|print)\b.*{answer_literal}"
+    )
     assignment_re = re.compile(
-        rf"(?<![!<>=])=\s*"
-        rf"(?:['\"]{answer_re}['\"]|(?<![\w.]){answer_re}(?![\w.]))"
+        rf"(?<![!<>=])=\s*{answer_literal}"
+    )
+    comparison_re = re.compile(
+        rf"(?:==|!=)\s*{answer_literal}|{answer_literal}\s*(?:==|!=)"
     )
     for idx, line in enumerate(text.splitlines(), 1):
         code = line.split("#", 1)[0]
         if answer not in code:
             continue
-        if action_re.search(code) or assignment_re.search(code):
+        if (
+            action_re.search(code)
+            or assignment_re.search(code)
+            or comparison_re.search(code)
+        ):
             hits.append(idx)
     return hits
 
@@ -140,6 +148,10 @@ def c_comment_hits(text: str, answer: str) -> list[int]:
 def c_line_hits(text: str, answer: str) -> list[int]:
     hits: list[int] = []
     in_block = False
+    answer_re = re.escape(answer)
+    suffix_re = r"[uUlL]*" if answer.isdigit() else ""
+    literal_re = re.compile(rf"(?<![\w.]){answer_re}{suffix_re}(?![\w.])")
+    quoted_re = re.compile(rf"['\"]{answer_re}['\"]")
     for idx, line in enumerate(text.splitlines(), 1):
         if in_block:
             if "*/" in line:
@@ -151,14 +163,33 @@ def c_line_hits(text: str, answer: str) -> list[int]:
             continue
         if "//" in line:
             line = line.split("//", 1)[0]
-        if answer not in line:
+        normalized_line = re.sub(r"(?<=\d)'(?=\d)", "", line)
+        if answer not in normalized_line:
             continue
-        if re.search(r"\breturn\b", line):
+        if re.search(r"\breturn\b", normalized_line):
             hits.append(idx)
             continue
-        if re.search(r"\bprintf\s*\(", line):
+        if re.search(r"\bprintf\s*\(", normalized_line):
             hits.append(idx)
             continue
+        if re.search(r"\bcout\b", normalized_line):
+            hits.append(idx)
+            continue
+        if re.search(r"\bassert\s*\(", normalized_line):
+            hits.append(idx)
+            continue
+        comparison_re = (
+            rf"(?:==|!=)\s*(?:{quoted_re.pattern}|{literal_re.pattern})"
+            rf"|(?:{quoted_re.pattern}|{literal_re.pattern})\s*(?:==|!=)"
+        )
+        if re.search(comparison_re, normalized_line):
+            hits.append(idx)
+            continue
+        if re.search(
+            rf"(?<![!<>=])=\s*(?:{quoted_re.pattern}|{literal_re.pattern})",
+            normalized_line,
+        ):
+            hits.append(idx)
     return hits
 
 

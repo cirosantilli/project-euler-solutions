@@ -528,6 +528,28 @@ def source_from_target(path: Path, language: str) -> Path:
     return path
 
 
+def is_primary_python_solver_path(path: Path) -> bool:
+    if path.suffix != ".py":
+        return False
+    full_path = path if path.is_absolute() else ROOT / path
+    return full_path.resolve().parent == SOLVERS_DIR.resolve()
+
+
+def is_primary_python_result(res: Result) -> bool:
+    language = res.language or "py"
+    if language != "py":
+        return False
+    if res.source_path is None:
+        return True
+    return is_primary_python_solver_path(res.source_path)
+
+
+def target_from_source(path: Path, language: str) -> Path:
+    if language in {"c", "cpp", "lean"} and path.suffix != ".out":
+        return path.with_name(f"{path.stem}_{language}.out")
+    return path
+
+
 def load_solver_metadata(
     puzzle_id: TestId, language: str | None
 ) -> tuple[str | None, int | None]:
@@ -550,7 +572,7 @@ def load_solver_metadata(
 def run_solver(
     path: Path, timeout: float | None, language: str
 ) -> tuple[int | None, str, str, float, bool]:
-    solver_path = path.resolve()
+    solver_path = target_from_source(path, language).resolve()
     start = time.perf_counter()
     try:
         if language == "py":
@@ -864,18 +886,19 @@ def parse_primary_python_row_map(lines: list[str]) -> dict[tuple[TestId, str], s
         match = row_re.match(line)
         if match:
             link_target = match.group(1)
+            path = Path(link_target)
+            if not is_primary_python_solver_path(path):
+                continue
             pid = test_id_from_link_target(link_target)
             if pid is None:
                 continue
-            language = detect_language(Path(link_target)) or ""
+            language = detect_language(path) or ""
         else:
             plain_match = plain_re.match(line)
             if not plain_match:
                 continue
             pid = int(plain_match.group(1))
             language = "py"
-        if language != "py":
-            continue
         cells = trim_trailing_empty_cells(readme_tables.split_table_row(line))
         normalized = normalize_row_fields(pid, cells)
         if normalized is None:
@@ -1237,8 +1260,7 @@ def update_readme(results: list[Result]) -> None:
     row_map: dict[tuple[TestId, str], str] = {}
 
     for res in results:
-        language = res.language or ""
-        if language == "" or language == "py":
+        if is_primary_python_result(res):
             result_map[result_key(res)] = format_row(res)
 
     for i in range(start + 1, end):
@@ -1246,15 +1268,16 @@ def update_readme(results: list[Result]) -> None:
         match = row_re.match(line)
         if match:
             link_target = match.group(1)
+            path = Path(link_target)
+            if not is_primary_python_solver_path(path):
+                continue
             pid = test_id_from_link_target(link_target)
             if pid is None:
                 id_match = re.search(r"\[(\d+)\]", line)
                 if not id_match:
                     continue
                 pid = int(id_match.group(1))
-            language = detect_language(Path(link_target)) or ""
-            if language != "py":
-                continue
+            language = detect_language(path) or ""
             cells = trim_trailing_empty_cells(readme_tables.split_table_row(line))
             normalized = normalize_row_fields(pid, cells)
             if normalized is None:
@@ -1346,10 +1369,13 @@ def update_readme_links() -> None:
         match = row_re.match(line)
         if match:
             link_target = match.group(1)
+            path = Path(link_target)
+            if not is_primary_python_solver_path(path):
+                continue
             pid = test_id_from_link_target(link_target)
             if pid is None:
                 continue
-            language = detect_language(Path(link_target)) or ""
+            language = detect_language(path) or ""
         else:
             plain_match = plain_re.match(line)
             if not plain_match:
@@ -1359,8 +1385,6 @@ def update_readme_links() -> None:
                 continue
             pid = int(pid_text)
             language = "py"
-        if language != "py":
-            continue
 
         cells = trim_trailing_empty_cells(readme_tables.split_table_row(line))
         normalized = normalize_row_fields(pid, cells)
@@ -1419,10 +1443,13 @@ def update_readme_not_found() -> None:
         link_target = None
         if match:
             link_target = match.group(1)
+            path = Path(link_target)
+            if not is_primary_python_solver_path(path):
+                continue
             pid = test_id_from_link_target(link_target)
             if pid is None:
                 continue
-            language = detect_language(Path(link_target)) or ""
+            language = detect_language(path) or ""
         else:
             plain_match = plain_re.match(line)
             if not plain_match:
@@ -1432,8 +1459,6 @@ def update_readme_not_found() -> None:
                 continue
             pid = int(pid_text)
             language = "py"
-        if language != "py":
-            continue
 
         if isinstance(pid, int):
             seen_ids.add(pid)
@@ -2032,8 +2057,8 @@ def main() -> None:
     passed = sum(r.correct for r in results)
     print(f"\nPassed {passed}/{total_run} tests.")
 
-    py_results = [res for res in results if (res.language or "py") == "py"]
-    other_results = [res for res in results if (res.language or "py") != "py"]
+    py_results = [res for res in results if is_primary_python_result(res)]
+    other_results = [res for res in results if not is_primary_python_result(res)]
 
     if py_results:
         print("\n|===")
