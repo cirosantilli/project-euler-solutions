@@ -1554,12 +1554,33 @@ We have placed non-Python solvers in this separate list for the following reason
 
 The main goal of this is to determine if there are fundamentally better algorithms available for upgrade.
 
+This goal is fraught with danger because:
+
+* a faster solver might be possible for algorithms which work for a smaller subset of input values. The extreme case of this is a solver with a single print of the final known answer.
+* galactic algorithms https://en.wikipedia.org/wiki/Galactic_algorithm[galactic algorithms]
+
+but we do our best.
+
+To list our Python implementations which have the greatest potential known improvements in another implementation use:
+
+....
+./greatest-improvements.py
+....
+
+To list the Python eulersolve implementations which have the greatest potential known improvements in another implementation use:
+
+....
+./greatest-improvements.py --reference-set solvers/eulersolve
+....
+
 Special setup for eulersolve because it is semi proprietary so we are not publishing it publicly for now, ask for clone permission if you want to run it:
 
 ....
 git clone git@github.com:cirosantilli/eulersolve.git solvers/eulersolve
 ./test.py --set solvers/eulersolve
 ....
+
+Some of the Python implementations are missing for eulersolve, often for the harder problems. We have used LLMs to try and automatically translate their C++ implementation to Python in those cases. We have also forced their implementations to use one thread only.
 
 // BENCHMARK TABLE
 * 1
