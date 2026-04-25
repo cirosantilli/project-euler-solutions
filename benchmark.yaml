@@ -1,0 +1,3978 @@
+1:
+  solvers/1.py: 0.090
+  solvers/eulersolve/1.py: 0.087
+  solvers/1.c: 0.011
+  solvers/1.cpp: 0.003
+  solvers/eulersolve/1.cpp: 0.004
+  solvers/1.lean: 0.389
+2:
+  solvers/2.py: 0.153
+  solvers/eulersolve/2.py: 0.086
+  solvers/eulersolve/2.cpp: 0.003
+  solvers/2.lean: 0.021
+3:
+  solvers/3.py: 0.134
+  solvers/eulersolve/3.py: 0.075
+  solvers/eulersolve/3.cpp: 0.003
+4:
+  solvers/4.py: 0.140
+  solvers/eulersolve/4.py: 0.083
+  solvers/eulersolve/4.cpp: 0.003
+5:
+  solvers/5.py: 0.149
+  solvers/eulersolve/5.py: 0.065
+  solvers/eulersolve/5.cpp: 0.003
+6:
+  solvers/6.py: 0.132
+  solvers/eulersolve/6.py: 0.062
+  solvers/eulersolve/6.cpp: 0.003
+7:
+  solvers/7.py: 0.152
+  solvers/eulersolve/7.py: 0.065
+  solvers/eulersolve/7.cpp: 0.003
+8:
+  solvers/8.py: 0.137
+  solvers/eulersolve/8.py: 0.061
+  solvers/eulersolve/8.cpp: 0.003
+9:
+  solvers/9.py: 0.068
+  solvers/eulersolve/9.py: 0.061
+  solvers/eulersolve/9.cpp: 0.003
+10:
+  solvers/10.py: 0.081
+  solvers/eulersolve/10.py: 0.112
+  solvers/eulersolve/10.cpp: 0.009
+11:
+  solvers/11.py: 0.081
+  solvers/eulersolve/11.py: 0.066
+  solvers/eulersolve/11.cpp: 0.003
+12:
+  solvers/12.py: 0.110
+  solvers/eulersolve/12.py: 0.083
+  solvers/eulersolve/12.cpp: 0.006
+13:
+  solvers/13.py: 0.069
+  solvers/eulersolve/13.py: 0.061
+  solvers/eulersolve/13.cpp: 0.003
+14:
+  solvers/14.py: 0.520
+  solvers/eulersolve/14.py: 0.863
+  solvers/eulersolve/14.cpp: 0.700
+15:
+  solvers/15.py: 0.077
+  solvers/eulersolve/15.py: 0.058
+  solvers/eulersolve/15.cpp: 0.003
+16:
+  solvers/16.py: 0.066
+  solvers/eulersolve/16.py: 0.058
+  solvers/eulersolve/16.cpp: 0.003
+17:
+  solvers/17.py: 0.069
+  solvers/eulersolve/17.py: 0.059
+  solvers/eulersolve/17.cpp: 0.002
+18:
+  solvers/18.py: 0.069
+  solvers/eulersolve/18.py: 0.057
+  solvers/eulersolve/18.cpp: 0.002
+19:
+  solvers/19.py: 0.079
+  solvers/eulersolve/19.py: 0.073
+  solvers/eulersolve/19.cpp: 0.002
+20:
+  solvers/20.py: 0.065
+  solvers/eulersolve/20.py: 0.060
+  solvers/eulersolve/20.cpp: 0.002
+21:
+  solvers/21.py: 0.077
+  solvers/eulersolve/21.py: 0.069
+  solvers/eulersolve/21.cpp: 0.002
+22:
+  solvers/22.py: 0.082
+  solvers/eulersolve/22.py: 0.087
+  solvers/eulersolve/22.cpp: 0.004
+23:
+  solvers/23.py: 0.136
+  solvers/eulersolve/23.py: 0.140
+  solvers/eulersolve/23.cpp: 0.023
+24:
+  solvers/24.py: 0.068
+  solvers/eulersolve/24.py: 0.063
+  solvers/eulersolve/24.cpp: 0.002
+25:
+  solvers/25.py: 0.089
+  solvers/eulersolve/25.py: 0.058
+  solvers/eulersolve/25.cpp: 0.001
+26:
+  solvers/26.py: 0.073
+  solvers/eulersolve/26.py: 0.065
+  solvers/eulersolve/26.cpp: 0.002
+27:
+  solvers/27.py: 0.091
+  solvers/eulersolve/27.py: 0.156
+  solvers/eulersolve/27.cpp: 0.040
+28:
+  solvers/28.py: 0.069
+  solvers/eulersolve/28.py: 0.058
+  solvers/eulersolve/28.cpp: 0.002
+29:
+  solvers/29.py: 0.076
+  solvers/eulersolve/29.py: 0.064
+  solvers/eulersolve/29.cpp: 0.006
+30:
+  solvers/30.py: 0.085
+  solvers/eulersolve/30.py: 0.067
+  solvers/eulersolve/30.cpp: 0.004
+31:
+  solvers/31.py: 0.070
+  solvers/eulersolve/31.py: 0.060
+  solvers/eulersolve/31.cpp: 0.003
+32:
+  solvers/32.py: 0.145
+  solvers/eulersolve/32.py: 0.105
+  solvers/eulersolve/32.cpp: 0.005
+33:
+  solvers/33.py: 0.076
+  solvers/eulersolve/33.py: 0.069
+  solvers/eulersolve/33.cpp: 0.002
+34:
+  solvers/34.py: 0.164
+  solvers/eulersolve/34.py: 0.150
+  solvers/eulersolve/34.cpp: 0.018
+35:
+  solvers/35.py: 0.103
+  solvers/eulersolve/35.py: 0.097
+  solvers/eulersolve/35.cpp: 0.008
+36:
+  solvers/36.py: 0.083
+  solvers/eulersolve/36.py: 0.088
+  solvers/eulersolve/36.cpp: 0.012
+37:
+  solvers/37.py: 0.086
+  solvers/eulersolve/37.py: 0.146
+  solvers/eulersolve/37.cpp: 0.098
+38:
+  solvers/38.py: 0.082
+  solvers/eulersolve/38.py: 0.067
+  solvers/eulersolve/38.cpp: 0.002
+39:
+  solvers/39.py: 0.068
+  solvers/eulersolve/39.py: 0.076
+  solvers/eulersolve/39.cpp: 0.003
+40:
+  solvers/40.py: 0.066
+  solvers/eulersolve/40.py: 0.067
+  solvers/eulersolve/40.cpp: 0.004
+41:
+  solvers/41.py: 0.083
+  solvers/eulersolve/41.py: 0.059
+  solvers/eulersolve/41.cpp: 0.002
+42:
+  solvers/42.py: 0.135
+  solvers/eulersolve/42.py: 0.078
+  solvers/eulersolve/42.cpp: 0.003
+43:
+  solvers/43.py: 0.070
+  solvers/eulersolve/43.py: 0.595
+  solvers/eulersolve/43.cpp: 0.017
+44:
+  solvers/44.py: 0.494
+  solvers/eulersolve/44.py: 0.393
+  solvers/eulersolve/44.cpp: 0.057
+45:
+  solvers/45.py: 0.080
+  solvers/eulersolve/45.py: 0.064
+  solvers/eulersolve/45.cpp: 0.002
+46:
+  solvers/46.py: 0.095
+  solvers/eulersolve/46.py: 0.070
+  solvers/eulersolve/46.cpp: 0.002
+47:
+  solvers/47.py: 0.075
+  solvers/eulersolve/47.py: 0.095
+  solvers/eulersolve/47.cpp: 0.024
+48:
+  solvers/48.py: 0.080
+  solvers/eulersolve/48.py: 0.064
+  solvers/eulersolve/48.cpp: 0.002
+49:
+  solvers/49.py: 0.073
+  solvers/eulersolve/49.py: 0.067
+  solvers/eulersolve/49.cpp: 0.002
+50:
+  solvers/50.py: 0.090
+  solvers/eulersolve/50.py: 0.087
+  solvers/eulersolve/50.cpp: 0.006
+51:
+  solvers/51.py: 0.110
+  solvers/eulersolve/51.py: 0.231
+  solvers/eulersolve/51.cpp: 0.025
+52:
+  solvers/52.py: 0.083
+  solvers/eulersolve/52.py: 0.108
+  solvers/eulersolve/52.cpp: 0.011
+53:
+  solvers/53.py: 0.063
+  solvers/eulersolve/53.py: 0.058
+  solvers/eulersolve/53.cpp: 0.002
+54:
+  solvers/54.py: 0.128
+  solvers/eulersolve/54.py: 0.124
+  solvers/eulersolve/54.cpp: 0.002
+55:
+  solvers/55.py: 0.095
+  solvers/eulersolve/55.py: 0.102
+  solvers/eulersolve/55.cpp: 0.005
+56:
+  solvers/56.py: 0.112
+  solvers/eulersolve/56.py: 0.072
+  solvers/eulersolve/56.cpp: 0.004
+57:
+  solvers/57.py: 0.062
+  solvers/eulersolve/57.py: 0.061
+  solvers/eulersolve/57.cpp: 0.005
+58:
+  solvers/58.py: 0.152
+  solvers/eulersolve/58.py: 0.168
+  solvers/eulersolve/58.cpp: 0.169
+59:
+  solvers/59.py: 0.099
+  solvers/eulersolve/59.py: 0.535
+  solvers/eulersolve/59.cpp: 0.062
+60:
+  solvers/60.py: 0.366
+  solvers/eulersolve/60.py: 0.448
+  solvers/eulersolve/60.cpp: 0.141
+61:
+  solvers/61.py: 0.061
+  solvers/eulersolve/61.py: 0.072
+  solvers/eulersolve/61.cpp: 0.002
+62:
+  solvers/62.py: 0.075
+  solvers/eulersolve/62.py: 0.073
+  solvers/eulersolve/62.cpp: 0.007
+63:
+  solvers/63.py: 0.060
+  solvers/eulersolve/63.py: 0.058
+  solvers/eulersolve/63.cpp: 0.003
+64:
+  solvers/64.py: 0.079
+  solvers/eulersolve/64.py: 0.072
+  solvers/eulersolve/64.cpp: 0.005
+65:
+  solvers/65.py: 0.059
+  solvers/eulersolve/65.py: 0.058
+  solvers/eulersolve/65.cpp: 0.002
+66:
+  solvers/66.py: 0.070
+  solvers/eulersolve/66.py: 0.070
+  solvers/eulersolve/66.cpp: 0.003
+67:
+  solvers/67.py: 0.093
+  solvers/eulersolve/67.py: 0.075
+  solvers/eulersolve/67.cpp: 0.002
+68:
+  solvers/68.py: 0.072
+  solvers/eulersolve/68.py: 0.093
+  solvers/eulersolve/68.cpp: 0.036
+69:
+  solvers/69.py: 0.067
+  solvers/eulersolve/69.py: 0.069
+  solvers/eulersolve/69.cpp: 0.002
+70:
+  solvers/70.py: 0.488
+  solvers/eulersolve/70.py: 3.760
+  solvers/eulersolve/70.cpp: 0.491
+71:
+  solvers/71.py: 0.166
+  solvers/eulersolve/71.py: 0.162
+  solvers/eulersolve/71.cpp: 0.055
+72:
+  solvers/72.py: 0.094
+  solvers/eulersolve/72.py: 0.086
+  solvers/eulersolve/72.cpp: 0.011
+73:
+  solvers/73.py: 0.897
+  solvers/eulersolve/73.py: 0.225
+  solvers/eulersolve/73.cpp: 0.013
+74:
+  solvers/74.py: 0.176
+  solvers/eulersolve/74.py: 0.421
+  solvers/eulersolve/74.cpp: 0.127
+75:
+  solvers/75.py: 0.143
+  solvers/eulersolve/75.py: 0.098
+  solvers/eulersolve/75.cpp: 0.013
+76:
+  solvers/76.py: 0.118
+  solvers/eulersolve/76.py: 0.058
+  solvers/eulersolve/76.cpp: 0.002
+77:
+  solvers/77.py: 0.074
+  solvers/eulersolve/77.py: 0.061
+  solvers/eulersolve/77.cpp: 0.002
+78:
+  solvers/78.py: 0.162
+  solvers/eulersolve/78.py: 0.133
+  solvers/eulersolve/78.cpp: 0.016
+79:
+  solvers/79.py: 0.098
+  solvers/eulersolve/79.py: 0.069
+  solvers/eulersolve/79.cpp: 0.002
+80:
+  solvers/80.py: 0.066
+  solvers/eulersolve/80.py: 0.084
+  solvers/eulersolve/80.cpp: 0.004
+81:
+  solvers/81.py: 0.079
+  solvers/eulersolve/81.py: 0.064
+  solvers/eulersolve/81.cpp: 0.002
+82:
+  solvers/82.py: 0.070
+  solvers/eulersolve/82.py: 0.069
+  solvers/eulersolve/82.cpp: 0.002
+83:
+  solvers/83.py: 0.152
+  solvers/eulersolve/83.py: 0.090
+  solvers/eulersolve/83.cpp: 0.003
+84:
+  solvers/84.py: 0.121
+  solvers/eulersolve/84.py: 0.543
+  solvers/eulersolve/84.cpp: 0.005
+85:
+  solvers/85.py: 0.078
+  solvers/eulersolve/85.py: 0.064
+  solvers/eulersolve/85.cpp: 0.003
+86:
+  solvers/86.py: 0.294
+  solvers/eulersolve/86.py: 0.279
+  solvers/eulersolve/86.cpp: 0.013
+87:
+  solvers/87.py: 0.304
+  solvers/eulersolve/87.py: 0.312
+  solvers/eulersolve/87.cpp: 0.215
+88:
+  solvers/88.py: 0.097
+  solvers/eulersolve/88.py: 0.090
+  solvers/eulersolve/88.cpp: 0.004
+89:
+  solvers/89.py: 0.089
+  solvers/eulersolve/89.py: 0.081
+  solvers/eulersolve/89.cpp: 0.002
+90:
+  solvers/90.py: 0.090
+  solvers/eulersolve/90.py: 0.119
+  solvers/eulersolve/90.cpp: 0.003
+91:
+  solvers/91.py: 0.082
+  solvers/eulersolve/91.py: 0.100
+  solvers/eulersolve/91.cpp: 0.015
+92:
+  solvers/92.py: 0.139
+  solvers/eulersolve/92.py: 4.179
+  solvers/eulersolve/92.cpp: 0.070
+93:
+  solvers/93.py: 1.685
+  solvers/eulersolve/93.py: 1.308
+  solvers/eulersolve/93.cpp: 0.047
+94:
+  solvers/94.py: 0.080
+  solvers/eulersolve/94.py: 0.059
+  solvers/eulersolve/94.cpp: 0.003
+95:
+  solvers/95.py: 0.309
+  solvers/eulersolve/95.py: 0.239
+  solvers/eulersolve/95.cpp: 0.067
+96:
+  solvers/96.py: 0.134
+  solvers/eulersolve/96.py: 0.882
+  solvers/eulersolve/96.cpp: 0.004
+97:
+  solvers/97.py: 0.076
+  solvers/eulersolve/97.py: 0.057
+  solvers/eulersolve/97.cpp: 0.002
+98:
+  solvers/98.py: 0.177
+  solvers/eulersolve/98.py: 0.107
+  solvers/eulersolve/98.cpp: 0.024
+99:
+  solvers/99.py: 0.080
+  solvers/eulersolve/99.py: 0.062
+  solvers/eulersolve/99.cpp: 0.003
+100:
+  solvers/100.py: 0.076
+  solvers/eulersolve/100.py: 0.057
+  solvers/eulersolve/100.cpp: 0.002
+101:
+  solvers/101.py: 0.107
+  solvers/eulersolve/101.py: 0.058
+  solvers/eulersolve/101.cpp: 0.003
+102:
+  solvers/102.py: 0.080
+  solvers/eulersolve/102.py: 0.076
+  solvers/eulersolve/102.cpp: 0.002
+103:
+  solvers/103.py: 1.410
+  solvers/eulersolve/103.py: 1.319
+  solvers/eulersolve/103.cpp: 0.209
+104:
+  solvers/104.py: 0.171
+  solvers/eulersolve/104.py: 0.187
+  solvers/eulersolve/104.cpp: 0.007
+105:
+  solvers/105.py: 0.077
+  solvers/eulersolve/105.py: 0.466
+  solvers/eulersolve/105.cpp: 0.025
+106:
+  solvers/106.py: 0.063
+  solvers/eulersolve/106.py: 0.215
+  solvers/eulersolve/106.cpp: 0.008
+107:
+  solvers/107.py: 0.064
+  solvers/eulersolve/107.py: 0.071
+  solvers/eulersolve/107.cpp: 0.002
+108:
+  solvers/108.py: 0.061
+  solvers/eulersolve/108.py: 0.060
+  solvers/eulersolve/108.cpp: 0.002
+109:
+  solvers/109.py: 0.083
+  solvers/eulersolve/109.py: 0.071
+  solvers/eulersolve/109.cpp: 0.002
+110:
+  solvers/110.py: 0.112
+  solvers/eulersolve/110.py: 0.101
+  solvers/eulersolve/110.cpp: 0.002
+111:
+  solvers/111.py: 0.114
+  solvers/eulersolve/111.py: 0.993
+  solvers/eulersolve/111.cpp: 0.002
+112:
+  solvers/112.py: 0.133
+  solvers/eulersolve/112.py: 0.188
+  solvers/eulersolve/112.cpp: 0.008
+113:
+  solvers/113.py: 0.070
+  solvers/eulersolve/113.py: 0.059
+  solvers/eulersolve/113.cpp: 0.002
+114:
+  solvers/114.py: 0.058
+  solvers/eulersolve/114.py: 0.065
+  solvers/eulersolve/114.cpp: 0.002
+115:
+  solvers/115.py: 0.087
+  solvers/eulersolve/115.py: 0.069
+  solvers/eulersolve/115.cpp: 0.002
+116:
+  solvers/116.py: 0.056
+  solvers/eulersolve/116.py: 0.061
+  solvers/eulersolve/116.cpp: 0.002
+117:
+  solvers/117.py: 0.054
+  solvers/eulersolve/117.py: 0.057
+  solvers/eulersolve/117.cpp: 0.002
+118:
+  solvers/118.py: 0.731
+  solvers/eulersolve/118.py: 1.507
+  solvers/eulersolve/118.cpp: 0.261
+119:
+  solvers/119.py: 0.114
+  solvers/eulersolve/119.py: 0.096
+  solvers/eulersolve/119.cpp: 0.003
+120:
+  solvers/120.py: 0.055
+  solvers/eulersolve/120.py: 0.083
+  solvers/eulersolve/120.cpp: 0.002
+121:
+  solvers/121.py: 0.054
+  solvers/eulersolve/121.py: 0.089
+  solvers/eulersolve/121.cpp: 0.002
+122:
+  solvers/122.py: 0.316
+  solvers/eulersolve/122.py: 0.095
+  solvers/eulersolve/122.cpp: 0.003
+123:
+  solvers/123.py: 0.085
+  solvers/eulersolve/123.py: 1.306
+  solvers/eulersolve/123.cpp: 0.009
+124:
+  solvers/124.py: 0.143
+  solvers/eulersolve/124.py: 0.161
+  solvers/eulersolve/124.cpp: 0.010
+125:
+  solvers/125.py: 0.079
+  solvers/eulersolve/125.py: 0.093
+  solvers/eulersolve/125.cpp: 0.014
+126:
+  solvers/126.py: 0.075
+  solvers/eulersolve/126.py: 0.133
+  solvers/eulersolve/126.cpp: 0.049
+127:
+  solvers/127.py: 4.041
+  solvers/eulersolve/127.py: 0.282
+  solvers/eulersolve/127.cpp: 0.032
+128:
+  solvers/128.py: 0.086
+  solvers/eulersolve/128.py: 0.883
+  solvers/eulersolve/128.cpp: 0.027
+129:
+  solvers/129.py: 0.068
+  solvers/eulersolve/129.py: 0.071
+  solvers/eulersolve/129.cpp: 0.012
+130:
+  solvers/130.py: 0.072
+  solvers/eulersolve/130.py: 0.794
+  solvers/eulersolve/130.cpp: 0.029
+131:
+  solvers/131.py: 0.059
+  solvers/eulersolve/131.py: 0.059
+  solvers/eulersolve/131.cpp: 0.002
+132:
+  solvers/132.py: 0.074
+  solvers/eulersolve/132.py: 0.077
+  solvers/eulersolve/132.cpp: 0.011
+133:
+  solvers/133.py: 0.103
+  solvers/eulersolve/133.py: 0.115
+  solvers/eulersolve/133.cpp: 0.008
+134:
+  solvers/134.py: 0.158
+  solvers/eulersolve/134.py: 0.801
+  solvers/eulersolve/134.cpp: 0.011
+135:
+  solvers/135.py: 0.095
+  solvers/eulersolve/135.py: 0.094
+  solvers/eulersolve/135.cpp: 0.008
+136:
+  solvers/136.py: 2.980
+  solvers/eulersolve/136.py: 3.168
+  solvers/eulersolve/136.cpp: 0.847
+137:
+  solvers/137.py: 0.062
+  solvers/eulersolve/137.py: 0.057
+  solvers/eulersolve/137.cpp: 0.003
+138:
+  solvers/138.py: 0.058
+  solvers/eulersolve/138.py: 0.056
+  solvers/eulersolve/138.cpp: 0.002
+139:
+  solvers/139.py: 1.011
+  solvers/eulersolve/139.py: 0.904
+  solvers/eulersolve/139.cpp: 0.399
+140:
+  solvers/140.py: 0.089
+  solvers/eulersolve/140.py: 0.054
+  solvers/eulersolve/140.cpp: 0.003
+141:
+  solvers/141.py: 0.577
+  solvers/eulersolve/141.py: 4.294
+  solvers/eulersolve/141.cpp: 4.897
+142:
+  solvers/142.py: 0.163
+  solvers/eulersolve/142.py: 0.147
+  solvers/eulersolve/142.cpp: 0.007
+143:
+  solvers/143.py: 0.341
+  solvers/eulersolve/143.py: 0.324
+  solvers/eulersolve/143.cpp: 0.047
+144:
+  solvers/144.py: 0.068
+  solvers/eulersolve/144.py: 0.055
+  solvers/eulersolve/144.cpp: 0.003
+145:
+  solvers/145.py: 2.390
+  solvers/eulersolve/145.py: 0.153
+  solvers/eulersolve/145.cpp: 0.006
+146:
+  solvers/146.py: 1.918
+  solvers/eulersolve/146.py: 19.094
+  solvers/eulersolve/146.cpp: 1.110
+147:
+  solvers/147.py: 1.693
+  solvers/eulersolve/147.py: 0.228
+  solvers/eulersolve/147.cpp: 0.037
+148:
+  solvers/148.py: 17.783
+  solvers/eulersolve/148.py: 0.057
+  solvers/eulersolve/148.cpp: 0.003
+149:
+  solvers/149.py: 0.180
+  solvers/eulersolve/149.py: 0.202
+  solvers/eulersolve/149.cpp: 0.049
+150:
+  solvers/150.py: 2.430
+  solvers/eulersolve/150.py: 1.381
+  solvers/eulersolve/150.cpp: 0.133
+151:
+  solvers/151.py: 0.091
+  solvers/eulersolve/151.py: 0.056
+  solvers/eulersolve/151.cpp: 0.002
+152:
+  solvers/152.py: 0.452
+  solvers/eulersolve/152.py: 0.156
+  solvers/eulersolve/152.cpp: 0.029
+153:
+  solvers/153.py: 3.061
+  solvers/eulersolve/153.py: 5.567
+  solvers/eulersolve/153.cpp: 2.579
+154:
+  solvers/154.py: 19.986
+  solvers/eulersolve/154.py: 35.361
+  solvers/eulersolve/154.cpp: 4.899
+155:
+  solvers/155.py: 37.908
+  solvers/eulersolve/155.py: 17.911
+  solvers/eulersolve/155.cpp: 3.279
+156:
+  solvers/156.py: 0.142
+  solvers/eulersolve/156.py: 0.135
+  solvers/eulersolve/156.cpp: 0.013
+157:
+  solvers/157.py: 0.089
+  solvers/eulersolve/157.py: 0.064
+  solvers/eulersolve/157.cpp: 0.003
+158:
+  solvers/158.py: 0.059
+  solvers/eulersolve/158.py: 0.055
+  solvers/eulersolve/158.cpp: 0.002
+159:
+  solvers/159.py: 0.214
+  solvers/eulersolve/159.py: 0.140
+  solvers/eulersolve/159.cpp: 0.019
+160:
+  solvers/160.py: 0.088
+  solvers/eulersolve/160.py: 0.058
+  solvers/eulersolve/160.cpp: 0.002
+161:
+  solvers/161.py: 0.395
+  solvers/eulersolve/161.py: 2.501
+  solvers/eulersolve/161.cpp: 1.428
+162:
+  solvers/162.py: 0.107
+  solvers/eulersolve/162.py: 0.057
+  solvers/eulersolve/162.cpp: 0.003
+163:
+  solvers/163.py: 0.269
+  solvers/eulersolve/163.py: 0.111
+  solvers/eulersolve/163.cpp: 0.008
+164:
+  solvers/164.py: 0.083
+  solvers/eulersolve/164.py: 0.062
+  solvers/eulersolve/164.cpp: 0.002
+165:
+  solvers/165.py: 7.962
+  solvers/eulersolve/165.py: 3.427
+  solvers/eulersolve/165.cpp: 4.710
+166:
+  solvers/166.py: 2.932
+  solvers/eulersolve/166.py: 2.363
+  solvers/eulersolve/166.cpp: 0.318
+167:
+  solvers/167.py: 0.233
+  solvers/eulersolve/167.py: 0.752
+  solvers/eulersolve/167.cpp: 0.446
+168:
+  solvers/168.py: 0.065
+  solvers/eulersolve/168.py: 0.066
+  solvers/eulersolve/168.cpp: 0.044
+169:
+  solvers/169.py: 0.054
+  solvers/eulersolve/169.py: 0.057
+  solvers/eulersolve/169.cpp: 0.002
+170:
+  solvers/170.py: 0.131
+  solvers/eulersolve/170.py: 4.370
+  solvers/eulersolve/170.cpp: 3.123
+171:
+  solvers/171.py: 1.801
+  solvers/eulersolve/171.py: 0.066
+  solvers/eulersolve/171.cpp: 0.013
+172:
+  solvers/172.py: 4.334
+  solvers/eulersolve/172.py: 0.126
+  solvers/eulersolve/172.cpp: 0.005
+173:
+  solvers/173.py: 0.061
+  solvers/eulersolve/173.py: 0.059
+  solvers/eulersolve/173.cpp: 0.003
+174:
+  solvers/174.py: 0.100
+  solvers/eulersolve/174.py: 0.083
+  solvers/eulersolve/174.cpp: 0.007
+175:
+  solvers/175.py: 0.059
+  solvers/eulersolve/175.py: 0.055
+  solvers/eulersolve/175.cpp: 0.002
+176:
+  solvers/176.py: 0.064
+  solvers/eulersolve/176.py: 0.062
+  solvers/eulersolve/176.cpp: 0.002
+177:
+  solvers/177.py: 2.431
+  solvers/eulersolve/177.py: 4.149
+  solvers/eulersolve/177.cpp: 0.526
+178:
+  solvers/178.py: 0.092
+  solvers/eulersolve/178.py: 0.072
+  solvers/eulersolve/178.cpp: 0.005
+179:
+  solvers/179.py: 1.397
+  solvers/eulersolve/179.py: 1.418
+  solvers/eulersolve/179.cpp: 0.367
+180:
+  solvers/180.py: 0.375
+  solvers/eulersolve/180.py: 0.722
+  solvers/eulersolve/180.cpp: 0.362
+181:
+  solvers/181.py: 0.162
+  solvers/eulersolve/181.py: 0.209
+  solvers/eulersolve/181.cpp: 0.026
+182:
+  solvers/182.py: 0.416
+  solvers/eulersolve/182.py: 0.591
+  solvers/eulersolve/182.cpp: 0.258
+183:
+  solvers/183.py: 0.069
+  solvers/eulersolve/183.py: 0.065
+  solvers/eulersolve/183.cpp: 0.003
+184:
+  solvers/184.py: 0.133
+  solvers/eulersolve/184.py: 0.070
+  solvers/eulersolve/184.cpp: 0.006
+185:
+  solvers/185.py: 3.334
+  solvers/eulersolve/185.py: 1.456
+  solvers/eulersolve/185.cpp: 0.240
+186:
+  solvers/186.py: 3.443
+  solvers/eulersolve/186.py: 1.043
+  solvers/eulersolve/186.cpp: 0.095
+187:
+  solvers/187.py: 0.464
+  solvers/eulersolve/187.py: 0.756
+  solvers/eulersolve/187.cpp: 0.359
+188:
+  solvers/188.py: 0.054
+  solvers/eulersolve/188.py: 0.054
+  solvers/eulersolve/188.cpp: 0.003
+189:
+  solvers/189.py: 0.248
+  solvers/eulersolve/189.py: 0.180
+  solvers/eulersolve/189.cpp: 0.007
+190:
+  solvers/190.py: 0.054
+  solvers/eulersolve/190.py: 0.054
+  solvers/eulersolve/190.cpp: 0.002
+191:
+  solvers/191.py: 0.055
+  solvers/eulersolve/191.py: 0.054
+  solvers/eulersolve/191.cpp: 0.002
+192:
+  solvers/192.py: 0.133
+  solvers/eulersolve/192.py: 0.110
+  solvers/eulersolve/192.cpp: 0.089
+193:
+  solvers/193.py: 1.960
+  solvers/eulersolve/193.py: 1.208
+  solvers/eulersolve/193.cpp: 0.316
+194:
+  solvers/194.py: 0.067
+  solvers/eulersolve/194.py: 0.054
+  solvers/eulersolve/194.cpp: 0.003
+195:
+  solvers/195.py: 1.432
+  solvers/eulersolve/195.py: 1.113
+  solvers/eulersolve/195.cpp: 0.266
+196:
+  solvers/196.py: 3.518
+  solvers/eulersolve/196.py: 1.746
+  solvers/eulersolve/196.cpp: 0.667
+197:
+  solvers/197.py: 0.055
+  solvers/eulersolve/197.py: 0.055
+  solvers/eulersolve/197.cpp: 0.005
+198:
+  solvers/198.py: 0.100
+  solvers/eulersolve/198.py: 1.112
+  solvers/eulersolve/198.cpp: 0.652
+199:
+  solvers/199.py: 0.071
+  solvers/eulersolve/199.py: 0.064
+  solvers/eulersolve/199.cpp: 0.004
+200:
+  solvers/200.py: 2.155
+  solvers/eulersolve/200.py: 0.203
+  solvers/eulersolve/200.cpp: 0.017
+201:
+  solvers/201.py: 10.043
+  solvers/eulersolve/201.py: 2.749
+  solvers/eulersolve/201.cpp: 0.154
+202:
+  solvers/202.py: 0.115
+  solvers/eulersolve/202.py: 0.055
+  solvers/eulersolve/202.cpp: 0.002
+203:
+  solvers/203.py: 0.058
+  solvers/eulersolve/203.py: 0.084
+  solvers/eulersolve/203.cpp: 0.027
+204:
+  solvers/204.py: 0.190
+  solvers/eulersolve/204.py: 0.817
+  solvers/eulersolve/204.cpp: 0.058
+205:
+  solvers/205.py: 0.158
+  solvers/eulersolve/205.py: 0.057
+  solvers/eulersolve/205.cpp: 0.002
+206:
+  solvers/206.py: 0.087
+  solvers/eulersolve/206.py: 0.164
+  solvers/eulersolve/206.cpp: 0.061
+207:
+  solvers/207.py: 0.078
+  solvers/eulersolve/207.py: 0.054
+  solvers/eulersolve/207.cpp: 0.002
+208:
+  solvers/208.py: 0.433
+  solvers/eulersolve/208.py: 5.666
+  solvers/eulersolve/208.cpp: 4.258
+209:
+  solvers/209.py: 0.078
+  solvers/eulersolve/209.py: 0.054
+  solvers/eulersolve/209.cpp: 0.003
+210:
+  solvers/210.py: 4.211
+  solvers/eulersolve/210.py: 0.970
+  solvers/eulersolve/210.cpp: 0.321
+211:
+  solvers/211.py: 18.066
+  solvers/eulersolve/211.py: 7.855
+  solvers/eulersolve/211.cpp: 1.165
+212:
+  solvers/212.py: 1.794
+  solvers/eulersolve/212.py: 63.156
+  solvers/eulersolve/212.cpp: 4.014
+213:
+  solvers/213.py: 0.186
+  solvers/eulersolve/213.py: 0.356
+  solvers/eulersolve/213.cpp: 0.230
+214:
+  solvers/214.py: 2.658
+  solvers/eulersolve/214.py: 1.742
+  solvers/eulersolve/214.cpp: 0.502
+215:
+  solvers/215.py: 0.212
+  solvers/eulersolve/215.py: 0.104
+  solvers/eulersolve/215.cpp: 0.010
+216:
+  solvers/216.py: 82.069
+  solvers/eulersolve/216.py: 4.528
+  solvers/eulersolve/216.cpp: 2.412
+217:
+  solvers/217.py: 0.082
+  solvers/eulersolve/217.py: 0.100
+  solvers/eulersolve/217.cpp: 0.027
+218:
+  solvers/218.py: 0.058
+  solvers/eulersolve/218.py: 0.057
+  solvers/eulersolve/218.cpp: 0.009
+219:
+  solvers/219.py: 0.057
+  solvers/eulersolve/219.py: 0.054
+  solvers/eulersolve/219.cpp: 0.038
+220:
+  solvers/220.py: 0.088
+  solvers/eulersolve/220.py: 0.056
+  solvers/eulersolve/220.cpp: 0.002
+221:
+  solvers/221.py: 8.239
+  solvers/eulersolve/221.py: 1.094
+  solvers/eulersolve/221.cpp: 0.419
+222:
+  solvers/222.py: 0.558
+  solvers/eulersolve/222.py: 12.910
+  solvers/eulersolve/222.cpp: 1.586
+223:
+  solvers/223.py: 1.447
+  solvers/eulersolve/223.py: 10.987
+  solvers/eulersolve/223.cpp: 2.875
+224:
+  solvers/224.py: 0.245
+  solvers/eulersolve/224.py: 0.783
+  solvers/eulersolve/224.cpp: 0.090
+225:
+  solvers/225.py: 0.074
+  solvers/eulersolve/225.py: 0.127
+  solvers/eulersolve/225.cpp: 0.045
+226:
+  solvers/226.py: 0.080
+  solvers/eulersolve/226.py: 2.439
+  solvers/eulersolve/226.cpp: 1.929
+227:
+  solvers/227.py: 0.380
+  solvers/eulersolve/227.py: 0.063
+  solvers/eulersolve/227.cpp: 0.004
+228:
+  solvers/228.py: 0.075
+  solvers/eulersolve/228.py: 0.060
+  solvers/eulersolve/228.cpp: 0.002
+229:
+  solvers/229.py: 14.078
+  solvers/eulersolve/229.py: 13.991
+  solvers/eulersolve/229.cpp: 4.581
+230:
+  solvers/230.py: 0.053
+  solvers/eulersolve/230.py: 0.057
+  solvers/eulersolve/230.cpp: 0.002
+231:
+  solvers/231.py: 0.176
+  solvers/eulersolve/231.py: 0.436
+  solvers/eulersolve/231.cpp: 0.111
+232:
+  solvers/232.py: 0.093
+  solvers/eulersolve/232.py: 0.061
+  solvers/eulersolve/232.cpp: 0.004
+233:
+  solvers/233.py: 0.141
+  solvers/eulersolve/233.py: 0.290
+  solvers/eulersolve/233.cpp: 0.127
+234:
+  solvers/234.py: 0.074
+  solvers/eulersolve/234.py: 0.085
+  solvers/eulersolve/234.cpp: 0.008
+235:
+  solvers/235.py: 0.068
+  solvers/eulersolve/235.py: 0.056
+  solvers/eulersolve/235.cpp: 0.004
+236:
+  solvers/236.py: 0.283
+  solvers/eulersolve/236.py: 1.725
+  solvers/eulersolve/236.cpp: 0.351
+237:
+  solvers/237.py: 0.080
+  solvers/eulersolve/237.py: 0.059
+  solvers/eulersolve/237.cpp: 0.012
+238:
+  solvers/238.py: 2.616
+  solvers/eulersolve/238.py: 6.348
+  solvers/eulersolve/238.cpp: 3.944
+239:
+  solvers/239.py: 0.082
+  solvers/eulersolve/239.py: 0.057
+  solvers/eulersolve/239.cpp: 0.021
+240:
+  solvers/240.py: 0.465
+  solvers/eulersolve/240.py: 0.072
+  solvers/eulersolve/240.cpp: 0.004
+241:
+  solvers/241.py: 5.802
+  solvers/eulersolve/241.py: 0.363
+  solvers/eulersolve/241.cpp: 0.014
+242:
+  solvers/242.py: 0.072
+  solvers/eulersolve/242.py: 0.056
+  solvers/eulersolve/242.cpp: 0.032
+243:
+  solvers/243.py: 0.057
+  solvers/eulersolve/243.py: 0.059
+  solvers/eulersolve/243.cpp: 0.002
+244:
+  solvers/244.py: 0.201
+  solvers/eulersolve/244.py: 0.288
+  solvers/eulersolve/244.cpp: 0.054
+245:
+  solvers/245.py: 1.612
+  solvers/eulersolve/245.py: 9.246
+  solvers/eulersolve/245.cpp: 8.860
+246:
+  solvers/246.py: 0.106
+  solvers/eulersolve/246.py: 0.126
+  solvers/eulersolve/246.cpp: 0.005
+247:
+  solvers/247.py: 1.026
+  solvers/eulersolve/247.py: 0.629
+  solvers/eulersolve/247.cpp: 0.278
+248:
+  solvers/248.py: 1.402
+  solvers/eulersolve/248.py: 3.106
+  solvers/eulersolve/248.cpp: 2.506
+249:
+  solvers/249.py: 0.791
+  solvers/eulersolve/249.py: 1.095
+  solvers/eulersolve/249.cpp: 0.300
+250:
+  solvers/250.py: 0.405
+  solvers/eulersolve/250.py: 0.399
+  solvers/eulersolve/250.cpp: 0.152
+251:
+  solvers/251.py: 23.087
+  solvers/eulersolve/251.py: 28.658
+  solvers/eulersolve/251.cpp: 11.090
+252:
+  solvers/252.py: 8.775
+  solvers/eulersolve/252.py: 12.672
+  solvers/eulersolve/252.cpp: 0.745
+253:
+  solvers/253.py: 23.854
+  solvers/eulersolve/253.py: 1.903
+  solvers/eulersolve/253.cpp: 0.399
+254:
+  solvers/254.py: 0.642
+  solvers/eulersolve/254.py: 25.635
+  solvers/eulersolve/254.cpp: 3.648
+255:
+  solvers/255.py: 1.105
+  solvers/eulersolve/255.py: 4.043
+  solvers/eulersolve/255.cpp: 0.419
+256:
+  solvers/256.py: 1.786
+  solvers/eulersolve/256.py: 0.207
+  solvers/eulersolve/256.cpp: 0.008
+257:
+  solvers/257.py: 2.900
+  solvers/eulersolve/257.py: 7.401
+  solvers/eulersolve/257.cpp: 7.173
+258:
+  solvers/258.py: 1.565
+  solvers/eulersolve/258.py: 1.743
+  solvers/eulersolve/258.cpp: 0.519
+259:
+  solvers/259.py: 115.037
+  solvers/eulersolve/259.py: 20.416
+  solvers/eulersolve/259.cpp: 23.371
+260:
+  solvers/260.py: 0.965
+  solvers/eulersolve/260.py: 1.708
+  solvers/eulersolve/260.cpp: 0.486
+261:
+  solvers/261.py: 0.162
+  solvers/eulersolve/261.py: 0.240
+  solvers/eulersolve/261.cpp: 0.105
+262:
+  solvers/262.py: 0.554
+  solvers/eulersolve/262.py: 1.098
+  solvers/eulersolve/262.cpp: 0.132
+263:
+  solvers/263.py: 6.522
+  solvers/eulersolve/263.py: 7.185
+  solvers/eulersolve/263.cpp: 1.756
+264:
+  solvers/264.py: 1.089
+  solvers/eulersolve/264.py: 40.930
+  solvers/eulersolve/264.cpp: 18.165
+265:
+  solvers/265.py: 0.106
+  solvers/eulersolve/265.py: 0.088
+  solvers/eulersolve/265.cpp: 0.003
+266:
+  solvers/266.py: 9.873
+  solvers/eulersolve/266.py: 11.248
+  solvers/eulersolve/266.cpp: 0.473
+267:
+  solvers/267.py: 0.151
+  solvers/eulersolve/267.py: 0.054
+  solvers/eulersolve/267.cpp: 0.002
+268:
+  solvers/268.py: 1.479
+  solvers/eulersolve/268.py: 0.652
+  solvers/eulersolve/268.cpp: 0.072
+269:
+  solvers/269.py: 0.356
+  solvers/eulersolve/269.py: 0.739
+  solvers/eulersolve/269.cpp: 0.162
+270:
+  solvers/270.py: 0.278
+  solvers/eulersolve/270.py: 0.075
+  solvers/eulersolve/270.cpp: 0.003
+271:
+  solvers/271.py: 0.068
+  solvers/eulersolve/271.py: 0.064
+  solvers/eulersolve/271.cpp: 0.002
+272:
+  solvers/272.py: 0.652
+  solvers/eulersolve/272.py: 1.565
+  solvers/eulersolve/272.cpp: 0.756
+273:
+  solvers/273.py: 0.326
+  solvers/eulersolve/273.py: 0.717
+  solvers/eulersolve/273.cpp: 0.056
+274:
+  solvers/274.py: 0.254
+  solvers/eulersolve/274.py: 0.347
+  solvers/eulersolve/274.cpp: 0.051
+275:
+  solvers/275.py: 43.817
+  solvers/eulersolve/275.py: "error: timed out after 600.000s"
+  solvers/eulersolve/275.cpp: 32.980
+276:
+  solvers/276.py: 0.466
+  solvers/eulersolve/276.py: 0.548
+  solvers/eulersolve/276.cpp: 0.202
+277:
+  solvers/277.py: 0.056
+  solvers/eulersolve/277.py: 0.058
+  solvers/eulersolve/277.cpp: 0.002
+278:
+  solvers/278.py: 0.209
+  solvers/eulersolve/278.py: 0.155
+  solvers/eulersolve/278.cpp: 1.216
+279:
+  solvers/279.py: 4.793
+  solvers/eulersolve/279.py: 8.557
+  solvers/eulersolve/279.cpp: 4.564
+280:
+  solvers/280.py: 0.782
+  solvers/eulersolve/280.py: 0.089
+  solvers/eulersolve/280.cpp: 0.006
+281:
+  solvers/281.py: 0.125
+  solvers/eulersolve/281.py: 0.063
+  solvers/eulersolve/281.cpp: 0.004
+282:
+  solvers/282.py: 0.076
+  solvers/eulersolve/282.py: 0.068
+  solvers/eulersolve/282.cpp: 0.002
+283:
+  solvers/283.py: 10.757
+  solvers/eulersolve/283.py: 7.939
+  solvers/eulersolve/283.cpp: 1.936
+284:
+  solvers/284.py: 2.351
+  solvers/eulersolve/284.py: 0.283
+  solvers/eulersolve/284.cpp: 0.211
+285:
+  solvers/285.py: 0.125
+  solvers/eulersolve/285.py: 0.065
+  solvers/eulersolve/285.cpp: 0.011
+286:
+  solvers/286.py: 0.080
+  solvers/eulersolve/286.py: 0.059
+  solvers/eulersolve/286.cpp: 0.004
+287:
+  solvers/287.py: 4.865
+  solvers/eulersolve/287.py: 8.925
+  solvers/eulersolve/287.cpp: 0.802
+288:
+  solvers/288.py: 0.895
+  solvers/eulersolve/288.py: 0.114
+  solvers/eulersolve/288.cpp: 0.061
+289:
+  solvers/289.py: 0.176
+  solvers/eulersolve/289.py: 0.056
+  solvers/eulersolve/289.cpp: 0.023
+290:
+  solvers/290.py: 0.135
+  solvers/eulersolve/290.py: 0.173
+  solvers/eulersolve/290.cpp: 0.031
+291:
+  solvers/291.py: 22.839
+  solvers/eulersolve/291.py: 4.989
+  solvers/eulersolve/291.cpp: 2.327
+292:
+  solvers/292.py: 1.841
+  solvers/eulersolve/292.py: 0.874
+  solvers/eulersolve/292.cpp: 0.177
+293:
+  solvers/293.py: 0.173
+  solvers/eulersolve/293.py: 0.097
+  solvers/eulersolve/293.cpp: 0.013
+294:
+  solvers/294.py: 0.204
+  solvers/eulersolve/294.py: 0.065
+  solvers/eulersolve/294.cpp: 0.005
+295:
+  solvers/295.py: 4.636
+  solvers/eulersolve/295.py: 1.889
+  solvers/eulersolve/295.cpp: 0.132
+296:
+  solvers/296.py: 80.048
+  solvers/eulersolve/296.py: 0.583
+  solvers/eulersolve/296.cpp: 30.118
+297:
+  solvers/297.py: 0.065
+  solvers/eulersolve/297.py: 0.056
+  solvers/eulersolve/297.cpp: 0.003
+298:
+  solvers/298.py: 0.538
+  solvers/eulersolve/298.py: 0.165
+  solvers/eulersolve/298.cpp: 0.051
+299:
+  solvers/299.py: 1.066
+  solvers/eulersolve/299.py: 2.741
+  solvers/eulersolve/299.cpp: 1.239
+300:
+  solvers/300.py: 1.036
+  solvers/eulersolve/300.py: 3.353
+  solvers/eulersolve/300.cpp: 1.604
+301:
+  solvers/301.py: 0.062
+  solvers/eulersolve/301.py: 0.055
+  solvers/eulersolve/301.cpp: 0.003
+302:
+  solvers/302.py: 2.369
+  solvers/eulersolve/302.py: 1.228
+  solvers/eulersolve/302.cpp: 0.931
+303:
+  solvers/303.py: 0.619
+  solvers/eulersolve/303.py: 1.252
+  solvers/eulersolve/303.cpp: 0.253
+304:
+  solvers/304.py: 0.571
+  solvers/eulersolve/304.py: 1.006
+  solvers/eulersolve/304.cpp: 0.273
+305:
+  solvers/305.py: 0.229
+  solvers/eulersolve/305.py: 0.170
+  solvers/eulersolve/305.cpp: 0.008
+306:
+  solvers/306.py: 0.058
+  solvers/eulersolve/306.py: 0.069
+  solvers/eulersolve/306.cpp: 0.004
+307:
+  solvers/307.py: 0.112
+  solvers/eulersolve/307.py: 0.063
+  solvers/eulersolve/307.cpp: 1.110
+308:
+  solvers/308.py: 0.217
+  solvers/eulersolve/308.py: 1.086
+  solvers/eulersolve/308.cpp: 0.598
+309:
+  solvers/309.py: 1.503
+  solvers/eulersolve/309.py: 6.423
+  solvers/eulersolve/309.cpp: 1.055
+310:
+  solvers/310.py: 6.476
+  solvers/eulersolve/310.py: 0.107
+  solvers/eulersolve/310.cpp: 0.031
+311:
+  solvers/311.py: 0.293
+  solvers/eulersolve/311.py: 53.887
+  solvers/eulersolve/311.cpp: 10.727
+312:
+  solvers/312.py: 0.409
+  solvers/eulersolve/312.py: 0.056
+  solvers/eulersolve/312.cpp: 0.003
+313:
+  solvers/313.py: 0.071
+  solvers/eulersolve/313.py: 0.074
+  solvers/eulersolve/313.cpp: 0.006
+314:
+  solvers/314.py: 1.835
+  solvers/eulersolve/314.py: 9.950
+  solvers/eulersolve/314.cpp: 2.282
+315:
+  solvers/315.py: 0.244
+  solvers/eulersolve/315.py: 3.131
+  solvers/eulersolve/315.cpp: 0.176
+316:
+  solvers/316.py: 11.613
+  solvers/eulersolve/316.py: 0.202
+  solvers/eulersolve/316.cpp: 0.046
+317:
+  solvers/317.py: 0.057
+  solvers/eulersolve/317.py: 0.058
+  solvers/eulersolve/317.cpp: 0.003
+318:
+  solvers/318.py: 0.074
+  solvers/eulersolve/318.py: 0.073
+  solvers/eulersolve/318.cpp: 0.011
+319:
+  solvers/319.py: 0.715
+  solvers/eulersolve/319.py: 0.594
+  solvers/eulersolve/319.cpp: 0.339
+320:
+  solvers/320.py: 28.163
+  solvers/eulersolve/320.py: 3.567
+  solvers/eulersolve/320.cpp: 1.398
+321:
+  solvers/321.py: 0.060
+  solvers/eulersolve/321.py: 0.055
+  solvers/eulersolve/321.cpp: 0.002
+322:
+  solvers/322.py: 0.118
+  solvers/eulersolve/322.py: 1.835
+  solvers/eulersolve/322.cpp: 0.311
+323:
+  solvers/323.py: 0.055
+  solvers/eulersolve/323.py: 0.089
+  solvers/eulersolve/323.cpp: 0.003
+324:
+  solvers/324.py: 0.381
+  solvers/eulersolve/324.py: 0.325
+  solvers/eulersolve/324.cpp: 0.446
+325:
+  solvers/325.py: 0.137
+  solvers/eulersolve/325.py: 0.056
+  solvers/eulersolve/325.cpp: 0.003
+326:
+  solvers/326.py: 0.682
+  solvers/eulersolve/326.py: 0.296
+  solvers/eulersolve/326.cpp: 0.143
+327:
+  solvers/327.py: 0.077
+  solvers/eulersolve/327.py: 0.055
+  solvers/eulersolve/327.cpp: 0.003
+328:
+  solvers/328.py: 0.208
+  solvers/eulersolve/328.py: 0.841
+  solvers/eulersolve/328.cpp: 0.126
+329:
+  solvers/329.py: 0.098
+  solvers/eulersolve/329.py: 0.060
+  solvers/eulersolve/329.cpp: 0.003
+330:
+  solvers/330.py: 0.103
+  solvers/eulersolve/330.py: 0.486
+  solvers/eulersolve/330.cpp: 1.189
+331:
+  solvers/331.py: 0.225
+  solvers/eulersolve/331.py: 102.261
+  solvers/eulersolve/331.cpp: 34.999
+332:
+  solvers/332.py: 0.406
+  solvers/eulersolve/332.py: 1.689
+  solvers/eulersolve/332.cpp: 0.492
+333:
+  solvers/333.py: 2.909
+  solvers/eulersolve/333.py: 6.818
+  solvers/eulersolve/333.cpp: 0.519
+334:
+  solvers/334.py: 0.640
+  solvers/eulersolve/334.py: 0.058
+  solvers/eulersolve/334.cpp: 0.003
+335:
+  solvers/335.py: 0.072
+  solvers/eulersolve/335.py: 0.060
+  solvers/eulersolve/335.cpp: 0.004
+336:
+  solvers/336.py: 0.252
+  solvers/eulersolve/336.py: 0.218
+  solvers/eulersolve/336.cpp: 0.093
+337:
+  solvers/337.py: 11.549
+  solvers/eulersolve/337.py: 9.549
+  solvers/eulersolve/337.cpp: 4.585
+338:
+  solvers/338.py: 0.110
+  solvers/eulersolve/338.py: 4.998
+  solvers/eulersolve/338.cpp: 2.974
+339:
+  solvers/339.py: 0.113
+  solvers/eulersolve/339.py: 2.034
+  solvers/eulersolve/339.cpp: 2.808
+340:
+  solvers/340.py: 0.062
+  solvers/eulersolve/340.py: 0.055
+  solvers/eulersolve/340.cpp: 0.008
+341:
+  solvers/341.py: 0.702
+  solvers/eulersolve/341.py: 0.717
+  solvers/eulersolve/341.cpp: 0.079
+342:
+  solvers/342.py: 11.835
+  solvers/eulersolve/342.py: 0.444
+  solvers/eulersolve/342.cpp: 0.189
+343:
+  solvers/343.py: 27.787
+  solvers/eulersolve/343.py: 0.374
+  solvers/eulersolve/343.cpp: 0.266
+344:
+  solvers/344.py: 1.638
+  solvers/eulersolve/344.py: 0.127
+  solvers/eulersolve/344.cpp: 0.043
+345:
+  solvers/345.py: 0.095
+  solvers/eulersolve/345.py: 0.071
+  solvers/eulersolve/345.cpp: 0.004
+346:
+  solvers/346.py: 0.152
+  solvers/eulersolve/346.py: 0.262
+  solvers/eulersolve/346.cpp: 0.067
+347:
+  solvers/347.py: 0.199
+  solvers/eulersolve/347.py: 0.312
+  solvers/eulersolve/347.cpp: 0.056
+348:
+  solvers/348.py: 59.633
+  solvers/eulersolve/348.py: 4.077
+  solvers/eulersolve/348.cpp: 0.361
+349:
+  solvers/349.py: 0.057
+  solvers/eulersolve/349.py: 0.087
+  solvers/eulersolve/349.cpp: 0.015
+350:
+  solvers/350.py: 0.192
+  solvers/eulersolve/350.py: 0.141
+  solvers/eulersolve/350.cpp: 0.053
+351:
+  solvers/351.py: 0.095
+  solvers/eulersolve/351.py: 0.124
+  solvers/eulersolve/351.cpp: 0.061
+352:
+  solvers/352.py: 0.658
+  solvers/eulersolve/352.py: 1.403
+  solvers/eulersolve/352.cpp: 30.900
+353:
+  solvers/353.py: 8.820
+  solvers/eulersolve/353.py: 7.212
+  solvers/eulersolve/353.cpp: 5.638
+354:
+  solvers/354.py: 1.617
+  solvers/eulersolve/354.py: 3.371
+  solvers/eulersolve/354.cpp: 0.855
+355:
+  solvers/355.py: 0.720
+  solvers/eulersolve/355.py: 0.108
+  solvers/eulersolve/355.cpp: 0.019
+356:
+  solvers/356.py: 0.110
+  solvers/eulersolve/356.py: 0.064
+  solvers/eulersolve/356.cpp: 0.006
+357:
+  solvers/357.py: 5.254
+  solvers/eulersolve/357.py: 2.498
+  solvers/eulersolve/357.cpp: 0.744
+358:
+  solvers/358.py: 13.951
+  solvers/eulersolve/358.py: 0.057
+  solvers/eulersolve/358.cpp: 0.003
+359:
+  solvers/359.py: 0.055
+  solvers/eulersolve/359.py: 0.077
+  solvers/eulersolve/359.cpp: 0.044
+360:
+  solvers/360.py: 0.112
+  solvers/eulersolve/360.py: 2.856
+  solvers/eulersolve/360.cpp: 0.935
+361:
+  solvers/361.py: 0.222
+  solvers/eulersolve/361.py: 0.148
+  solvers/eulersolve/361.cpp: 0.006
+362:
+  solvers/362.py: 2.600
+  solvers/eulersolve/362.py: 11.697
+  solvers/eulersolve/362.cpp: 3.839
+363:
+  solvers/363.py: 0.131
+  solvers/eulersolve/363.py: 0.064
+  solvers/eulersolve/363.cpp: 0.004
+364:
+  solvers/364.py: 0.169
+  solvers/eulersolve/364.py: 0.144
+  solvers/eulersolve/364.cpp: 0.041
+365:
+  solvers/365.py: 0.420
+  solvers/eulersolve/365.py: 0.388
+  solvers/eulersolve/365.cpp: 0.216
+366:
+  solvers/366.py: 0.106
+  solvers/eulersolve/366.py: 0.055
+  solvers/eulersolve/366.cpp: 0.003
+367:
+  solvers/367.py: 0.276
+  solvers/eulersolve/367.py: 0.099
+  solvers/eulersolve/367.cpp: 0.006
+368:
+  solvers/368.py: 0.691
+  solvers/eulersolve/368.py: 0.948
+  solvers/eulersolve/368.cpp: 0.070
+369:
+  solvers/369.py: 0.127
+  solvers/eulersolve/369.py: 0.074
+  solvers/eulersolve/369.cpp: 0.149
+370:
+  solvers/370.py: 0.133
+  solvers/eulersolve/370.py: 75.881
+  solvers/eulersolve/370.cpp: 25.977
+371:
+  solvers/371.py: 0.053
+  solvers/eulersolve/371.py: 0.057
+  solvers/eulersolve/371.cpp: 0.003
+372:
+  solvers/372.py: 1.705
+  solvers/eulersolve/372.py: 6.629
+  solvers/eulersolve/372.cpp: 6.935
+373:
+  solvers/373.py: 1.098
+  solvers/eulersolve/373.py: 164.039
+  solvers/eulersolve/373.cpp: 57.006
+374:
+  solvers/374.py: 0.618
+  solvers/eulersolve/374.py: 0.787
+  solvers/eulersolve/374.cpp: 0.614
+375:
+  solvers/375.py: 1.304
+  solvers/eulersolve/375.py: 1.415
+  solvers/eulersolve/375.cpp: 0.415
+376:
+  solvers/376.py: 4.841
+  solvers/eulersolve/376.py: 0.353
+  solvers/eulersolve/376.cpp: 0.082
+377:
+  solvers/377.py: 0.105
+  solvers/eulersolve/377.py: 0.068
+  solvers/eulersolve/377.cpp: 0.003
+378:
+  solvers/378.py: 13.007
+  solvers/eulersolve/378.py: 16.925
+  solvers/eulersolve/378.cpp: 2.839
+379:
+  solvers/379.py: 5.745
+  solvers/eulersolve/379.py: 1.482
+  solvers/eulersolve/379.cpp: 0.640
+380:
+  solvers/380.py: 0.098
+  solvers/eulersolve/380.py: 0.060
+  solvers/eulersolve/380.cpp: 0.005
+381:
+  solvers/381.py: 2.832
+  solvers/eulersolve/381.py: 1.644
+  solvers/eulersolve/381.cpp: 0.389
+382:
+  solvers/382.py: 0.087
+  solvers/eulersolve/382.py: 0.063
+  solvers/eulersolve/382.cpp: 0.004
+383:
+  solvers/383.py: 0.179
+  solvers/eulersolve/383.py: 0.064
+  solvers/eulersolve/383.cpp: 0.002
+384:
+  solvers/384.py: 0.094
+  solvers/eulersolve/384.py: 0.149
+  solvers/eulersolve/384.cpp: 0.035
+385:
+  solvers/385.py: 0.134
+  solvers/eulersolve/385.py: 0.062
+  solvers/eulersolve/385.cpp: 0.003
+386:
+  solvers/386.py: 0.834
+  solvers/eulersolve/386.py: 9.558
+  solvers/eulersolve/386.cpp: 3.231
+387:
+  solvers/387.py: 0.122
+  solvers/eulersolve/387.py: 0.114
+  solvers/eulersolve/387.cpp: 0.077
+388:
+  solvers/388.py: 0.561
+  solvers/eulersolve/388.py: 0.503
+  solvers/eulersolve/388.cpp: 0.260
+389:
+  solvers/389.py: 0.131
+  solvers/eulersolve/389.py: 0.054
+  solvers/eulersolve/389.cpp: 0.003
+390:
+  solvers/390.py: 0.127
+  solvers/eulersolve/390.py: 0.066
+  solvers/eulersolve/390.cpp: 0.006
+391:
+  solvers/391.py: 1.027
+  solvers/eulersolve/391.py: 0.255
+  solvers/eulersolve/391.cpp: 0.080
+392:
+  solvers/392.py: 0.080
+  solvers/eulersolve/392.py: 0.063
+  solvers/eulersolve/392.cpp: 0.005
+393:
+  solvers/393.py: 13.176
+  solvers/eulersolve/393.py: 0.748
+  solvers/eulersolve/393.cpp: 0.061
+394:
+  solvers/394.py: 0.088
+  solvers/eulersolve/394.py: 0.059
+  solvers/eulersolve/394.cpp: 0.003
+395:
+  solvers/395.py: 0.245
+  solvers/eulersolve/395.py: 0.099
+  solvers/eulersolve/395.cpp: 0.003
+396:
+  solvers/396.py: 0.116
+  solvers/eulersolve/396.py: 0.083
+  solvers/eulersolve/396.cpp: 0.005
+397:
+  solvers/397.py: 3.560
+  solvers/eulersolve/397.py: 105.808
+  solvers/eulersolve/397.cpp: 7.671
+398:
+  solvers/398.py: 0.328
+  solvers/eulersolve/398.py: 0.097
+  solvers/eulersolve/398.cpp: 0.041
+399:
+  solvers/399.py: 4.903
+  solvers/eulersolve/399.py: 13.609
+  solvers/eulersolve/399.cpp: 6.961
+400:
+  solvers/400.py: 0.342
+  solvers/eulersolve/400.py: 15.070
+  solvers/eulersolve/400.cpp: 1.584
+401:
+  solvers/401.py: 2.009
+  solvers/eulersolve/401.py: 3.229
+  solvers/eulersolve/401.cpp: 2.189
+402:
+  solvers/402.py: 0.127
+  solvers/eulersolve/402.py: 0.081
+  solvers/eulersolve/402.cpp: 0.004
+403:
+  solvers/403.py: 1.094
+  solvers/eulersolve/403.py: 0.644
+  solvers/eulersolve/403.cpp: 0.768
+404:
+  solvers/404.py: 9.342
+  solvers/eulersolve/404.py: 36.523
+  solvers/eulersolve/404.cpp: 15.456
+405:
+  solvers/405.py: 0.083
+  solvers/eulersolve/405.py: 0.056
+  solvers/eulersolve/405.cpp: 0.003
+406:
+  solvers/406.py: 1.002
+  solvers/eulersolve/406.py: 0.123
+  solvers/eulersolve/406.cpp: 0.019
+407:
+  solvers/407.py: 8.929
+  solvers/eulersolve/407.py: 9.173
+  solvers/eulersolve/407.cpp: 2.854
+408:
+  solvers/408.py: 2.705
+  solvers/eulersolve/408.py: 2.040
+  solvers/eulersolve/408.cpp: 1.026
+409:
+  solvers/409.py: 0.329
+  solvers/eulersolve/409.py: 0.180
+  solvers/eulersolve/409.cpp: 0.119
+410:
+  solvers/410.py: 1.995
+  solvers/eulersolve/410.py: 4.274
+  solvers/eulersolve/410.cpp: 1.765
+411:
+  solvers/411.py: 13.880
+  solvers/eulersolve/411.py: 17.347
+  solvers/eulersolve/411.cpp: 4.027
+412:
+  solvers/412.py: 0.578
+  solvers/eulersolve/412.py: 0.590
+  solvers/eulersolve/412.cpp: 0.327
+413:
+  solvers/413.py: 18.845
+  solvers/eulersolve/413.py: 11.439
+  solvers/eulersolve/413.cpp: 3.163
+414:
+  solvers/414.py: 13.126
+  solvers/eulersolve/414.py: 29.013
+  solvers/eulersolve/414.cpp: 5.523
+415:
+  solvers/415.py: 100.317
+  solvers/eulersolve/415.py: 6.506
+  solvers/eulersolve/415.cpp: 4.520
+416:
+  solvers/416.py: 6.503
+  solvers/eulersolve/416.py: 28.968
+  solvers/eulersolve/416.cpp: 1.342
+417:
+  solvers/417.py: 11.211
+  solvers/eulersolve/417.py: 18.625
+  solvers/eulersolve/417.cpp: 7.089
+418:
+  solvers/418.py: 2.043
+  solvers/eulersolve/418.py: 7.401
+  solvers/eulersolve/418.cpp: 1.432
+419:
+  solvers/419.py: 0.326
+  solvers/eulersolve/419.py: 0.302
+  solvers/eulersolve/419.cpp: 0.023
+420:
+  solvers/420.py: 0.982
+  solvers/eulersolve/420.py: 0.968
+  solvers/eulersolve/420.cpp: 0.380
+421:
+  solvers/421.py: 2.073
+  solvers/eulersolve/421.py: 3.580
+  solvers/eulersolve/421.cpp: 1.362
+422:
+  solvers/422.py: 0.109
+  solvers/eulersolve/422.py: 0.054
+  solvers/eulersolve/422.cpp: 0.004
+423:
+  solvers/423.py: 2.134
+  solvers/eulersolve/423.py: 2.517
+  solvers/eulersolve/423.cpp: 1.379
+424:
+  solvers/424.py: 0.844
+  solvers/eulersolve/424.py: 0.628
+  solvers/eulersolve/424.cpp: 0.047
+425:
+  solvers/425.py: 4.366
+  solvers/eulersolve/425.py: 1.708
+  solvers/eulersolve/425.cpp: 0.422
+426:
+  solvers/426.py: 0.496
+  solvers/eulersolve/426.py: 1.255
+  solvers/eulersolve/426.cpp: 0.443
+427:
+  solvers/427.py: 3.178
+  solvers/eulersolve/427.py: 6.723
+  solvers/eulersolve/427.cpp: 4.298
+428:
+  solvers/428.py: 2.022
+  solvers/eulersolve/428.py: 1.166
+  solvers/eulersolve/428.cpp: 0.651
+429:
+  solvers/429.py: 1.636
+  solvers/eulersolve/429.py: 2.087
+  solvers/eulersolve/429.cpp: 0.475
+430:
+  solvers/430.py: 0.108
+  solvers/eulersolve/430.py: 0.922
+  solvers/eulersolve/430.cpp: 8.785
+431:
+  solvers/431.py: 0.146
+  solvers/eulersolve/431.py: 0.146
+  solvers/eulersolve/431.cpp: 0.851
+432:
+  solvers/432.py: 1.240
+  solvers/eulersolve/432.py: 4.786
+  solvers/eulersolve/432.cpp: 1.316
+433:
+  solvers/433.py: 0.105
+  solvers/eulersolve/433.py: 1.984
+  solvers/eulersolve/433.cpp: 1.344
+434:
+  solvers/434.py: 0.739
+  solvers/eulersolve/434.py: 0.358
+  solvers/eulersolve/434.cpp: 0.171
+435:
+  solvers/435.py: 0.068
+  solvers/eulersolve/435.py: 0.082
+  solvers/eulersolve/435.cpp: 0.003
+436:
+  solvers/436.py: 0.115
+  solvers/eulersolve/436.py: 0.055
+  solvers/eulersolve/436.cpp: 0.117
+437:
+  solvers/437.py: 6.854
+  solvers/eulersolve/437.py: 7.928
+  solvers/eulersolve/437.cpp: 3.082
+438:
+  solvers/438.py: 19.389
+  solvers/eulersolve/438.py: 3.028
+  solvers/eulersolve/438.cpp: 0.371
+439:
+  solvers/439.py: 12.590
+  solvers/eulersolve/439.py: 10.636
+  solvers/eulersolve/439.cpp: 7.242
+440:
+  solvers/440.py: 0.993
+  solvers/eulersolve/440.py: 1.338
+  solvers/eulersolve/440.cpp: 0.847
+441:
+  solvers/441.py: 0.675
+  solvers/eulersolve/441.py: 3.834
+  solvers/eulersolve/441.cpp: 1.737
+442:
+  solvers/442.py: 0.464
+  solvers/eulersolve/442.py: 0.092
+  solvers/eulersolve/442.cpp: 0.014
+443:
+  solvers/443.py: 2.064
+  solvers/eulersolve/443.py: 0.173
+  solvers/eulersolve/443.cpp: 0.284
+444:
+  solvers/444.py: 0.142
+  solvers/eulersolve/444.py: 0.069
+  solvers/eulersolve/444.cpp: 0.003
+445:
+  solvers/445.py: 4.030
+  solvers/eulersolve/445.py: 5.904
+  solvers/eulersolve/445.cpp: 1.688
+446:
+  solvers/446.py: 3.014
+  solvers/eulersolve/446.py: 4.100
+  solvers/eulersolve/446.cpp: 0.913
+447:
+  solvers/447.py: 0.545
+  solvers/eulersolve/447.py: 3.696
+  solvers/eulersolve/447.cpp: 2.274
+448:
+  solvers/448.py: 2.785
+  solvers/eulersolve/448.py: 6.227
+  solvers/eulersolve/448.cpp: 3.085
+449:
+  solvers/449.py: 0.100
+  solvers/eulersolve/449.py: 0.072
+  solvers/eulersolve/449.cpp: 0.023
+450:
+  solvers/450.py: 0.602
+  solvers/eulersolve/450.py: 0.812
+  solvers/eulersolve/450.cpp: 0.058
+451:
+  solvers/451.py: 74.218
+  solvers/eulersolve/451.py: 11.103
+  solvers/eulersolve/451.cpp: 3.390
+452:
+  solvers/452.py: 2.987
+  solvers/eulersolve/452.py: 9.349
+  solvers/eulersolve/452.cpp: 1.388
+453:
+  solvers/453.py: 0.229
+  solvers/eulersolve/453.py: 7.138
+  solvers/eulersolve/453.cpp: 4.147
+454:
+  solvers/454.py: 3.694
+  solvers/eulersolve/454.py: 9.769
+  solvers/eulersolve/454.cpp: 3.384
+455:
+  solvers/455.py: 1.458
+  solvers/eulersolve/455.py: 1.930
+  solvers/eulersolve/455.cpp: 1.441
+456:
+  solvers/456.py: 7.393
+  solvers/eulersolve/456.py: 20.006
+  solvers/eulersolve/456.cpp: 0.690
+457:
+  solvers/457.py: 1.024
+  solvers/eulersolve/457.py: 0.590
+  solvers/eulersolve/457.cpp: 0.230
+458:
+  solvers/458.py: 0.067
+  solvers/eulersolve/458.py: 8.222
+  solvers/eulersolve/458.cpp: 0.258
+459:
+  solvers/459.py: 36.174
+  solvers/eulersolve/459.py: 19.962
+  solvers/eulersolve/459.cpp: 5.066
+460:
+  solvers/460.py: 1.552
+  solvers/eulersolve/460.py: 5.026
+  solvers/eulersolve/460.cpp: 1.402
+461:
+  solvers/461.py: 0.162
+  solvers/eulersolve/461.py: 4.585
+  solvers/eulersolve/461.cpp: 3.620
+462:
+  solvers/462.py: 0.099
+  solvers/eulersolve/462.py: 0.059
+  solvers/eulersolve/462.cpp: 0.003
+463:
+  solvers/463.py: 0.127
+  solvers/eulersolve/463.py: 0.056
+  solvers/eulersolve/463.cpp: 0.003
+464:
+  solvers/464.py: 10.824
+  solvers/eulersolve/464.py: 5.221
+  solvers/eulersolve/464.cpp: 2.192
+465:
+  solvers/465.py: 7.407
+  solvers/eulersolve/465.py: 2.270
+  solvers/eulersolve/465.cpp: 1.158
+466:
+  solvers/466.py: 7.379
+  solvers/eulersolve/466.py: 12.416
+  solvers/eulersolve/466.cpp: 2.991
+467:
+  solvers/467.py: 0.233
+  solvers/eulersolve/467.py: 2.202
+  solvers/eulersolve/467.cpp: 0.265
+468:
+  solvers/468.py: 0.225
+  solvers/eulersolve/468.py: 9.420
+  solvers/eulersolve/468.cpp: 4.032
+469:
+  solvers/469.py: 0.145
+  solvers/eulersolve/469.py: 0.056
+  solvers/eulersolve/469.cpp: 0.003
+470:
+  solvers/470.py: 1.820
+  solvers/eulersolve/470.py: 4.048
+  solvers/eulersolve/470.cpp: 2.461
+471:
+  solvers/471.py: 0.156
+  solvers/eulersolve/471.py: 0.069
+  solvers/eulersolve/471.cpp: 0.006
+472:
+  solvers/472.py: 0.103
+  solvers/eulersolve/472.py: 0.055
+  solvers/eulersolve/472.cpp: 0.002
+473:
+  solvers/473.py: 0.585
+  solvers/eulersolve/473.py: 0.244
+  solvers/eulersolve/473.cpp: 0.025
+474:
+  solvers/474.py: 41.171
+  solvers/eulersolve/474.py: 6.123
+  solvers/eulersolve/474.cpp: 1.803
+475:
+  solvers/475.py: 0.168
+  solvers/eulersolve/475.py: 9.460
+  solvers/eulersolve/475.cpp: 2.661
+476:
+  solvers/476.py: 25.504
+  solvers/eulersolve/476.py: 6.439
+  solvers/eulersolve/476.cpp: 6.227
+477:
+  solvers/477.py: 0.465
+  solvers/eulersolve/477.py: 0.081
+  solvers/eulersolve/477.cpp: 0.009
+478:
+  solvers/478.py: 0.119
+  solvers/eulersolve/478.py: 3.911
+  solvers/eulersolve/478.cpp: 1.515
+479:
+  solvers/479.py: 0.515
+  solvers/eulersolve/479.py: 0.491
+  solvers/eulersolve/479.cpp: 0.270
+480:
+  solvers/480.py: 0.133
+  solvers/eulersolve/480.py: 0.138
+  solvers/eulersolve/480.cpp: 0.017
+481:
+  solvers/481.py: 0.755
+  solvers/eulersolve/481.py: 0.323
+  solvers/eulersolve/481.cpp: 0.084
+482:
+  solvers/482.py: 3.574
+  solvers/eulersolve/482.py: 4.565
+  solvers/eulersolve/482.cpp: 1.260
+483:
+  solvers/483.py: 8.307
+  solvers/eulersolve/483.py: 0.695
+  solvers/eulersolve/483.cpp: 0.222
+484:
+  solvers/484.py: 1.523
+  solvers/eulersolve/484.py: 1.855
+  solvers/eulersolve/484.cpp: 0.985
+485:
+  solvers/485.py: 2.056
+  solvers/eulersolve/485.py: 9.189
+  solvers/eulersolve/485.cpp: 2.028
+486:
+  solvers/486.py: 0.296
+  solvers/eulersolve/486.py: 6.796
+  solvers/eulersolve/486.cpp: 1.391
+487:
+  solvers/487.py: 0.362
+  solvers/eulersolve/487.py: 0.359
+  solvers/eulersolve/487.cpp: 0.242
+488:
+  solvers/488.py: 0.125
+  solvers/eulersolve/488.py: 0.071
+  solvers/eulersolve/488.cpp: 0.004
+489:
+  solvers/489.py: 0.893
+  solvers/eulersolve/489.py: 0.568
+  solvers/eulersolve/489.cpp: 0.064
+490:
+  solvers/490.py: 0.160
+  solvers/eulersolve/490.py: 0.121
+  solvers/eulersolve/490.cpp: 0.011
+491:
+  solvers/491.py: 0.066
+  solvers/eulersolve/491.py: 0.107
+  solvers/eulersolve/491.cpp: 0.003
+492:
+  solvers/492.py: 1.367
+  solvers/eulersolve/492.py: 1.081
+  solvers/eulersolve/492.cpp: 0.506
+493:
+  solvers/493.py: 0.097
+  solvers/eulersolve/493.py: 0.055
+  solvers/eulersolve/493.cpp: 0.003
+494:
+  solvers/494.py: 0.083
+  solvers/eulersolve/494.py: 25.409
+  solvers/eulersolve/494.cpp: 0.072
+495:
+  solvers/495.py: 1.424
+  solvers/eulersolve/495.py: 2.206
+  solvers/eulersolve/495.cpp: 0.562
+496:
+  solvers/496.py: 0.370
+  solvers/eulersolve/496.py: 0.258
+  solvers/eulersolve/496.cpp: 0.062
+497:
+  solvers/497.py: 0.243
+  solvers/eulersolve/497.py: 0.126
+  solvers/eulersolve/497.cpp: 0.004
+498:
+  solvers/498.py: 0.140
+  solvers/eulersolve/498.py: 0.057
+  solvers/eulersolve/498.cpp: 0.002
+499:
+  solvers/499.py: 0.116
+  solvers/eulersolve/499.py: 2.306
+  solvers/eulersolve/499.cpp: 3.477
+500:
+  solvers/500.py: 1.463
+  solvers/eulersolve/500.py: 0.453
+  solvers/eulersolve/500.cpp: 0.640
+501:
+  solvers/501.py: 126.958
+  solvers/eulersolve/501.py: 2.181
+  solvers/eulersolve/501.cpp: 0.940
+502:
+  solvers/502.py: 2.903
+  solvers/eulersolve/502.py: 8.073
+  solvers/eulersolve/502.cpp: 2.873
+503:
+  solvers/503.py: 0.137
+  solvers/eulersolve/503.py: 0.077
+  solvers/eulersolve/503.cpp: 0.155
+504:
+  solvers/504.py: 0.645
+  solvers/eulersolve/504.py: 2.274
+  solvers/eulersolve/504.cpp: 0.119
+505:
+  solvers/505.py: 106.445
+  solvers/eulersolve/505.py: 92.983
+  solvers/eulersolve/505.cpp: 7.273
+506:
+  solvers/506.py: 0.101
+  solvers/eulersolve/506.py: 0.056
+  solvers/eulersolve/506.cpp: 0.021
+507:
+  solvers/507.py: 177.141
+  solvers/eulersolve/507.py: 22.785
+  solvers/eulersolve/507.cpp: 5.440
+508:
+  solvers/508.py: 0.211
+  solvers/eulersolve/508.py: 0.070
+  solvers/eulersolve/508.cpp: 0.004
+509:
+  solvers/509.py: 0.107
+  solvers/eulersolve/509.py: 0.060
+  solvers/eulersolve/509.cpp: 0.002
+510:
+  solvers/510.py: 1.384
+  solvers/eulersolve/510.py: 0.061
+  solvers/eulersolve/510.cpp: 0.003
+511:
+  solvers/511.py: 1.665
+  solvers/eulersolve/511.py: 2.393
+  solvers/eulersolve/511.cpp: 1.232
+512:
+  solvers/512.py: 18.230
+  solvers/eulersolve/512.py: 0.278
+  solvers/eulersolve/512.cpp: 0.194
+513:
+  solvers/513.py: 15.445
+  solvers/eulersolve/513.py: 0.508
+  solvers/eulersolve/513.cpp: 0.040
+514:
+  solvers/514.py: 0.522
+  solvers/eulersolve/514.py: 21.844
+  solvers/eulersolve/514.cpp: 1.904
+515:
+  solvers/515.py: 0.132
+  solvers/eulersolve/515.py: 0.094
+  solvers/eulersolve/515.cpp: 0.004
+516:
+  solvers/516.py: 0.941
+  solvers/eulersolve/516.py: 0.327
+  solvers/eulersolve/516.cpp: 0.054
+517:
+  solvers/517.py: 0.705
+  solvers/eulersolve/517.py: 0.549
+  solvers/eulersolve/517.cpp: 0.185
+518:
+  solvers/518.py: 4.163
+  solvers/eulersolve/518.py: 9.599
+  solvers/eulersolve/518.cpp: 3.853
+519:
+  solvers/519.py: 0.200
+  solvers/eulersolve/519.py: 6.969
+  solvers/eulersolve/519.cpp: 0.282
+520:
+  solvers/520.py: 0.108
+  solvers/eulersolve/520.py: 0.061
+  solvers/eulersolve/520.cpp: 0.003
+521:
+  solvers/521.py: 35.023
+  solvers/eulersolve/521.py: 2.919
+  solvers/eulersolve/521.cpp: 1.085
+522:
+  solvers/522.py: 2.453
+  solvers/eulersolve/522.py: 3.036
+  solvers/eulersolve/522.cpp: 1.230
+523:
+  solvers/523.py: 0.060
+  solvers/eulersolve/523.py: 0.055
+  solvers/eulersolve/523.cpp: 0.003
+524:
+  solvers/524.py: 11.384
+  solvers/eulersolve/524.py: 0.063
+  solvers/eulersolve/524.cpp: 0.030
+525:
+  solvers/525.py: 0.167
+  solvers/eulersolve/525.py: 0.067
+  solvers/eulersolve/525.cpp: 0.006
+526:
+  solvers/526.py: 41.979
+  solvers/eulersolve/526.py: 23.403
+  solvers/eulersolve/526.cpp: 6.107
+527:
+  solvers/527.py: 0.120
+  solvers/eulersolve/527.py: 0.058
+  solvers/eulersolve/527.cpp: 0.002
+528:
+  solvers/528.py: 0.126
+  solvers/eulersolve/528.py: 0.065
+  solvers/eulersolve/528.cpp: 0.004
+529:
+  solvers/529.py: 9.143
+  solvers/eulersolve/529.py: 15.908
+  solvers/eulersolve/529.cpp: 2.135
+530:
+  solvers/530.py: 5.856
+  solvers/eulersolve/530.py: 10.712
+  solvers/eulersolve/530.cpp: 6.123
+531:
+  solvers/531.py: 1.608
+  solvers/eulersolve/531.py: 3.040
+  solvers/eulersolve/531.cpp: 1.146
+532:
+  solvers/532.py: 0.132
+  solvers/eulersolve/532.py: 0.442
+  solvers/eulersolve/532.cpp: 0.024
+533:
+  solvers/533.py: 1.071
+  solvers/eulersolve/533.py: 0.377
+  solvers/eulersolve/533.cpp: 0.049
+534:
+  solvers/534.py: 51.208
+  solvers/eulersolve/534.py: 98.402
+  solvers/eulersolve/534.cpp: 10.176
+535:
+  solvers/535.py: 0.568
+  solvers/eulersolve/535.py: 0.077
+  solvers/eulersolve/535.cpp: 0.033
+536:
+  solvers/536.py: 10.601
+  solvers/eulersolve/536.py: 8.298
+  solvers/eulersolve/536.cpp: 4.530
+537:
+  solvers/537.py: 23.167
+  solvers/eulersolve/537.py: 0.561
+  solvers/eulersolve/537.cpp: 0.310
+538:
+  solvers/538.py: 1.363
+  solvers/eulersolve/538.py: 3.470
+  solvers/eulersolve/538.cpp: 0.704
+539:
+  solvers/539.py: 0.104
+  solvers/eulersolve/539.py: 0.057
+  solvers/eulersolve/539.cpp: 0.003
+540:
+  solvers/540.py: 9.710
+  solvers/eulersolve/540.py: 2.195
+  solvers/eulersolve/540.cpp: 0.442
+541:
+  solvers/541.py: 0.154
+  solvers/eulersolve/541.py: 0.065
+  solvers/eulersolve/541.cpp: 0.006
+542:
+  solvers/542.py: 1.065
+  solvers/eulersolve/542.py: 0.164
+  solvers/eulersolve/542.cpp: 0.017
+543:
+  solvers/543.py: 0.706
+  solvers/eulersolve/543.py: 0.328
+  solvers/eulersolve/543.cpp: 0.055
+544:
+  solvers/544.py: 2.921
+  solvers/eulersolve/544.py: 4.064
+  solvers/eulersolve/544.cpp: 0.612
+545:
+  solvers/545.py: 0.878
+  solvers/eulersolve/545.py: 0.658
+  solvers/eulersolve/545.cpp: 0.213
+546:
+  solvers/546.py: 0.112
+  solvers/eulersolve/546.py: 0.086
+  solvers/eulersolve/546.cpp: 0.004
+547:
+  solvers/547.py: 0.543
+  solvers/eulersolve/547.py: 5.662
+  solvers/eulersolve/547.cpp: 1.107
+548:
+  solvers/548.py: 0.795
+  solvers/eulersolve/548.py: 0.508
+  solvers/eulersolve/548.cpp: 0.059
+549:
+  solvers/549.py: 31.523
+  solvers/eulersolve/549.py: 5.335
+  solvers/eulersolve/549.cpp: 2.563
+550:
+  solvers/550.py: 0.692
+  solvers/eulersolve/550.py: 2.334
+  solvers/eulersolve/550.cpp: 0.399
+551:
+  solvers/551.py: 0.154
+  solvers/eulersolve/551.py: 0.639
+  solvers/eulersolve/551.cpp: 0.111
+552:
+  solvers/552.py: 66.467
+  solvers/eulersolve/552.py: 2.977
+  solvers/eulersolve/552.cpp: 1.695
+553:
+  solvers/553.py: 0.891
+  solvers/eulersolve/553.py: 5.198
+  solvers/eulersolve/553.cpp: 0.346
+554:
+  solvers/554.py: 0.791
+  solvers/eulersolve/554.py: 0.730
+  solvers/eulersolve/554.cpp: 0.554
+555:
+  solvers/555.py: 0.273
+  solvers/eulersolve/555.py: 0.063
+  solvers/eulersolve/555.cpp: 0.005
+556:
+  solvers/556.py: 1.137
+  solvers/eulersolve/556.py: 1.317
+  solvers/eulersolve/556.cpp: 0.437
+557:
+  solvers/557.py: 13.987
+  solvers/eulersolve/557.py: 64.127
+  solvers/eulersolve/557.cpp: 46.787
+558:
+  solvers/558.py: 102.015
+  solvers/eulersolve/558.py: 9.990
+  solvers/eulersolve/558.cpp: 2.565
+559:
+  solvers/559.py: 3.744
+  solvers/eulersolve/559.py: 5.939
+  solvers/eulersolve/559.cpp: 4.011
+560:
+  solvers/560.py: 0.397
+  solvers/eulersolve/560.py: 0.709
+  solvers/eulersolve/560.cpp: 0.206
+561:
+  solvers/561.py: 0.065
+  solvers/eulersolve/561.py: 0.055
+  solvers/eulersolve/561.cpp: 0.002
+562:
+  solvers/562.py: 0.416
+  solvers/eulersolve/562.py: 14.994
+  solvers/eulersolve/562.cpp: 6.489
+563:
+  solvers/563.py: 4.428
+  solvers/eulersolve/563.py: 21.900
+  solvers/eulersolve/563.cpp: 6.815
+564:
+  solvers/564.py: 2.307
+  solvers/eulersolve/564.py: 9.658
+  solvers/eulersolve/564.cpp: 8.982
+565:
+  solvers/565.py: 16.009
+  solvers/eulersolve/565.py: 0.926
+  solvers/eulersolve/565.cpp: 0.467
+566:
+  solvers/566.py: 0.101
+  solvers/eulersolve/566.py: 22.990
+  solvers/eulersolve/566.cpp: 7.466
+567:
+  solvers/567.py: 0.101
+  solvers/eulersolve/567.py: 0.056
+  solvers/eulersolve/567.cpp: 0.003
+568:
+  solvers/568.py: 0.122
+  solvers/eulersolve/568.py: 0.067
+  solvers/eulersolve/568.cpp: 0.002
+569:
+  solvers/569.py: 2.061
+  solvers/eulersolve/569.py: 11.395
+  solvers/eulersolve/569.cpp: 10.445
+570:
+  solvers/570.py: 3.488
+  solvers/eulersolve/570.py: 3.721
+  solvers/eulersolve/570.cpp: 2.244
+571:
+  solvers/571.py: 37.492
+  solvers/eulersolve/571.py: 24.582
+  solvers/eulersolve/571.cpp: 4.546
+572:
+  solvers/572.py: 1.163
+  solvers/eulersolve/572.py: 19.323
+  solvers/eulersolve/572.cpp: 2.674
+573:
+  solvers/573.py: 0.105
+  solvers/eulersolve/573.py: 0.112
+  solvers/eulersolve/573.cpp: 0.161
+574:
+  solvers/574.py: 0.247
+  solvers/eulersolve/574.py: 2.450
+  solvers/eulersolve/574.cpp: 0.262
+575:
+  solvers/575.py: 0.072
+  solvers/eulersolve/575.py: 0.056
+  solvers/eulersolve/575.cpp: 0.003
+576:
+  solvers/576.py: 6.163
+  solvers/eulersolve/576.py: 8.741
+  solvers/eulersolve/576.cpp: 1.662
+577:
+  solvers/577.py: 0.105
+  solvers/eulersolve/577.py: 0.055
+  solvers/eulersolve/577.cpp: 0.003
+578:
+  solvers/578.py: 24.776
+  solvers/eulersolve/578.py: 34.013
+  solvers/eulersolve/578.cpp: 10.729
+579:
+  solvers/579.py: 1.650
+  solvers/eulersolve/579.py: 43.494
+  solvers/eulersolve/579.cpp: 11.890
+580:
+  solvers/580.py: 3.210
+  solvers/eulersolve/580.py: 3.751
+  solvers/eulersolve/580.cpp: 1.432
+581:
+  solvers/581.py: 3.398
+  solvers/eulersolve/581.py: 5.322
+  solvers/eulersolve/581.cpp: 1.896
+582:
+  solvers/582.py: 0.159
+  solvers/eulersolve/582.py: 0.101
+  solvers/eulersolve/582.cpp: 0.022
+583:
+  solvers/583.py: 25.482
+  solvers/eulersolve/583.py: 46.628
+  solvers/eulersolve/583.cpp: 5.169
+584:
+  solvers/584.py: 1.663
+  solvers/eulersolve/584.py: 3.592
+  solvers/eulersolve/584.cpp: 4.444
+585:
+  solvers/585.py: 0.523
+  solvers/eulersolve/585.py: 15.065
+  solvers/eulersolve/585.cpp: 1.507
+586:
+  solvers/586.py: 0.397
+  solvers/eulersolve/586.py: 0.557
+  solvers/eulersolve/586.cpp: 0.220
+587:
+  solvers/587.py: 0.075
+  solvers/eulersolve/587.py: 0.061
+  solvers/eulersolve/587.cpp: 0.003
+588:
+  solvers/588.py: 0.102
+  solvers/eulersolve/588.py: 0.059
+  solvers/eulersolve/588.cpp: 0.003
+589:
+  solvers/589.py: 3.219
+  solvers/eulersolve/589.py: 10.586
+  solvers/eulersolve/589.cpp: 0.649
+590:
+  solvers/590.py: 0.263
+  solvers/eulersolve/590.py: 0.866
+  solvers/eulersolve/590.cpp: 0.255
+591:
+  solvers/591.py: 0.755
+  solvers/eulersolve/591.py: 68.800
+  solvers/eulersolve/591.cpp: 2.238
+592:
+  solvers/592.py: 0.168
+  solvers/eulersolve/592.py: 1.299
+  solvers/eulersolve/592.cpp: 0.044
+593:
+  solvers/593.py: 1.373
+  solvers/eulersolve/593.py: 6.177
+  solvers/eulersolve/593.cpp: 1.640
+594:
+  solvers/594.py: 0.178
+  solvers/eulersolve/594.py: 3.323
+  solvers/eulersolve/594.cpp: 0.343
+595:
+  solvers/595.py: 0.237
+  solvers/eulersolve/595.py: 0.161
+  solvers/eulersolve/595.cpp: 0.006
+596:
+  solvers/596.py: 5.341
+  solvers/eulersolve/596.py: 4.509
+  solvers/eulersolve/596.cpp: 2.452
+597:
+  solvers/597.py: 0.117
+  solvers/eulersolve/597.py: 0.192
+  solvers/eulersolve/597.cpp: 0.006
+598:
+  solvers/598.py: 0.681
+  solvers/eulersolve/598.py: 0.377
+  solvers/eulersolve/598.cpp: 0.027
+599:
+  solvers/599.py: 0.099
+  solvers/eulersolve/599.py: 0.066
+  solvers/eulersolve/599.cpp: 6.694
+600:
+  solvers/600.py: 0.084
+  solvers/eulersolve/600.py: 0.063
+  solvers/eulersolve/600.cpp: 0.003
+601:
+  solvers/601.py: 0.056
+  solvers/eulersolve/601.py: 0.054
+  solvers/eulersolve/601.cpp: 0.003
+602:
+  solvers/602.py: 0.797
+  solvers/eulersolve/602.py: 0.707
+  solvers/eulersolve/602.cpp: 0.360
+603:
+  solvers/603.py: 0.352
+  solvers/eulersolve/603.py: 1.184
+  solvers/eulersolve/603.cpp: 0.095
+604:
+  solvers/604.py: 0.183
+  solvers/eulersolve/604.py: 0.209
+  solvers/eulersolve/604.cpp: 0.067
+605:
+  solvers/605.py: 0.093
+  solvers/eulersolve/605.py: 0.057
+  solvers/eulersolve/605.cpp: 0.003
+606:
+  solvers/606.py: 6.217
+  solvers/eulersolve/606.py: 9.298
+  solvers/eulersolve/606.cpp: 3.263
+607:
+  solvers/607.py: 0.088
+  solvers/eulersolve/607.py: 0.059
+  solvers/eulersolve/607.cpp: 0.004
+608:
+  solvers/608.py: 3.452
+  solvers/eulersolve/608.py: 2.138
+  solvers/eulersolve/608.cpp: 0.874
+609:
+  solvers/609.py: 13.965
+  solvers/eulersolve/609.py: 2.742
+  solvers/eulersolve/609.cpp: 0.748
+610:
+  solvers/610.py: 0.173
+  solvers/eulersolve/610.py: 0.096
+  solvers/eulersolve/610.cpp: 0.003
+611:
+  solvers/611.py: 12.964
+  solvers/eulersolve/611.py: 10.833
+  solvers/eulersolve/611.cpp: 1.213
+612:
+  solvers/612.py: 0.122
+  solvers/eulersolve/612.py: 0.064
+  solvers/eulersolve/612.cpp: 0.003
+613:
+  solvers/613.py: 0.061
+  solvers/eulersolve/613.py: 0.106
+  solvers/eulersolve/613.cpp: 0.138
+614:
+  solvers/614.py: 0.066
+  solvers/eulersolve/614.py: 15.046
+  solvers/eulersolve/614.cpp: 3.963
+615:
+  solvers/615.py: 10.299
+  solvers/eulersolve/615.py: 0.460
+  solvers/eulersolve/615.cpp: 0.138
+616:
+  solvers/616.py: 0.416
+  solvers/eulersolve/616.py: 0.306
+  solvers/eulersolve/616.cpp: 0.048
+617:
+  solvers/617.py: 0.111
+  solvers/eulersolve/617.py: 0.058
+  solvers/eulersolve/617.cpp: 0.003
+618:
+  solvers/618.py: 0.616
+  solvers/eulersolve/618.py: 0.298
+  solvers/eulersolve/618.cpp: 0.186
+619:
+  solvers/619.py: 0.526
+  solvers/eulersolve/619.py: 0.553
+  solvers/eulersolve/619.cpp: 0.073
+620:
+  solvers/620.py: 1.225
+  solvers/eulersolve/620.py: 0.425
+  solvers/eulersolve/620.cpp: 1.858
+621:
+  solvers/621.py: 0.303
+  solvers/eulersolve/621.py: 0.142
+  solvers/eulersolve/621.cpp: 0.012
+622:
+  solvers/622.py: 2.659
+  solvers/eulersolve/622.py: 0.091
+  solvers/eulersolve/622.cpp: 0.003
+623:
+  solvers/623.py: 8.766
+  solvers/eulersolve/623.py: 2.877
+  solvers/eulersolve/623.cpp: 0.139
+624:
+  solvers/624.py: 0.127
+  solvers/eulersolve/624.py: 0.061
+  solvers/eulersolve/624.cpp: 0.002
+625:
+  solvers/625.py: 1.877
+  solvers/eulersolve/625.py: 3.024
+  solvers/eulersolve/625.cpp: 1.430
+626:
+  solvers/626.py: 0.216
+  solvers/eulersolve/626.py: 1.668
+  solvers/eulersolve/626.cpp: 0.170
+627:
+  solvers/627.py: 0.122
+  solvers/eulersolve/627.py: 0.059
+  solvers/eulersolve/627.cpp: 0.014
+628:
+  solvers/628.py: 0.785
+  solvers/eulersolve/628.py: 0.521
+  solvers/eulersolve/628.cpp: 0.536
+629:
+  solvers/629.py: 0.164
+  solvers/eulersolve/629.py: 0.100
+  solvers/eulersolve/629.cpp: 0.020
+630:
+  solvers/630.py: 1.051
+  solvers/eulersolve/630.py: 15.008
+  solvers/eulersolve/630.cpp: 0.348
+631:
+  solvers/631.py: 1.760
+  solvers/eulersolve/631.py: 0.110
+  solvers/eulersolve/631.cpp: 0.007
+632:
+  solvers/632.py: 5.078
+  solvers/eulersolve/632.py: 4.475
+  solvers/eulersolve/632.cpp: 1.638
+633:
+  solvers/633.py: 0.246
+  solvers/eulersolve/633.py: 0.316
+  solvers/eulersolve/633.cpp: 0.039
+634:
+  solvers/634.py: 0.213
+  solvers/eulersolve/634.py: 0.156
+  solvers/eulersolve/634.cpp: 0.014
+635:
+  solvers/635.py: 6.251
+  solvers/eulersolve/635.py: 6.500
+  solvers/eulersolve/635.cpp: 3.119
+636:
+  solvers/636.py: 3.425
+  solvers/eulersolve/636.py: 3.384
+  solvers/eulersolve/636.cpp: 1.920
+637:
+  solvers/637.py: 26.787
+  solvers/eulersolve/637.py: 58.593
+  solvers/eulersolve/637.cpp: 1.961
+638:
+  solvers/638.py: 0.270
+  solvers/eulersolve/638.py: 0.188
+  solvers/eulersolve/638.cpp: 0.074
+639:
+  solvers/639.py: 4.653
+  solvers/eulersolve/639.py: 1.657
+  solvers/eulersolve/639.cpp: 1.212
+640:
+  solvers/640.py: 1.630
+  solvers/eulersolve/640.py: 21.123
+  solvers/eulersolve/640.cpp: 11.276
+641:
+  solvers/641.py: 1.280
+  solvers/eulersolve/641.py: 1.670
+  solvers/eulersolve/641.cpp: 0.159
+642:
+  solvers/642.py: 47.987
+  solvers/eulersolve/642.py: 2.125
+  solvers/eulersolve/642.cpp: 0.926
+643:
+  solvers/643.py: 1.146
+  solvers/eulersolve/643.py: 1.384
+  solvers/eulersolve/643.cpp: 1.001
+644:
+  solvers/644.py: 3.547
+  solvers/eulersolve/644.py: 5.088
+  solvers/eulersolve/644.cpp: 6.140
+645:
+  solvers/645.py: 0.117
+  solvers/eulersolve/645.py: 0.076
+  solvers/eulersolve/645.cpp: 0.029
+646:
+  solvers/646.py: 14.765
+  solvers/eulersolve/646.py: 14.284
+  solvers/eulersolve/646.cpp: 1.081
+647:
+  solvers/647.py: 0.119
+  solvers/eulersolve/647.py: 0.072
+  solvers/eulersolve/647.cpp: 0.003
+648:
+  solvers/648.py: 1.187
+  solvers/eulersolve/648.py: 0.972
+  solvers/eulersolve/648.cpp: 0.080
+649:
+  solvers/649.py: 0.146
+  solvers/eulersolve/649.py: 0.557
+  solvers/eulersolve/649.cpp: 0.048
+650:
+  solvers/650.py: 30.908
+  solvers/eulersolve/650.py: 0.605
+  solvers/eulersolve/650.cpp: 0.427
+651:
+  solvers/651.py: 0.202
+  solvers/eulersolve/651.py: 0.114
+  solvers/eulersolve/651.cpp: 0.029
+652:
+  solvers/652.py: 0.081
+  solvers/eulersolve/652.py: 0.063
+  solvers/eulersolve/652.cpp: 0.004
+653:
+  solvers/653.py: 0.148
+  solvers/eulersolve/653.py: 0.139
+  solvers/eulersolve/653.cpp: 0.020
+654:
+  solvers/654.py: 1.801
+  solvers/eulersolve/654.py: "error: failed (exit 1)"
+  solvers/eulersolve/654.cpp: 3.302
+655:
+  solvers/655.py: 38.562
+  solvers/eulersolve/655.py: 38.477
+  solvers/eulersolve/655.cpp: 7.892
+656:
+  solvers/656.py: 0.107
+  solvers/eulersolve/656.py: 0.091
+  solvers/eulersolve/656.cpp: 0.003
+657:
+  solvers/657.py: 0.089
+  solvers/eulersolve/657.py: 3.644
+  solvers/eulersolve/657.cpp: 1.666
+658:
+  solvers/658.py: 1.087
+  solvers/eulersolve/658.py: 3.625
+  solvers/eulersolve/658.cpp: 1.661
+659:
+  solvers/659.py: 1.456
+  solvers/eulersolve/659.py: 2.282
+  solvers/eulersolve/659.cpp: 1.134
+660:
+  solvers/660.py: 6.946
+  solvers/eulersolve/660.py: 36.445
+  solvers/eulersolve/660.cpp: 2.388
+661:
+  solvers/661.py: 0.063
+  solvers/eulersolve/661.py: 0.101
+  solvers/eulersolve/661.cpp: 0.003
+662:
+  solvers/662.py: 94.847
+  solvers/eulersolve/662.py: 66.275
+  solvers/eulersolve/662.cpp: 7.064
+663:
+  solvers/663.py: 2.536
+  solvers/eulersolve/663.py: 19.675
+  solvers/eulersolve/663.cpp: 6.590
+664:
+  solvers/664.py: 0.115
+  solvers/eulersolve/664.py: 5.946
+  solvers/eulersolve/664.cpp: 0.013
+665:
+  solvers/665.py: 2.510
+  solvers/eulersolve/665.py: 41.947
+  solvers/eulersolve/665.cpp: 2.476
+666:
+  solvers/666.py: 0.121
+  solvers/eulersolve/666.py: 0.066
+  solvers/eulersolve/666.cpp: 0.002
+667:
+  solvers/667.py: 6.725
+  solvers/eulersolve/667.py: 30.704
+  solvers/eulersolve/667.cpp: 24.689
+668:
+  solvers/668.py: 0.387
+  solvers/eulersolve/668.py: 0.637
+  solvers/eulersolve/668.cpp: 0.242
+669:
+  solvers/669.py: 0.085
+  solvers/eulersolve/669.py: 0.054
+  solvers/eulersolve/669.cpp: 0.002
+670:
+  solvers/670.py: 1.598
+  solvers/eulersolve/670.py: 1.428
+  solvers/eulersolve/670.cpp: 0.274
+671:
+  solvers/671.py: 0.198
+  solvers/eulersolve/671.py: 5.495
+  solvers/eulersolve/671.cpp: 0.669
+672:
+  solvers/672.py: 0.102
+  solvers/eulersolve/672.py: 0.061
+  solvers/eulersolve/672.cpp: 0.002
+673:
+  solvers/673.py: 0.104
+  solvers/eulersolve/673.py: 0.064
+  solvers/eulersolve/673.cpp: 0.002
+674:
+  solvers/674.py: 3.307
+  solvers/eulersolve/674.py: 1.654
+  solvers/eulersolve/674.cpp: 1.053
+675:
+  solvers/675.py: 46.059
+  solvers/eulersolve/675.py: 2.139
+  solvers/eulersolve/675.cpp: 0.948
+676:
+  solvers/676.py: 0.095
+  solvers/eulersolve/676.py: 0.071
+  solvers/eulersolve/676.cpp: 0.003
+677:
+  solvers/677.py: 2.102
+  solvers/eulersolve/677.py: 2.107
+  solvers/eulersolve/677.cpp: 0.829
+678:
+  solvers/678.py: 5.441
+  solvers/eulersolve/678.py: 22.288
+  solvers/eulersolve/678.cpp: 11.834
+679:
+  solvers/679.py: 0.102
+  solvers/eulersolve/679.py: 0.071
+  solvers/eulersolve/679.cpp: 0.003
+680:
+  solvers/680.py: 105.370
+  solvers/eulersolve/680.py: 46.378
+  solvers/eulersolve/680.cpp: 4.448
+681:
+  solvers/681.py: 122.323
+  solvers/eulersolve/681.py: 94.303
+  solvers/eulersolve/681.cpp: 39.421
+682:
+  solvers/682.py: 0.070
+  solvers/eulersolve/682.py: 0.193
+  solvers/eulersolve/682.cpp: 0.129
+683:
+  solvers/683.py: 0.152
+  solvers/eulersolve/683.py: 0.267
+  solvers/eulersolve/683.cpp: 0.634
+684:
+  solvers/684.py: 0.066
+  solvers/eulersolve/684.py: 0.059
+  solvers/eulersolve/684.cpp: 0.003
+685:
+  solvers/685.py: 0.272
+  solvers/eulersolve/685.py: 0.289
+  solvers/eulersolve/685.cpp: 0.094
+686:
+  solvers/686.py: 0.718
+  solvers/eulersolve/686.py: 0.398
+  solvers/eulersolve/686.cpp: 0.531
+687:
+  solvers/687.py: 0.108
+  solvers/eulersolve/687.py: 0.575
+  solvers/eulersolve/687.cpp: 0.026
+688:
+  solvers/688.py: 6.874
+  solvers/eulersolve/688.py: 3.748
+  solvers/eulersolve/688.cpp: 2.003
+689:
+  solvers/689.py: 0.195
+  solvers/eulersolve/689.py: 27.674
+  solvers/eulersolve/689.cpp: 143.728
+690:
+  solvers/690.py: 0.185
+  solvers/eulersolve/690.py: 0.137
+  solvers/eulersolve/690.cpp: 0.045
+691:
+  solvers/691.py: 2.168
+  solvers/eulersolve/691.py: 7.815
+  solvers/eulersolve/691.cpp: 0.385
+692:
+  solvers/692.py: 0.077
+  solvers/eulersolve/692.py: 0.060
+  solvers/eulersolve/692.cpp: 0.002
+693:
+  solvers/693.py: 6.818
+  solvers/eulersolve/693.py: 5.461
+  solvers/eulersolve/693.cpp: 5.929
+694:
+  solvers/694.py: 0.592
+  solvers/eulersolve/694.py: 0.256
+  solvers/eulersolve/694.cpp: 0.035
+695:
+  solvers/695.py: 0.220
+  solvers/eulersolve/695.py: 4.845
+  solvers/eulersolve/695.cpp: 3.274
+696:
+  solvers/696.py: 0.286
+  solvers/eulersolve/696.py: 0.368
+  solvers/eulersolve/696.cpp: 0.144
+697:
+  solvers/697.py: 0.113
+  solvers/eulersolve/697.py: 0.055
+  solvers/eulersolve/697.cpp: 0.003
+698:
+  solvers/698.py: 0.090
+  solvers/eulersolve/698.py: 0.074
+  solvers/eulersolve/698.cpp: 0.002
+699:
+  solvers/699.py: 0.968
+  solvers/eulersolve/699.py: 0.825
+  solvers/eulersolve/699.cpp: 0.174
+700:
+  solvers/700.py: 1.233
+  solvers/eulersolve/700.py: 0.410
+  solvers/eulersolve/700.cpp: 0.074
+701:
+  solvers/701.py: 40.357
+  solvers/eulersolve/701.py: 54.200
+  solvers/eulersolve/701.cpp: 3.102
+702:
+  solvers/702.py: 0.079
+  solvers/eulersolve/702.py: 0.056
+  solvers/eulersolve/702.cpp: 0.004
+703:
+  solvers/703.py: 0.227
+  solvers/eulersolve/703.py: 0.416
+  solvers/eulersolve/703.cpp: 0.135
+704:
+  solvers/704.py: 0.133
+  solvers/eulersolve/704.py: 0.059
+  solvers/eulersolve/704.cpp: 0.311
+705:
+  solvers/705.py: 65.249
+  solvers/eulersolve/705.py: 11.733
+  solvers/eulersolve/705.cpp: 2.598
+706:
+  solvers/706.py: 0.124
+  solvers/eulersolve/706.py: 0.187
+  solvers/eulersolve/706.cpp: 0.027
+707:
+  solvers/707.py: 0.228
+  solvers/eulersolve/707.py: 1.585
+  solvers/eulersolve/707.cpp: 0.037
+708:
+  solvers/708.py: 3.549
+  solvers/eulersolve/708.py: 3.549
+  solvers/eulersolve/708.cpp: 1.999
+709:
+  solvers/709.py: 3.460
+  solvers/eulersolve/709.py: 1.957
+  solvers/eulersolve/709.cpp: 0.284
+710:
+  solvers/710.py: 0.276
+  solvers/eulersolve/710.py: 0.076
+  solvers/eulersolve/710.cpp: 0.017
+711:
+  solvers/711.py: 0.244
+  solvers/eulersolve/711.py: 0.147
+  solvers/eulersolve/711.cpp: 0.077
+712:
+  solvers/712.py: 95.006
+  solvers/eulersolve/712.py: 35.030
+  solvers/eulersolve/712.cpp: 4.456
+713:
+  solvers/713.py: 0.068
+  solvers/eulersolve/713.py: 0.090
+  solvers/eulersolve/713.cpp: 0.024
+714:
+  solvers/714.py: 5.339
+  solvers/eulersolve/714.py: 1.853
+  solvers/eulersolve/714.cpp: 2.690
+715:
+  solvers/715.py: 77.257
+  solvers/eulersolve/715.py: 22.915
+  solvers/eulersolve/715.cpp: 5.758
+716:
+  solvers/716.py: 0.091
+  solvers/eulersolve/716.py: 0.054
+  solvers/eulersolve/716.cpp: 0.003
+717:
+  solvers/717.py: 0.906
+  solvers/eulersolve/717.py: 0.519
+  solvers/eulersolve/717.cpp: 0.332
+718:
+  solvers/718.py: 1.549
+  solvers/eulersolve/718.py: 24.191
+  solvers/eulersolve/718.cpp: 3.420
+719:
+  solvers/719.py: 1.035
+  solvers/eulersolve/719.py: 0.794
+  solvers/eulersolve/719.cpp: 0.097
+720:
+  solvers/720.py: 0.634
+  solvers/eulersolve/720.py: 1.626
+  solvers/eulersolve/720.cpp: 0.621
+721:
+  solvers/721.py: 9.884
+  solvers/eulersolve/721.py: 9.902
+  solvers/eulersolve/721.cpp: 2.701
+722:
+  solvers/722.py: 0.086
+  solvers/eulersolve/722.py: 0.069
+  solvers/eulersolve/722.cpp: 0.010
+723:
+  solvers/723.py: 1.192
+  solvers/eulersolve/723.py: 0.054
+  solvers/eulersolve/723.cpp: 0.002
+724:
+  solvers/724.py: 0.190
+  solvers/eulersolve/724.py: 0.068
+  solvers/eulersolve/724.cpp: 0.002
+725:
+  solvers/725.py: 0.168
+  solvers/eulersolve/725.py: 0.102
+  solvers/eulersolve/725.cpp: 0.011
+726:
+  solvers/726.py: 0.511
+  solvers/eulersolve/726.py: 0.382
+  solvers/eulersolve/726.cpp: 0.190
+727:
+  solvers/727.py: 0.214
+  solvers/eulersolve/727.py: 0.115
+  solvers/eulersolve/727.cpp: 0.013
+728:
+  solvers/728.py: 0.754
+  solvers/eulersolve/728.py: 2.129
+  solvers/eulersolve/728.cpp: 1.603
+729:
+  solvers/729.py: 62.867
+  solvers/eulersolve/729.py: 4.653
+  solvers/eulersolve/729.cpp: 5.052
+730:
+  solvers/730.py: 34.591
+  solvers/eulersolve/730.py: 31.019
+  solvers/eulersolve/730.cpp: 6.957
+731:
+  solvers/731.py: 0.084
+  solvers/eulersolve/731.py: 0.059
+  solvers/eulersolve/731.cpp: 0.002
+732:
+  solvers/732.py: 0.382
+  solvers/eulersolve/732.py: 0.185
+  solvers/eulersolve/732.cpp: 0.028
+733:
+  solvers/733.py: 8.167
+  solvers/eulersolve/733.py: 2.660
+  solvers/eulersolve/733.cpp: 1.160
+734:
+  solvers/734.py: 0.689
+  solvers/eulersolve/734.py: 0.335
+  solvers/eulersolve/734.cpp: 0.122
+735:
+  solvers/735.py: 16.234
+  solvers/eulersolve/735.py: 18.988
+  solvers/eulersolve/735.cpp: 10.442
+736:
+  solvers/736.py: 0.158
+  solvers/eulersolve/736.py: 0.075
+  solvers/eulersolve/736.cpp: 0.003
+737:
+  solvers/737.py: 0.165
+  solvers/eulersolve/737.py: 0.086
+  solvers/eulersolve/737.cpp: 0.022
+738:
+  solvers/738.py: 3.772
+  solvers/eulersolve/738.py: 2.606
+  solvers/eulersolve/738.cpp: 1.523
+739:
+  solvers/739.py: 2.505
+  solvers/eulersolve/739.py: 4.946
+  solvers/eulersolve/739.cpp: 1.827
+740:
+  solvers/740.py: 1.920
+  solvers/eulersolve/740.py: 6.496
+  solvers/eulersolve/740.cpp: 0.402
+741:
+  solvers/741.py: 0.868
+  solvers/eulersolve/741.py: 1.358
+  solvers/eulersolve/741.cpp: 0.792
+742:
+  solvers/742.py: 0.898
+  solvers/eulersolve/742.py: 1.814
+  solvers/eulersolve/742.cpp: 0.256
+743:
+  solvers/743.py: 3.036
+  solvers/eulersolve/743.py: 2.856
+  solvers/eulersolve/743.cpp: 1.380
+744:
+  solvers/744.py: 0.135
+  solvers/eulersolve/744.py: 0.057
+  solvers/eulersolve/744.cpp: 0.002
+745:
+  solvers/745.py: 2.681
+  solvers/eulersolve/745.py: 0.690
+  solvers/eulersolve/745.cpp: 0.332
+746:
+  solvers/746.py: 0.210
+  solvers/eulersolve/746.py: 6.564
+  solvers/eulersolve/746.cpp: 0.322
+747:
+  solvers/747.py: 17.801
+  solvers/eulersolve/747.py: 19.908
+  solvers/eulersolve/747.cpp: 2.431
+748:
+  solvers/748.py: 2.359
+  solvers/eulersolve/748.py: 5.055
+  solvers/eulersolve/748.cpp: 2.018
+749:
+  solvers/749.py: 1.652
+  solvers/eulersolve/749.py: 27.096
+  solvers/eulersolve/749.cpp: 2.631
+750:
+  solvers/750.py: 1.133
+  solvers/eulersolve/750.py: 0.807
+  solvers/eulersolve/750.cpp: 0.238
+751:
+  solvers/751.py: 0.089
+  solvers/eulersolve/751.py: 0.123
+  solvers/eulersolve/751.cpp: 0.004
+752:
+  solvers/752.py: 5.407
+  solvers/eulersolve/752.py: 0.394
+  solvers/eulersolve/752.cpp: 0.148
+753:
+  solvers/753.py: 0.203
+  solvers/eulersolve/753.py: 5.740
+  solvers/eulersolve/753.cpp: 10.330
+754:
+  solvers/754.py: 105.190
+  solvers/eulersolve/754.py: 5.435
+  solvers/eulersolve/754.cpp: 1.940
+755:
+  solvers/755.py: 0.098
+  solvers/eulersolve/755.py: 0.055
+  solvers/eulersolve/755.cpp: 0.003
+756:
+  solvers/756.py: 0.108
+  solvers/eulersolve/756.py: 0.606
+  solvers/eulersolve/756.cpp: 0.252
+757:
+  solvers/757.py: 28.238
+  solvers/eulersolve/757.py: 79.173
+  solvers/eulersolve/757.cpp: 4.111
+758:
+  solvers/758.py: 0.408
+  solvers/eulersolve/758.py: 0.516
+  solvers/eulersolve/758.cpp: 0.126
+759:
+  solvers/759.py: 0.092
+  solvers/eulersolve/759.py: 0.075
+  solvers/eulersolve/759.cpp: 0.002
+760:
+  solvers/760.py: 0.113
+  solvers/eulersolve/760.py: 0.072
+  solvers/eulersolve/760.cpp: 0.002
+761:
+  solvers/761.py: 1.908
+  solvers/eulersolve/761.py: 0.072
+  solvers/eulersolve/761.cpp: 0.003
+762:
+  solvers/762.py: 0.217
+  solvers/eulersolve/762.py: 0.073
+  solvers/eulersolve/762.cpp: 0.002
+763:
+  solvers/763.py: 1.871
+  solvers/eulersolve/763.py: 17.590
+  solvers/eulersolve/763.cpp: 1.563
+764:
+  solvers/764.py: 0.312
+  solvers/eulersolve/764.py: 2.371
+  solvers/eulersolve/764.cpp: 1.305
+765:
+  solvers/765.py: 0.104
+  solvers/eulersolve/765.py: 0.179
+  solvers/eulersolve/765.cpp: 0.003
+766:
+  solvers/766.py: 12.830
+  solvers/eulersolve/766.py: 11.763
+  solvers/eulersolve/766.cpp: 1.740
+767:
+  solvers/767.py: 1.240
+  solvers/eulersolve/767.py: 1.086
+  solvers/eulersolve/767.cpp: 0.817
+768:
+  solvers/768.py: 0.113
+  solvers/eulersolve/768.py: 0.152
+  solvers/eulersolve/768.cpp: 0.019
+769:
+  solvers/769.py: 5.687
+  solvers/eulersolve/769.py: 7.827
+  solvers/eulersolve/769.cpp: 5.808
+770:
+  solvers/770.py: 0.097
+  solvers/eulersolve/770.py: 0.057
+  solvers/eulersolve/770.cpp: 0.003
+771:
+  solvers/771.py: 1.992
+  solvers/eulersolve/771.py: 0.074
+  solvers/eulersolve/771.cpp: 0.004
+772:
+  solvers/772.py: 0.633
+  solvers/eulersolve/772.py: 1.021
+  solvers/eulersolve/772.cpp: 0.214
+773:
+  solvers/773.py: 0.074
+  solvers/eulersolve/773.py: 0.059
+  solvers/eulersolve/773.cpp: 0.003
+774:
+  solvers/774.py: 19.126
+  solvers/eulersolve/774.py: 2.868
+  solvers/eulersolve/774.cpp: 0.124
+775:
+  solvers/775.py: 0.263
+  solvers/eulersolve/775.py: 0.175
+  solvers/eulersolve/775.cpp: 0.022
+776:
+  solvers/776.py: 0.173
+  solvers/eulersolve/776.py: 0.084
+  solvers/eulersolve/776.cpp: 0.004
+777:
+  solvers/777.py: 0.195
+  solvers/eulersolve/777.py: 0.652
+  solvers/eulersolve/777.cpp: 0.179
+778:
+  solvers/778.py: 0.108
+  solvers/eulersolve/778.py: 0.064
+  solvers/eulersolve/778.cpp: 0.003
+779:
+  solvers/779.py: 0.184
+  solvers/eulersolve/779.py: 1.802
+  solvers/eulersolve/779.cpp: 1.017
+780:
+  solvers/780.py: 4.671
+  solvers/eulersolve/780.py: 1.816
+  solvers/eulersolve/780.cpp: 1.229
+781:
+  solvers/781.py: 0.653
+  solvers/eulersolve/781.py: 9.896
+  solvers/eulersolve/781.cpp: 1.953
+782:
+  solvers/782.py: 4.005
+  solvers/eulersolve/782.py: 18.318
+  solvers/eulersolve/782.cpp: 2.593
+783:
+  solvers/783.py: 0.127
+  solvers/eulersolve/783.py: 27.942
+  solvers/eulersolve/783.cpp: 0.017
+784:
+  solvers/784.py: 5.414
+  solvers/eulersolve/784.py: 14.860
+  solvers/eulersolve/784.cpp: 2.178
+785:
+  solvers/785.py: 1.492
+  solvers/eulersolve/785.py: 10.796
+  solvers/eulersolve/785.cpp: 5.001
+786:
+  solvers/786.py: 0.977
+  solvers/eulersolve/786.py: 0.780
+  solvers/eulersolve/786.cpp: 0.398
+787:
+  solvers/787.py: 0.364
+  solvers/eulersolve/787.py: 0.301
+  solvers/eulersolve/787.cpp: 0.090
+788:
+  solvers/788.py: 0.914
+  solvers/eulersolve/788.py: 0.069
+  solvers/eulersolve/788.cpp: 0.027
+789:
+  solvers/789.py: 4.265
+  solvers/eulersolve/789.py: 8.077
+  solvers/eulersolve/789.cpp: 2.402
+790:
+  solvers/790.py: 9.579
+  solvers/eulersolve/790.py: 5.758
+  solvers/eulersolve/790.cpp: 1.562
+791:
+  solvers/791.py: 4.156
+  solvers/eulersolve/791.py: 6.648
+  solvers/eulersolve/791.cpp: 2.229
+792:
+  solvers/792.py: 0.549
+  solvers/eulersolve/792.py: 13.808
+  solvers/eulersolve/792.cpp: 0.201
+793:
+  solvers/793.py: 2.609
+  solvers/eulersolve/793.py: 0.463
+  solvers/eulersolve/793.cpp: 0.234
+794:
+  solvers/794.py: 0.340
+  solvers/eulersolve/794.py: 0.160
+  solvers/eulersolve/794.cpp: 0.009
+795:
+  solvers/795.py: 1.103
+  solvers/eulersolve/795.py: 0.751
+  solvers/eulersolve/795.cpp: 0.233
+796:
+  solvers/796.py: 0.419
+  solvers/eulersolve/796.py: 0.064
+  solvers/eulersolve/796.cpp: 0.002
+797:
+  solvers/797.py: 6.615
+  solvers/eulersolve/797.py: 4.533
+  solvers/eulersolve/797.cpp: 2.474
+798:
+  solvers/798.py: 5.988
+  solvers/eulersolve/798.py: 5.205
+  solvers/eulersolve/798.cpp: 1.831
+799:
+  solvers/799.py: 2.430
+  solvers/eulersolve/799.py: 7.293
+  solvers/eulersolve/799.cpp: 5.362
+800:
+  solvers/800.py: 1.119
+  solvers/eulersolve/800.py: 0.286
+  solvers/eulersolve/800.cpp: 0.127
+801:
+  solvers/801.py: 2.727
+  solvers/eulersolve/801.py: 2.956
+  solvers/eulersolve/801.cpp: 1.302
+802:
+  solvers/802.py: 0.503
+  solvers/eulersolve/802.py: 0.600
+  solvers/eulersolve/802.cpp: 0.220
+803:
+  solvers/803.py: 0.730
+  solvers/eulersolve/803.py: 4.378
+  solvers/eulersolve/803.cpp: 0.438
+804:
+  solvers/804.py: 1.553
+  solvers/eulersolve/804.py: 2.800
+  solvers/eulersolve/804.cpp: 0.203
+805:
+  solvers/805.py: 0.421
+  solvers/eulersolve/805.py: 2.877
+  solvers/eulersolve/805.cpp: 1.050
+806:
+  solvers/806.py: 0.327
+  solvers/eulersolve/806.py: 0.216
+  solvers/eulersolve/806.cpp: 0.807
+807:
+  solvers/807.py: 0.116
+  solvers/eulersolve/807.py: 19.198
+  solvers/eulersolve/807.cpp: 2.107
+808:
+  solvers/808.py: 2.932
+  solvers/eulersolve/808.py: 1.580
+  solvers/eulersolve/808.cpp: 0.409
+809:
+  solvers/809.py: 0.101
+  solvers/eulersolve/809.py: 0.060
+  solvers/eulersolve/809.cpp: 0.003
+810:
+  solvers/810.py: 51.788
+  solvers/eulersolve/810.py: 2.244
+  solvers/eulersolve/810.cpp: 1.274
+811:
+  solvers/811.py: 0.097
+  solvers/eulersolve/811.py: 0.123
+  solvers/eulersolve/811.cpp: 0.020
+812:
+  solvers/812.py: 0.334
+  solvers/eulersolve/812.py: 1.089
+  solvers/eulersolve/812.cpp: 0.032
+813:
+  solvers/813.py: 0.103
+  solvers/eulersolve/813.py: 0.063
+  solvers/eulersolve/813.cpp: 0.002
+814:
+  solvers/814.py: 1.466
+  solvers/eulersolve/814.py: 1.259
+  solvers/eulersolve/814.cpp: 0.262
+815:
+  solvers/815.py: 0.862
+  solvers/eulersolve/815.py: 2.217
+  solvers/eulersolve/815.cpp: 1.580
+816:
+  solvers/816.py: 9.427
+  solvers/eulersolve/816.py: 7.080
+  solvers/eulersolve/816.cpp: 0.559
+817:
+  solvers/817.py: 0.217
+  solvers/eulersolve/817.py: 0.154
+  solvers/eulersolve/817.cpp: 0.033
+818:
+  solvers/818.py: 0.575
+  solvers/eulersolve/818.py: 20.493
+  solvers/eulersolve/818.cpp: 7.760
+819:
+  solvers/819.py: 0.112
+  solvers/eulersolve/819.py: 0.075
+  solvers/eulersolve/819.cpp: 0.017
+820:
+  solvers/820.py: 1.803
+  solvers/eulersolve/820.py: 2.183
+  solvers/eulersolve/820.cpp: 1.249
+821:
+  solvers/821.py: 0.135
+  solvers/eulersolve/821.py: 0.061
+  solvers/eulersolve/821.cpp: 0.003
+822:
+  solvers/822.py: 0.113
+  solvers/eulersolve/822.py: 0.078
+  solvers/eulersolve/822.cpp: 0.007
+823:
+  solvers/823.py: 2.639
+  solvers/eulersolve/823.py: 1.006
+  solvers/eulersolve/823.cpp: 0.199
+824:
+  solvers/824.py: 3.781
+  solvers/eulersolve/824.py: 6.233
+  solvers/eulersolve/824.cpp: 1.601
+825:
+  solvers/825.py: 0.187
+  solvers/eulersolve/825.py: 0.058
+  solvers/eulersolve/825.cpp: 0.003
+826:
+  solvers/826.py: 0.221
+  solvers/eulersolve/826.py: 0.068
+  solvers/eulersolve/826.cpp: 0.006
+827:
+  solvers/827.py: 0.871
+  solvers/eulersolve/827.py: 0.631
+  solvers/eulersolve/827.cpp: 0.070
+828:
+  solvers/828.py: 1.234
+  solvers/eulersolve/828.py: 0.462
+  solvers/eulersolve/828.cpp: 0.412
+829:
+  solvers/829.py: 5.043
+  solvers/eulersolve/829.py: 3.391
+  solvers/eulersolve/829.cpp: 0.874
+830:
+  solvers/830.py: 0.108
+  solvers/eulersolve/830.py: 0.091
+  solvers/eulersolve/830.cpp: 0.005
+831:
+  solvers/831.py: 0.099
+  solvers/eulersolve/831.py: 0.059
+  solvers/eulersolve/831.cpp: 0.002
+832:
+  solvers/832.py: 0.096
+  solvers/eulersolve/832.py: 0.061
+  solvers/eulersolve/832.cpp: 0.002
+833:
+  solvers/833.py: 0.149
+  solvers/eulersolve/833.py: 1.332
+  solvers/eulersolve/833.cpp: 0.193
+834:
+  solvers/834.py: 1.494
+  solvers/eulersolve/834.py: 5.717
+  solvers/eulersolve/834.cpp: 1.008
+835:
+  solvers/835.py: 0.095
+  solvers/eulersolve/835.py: 0.065
+  solvers/eulersolve/835.cpp: 0.004
+836:
+  solvers/836.py: 0.096
+  solvers/eulersolve/836.py: 0.059
+  solvers/eulersolve/836.cpp: 0.002
+837:
+  solvers/837.py: 12.890
+  solvers/eulersolve/837.py: 6.335
+  solvers/eulersolve/837.cpp: 2.778
+838:
+  solvers/838.py: 0.167
+  solvers/eulersolve/838.py: 0.237
+  solvers/eulersolve/838.cpp: 0.019
+839:
+  solvers/839.py: 2.525
+  solvers/eulersolve/839.py: 0.619
+  solvers/eulersolve/839.cpp: 0.178
+840:
+  solvers/840.py: 1.390
+  solvers/eulersolve/840.py: 3.232
+  solvers/eulersolve/840.cpp: 1.060
+841:
+  solvers/841.py: 0.572
+  solvers/eulersolve/841.py: 0.095
+  solvers/eulersolve/841.cpp: 0.037
+842:
+  solvers/842.py: 3.067
+  solvers/eulersolve/842.py: 68.679
+  solvers/eulersolve/842.cpp: 19.403
+843:
+  solvers/843.py: 0.558
+  solvers/eulersolve/843.py: 0.435
+  solvers/eulersolve/843.cpp: 0.023
+844:
+  solvers/844.py: 0.270
+  solvers/eulersolve/844.py: 0.227
+  solvers/eulersolve/844.cpp: 0.032
+845:
+  solvers/845.py: 0.127
+  solvers/eulersolve/845.py: 0.070
+  solvers/eulersolve/845.cpp: 0.003
+846:
+  solvers/846.py: 5.091
+  solvers/eulersolve/846.py: 0.406
+  solvers/eulersolve/846.cpp: 0.078
+847:
+  solvers/847.py: 0.107
+  solvers/eulersolve/847.py: 0.063
+  solvers/eulersolve/847.cpp: 0.002
+848:
+  solvers/848.py: 0.094
+  solvers/eulersolve/848.py: 0.104
+  solvers/eulersolve/848.cpp: 0.003
+849:
+  solvers/849.py: 2.254
+  solvers/eulersolve/849.py: 9.284
+  solvers/eulersolve/849.cpp: 3.170
+850:
+  solvers/850.py: 15.404
+  solvers/eulersolve/850.py: 2.122
+  solvers/eulersolve/850.cpp: 0.492
+851:
+  solvers/851.py: 0.327
+  solvers/eulersolve/851.py: 0.398
+  solvers/eulersolve/851.cpp: 0.191
+852:
+  solvers/852.py: 0.367
+  solvers/eulersolve/852.py: 1.136
+  solvers/eulersolve/852.cpp: 3.880
+853:
+  solvers/853.py: 0.134
+  solvers/eulersolve/853.py: 0.125
+  solvers/eulersolve/853.cpp: 0.003
+854:
+  solvers/854.py: 0.081
+  solvers/eulersolve/854.py: 0.067
+  solvers/eulersolve/854.cpp: 0.005
+855:
+  solvers/855.py: 0.077
+  solvers/eulersolve/855.py: 0.058
+  solvers/eulersolve/855.cpp: 0.003
+856:
+  solvers/856.py: 1.177
+  solvers/eulersolve/856.py: 0.085
+  solvers/eulersolve/856.cpp: 0.004
+857:
+  solvers/857.py: 0.288
+  solvers/eulersolve/857.py: 0.524
+  solvers/eulersolve/857.cpp: 0.301
+858:
+  solvers/858.py: 0.711
+  solvers/eulersolve/858.py: 0.526
+  solvers/eulersolve/858.cpp: 0.111
+859:
+  solvers/859.py: 0.148
+  solvers/eulersolve/859.py: 0.712
+  solvers/eulersolve/859.cpp: 0.122
+860:
+  solvers/860.py: 0.127
+  solvers/eulersolve/860.py: 6.422
+  solvers/eulersolve/860.cpp: 0.795
+861:
+  solvers/861.py: 2.722
+  solvers/eulersolve/861.py: 6.675
+  solvers/eulersolve/861.cpp: 2.563
+862:
+  solvers/862.py: 0.183
+  solvers/eulersolve/862.py: 0.127
+  solvers/eulersolve/862.cpp: 0.013
+863:
+  solvers/863.py: 0.293
+  solvers/eulersolve/863.py: 0.206
+  solvers/eulersolve/863.cpp: 0.145
+864:
+  solvers/864.py: 3.488
+  solvers/eulersolve/864.py: 5.348
+  solvers/eulersolve/864.cpp: 2.068
+865:
+  solvers/865.py: 2.250
+  solvers/eulersolve/865.py: 0.663
+  solvers/eulersolve/865.cpp: 0.502
+866:
+  solvers/866.py: 0.173
+  solvers/eulersolve/866.py: 0.060
+  solvers/eulersolve/866.cpp: 0.002
+867:
+  solvers/867.py: 0.384
+  solvers/eulersolve/867.py: 0.212
+  solvers/eulersolve/867.cpp: 0.030
+868:
+  solvers/868.py: 0.142
+  solvers/eulersolve/868.py: 0.063
+  solvers/eulersolve/868.cpp: 0.002
+869:
+  solvers/869.py: 15.440
+  solvers/eulersolve/869.py: 41.503
+  solvers/eulersolve/869.cpp: 3.897
+870:
+  solvers/870.py: 11.637
+  solvers/eulersolve/870.py: 23.844
+  solvers/eulersolve/870.cpp: 5.314
+871:
+  solvers/871.py: 0.659
+  solvers/eulersolve/871.py: 3.038
+  solvers/eulersolve/871.cpp: 0.612
+872:
+  solvers/872.py: 0.068
+  solvers/eulersolve/872.py: 0.055
+  solvers/eulersolve/872.cpp: 0.004
+873:
+  solvers/873.py: 0.381
+  solvers/eulersolve/873.py: 0.501
+  solvers/eulersolve/873.cpp: 0.349
+874:
+  solvers/874.py: 0.295
+  solvers/eulersolve/874.py: 4.889
+  solvers/eulersolve/874.cpp: 0.690
+875:
+  solvers/875.py: 1.062
+  solvers/eulersolve/875.py: 3.680
+  solvers/eulersolve/875.cpp: 0.780
+876:
+  solvers/876.py: 0.313
+  solvers/eulersolve/876.py: 0.086
+  solvers/eulersolve/876.cpp: 0.007
+877:
+  solvers/877.py: 0.095
+  solvers/eulersolve/877.py: 0.055
+  solvers/eulersolve/877.cpp: 0.097
+878:
+  solvers/878.py: 19.465
+  solvers/eulersolve/878.py: 0.594
+  solvers/eulersolve/878.cpp: 0.072
+879:
+  solvers/879.py: 0.214
+  solvers/eulersolve/879.py: 0.771
+  solvers/eulersolve/879.cpp: 0.047
+880:
+  solvers/880.py: 10.848
+  solvers/eulersolve/880.py: 1.073
+  solvers/eulersolve/880.cpp: 0.427
+881:
+  solvers/881.py: 0.139
+  solvers/eulersolve/881.py: 0.137
+  solvers/eulersolve/881.cpp: 0.015
+882:
+  solvers/882.py: 0.149
+  solvers/eulersolve/882.py: 0.169
+  solvers/eulersolve/882.cpp: 0.012
+883:
+  solvers/883.py: 3.323
+  solvers/eulersolve/883.py: 4.156
+  solvers/eulersolve/883.cpp: 0.887
+884:
+  solvers/884.py: 0.708
+  solvers/eulersolve/884.py: 0.761
+  solvers/eulersolve/884.cpp: 1.037
+885:
+  solvers/885.py: 0.094
+  solvers/eulersolve/885.py: 0.351
+  solvers/eulersolve/885.cpp: 0.062
+886:
+  solvers/886.py: 53.376
+  solvers/eulersolve/886.py: 9.025
+  solvers/eulersolve/886.cpp: 2.031
+887:
+  solvers/887.py: 0.062
+  solvers/eulersolve/887.py: 0.055
+  solvers/eulersolve/887.cpp: 0.005
+888:
+  solvers/888.py: 0.333
+  solvers/eulersolve/888.py: 0.384
+  solvers/eulersolve/888.cpp: 0.265
+889:
+  solvers/889.py: 0.112
+  solvers/eulersolve/889.py: 0.112
+  solvers/eulersolve/889.cpp: 0.009
+890:
+  solvers/890.py: 5.698
+  solvers/eulersolve/890.py: 9.060
+  solvers/eulersolve/890.cpp: 3.253
+891:
+  solvers/891.py: 1.364
+  solvers/eulersolve/891.py: 0.814
+  solvers/eulersolve/891.cpp: 0.221
+892:
+  solvers/892.py: 0.290
+  solvers/eulersolve/892.py: 0.887
+  solvers/eulersolve/892.cpp: 0.584
+893:
+  solvers/893.py: 4.899
+  solvers/eulersolve/893.py: 5.105
+  solvers/eulersolve/893.cpp: 0.629
+894:
+  solvers/894.py: 0.090
+  solvers/eulersolve/894.py: 0.054
+  solvers/eulersolve/894.cpp: 0.003
+895:
+  solvers/895.py: 0.531
+  solvers/eulersolve/895.py: 0.068
+  solvers/eulersolve/895.cpp: 0.003
+896:
+  solvers/896.py: 0.258
+  solvers/eulersolve/896.py: 6.094
+  solvers/eulersolve/896.cpp: 0.659
+897:
+  solvers/897.py: 0.086
+  solvers/eulersolve/897.py: 0.157
+  solvers/eulersolve/897.cpp: 0.257
+898:
+  solvers/898.py: 6.089
+  solvers/eulersolve/898.py: 12.688
+  solvers/eulersolve/898.cpp: 0.659
+899:
+  solvers/899.py: 0.059
+  solvers/eulersolve/899.py: 0.058
+  solvers/eulersolve/899.cpp: 0.003
+900:
+  solvers/900.py: 0.258
+  solvers/eulersolve/900.py: 0.056
+  solvers/eulersolve/900.cpp: 0.003
+901:
+  solvers/901.py: 2.435
+  solvers/eulersolve/901.py: 0.056
+  solvers/eulersolve/901.cpp: 0.003
+902:
+  solvers/902.py: 1.294
+  solvers/eulersolve/902.py: 0.818
+  solvers/eulersolve/902.cpp: 0.098
+903:
+  solvers/903.py: 0.856
+  solvers/eulersolve/903.py: 0.252
+  solvers/eulersolve/903.cpp: 0.069
+904:
+  solvers/904.py: 1.566
+  solvers/eulersolve/904.py: 0.339
+  solvers/eulersolve/904.cpp: 0.280
+905:
+  solvers/905.py: 0.062
+  solvers/eulersolve/905.py: 2.308
+  solvers/eulersolve/905.cpp: 0.223
+906:
+  solvers/906.py: 0.195
+  solvers/eulersolve/906.py: 0.705
+  solvers/eulersolve/906.cpp: 2.116
+907:
+  solvers/907.py: 0.676
+  solvers/eulersolve/907.py: 0.656
+  solvers/eulersolve/907.cpp: 0.317
+908:
+  solvers/908.py: 4.928
+  solvers/eulersolve/908.py: 2.659
+  solvers/eulersolve/908.cpp: 1.993
+909:
+  solvers/909.py: 0.147
+  solvers/eulersolve/909.py: 0.056
+  solvers/eulersolve/909.cpp: 0.003
+910:
+  solvers/910.py: 39.422
+  solvers/eulersolve/910.py: 0.410
+  solvers/eulersolve/910.cpp: 0.069
+911:
+  solvers/911.py: 0.644
+  solvers/eulersolve/911.py: 0.054
+  solvers/eulersolve/911.cpp: 0.318
+912:
+  solvers/912.py: 0.117
+  solvers/eulersolve/912.py: 0.056
+  solvers/eulersolve/912.cpp: 0.003
+913:
+  solvers/913.py: 0.576
+  solvers/eulersolve/913.py: 0.400
+  solvers/eulersolve/913.cpp: 0.100
+914:
+  solvers/914.py: 0.477
+  solvers/eulersolve/914.py: 0.080
+  solvers/eulersolve/914.cpp: 0.260
+915:
+  solvers/915.py: 0.199
+  solvers/eulersolve/915.py: 2.561
+  solvers/eulersolve/915.cpp: 1.211
+916:
+  solvers/916.py: 0.312
+  solvers/eulersolve/916.py: 0.980
+  solvers/eulersolve/916.cpp: 1.060
+917:
+  solvers/917.py: 0.821
+  solvers/eulersolve/917.py: 1.419
+  solvers/eulersolve/917.cpp: 0.452
+918:
+  solvers/918.py: 0.061
+  solvers/eulersolve/918.py: 0.055
+  solvers/eulersolve/918.cpp: 0.003
+919:
+  solvers/919.py: 5.171
+  solvers/eulersolve/919.py: 6.486
+  solvers/eulersolve/919.cpp: 2.647
+920:
+  solvers/920.py: 0.801
+  solvers/eulersolve/920.py: 1.453
+  solvers/eulersolve/920.cpp: 0.702
+921:
+  solvers/921.py: 2.152
+  solvers/eulersolve/921.py: 1.488
+  solvers/eulersolve/921.cpp: 0.632
+922:
+  solvers/922.py: 0.475
+  solvers/eulersolve/922.py: 0.494
+  solvers/eulersolve/922.cpp: 0.229
+923:
+  solvers/923.py: 0.814
+  solvers/eulersolve/923.py: 37.076
+  solvers/eulersolve/923.cpp: 3.086
+924:
+  solvers/924.py: 0.855
+  solvers/eulersolve/924.py: 4.821
+  solvers/eulersolve/924.cpp: 0.723
+925:
+  solvers/925.py: 26.061
+  solvers/eulersolve/925.py: 9.217
+  solvers/eulersolve/925.cpp: 2.858
+926:
+  solvers/926.py: 0.963
+  solvers/eulersolve/926.py: 0.889
+  solvers/eulersolve/926.cpp: 0.106
+927:
+  solvers/927.py: 8.991
+  solvers/eulersolve/927.py: 13.657
+  solvers/eulersolve/927.cpp: 6.648
+928:
+  solvers/928.py: 9.830
+  solvers/eulersolve/928.py: 70.295
+  solvers/eulersolve/928.cpp: 3.667
+929:
+  solvers/929.py: 4.290
+  solvers/eulersolve/929.py: 2.376
+  solvers/eulersolve/929.cpp: 0.715
+930:
+  solvers/930.py: 1.150
+  solvers/eulersolve/930.py: 0.677
+  solvers/eulersolve/930.cpp: 0.102
+931:
+  solvers/931.py: 78.821
+  solvers/eulersolve/931.py: 17.762
+  solvers/eulersolve/931.cpp: 1.551
+932:
+  solvers/932.py: 4.977
+  solvers/eulersolve/932.py: 1.536
+  solvers/eulersolve/932.cpp: 0.100
+933:
+  solvers/933.py: 16.853
+  solvers/eulersolve/933.py: 93.206
+  solvers/eulersolve/933.cpp: 20.367
+934:
+  solvers/934.py: 0.337
+  solvers/eulersolve/934.py: 0.333
+  solvers/eulersolve/934.cpp: 0.108
+935:
+  solvers/935.py: 0.419
+  solvers/eulersolve/935.py: 40.976
+  solvers/eulersolve/935.cpp: 11.089
+936:
+  solvers/936.py: 0.138
+  solvers/eulersolve/936.py: 0.901
+  solvers/eulersolve/936.cpp: 0.179
+937:
+  solvers/937.py: 20.411
+  solvers/eulersolve/937.py: 33.012
+  solvers/eulersolve/937.cpp: 2.450
+938:
+  solvers/938.py: 0.124
+  solvers/eulersolve/938.py: 1.555
+  solvers/eulersolve/938.cpp: 1.432
+939:
+  solvers/939.py: 1.069
+  solvers/eulersolve/939.py: 1.302
+  solvers/eulersolve/939.cpp: 0.406
+940:
+  solvers/940.py: 0.118
+  solvers/eulersolve/940.py: 0.072
+  solvers/eulersolve/940.cpp: 0.002
+941:
+  solvers/941.py: 53.237
+  solvers/eulersolve/941.py: 0.071
+  solvers/eulersolve/941.cpp: 17.712
+942:
+  solvers/942.py: 3.238
+  solvers/eulersolve/942.py: 1.633
+  solvers/eulersolve/942.cpp: 0.649
+943:
+  solvers/943.py: 25.158
+  solvers/eulersolve/943.py: 33.829
+  solvers/eulersolve/943.cpp: 5.223
+944:
+  solvers/944.py: 0.458
+  solvers/eulersolve/944.py: 1.747
+  solvers/eulersolve/944.cpp: 0.862
+945:
+  solvers/945.py: 0.563
+  solvers/eulersolve/945.py: 0.068
+  solvers/eulersolve/945.cpp: 2.726
+946:
+  solvers/946.py: 0.221
+  solvers/eulersolve/946.py: 0.069
+  solvers/eulersolve/946.cpp: 1.290
+947:
+  solvers/947.py: 2.281
+  solvers/eulersolve/947.py: 0.065
+  solvers/eulersolve/947.cpp: 5.012
+948:
+  solvers/948.py: 0.191
+  solvers/eulersolve/948.py: 0.129
+  solvers/eulersolve/948.cpp: 0.010
+949:
+  solvers/949.py: 4.876
+  solvers/eulersolve/949.py: 1.489
+  solvers/eulersolve/949.cpp: 0.366
+950:
+  solvers/950.py: 0.251
+  solvers/eulersolve/950.py: 8.770
+  solvers/eulersolve/950.cpp: 0.387
+951:
+  solvers/951.py: 0.147
+  solvers/eulersolve/951.py: 8.564
+  solvers/eulersolve/951.cpp: 1.320
+952:
+  solvers/952.py: 2.243
+  solvers/eulersolve/952.py: 1.234
+  solvers/eulersolve/952.cpp: 0.590
+953:
+  solvers/953.py: 86.836
+  solvers/eulersolve/953.py: 0.067
+  solvers/eulersolve/953.cpp: 9.203
+954:
+  solvers/954.py: 76.641
+  solvers/eulersolve/954.py: 0.182
+  solvers/eulersolve/954.cpp: 0.003
+955:
+  solvers/955.py: 0.482
+  solvers/eulersolve/955.py: 0.130
+  solvers/eulersolve/955.cpp: 0.004
+956:
+  solvers/956.py: 0.151
+  solvers/eulersolve/956.py: 1.020
+  solvers/eulersolve/956.cpp: 0.659
+957:
+  solvers/957.py: 0.193
+  solvers/eulersolve/957.py: 0.059
+  solvers/eulersolve/957.cpp: 0.010
+958:
+  solvers/958.py: 13.233
+  solvers/eulersolve/958.py: 0.489
+  solvers/eulersolve/958.cpp: 0.053
+959:
+  solvers/959.py: 2.264
+  solvers/eulersolve/959.py: 0.904
+  solvers/eulersolve/959.cpp: 0.021
+960:
+  solvers/960.py: 0.061
+  solvers/eulersolve/960.py: 0.058
+  solvers/eulersolve/960.cpp: 0.003
+961:
+  solvers/961.py: 1.306
+  solvers/eulersolve/961.py: 0.478
+  solvers/eulersolve/961.cpp: 0.017
+962:
+  solvers/962.py: 27.947
+  solvers/eulersolve/962.py: 13.115
+  solvers/eulersolve/962.cpp: 3.579
+963:
+  solvers/963.py: 15.752
+  solvers/eulersolve/963.py: 13.670
+  solvers/eulersolve/963.cpp: 1.092
+964:
+  solvers/964.py: 0.114
+  solvers/eulersolve/964.py: 0.089
+  solvers/eulersolve/964.cpp: 0.004
+965:
+  solvers/965.py: 0.708
+  solvers/eulersolve/965.py: 0.283
+  solvers/eulersolve/965.cpp: 0.243
+966:
+  solvers/966.py: 36.829
+  solvers/eulersolve/966.py: 29.129
+  solvers/eulersolve/966.cpp: 34.067
+967:
+  solvers/967.py: 1.591
+  solvers/eulersolve/967.py: 6.582
+  solvers/eulersolve/967.cpp: 0.500
+968:
+  solvers/968.py: 0.932
+  solvers/eulersolve/968.py: 27.982
+  solvers/eulersolve/968.cpp: 3.482
+969:
+  solvers/969.py: 0.065
+  solvers/eulersolve/969.py: 0.070
+  solvers/eulersolve/969.cpp: 0.003
+970:
+  solvers/970.py: 0.125
+  solvers/eulersolve/970.py: 0.081
+  solvers/eulersolve/970.cpp: 0.003
+971:
+  solvers/971.py: 3.249
+  solvers/eulersolve/971.py: 3.875
+  solvers/eulersolve/971.cpp: 1.560
+972:
+  solvers/972.py: 50.921
+  solvers/eulersolve/972.py: 24.197
+  solvers/eulersolve/972.cpp: 2.415
+973:
+  solvers/973.py: 0.423
+  solvers/eulersolve/973.py: 0.158
+  solvers/eulersolve/973.cpp: 0.005
+974:
+  solvers/974.py: 0.320
+  solvers/eulersolve/974.py: 0.562
+  solvers/eulersolve/974.cpp: 0.221
+975:
+  solvers/975.py: 18.081
+  solvers/eulersolve/975.py: 5.151
+  solvers/eulersolve/975.cpp: 8.205
+976:
+  solvers/976.py: 0.706
+  solvers/eulersolve/976.py: 0.576
+  solvers/eulersolve/976.cpp: 0.336
+977:
+  solvers/977.py: 1.616
+  solvers/eulersolve/977.py: 0.805
+  solvers/eulersolve/977.cpp: 0.304
+978:
+  solvers/978.py: 0.070
+  solvers/eulersolve/978.py: 0.057
+  solvers/eulersolve/978.cpp: 0.003
+979:
+  solvers/979.py: 0.189
+  solvers/eulersolve/979.py: 0.156
+  solvers/eulersolve/979.cpp: 0.018
+980:
+  solvers/980.py: 0.435
+  solvers/eulersolve/980.py: 0.776
+  solvers/eulersolve/980.cpp: 0.437
+981:
+  solvers/981.py: 0.124
+  solvers/eulersolve/981.py: 0.123
+  solvers/eulersolve/981.cpp: 0.045
+982:
+  solvers/982.py: 0.111
+  solvers/eulersolve/982.py: 0.090
+  solvers/eulersolve/982.cpp: 0.007
+983:
+  solvers/983.py: 52.648
+  solvers/eulersolve/983.py: 1.083
+  solvers/eulersolve/983.cpp: 0.219
+984:
+  solvers/984.py: 20.317
+  solvers/eulersolve/984.py: 0.056
+  solvers/eulersolve/984.cpp: 0.003
+985:
+  solvers/985.py: 0.224
+  solvers/eulersolve/985.py: 0.067
+  solvers/eulersolve/985.cpp: 0.002
+986:
+  solvers/986.py: 8.944
+  solvers/eulersolve/986.py: 28.928
+  solvers/eulersolve/986.cpp: 3.507
+987:
+  solvers/987.py: 0.456
+  solvers/eulersolve/987.py: 22.649
+  solvers/eulersolve/987.cpp: 3.325
+988:
+  solvers/988.py: 0.071
+  solvers/eulersolve/988.py: 0.071
+  solvers/eulersolve/988.cpp: 0.003
+989:
+  solvers/989.py: 16.737
+  solvers/eulersolve/989.py: 42.990
+  solvers/eulersolve/989.cpp: 0.002
+990:
+  solvers/990.py: 2.503
+  solvers/eulersolve/990.py: 2.912
+  solvers/eulersolve/990.cpp: 0.678
+991:
+  solvers/991.py: 0.180
+  solvers/eulersolve/991.py: 0.920
+  solvers/eulersolve/991.cpp: 0.798
+992:
+  solvers/992.py: 0.095
+  solvers/eulersolve/992.py: 0.482
+  solvers/eulersolve/992.cpp: 0.051
+993:
+  solvers/993.py: 0.092
+  solvers/eulersolve/993.py: 0.086
+  solvers/eulersolve/993.cpp: 0.004
+994:
+  solvers/994.py: 22.996

@@ -1561,7 +1561,7 @@ git clone git@github.com:cirosantilli/eulersolve.git solvers/eulersolve
 ./test.py --set solvers/eulersolve
 ....
 
-// OTHER RESULTS TABLE
+// BENCHMARK TABLE
 * 1
 ** link:solvers/1.py[]: 0.090
 ** link:solvers/eulersolve/1.py[]: 0.087

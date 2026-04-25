@@ -17,6 +17,7 @@ import summary
 ROOT = Path(__file__).resolve().parent
 SOLUTIONS_PATH = ROOT / "data/projecteuler-solutions/Solutions.md"
 SOLVERS_DIR = ROOT / "solvers"
+BENCHMARK_PATH = ROOT / "benchmark.yaml"
 STATEMENTS_DOCS_DIR = ROOT / "data" / "project-euler-statements" / "data" / "documents"
 STATEMENTS_PROBLEM_DIR = ROOT / "data" / "project-euler-statements" / "data" / "problem"
 
@@ -939,14 +940,14 @@ def parse_primary_python_row_map(lines: list[str]) -> dict[tuple[TestId, str], s
 
 
 def other_results_block_span(lines: list[str]) -> tuple[int, int]:
-    marker_idx = find_marker_index(lines, "// OTHER RESULTS TABLE")
+    marker_idx = find_marker_index(lines, "// BENCHMARK TABLE")
     limit = marker_section_limit(lines, marker_idx)
     start = marker_idx + 1
     while start < limit and not lines[start].strip():
         start += 1
     if start < limit and lines[start].strip() == "|===":
         table_start, table_end = readme_tables.find_table_block(
-            lines, "// OTHER RESULTS TABLE"
+            lines, "// BENCHMARK TABLE"
         )
         return table_start, table_end + 1
     end = start
@@ -1031,15 +1032,90 @@ def parse_other_results_table(lines: list[str]) -> dict[int, dict[str, str]]:
     return rows
 
 
-def other_result_language(path_text: str) -> str:
-    return detect_language(Path(path_text)) or ""
+def parse_benchmark_value(value: str) -> str:
+    value = value.strip()
+    if not value:
+        return ""
+    if value.startswith('"'):
+        try:
+            parsed = json.loads(value)
+        except json.JSONDecodeError:
+            return value
+        return parsed if isinstance(parsed, str) else str(parsed)
+    return value
 
 
-def other_result_path_sort_key(path_text: str) -> tuple[int, str, str]:
-    language = other_result_language(path_text)
-    if language == "py":
-        return (0, "", path_text)
-    return (1, language, path_text)
+def parse_benchmark_yaml(lines: list[str]) -> dict[int, dict[str, str]]:
+    rows: dict[int, dict[str, str]] = {}
+    current_pid: int | None = None
+    for line in lines:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        key, sep, value = stripped.partition(":")
+        if not sep:
+            continue
+        key = key.strip()
+        if line == line.lstrip():
+            if key.isdigit():
+                current_pid = int(key)
+                rows.setdefault(current_pid, {})
+                continue
+            path_text = key
+            pid = parse_solver_id(Path(path_text))
+        else:
+            if current_pid is None:
+                continue
+            path_text = key
+            pid = current_pid
+        cell = parse_benchmark_value(value)
+        if not path_text or not cell:
+            continue
+        if pid is None:
+            continue
+        rows.setdefault(pid, {})[path_text] = cell
+    return rows
+
+
+def load_benchmark_results(
+    fallback_lines: list[str] | None = None,
+) -> dict[int, dict[str, str]]:
+    if BENCHMARK_PATH.exists():
+        rows = parse_benchmark_yaml(BENCHMARK_PATH.read_text().splitlines())
+        if rows or fallback_lines is None:
+            return rows
+    if fallback_lines is None:
+        return {}
+    return parse_other_results_table(fallback_lines)
+
+
+def format_benchmark_value(value: str) -> str:
+    value = value.strip()
+    if looks_numeric(value):
+        return value
+    return json.dumps(value)
+
+
+def format_benchmark_yaml(rows: dict[int, dict[str, str]]) -> list[str]:
+    yaml_lines: list[str] = []
+    for pid in sorted(rows):
+        row_values = {
+            path: cell.strip()
+            for path, cell in rows[pid].items()
+            if path.strip() and cell.strip()
+        }
+        if not row_values:
+            continue
+        yaml_lines.append(f"{pid}:")
+        for path in sorted(row_values, key=other_result_path_sort_key):
+            yaml_lines.append(
+                f"  {path}: {format_benchmark_value(row_values[path])}"
+            )
+    return yaml_lines
+
+
+def write_benchmark_results(rows: dict[int, dict[str, str]]) -> None:
+    BENCHMARK_PATH.write_text("\n".join(format_benchmark_yaml(rows)) + "\n")
 
 
 def format_other_results_list(rows: dict[int, dict[str, str]]) -> list[str]:
@@ -1063,6 +1139,17 @@ def replace_other_results_table(
 ) -> None:
     start, end = other_results_block_span(lines)
     lines[start:end] = format_other_results_list(rows)
+
+
+def other_result_language(path_text: str) -> str:
+    return detect_language(Path(path_text)) or ""
+
+
+def other_result_path_sort_key(path_text: str) -> tuple[int, str, str]:
+    language = other_result_language(path_text)
+    if language == "py":
+        return (0, "", path_text)
+    return (1, language, path_text)
 
 
 def result_suite_label(res: Result) -> str:
@@ -1141,12 +1228,12 @@ def primary_row_other_result_entry(pid: TestId, row: str) -> tuple[str, str] | N
     return path_text, cell
 
 
-def upsert_other_results_table(
-    lines: list[str],
+def upsert_benchmark_results(
     results: list[Result],
     row_map: dict[tuple[TestId, str], str] | None = None,
-) -> None:
-    rows = parse_other_results_table(lines)
+    fallback_lines: list[str] | None = None,
+) -> dict[int, dict[str, str]]:
+    rows = load_benchmark_results(fallback_lines)
 
     if row_map is not None:
         for (pid, language), row in row_map.items():
@@ -1170,7 +1257,8 @@ def upsert_other_results_table(
     for (pid, path_text), cell in result_cells.items():
         rows.setdefault(pid, {})[path_text] = cell
 
-    replace_other_results_table(lines, rows)
+    write_benchmark_results(rows)
+    return rows
 
 
 def other_result_suite_label(path_text: str) -> str:
@@ -1186,8 +1274,11 @@ def ordered_suite_labels(labels: set[str]) -> list[str]:
 
 def parse_other_python_suite_results(
     lines: list[str],
+    benchmark_rows: dict[int, dict[str, str]] | None = None,
 ) -> tuple[list[str], dict[int, dict[str, str]]]:
-    other_rows = parse_other_results_table(lines)
+    other_rows = benchmark_rows
+    if other_rows is None:
+        other_rows = load_benchmark_results(lines)
     labels: set[str] = set()
     suite_rows: dict[int, dict[str, str]] = {}
     for pid, path_values in other_rows.items():
@@ -1203,9 +1294,13 @@ def parse_other_python_suite_results(
 
 
 def replace_slowest_python_table(
-    lines: list[str], row_map: dict[tuple[TestId, str], str]
+    lines: list[str],
+    row_map: dict[tuple[TestId, str], str],
+    benchmark_rows: dict[int, dict[str, str]] | None = None,
 ) -> None:
-    ordered_labels, suite_rows = parse_other_python_suite_results(lines)
+    ordered_labels, suite_rows = parse_other_python_suite_results(
+        lines, benchmark_rows
+    )
 
     slow_candidates: list[tuple[float, str, str]] = []
     for (pid, language), row in row_map.items():
@@ -1333,8 +1428,9 @@ def update_readme(results: list[Result]) -> None:
     sorted_rows = [row_map[key] for key in sorted(row_map, key=row_sort_key)]
     lines[start + 1 : end] = [header_line, *sorted_rows]
 
-    upsert_other_results_table(lines, results, row_map)
-    replace_slowest_python_table(lines, row_map)
+    benchmark_rows = upsert_benchmark_results(results, row_map, lines)
+    replace_other_results_table(lines, benchmark_rows)
+    replace_slowest_python_table(lines, row_map, benchmark_rows)
 
     readme_path.write_text("\n".join(lines) + "\n")
 
@@ -1343,8 +1439,9 @@ def update_readme_solver_sets(results: list[Result]) -> None:
     readme_path = ROOT / "README.adoc"
     lines = readme_path.read_text().splitlines()
     row_map = parse_primary_python_row_map(lines)
-    upsert_other_results_table(lines, results, row_map)
-    replace_slowest_python_table(lines, row_map)
+    benchmark_rows = upsert_benchmark_results(results, row_map, lines)
+    replace_other_results_table(lines, benchmark_rows)
+    replace_slowest_python_table(lines, row_map, benchmark_rows)
     readme_path.write_text("\n".join(lines) + "\n")
 
 
@@ -1419,7 +1516,7 @@ def update_readme_not_found() -> None:
     readme_path = ROOT / "README.adoc"
     lines = readme_path.read_text().splitlines()
     start, end = readme_tables.find_table_block(lines, "// RESULTS TABLE")
-    existing_other_rows = parse_other_results_table(lines)
+    existing_other_rows = load_benchmark_results(lines)
     existing_other_paths = {
         path
         for path_values in existing_other_rows.values()
@@ -1570,8 +1667,9 @@ def update_readme_not_found() -> None:
         *sorted_rows,
     ]
 
-    upsert_other_results_table(lines, other_results, row_map)
-    replace_slowest_python_table(lines, row_map)
+    benchmark_rows = upsert_benchmark_results(other_results, row_map, lines)
+    replace_other_results_table(lines, benchmark_rows)
+    replace_slowest_python_table(lines, row_map, benchmark_rows)
 
     readme_path.write_text("\n".join(lines) + "\n")
 
