@@ -2,96 +2,44 @@
 from __future__ import annotations
 
 import argparse
-import re
+import csv
 import sys
 from dataclasses import dataclass
 from decimal import Decimal
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 
 import yaml
-from yaml.nodes import MappingNode, Node, ScalarNode
 
-
-NUMERIC_RE = re.compile(r"^\d+(?:\.\d+)?$")
-
-
-@dataclass(frozen=True)
-class BenchmarkResult:
-    path: str
-    time_text: str
-    runtime: Decimal
+from benchmark_utils import (
+    BenchmarkEntry,
+    format_seconds,
+    is_path_in_set,
+    iter_benchmark_entries,
+    load_benchmark,
+    normalize_language,
+)
 
 
 @dataclass(frozen=True)
 class Improvement:
     problem: int
-    reference: BenchmarkResult
-    better: BenchmarkResult
+    reference: BenchmarkEntry
+    better: BenchmarkEntry
 
     @property
     def seconds(self) -> Decimal:
         return self.reference.runtime - self.better.runtime
 
 
-def scalar_text(node: Node) -> str | None:
-    if not isinstance(node, ScalarNode):
-        return None
-    return node.value
-
-
-def normalize_language(language: str) -> str:
-    return language.removeprefix(".")
-
-
-def has_glob_pattern(reference_set: str) -> bool:
-    return any(char in reference_set for char in "*?[")
-
-
-def is_reference_path(path: str, reference_set: str) -> bool:
-    path_obj = PurePosixPath(path)
-    reference_set = reference_set.rstrip("/")
-    if has_glob_pattern(reference_set):
-        return path_obj.match(reference_set)
-
-    reference_path = PurePosixPath(reference_set)
-    if reference_path.suffix:
-        return path_obj == reference_path
-    return path_obj.parent == reference_path
-
-
-def parse_result(
-    path_node: Node, time_node: Node, language: str
-) -> BenchmarkResult | None:
-    path = scalar_text(path_node)
-    time_text = scalar_text(time_node)
-    if path is None or time_text is None:
-        return None
-    if not path.endswith(f".{language}") or not NUMERIC_RE.fullmatch(time_text):
-        return None
-    return BenchmarkResult(path, time_text, Decimal(time_text))
-
-
 def problem_improvement(
-    problem_node: Node,
-    results_node: Node,
+    problem: int,
+    entries: list[BenchmarkEntry],
     reference_set: str,
-    language: str,
 ) -> Improvement | None:
-    problem_text = scalar_text(problem_node)
-    if problem_text is None:
-        raise ValueError("benchmark.yaml contains a non-scalar problem id")
-    problem = int(problem_text)
-
-    if not isinstance(results_node, MappingNode):
-        return None
-
-    reference_results: list[BenchmarkResult] = []
-    other_results: list[BenchmarkResult] = []
-    for path_node, time_node in results_node.value:
-        result = parse_result(path_node, time_node, language)
-        if result is None:
-            continue
-        if is_reference_path(result.path, reference_set):
+    reference_results: list[BenchmarkEntry] = []
+    other_results: list[BenchmarkEntry] = []
+    for result in entries:
+        if is_path_in_set(result.path, reference_set):
             reference_results.append(result)
         else:
             other_results.append(result)
@@ -106,21 +54,6 @@ def problem_improvement(
     return Improvement(problem, reference, better)
 
 
-def load_benchmark(benchmark_path: Path) -> MappingNode | None:
-    with benchmark_path.open() as benchmark_file:
-        root = yaml.compose(benchmark_file, Loader=yaml.SafeLoader)
-
-    if root is None:
-        return None
-    if not isinstance(root, MappingNode):
-        raise ValueError(f"{benchmark_path} must contain a top-level mapping")
-    return root
-
-
-def format_seconds(seconds: Decimal) -> str:
-    return f"{seconds:.3f}"
-
-
 def print_greatest_improvements(
     benchmark_path: Path,
     reference_set: str,
@@ -130,32 +63,41 @@ def print_greatest_improvements(
     if root is None:
         return
 
+    entries_by_problem: dict[int, list[BenchmarkEntry]] = {}
+    for entry in iter_benchmark_entries(root, [language]):
+        entries_by_problem.setdefault(entry.problem, []).append(entry)
+
     improvements = [
         improvement
-        for problem_node, results_node in root.value
-        if (
-            improvement := problem_improvement(
-                problem_node, results_node, reference_set, language
-            )
-        )
+        for problem, entries in entries_by_problem.items()
+        if (improvement := problem_improvement(problem, entries, reference_set))
         is not None
     ]
     improvements.sort(
         key=lambda improvement: (-improvement.seconds, improvement.problem)
     )
 
+    writer = csv.writer(sys.stdout, lineterminator="\n")
+    writer.writerow(
+        [
+            "problem",
+            "improvement_seconds",
+            "reference_path",
+            "reference_runtime_seconds",
+            "better_path",
+            "better_runtime_seconds",
+        ]
+    )
     for improvement in improvements:
-        print(
-            "\t".join(
-                [
-                    str(improvement.problem),
-                    format_seconds(improvement.seconds),
-                    improvement.reference.path,
-                    improvement.reference.time_text,
-                    improvement.better.path,
-                    improvement.better.time_text,
-                ]
-            )
+        writer.writerow(
+            [
+                improvement.problem,
+                format_seconds(improvement.seconds),
+                improvement.reference.path,
+                improvement.reference.time_text,
+                improvement.better.path,
+                improvement.better.time_text,
+            ]
         )
 
 

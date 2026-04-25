@@ -247,7 +247,7 @@ Benchmark Python solvers from another directory without changing the default `./
 ./test.py --set solvers --set solvers/eulersolve 1-10
 ----
 
-With `-A`, solver timings are recorded in the <<other-solvers>> comparison list and Python timings are added as extra columns in <<slowest-solvers>>. Timings with missing reference answers are kept as unverified timings; existing solvers that fail or produce incorrect answers are recorded with an `error: ` entry in the comparison list.
+With `-A`, solver timings are recorded in link:benchmark.yaml[] and in the <<other-solvers>> comparison list. Timings with missing reference answers are kept as unverified timings; existing solvers that fail or produce incorrect answers are recorded with an `error: ` entry in the comparison list.
 
 === Linting
 
@@ -1472,70 +1472,28 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 
 This section lists the slowest solvers we have. Anything incredibly slower than most problems is likely to have important missing optimizations which we should ideally find.
 
+The slowest Python solvers in this repository can be listed as CSV with:
+
+[source,shell]
+----
+./slowest-solvers.py
+----
+
+Use the same `--set` and `-l`/`--lang` style as link:test.py[] to inspect other benchmarked solver sets and languages:
+
+[source,shell]
+----
+./slowest-solvers.py --set solvers/eulersolve
+./slowest-solvers.py --set solvers --set solvers/eulersolve -l cpp
+----
+
 A bar plot of solver times can be generated with link:plot.py[] but I couldn't be bothered showing it here:
 
 ----
 ./plot.py
 ----
 
-50 slowest Python solvers which give the correct answer:
-
-// SLOWEST PYTHON SOLVERS TABLE
-|===
-| ID | solvers (s) | solvers/eulersolve (s)
-| link:solvers/501.py[501.py] | 126.958 | 2.181
-| link:solvers/681.py[681.py] | 122.323 | 94.303
-| link:solvers/259.py[259.py] | 115.037 | 20.416
-| link:solvers/505.py[505.py] | 106.445 | 92.983
-| link:solvers/680.py[680.py] | 105.370 | 46.378
-| link:solvers/754.py[754.py] | 105.190 | 5.435
-| link:solvers/558.py[558.py] | 102.015 | 9.990
-| link:solvers/415.py[415.py] | 100.317 | 6.506
-| link:solvers/712.py[712.py] | 95.006 | 35.030
-| link:solvers/662.py[662.py] | 94.847 | 66.275
-| link:solvers/953.py[953.py] | 86.836 | 0.067
-| link:solvers/216.py[216.py] | 82.069 | 4.528
-| link:solvers/296.py[296.py] | 80.048 | 0.583
-| link:solvers/931.py[931.py] | 78.821 | 17.762
-| link:solvers/715.py[715.py] | 77.257 | 22.915
-| link:solvers/954.py[954.py] | 76.641 | 0.182
-| link:solvers/451.py[451.py] | 74.218 | 11.103
-| link:solvers/552.py[552.py] | 66.467 | 2.977
-| link:solvers/705.py[705.py] | 65.249 | 11.733
-| link:solvers/729.py[729.py] | 62.867 | 4.653
-| link:solvers/348.py[348.py] | 59.633 | 4.077
-| link:solvers/886.py[886.py] | 53.376 | 9.025
-| link:solvers/941.py[941.py] | 53.237 | 0.071
-| link:solvers/983.py[983.py] | 52.648 | 1.083
-| link:solvers/810.py[810.py] | 51.788 | 2.244
-| link:solvers/534.py[534.py] | 51.208 | 98.402
-| link:solvers/972.py[972.py] | 50.921 | 24.197
-| link:solvers/642.py[642.py] | 47.987 | 2.125
-| link:solvers/675.py[675.py] | 46.059 | 2.139
-| link:solvers/275.py[275.py] | 43.817 | 
-| link:solvers/526.py[526.py] | 41.979 | 23.403
-| link:solvers/474.py[474.py] | 41.171 | 6.123
-| link:solvers/701.py[701.py] | 40.357 | 54.200
-| link:solvers/910.py[910.py] | 39.422 | 0.410
-| link:solvers/655.py[655.py] | 38.562 | 38.477
-| link:solvers/155.py[155.py] | 37.908 | 17.911
-| link:solvers/571.py[571.py] | 37.492 | 24.582
-| link:solvers/966.py[966.py] | 36.829 | 29.129
-| link:solvers/459.py[459.py] | 36.174 | 19.962
-| link:solvers/521.py[521.py] | 35.023 | 2.919
-| link:solvers/730.py[730.py] | 34.591 | 31.019
-| link:solvers/549.py[549.py] | 31.523 | 5.335
-| link:solvers/650.py[650.py] | 30.908 | 0.605
-| link:solvers/757.py[757.py] | 28.238 | 79.173
-| link:solvers/320.py[320.py] | 28.163 | 3.567
-| link:solvers/962.py[962.py] | 27.947 | 13.115
-| link:solvers/343.py[343.py] | 27.787 | 0.374
-| link:solvers/637.py[637.py] | 26.787 | 58.593
-| link:solvers/925.py[925.py] | 26.061 | 9.217
-| link:solvers/476.py[476.py] | 25.504 | 6.439
-|===
-
-We've put some effort into optimizing the following above further but failed so far:
+We've put some effort into optimizing the following slow solvers further but failed so far:
 
 * 507
 * 715
@@ -1548,7 +1506,7 @@ At link:benchmark.yaml[] we store benchmarks for:
 +
 We have placed non-Python solvers in this separate list for the following reasons:
 +
-** Python is the primary language, and it is nice to have a cleaner table containing only it
+** Python is the primary language, and it is nice to keep the main results table focused on it
 ** our non-Python solvers will mostly be vibe-translated, and as such auto-generation metadata such as number of tokens and model doesn't matter so much for them
 * other large solution sets that have become available to us to try and see if any of them have fundamentally better algorithms than ours
 
@@ -1561,13 +1519,13 @@ This goal is fraught with danger because:
 
 but we do our best.
 
-To list our Python implementations which have the greatest potential known improvements in another implementation use:
+To list our Python implementations which have the greatest potential known improvements in another implementation as CSV use:
 
 ....
 ./greatest-improvements.py
 ....
 
-To list the Python eulersolve implementations which have the greatest potential known improvements in another implementation use:
+To list the Python eulersolve implementations which have the greatest potential known improvements in another implementation as CSV use:
 
 ....
 ./greatest-improvements.py --reference-set solvers/eulersolve

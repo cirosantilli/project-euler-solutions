@@ -833,25 +833,6 @@ def marker_section_limit(lines: list[str], marker_idx: int) -> int:
     return len(lines)
 
 
-def table_line_span_after_marker(lines: list[str], marker: str) -> tuple[int, int]:
-    marker_idx = find_marker_index(lines, marker)
-    limit = marker_section_limit(lines, marker_idx)
-    start = marker_idx + 1
-    while start < limit and not lines[start].strip():
-        start += 1
-    end = start
-    while end < limit and lines[end].strip().startswith("|"):
-        end += 1
-    return start, end
-
-
-def replace_table_after_marker(
-    lines: list[str], marker: str, table_lines: list[str]
-) -> None:
-    start, end = table_line_span_after_marker(lines, marker)
-    lines[start:end] = table_lines
-
-
 def link_target_from_cell(cell: str) -> str | None:
     link_match = re.search(r"(?:link:)?([^\[]+)\[[^\]]*\]", cell)
     if not link_match:
@@ -871,25 +852,6 @@ def parse_id_cell(cell: str) -> int | None:
     if plain_match:
         return int(plain_match.group(1))
     return None
-def runtime_cell_from_primary_row(pid: TestId, row: str) -> str:
-    if not isinstance(pid, int):
-        return ""
-    cells = trim_trailing_empty_cells(readme_tables.split_table_row(row))
-    normalized = normalize_row_fields(pid, cells)
-    if normalized is None:
-        return ""
-    (
-        _id_cell,
-        _statement_cell,
-        time_cell,
-        _model_cell,
-        _tokens_cell,
-        _output_cell,
-        error_cell,
-    ) = normalized
-    if error_cell and not is_missing_reference_error_cell(error_cell):
-        return ""
-    return time_cell
 
 
 def parse_primary_python_row_map(lines: list[str]) -> dict[tuple[TestId, str], str]:
@@ -1261,82 +1223,6 @@ def upsert_benchmark_results(
     return rows
 
 
-def other_result_suite_label(path_text: str) -> str:
-    parent = Path(path_text).parent.as_posix()
-    return parent if parent != "." else ""
-
-
-def ordered_suite_labels(labels: set[str]) -> list[str]:
-    ordered = ["solvers"]
-    ordered.extend(sorted(label for label in labels if label and label != "solvers"))
-    return ordered
-
-
-def parse_other_python_suite_results(
-    lines: list[str],
-    benchmark_rows: dict[int, dict[str, str]] | None = None,
-) -> tuple[list[str], dict[int, dict[str, str]]]:
-    other_rows = benchmark_rows
-    if other_rows is None:
-        other_rows = load_benchmark_results(lines)
-    labels: set[str] = set()
-    suite_rows: dict[int, dict[str, str]] = {}
-    for pid, path_values in other_rows.items():
-        for path_text, cell in path_values.items():
-            if other_result_language(path_text) != "py" or not looks_numeric(cell):
-                continue
-            label = other_result_suite_label(path_text)
-            if not label:
-                continue
-            labels.add(label)
-            suite_rows.setdefault(pid, {})[label] = cell
-    return ordered_suite_labels(labels), suite_rows
-
-
-def replace_slowest_python_table(
-    lines: list[str],
-    row_map: dict[tuple[TestId, str], str],
-    benchmark_rows: dict[int, dict[str, str]] | None = None,
-) -> None:
-    ordered_labels, suite_rows = parse_other_python_suite_results(
-        lines, benchmark_rows
-    )
-
-    slow_candidates: list[tuple[float, str, str]] = []
-    for (pid, language), row in row_map.items():
-        if not isinstance(pid, int) or language != "py":
-            continue
-        time_cell = runtime_cell_from_primary_row(pid, row)
-        if not time_cell:
-            continue
-        try:
-            runtime = float(time_cell)
-        except ValueError:
-            continue
-        id_cell = readme_tables.split_table_row(row)[0]
-        slow_candidates.append((runtime, id_cell, time_cell))
-
-    slowest = sorted(slow_candidates, key=lambda item: item[0], reverse=True)[:50]
-    header = "| ID | " + " | ".join(f"{label} (s)" for label in ordered_labels)
-    slow_rows: list[str] = []
-    for _rt, id_cell, time_cell in slowest:
-        pid = parse_id_cell(id_cell)
-        cells = [id_cell]
-        for label in ordered_labels:
-            if label == "solvers":
-                cells.append(time_cell)
-            elif pid is not None:
-                cells.append(suite_rows.get(pid, {}).get(label, ""))
-            else:
-                cells.append("")
-        slow_rows.append("| " + " | ".join(cells))
-    replace_table_after_marker(
-        lines,
-        "// SLOWEST PYTHON SOLVERS TABLE",
-        ["|===", header, *slow_rows, "|==="],
-    )
-
-
 def update_readme(results: list[Result]) -> None:
     readme_path = ROOT / "README.adoc"
     lines = readme_path.read_text().splitlines()
@@ -1430,7 +1316,6 @@ def update_readme(results: list[Result]) -> None:
 
     benchmark_rows = upsert_benchmark_results(results, row_map, lines)
     replace_other_results_table(lines, benchmark_rows)
-    replace_slowest_python_table(lines, row_map, benchmark_rows)
 
     readme_path.write_text("\n".join(lines) + "\n")
 
@@ -1441,7 +1326,6 @@ def update_readme_solver_sets(results: list[Result]) -> None:
     row_map = parse_primary_python_row_map(lines)
     benchmark_rows = upsert_benchmark_results(results, row_map, lines)
     replace_other_results_table(lines, benchmark_rows)
-    replace_slowest_python_table(lines, row_map, benchmark_rows)
     readme_path.write_text("\n".join(lines) + "\n")
 
 
@@ -1503,7 +1387,6 @@ def update_readme_links() -> None:
 
     sorted_rows = [row_map[key] for key in sorted(row_map, key=row_sort_key)]
     lines[start + 1 : end] = [header_line, *sorted_rows]
-    replace_slowest_python_table(lines, row_map)
     readme_path.write_text("\n".join(lines) + "\n")
 
 
@@ -1669,7 +1552,6 @@ def update_readme_not_found() -> None:
 
     benchmark_rows = upsert_benchmark_results(other_results, row_map, lines)
     replace_other_results_table(lines, benchmark_rows)
-    replace_slowest_python_table(lines, row_map, benchmark_rows)
 
     readme_path.write_text("\n".join(lines) + "\n")
 
