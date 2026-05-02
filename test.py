@@ -35,8 +35,6 @@ class Result:
     puzzle_id: TestId
     correct: bool
     elapsed: float | None
-    model: str | None
-    output_tokens: int | None
     output: str | None
     message: str
     language: str | None
@@ -550,25 +548,6 @@ def target_from_source(path: Path, language: str) -> Path:
     return path
 
 
-def load_solver_metadata(
-    puzzle_id: TestId, language: str | None
-) -> tuple[str | None, int | None]:
-    if not language:
-        return None, None
-    meta_path = SOLVERS_DIR / f"{puzzle_id}.{language}.json"
-    if not meta_path.exists():
-        return None, None
-    try:
-        payload = json.loads(meta_path.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
-        return None, None
-    output_tokens = payload.get("output_tokens")
-    model = payload.get("model")
-    model_value = model if isinstance(model, str) else None
-    tokens_value = output_tokens if isinstance(output_tokens, int) else None
-    return model_value, tokens_value
-
-
 def run_solver(
     path: Path, timeout: float | None, language: str
 ) -> tuple[int | None, str, str, float, bool]:
@@ -611,8 +590,6 @@ def wrong_answer_detail(display_output: str, expected: str | None) -> str:
 
 def format_row(res: Result) -> str:
     time_cell = f"{res.elapsed:.3f}" if res.elapsed is not None else ""
-    model_cell = res.model or ""
-    tokens_cell = str(res.output_tokens) if res.output_tokens is not None else ""
     output_cell = format_output_cell(res)
     error_cell = "" if res.correct else normalize_error_cell(res.message)
     link = format_id_cell(res)
@@ -621,8 +598,6 @@ def format_row(res: Result) -> str:
         link,
         explanation_cell,
         time_cell,
-        model_cell,
-        tokens_cell,
         output_cell,
         error_cell,
     )
@@ -677,6 +652,13 @@ def looks_numeric(value: str) -> bool:
     return bool(NUMERIC_RE.match(value))
 
 
+def looks_like_model_cell(value: str) -> bool:
+    value = value.strip().lower()
+    return value.startswith(
+        ("gpt-", "o1", "o3", "o4", "codex-", "claude-", "gemini-")
+    )
+
+
 def trim_trailing_empty_cells(cells: list[str]) -> list[str]:
     while len(cells) > 7 and cells[-1] == "":
         cells = cells[:-1]
@@ -697,7 +679,7 @@ def row_has_statement(cells: list[str]) -> bool:
 
 def normalize_row_fields(
     pid: TestId, cells: list[str]
-) -> tuple[str, str, str, str, str, str, str] | None:
+) -> tuple[str, str, str, str, str] | None:
     if (
         len(cells) >= 7
         and cells[1].startswith("link:")
@@ -709,30 +691,40 @@ def normalize_row_fields(
             id_cell,
             statement_cell,
             time_cell,
-            model_cell,
-            tokens_cell,
+            _model_cell,
+            _tokens_cell,
             output_cell,
             error_cell,
         ) = cells[:7]
     elif len(cells) == 6:
-        id_cell, statement_cell, time_cell, model_cell, tokens_cell, error_cell = cells
+        (
+            id_cell,
+            statement_cell,
+            time_cell,
+            _model_cell,
+            _tokens_cell,
+            error_cell,
+        ) = cells
         output_cell = ""
     elif len(cells) == 5:
         if row_has_statement(cells):
-            id_cell, statement_cell, time_cell, model_cell, last_cell = cells
-            if last_cell and not looks_numeric(last_cell):
-                tokens_cell = ""
-                error_cell = last_cell
+            id_cell, statement_cell, time_cell, fourth_cell, fifth_cell = cells
+            if looks_like_model_cell(fourth_cell) or (
+                not fourth_cell and looks_numeric(fifth_cell)
+            ):
+                output_cell = ""
+                error_cell = (
+                    fifth_cell if fifth_cell and not looks_numeric(fifth_cell) else ""
+                )
             else:
-                tokens_cell = last_cell
-                error_cell = ""
-            output_cell = ""
+                output_cell = fourth_cell
+                error_cell = fifth_cell
         else:
-            id_cell, time_cell, model_cell, tokens_cell, error_cell = cells
+            id_cell, time_cell, _model_cell, _tokens_cell, error_cell = cells
             statement_cell = explanation_link(pid)
             output_cell = ""
     elif len(cells) == 4:
-        id_cell, time_cell, model_cell, tokens_cell = cells
+        id_cell, time_cell, _model_cell, _tokens_cell = cells
         statement_cell = explanation_link(pid)
         output_cell = ""
         error_cell = ""
@@ -745,8 +737,6 @@ def normalize_row_fields(
         id_cell,
         statement_cell,
         time_cell,
-        model_cell,
-        tokens_cell,
         output_cell,
         error_cell,
     )
@@ -805,14 +795,12 @@ def format_row_fields(
     id_cell: str,
     statement_cell: str,
     time_cell: str,
-    model_cell: str,
-    tokens_cell: str,
     output_cell: str,
     error_cell: str,
 ) -> str:
     return (
         f"| {id_cell} | {statement_cell} | {time_cell} | "
-        f"{model_cell} | {tokens_cell} | {output_cell} | {error_cell}"
+        f"{output_cell} | {error_cell}"
     ).rstrip()
 
 
@@ -907,8 +895,6 @@ def parse_primary_python_row_map(lines: list[str]) -> dict[tuple[TestId, str], s
             id_cell,
             statement_cell,
             time_cell,
-            model_cell,
-            tokens_cell,
             output_cell,
             error_cell,
         ) = normalized
@@ -916,8 +902,6 @@ def parse_primary_python_row_map(lines: list[str]) -> dict[tuple[TestId, str], s
             id_cell,
             statement_cell,
             time_cell,
-            model_cell,
-            tokens_cell,
             output_cell,
             error_cell,
         )
@@ -1194,8 +1178,6 @@ def primary_row_other_result_entry(pid: TestId, row: str) -> tuple[str, str] | N
         id_cell,
         _statement_cell,
         time_cell,
-        _model_cell,
-        _tokens_cell,
         output_cell,
         error_cell,
     ) = normalized
@@ -1251,9 +1233,7 @@ def update_readme(results: list[Result]) -> None:
     lines = readme_path.read_text().splitlines()
     start, end = readme_tables.find_table_block(lines, "// RESULTS TABLE")
 
-    header_line = (
-        "| ID | Explanation | Runtime (s) | Model | Out Tokens | Output | Error"
-    )
+    header_line = "| ID | Explanation | Runtime (s) | Output | Error"
     row_re = re.compile(r"^\|\s+link:([^\[]+)\[")
     plain_re = re.compile(r"^\|\s+(\d+)\.py\s+\|")
     result_map: dict[tuple[TestId, str], str] = {}
@@ -1286,8 +1266,6 @@ def update_readme(results: list[Result]) -> None:
                 id_cell,
                 statement_cell,
                 time_cell,
-                model_cell,
-                tokens_cell,
                 output_cell,
                 error_cell,
             ) = normalized
@@ -1295,8 +1273,6 @@ def update_readme(results: list[Result]) -> None:
                 id_cell,
                 statement_cell,
                 time_cell,
-                model_cell,
-                tokens_cell,
                 output_cell,
                 error_cell,
             )
@@ -1316,8 +1292,6 @@ def update_readme(results: list[Result]) -> None:
             id_cell,
             statement_cell,
             time_cell,
-            model_cell,
-            tokens_cell,
             output_cell,
             error_cell,
         ) = normalized
@@ -1325,8 +1299,6 @@ def update_readme(results: list[Result]) -> None:
             id_cell,
             statement_cell,
             time_cell,
-            model_cell,
-            tokens_cell,
             output_cell,
             error_cell,
         )
@@ -1357,9 +1329,7 @@ def update_readme_links() -> None:
     lines = readme_path.read_text().splitlines()
     start, end = readme_tables.find_table_block(lines, "// RESULTS TABLE")
 
-    header_line = (
-        "| ID | Explanation | Runtime (s) | Model | Out Tokens | Output | Error"
-    )
+    header_line = "| ID | Explanation | Runtime (s) | Output | Error"
     row_re = re.compile(r"^\|\s+link:([^\[]+)\[")
     plain_re = re.compile(r"^\|\s+(\d+)\.py\s+\|")
     row_map: dict[tuple[TestId, str], str] = {}
@@ -1394,8 +1364,6 @@ def update_readme_links() -> None:
             id_cell,
             statement_cell,
             time_cell,
-            model_cell,
-            tokens_cell,
             output_cell,
             error_cell,
         ) = normalized
@@ -1403,8 +1371,6 @@ def update_readme_links() -> None:
             id_cell,
             statement_cell,
             time_cell,
-            model_cell,
-            tokens_cell,
             output_cell,
             error_cell,
         )
@@ -1470,8 +1436,6 @@ def update_readme_not_found() -> None:
             id_cell,
             statement_cell,
             time_cell,
-            model_cell,
-            tokens_cell,
             output_cell,
             error_cell,
         ) = normalized
@@ -1479,8 +1443,6 @@ def update_readme_not_found() -> None:
             id_cell,
             statement_cell,
             time_cell,
-            model_cell,
-            tokens_cell,
             output_cell,
             error_cell,
         )
@@ -1494,8 +1456,6 @@ def update_readme_not_found() -> None:
             puzzle_id=pid,
             correct=False,
             elapsed=None,
-            model=None,
-            output_tokens=None,
             output=None,
             message="solver not found",
             language=language,
@@ -1514,8 +1474,6 @@ def update_readme_not_found() -> None:
             puzzle_id=pid,
             correct=False,
             elapsed=None,
-            model=None,
-            output_tokens=None,
             output=None,
             message="untested",
             language=language,
@@ -1537,8 +1495,6 @@ def update_readme_not_found() -> None:
             puzzle_id=name,
             correct=False,
             elapsed=None,
-            model=None,
-            output_tokens=None,
             output=None,
             message="untested",
             language=target.language,
@@ -1557,8 +1513,6 @@ def update_readme_not_found() -> None:
             puzzle_id=pid,
             correct=False,
             elapsed=None,
-            model=None,
-            output_tokens=None,
             output=None,
             message="solver not found",
             language="py",
@@ -1571,7 +1525,7 @@ def update_readme_not_found() -> None:
 
     sorted_rows = [row_map[key] for key in sorted(row_map, key=row_sort_key)]
     lines[start + 1 : end] = [
-        "| ID | Explanation | Runtime (s) | Model | Out Tokens | Output | Error",
+        "| ID | Explanation | Runtime (s) | Output | Error",
         *sorted_rows,
     ]
 
@@ -1605,10 +1559,6 @@ def run_solver_set_target(
     pid = target.puzzle_id
     expected = reference.get(pid) if isinstance(pid, int) else None
     missing_reference = expected is None
-    model: str | None = None
-    output_tokens: int | None = None
-    if target.suite == "solvers":
-        model, output_tokens = load_solver_metadata(pid, target.language)
 
     print(f"[{pid}] running {target.path} ({target.suite})")
     rc, stdout, stderr, elapsed, timed_out = run_solver(
@@ -1622,8 +1572,6 @@ def run_solver_set_target(
             pid,
             correct=False,
             elapsed=None,
-            model=model,
-            output_tokens=output_tokens,
             output=None,
             message=f"timed out after {limit:.3f}s",
             language=target.language,
@@ -1637,8 +1585,6 @@ def run_solver_set_target(
             pid,
             correct=False,
             elapsed=elapsed,
-            model=model,
-            output_tokens=output_tokens,
             output=None,
             message=f"failed (exit {rc})",
             language=target.language,
@@ -1652,8 +1598,6 @@ def run_solver_set_target(
             pid,
             correct=False,
             elapsed=elapsed,
-            model=model,
-            output_tokens=output_tokens,
             output=display_output,
             message=MISSING_REFERENCE_MESSAGE,
             language=target.language,
@@ -1665,8 +1609,6 @@ def run_solver_set_target(
             pid,
             correct=True,
             elapsed=elapsed,
-            model=model,
-            output_tokens=output_tokens,
             output=expected,
             message="ok",
             language=target.language,
@@ -1681,8 +1623,6 @@ def run_solver_set_target(
         pid,
         correct=False,
         elapsed=elapsed,
-        model=model,
-        output_tokens=output_tokens,
         output=display_output,
         message=msg,
         language=target.language,
@@ -1872,8 +1812,6 @@ def main() -> None:
                     violation.puzzle_id,
                     correct=False,
                     elapsed=None,
-                    model=None,
-                    output_tokens=None,
                     output=None,
                     message="critical lint failed",
                     language=language,
@@ -1881,7 +1819,7 @@ def main() -> None:
                 )
             )
         print("\n|===")
-        print("| ID | Explanation | Runtime (s) | Model | Out Tokens | Output | Error")
+        print("| ID | Explanation | Runtime (s) | Output | Error")
         for res in sorted(lint_results, key=result_sort_key):
             print(format_row(res))
         print("|===")
@@ -1919,8 +1857,6 @@ def main() -> None:
                     pid,
                     correct=False,
                     elapsed=None,
-                    model=None,
-                    output_tokens=None,
                     output=None,
                     message="solver not found",
                     language=None,
@@ -1935,7 +1871,6 @@ def main() -> None:
             if target.checks_reference_answer and isinstance(pid, int):
                 expected = reference.get(pid)
             missing_reference = target.checks_reference_answer and expected is None
-            model, output_tokens = load_solver_metadata(pid, target.language)
             label = f"{target.language}" if target.language else "unknown"
             print(f"[{pid}] running {target.path} ({label})")
             rc, stdout, stderr, elapsed, timed_out = run_solver(
@@ -1948,8 +1883,6 @@ def main() -> None:
                         pid,
                         correct=False,
                         elapsed=None,
-                        model=model,
-                        output_tokens=output_tokens,
                         output=None,
                         message=f"timed out after {limit:.3f}s",
                         language=target.language,
@@ -1968,8 +1901,6 @@ def main() -> None:
                         pid,
                         correct=False,
                         elapsed=elapsed,
-                        model=model,
-                        output_tokens=output_tokens,
                         output=None,
                         message=f"failed (exit {rc})",
                         language=target.language,
@@ -1987,8 +1918,6 @@ def main() -> None:
                         pid,
                         correct=True,
                         elapsed=elapsed,
-                        model=model,
-                        output_tokens=output_tokens,
                         output=None,
                         message="output ignored",
                         language=target.language,
@@ -2004,8 +1933,6 @@ def main() -> None:
                         pid,
                         correct=False,
                         elapsed=elapsed,
-                        model=model,
-                        output_tokens=output_tokens,
                         output=display_output,
                         message=MISSING_REFERENCE_MESSAGE,
                         language=target.language,
@@ -2022,8 +1949,6 @@ def main() -> None:
                         pid,
                         correct=True,
                         elapsed=elapsed,
-                        model=model,
-                        output_tokens=output_tokens,
                         output=expected,
                         message="ok",
                         language=target.language,
@@ -2039,8 +1964,6 @@ def main() -> None:
                         pid,
                         correct=False,
                         elapsed=elapsed,
-                        model=model,
-                        output_tokens=output_tokens,
                         output=display_output,
                         message=msg,
                         language=target.language,
@@ -2062,7 +1985,7 @@ def main() -> None:
 
     if py_results:
         print("\n|===")
-        print("| ID | Explanation | Runtime (s) | Model | Out Tokens | Output | Error")
+        print("| ID | Explanation | Runtime (s) | Output | Error")
         for res in sorted(py_results, key=result_sort_key):
             print(format_row(res))
         print("|===")
