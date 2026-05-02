@@ -13,7 +13,7 @@
 This repo aims to solve **ALL** https://projecteuler.net[Project Euler] problems in openly licensed Python code, mostly using LLMs to generate the bulk of the solutions. Status:
 
 // STATUS TABLE
-* **1-994**: done
+* **1-995**: done
 
 Tested on Python 3.13.7, PyPy 7.3.20, Ubuntu 25.10.
 
@@ -1466,6 +1466,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/992.py[992.py] | link:solvers/992.md[992.md] | 0.095 | gpt-5.2-thinking |  | 568021234 | error: missing reference answer
 | link:solvers/993.py[993.py] | link:solvers/993.md[993.md] | 0.092 | gpt-5.2-thinking |  | 1661971830985915304 | error: missing reference answer
 | link:solvers/994.py[994.py] | link:solvers/994.md[994.md] | 22.996 | gpt-5.2-thinking |  | 350247268 | error: missing reference answer
+| link:solvers/995.py[995.py] | link:solvers/995.md[995.md] | 3.301 | gpt-5.2-thinking |  | 2.21322e536280 | error: missing reference answer
 |===
 
 === Slowest solvers
@@ -5520,3 +5521,5 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/eulersolve/993.cpp[]: 0.004
 * 994
 ** link:solvers/994.py[]: 22.996
+* 995
+** link:solvers/995.py[]: 3.301
