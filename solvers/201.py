@@ -48,7 +48,9 @@ def unique_sum_from_list(values: list[int], choose: int) -> int:
         used += 1
 
     final = state[choose]
-    return sum(total for total in range(low[choose], high[choose] + 1) if final[total] == 1)
+    return sum(
+        total for total in range(low[choose], high[choose] + 1) if final[total] == 1
+    )
 
 
 def solve(max_set: int, choose: int) -> int:

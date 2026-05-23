@@ -43,7 +43,9 @@ def phi(n: int) -> int:
 
 def is_perfect_cube(x: int) -> bool:
     root = round(x ** (1.0 / 3.0))
-    return any(candidate >= 0 and candidate**3 == x for candidate in range(root - 1, root + 2))
+    return any(
+        candidate >= 0 and candidate**3 == x for candidate in range(root - 1, root + 2)
+    )
 
 
 def p_minus_1_factors_mod3(p: int, spf: list[int]) -> tuple[tuple[int, int], ...]:

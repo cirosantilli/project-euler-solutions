@@ -9,6 +9,7 @@ Each operation reverses a range of positions, implemented by two splits + lazy r
 No external libraries are used.
 """
 
+
 def compute_R(N: int, K: int, mod: int | None = None) -> int:
     """
     Compute R(N, K). If mod is provided, all accumulated sums are kept modulo `mod`

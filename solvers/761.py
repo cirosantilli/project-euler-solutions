@@ -14,10 +14,7 @@ def compute(n: int) -> float:
             branch = k - 1
             break
 
-    argument = (
-        2 * sin(branch * theta) / ((branch + n) * tangent)
-        - cos(branch * theta)
-    )
+    argument = 2 * sin(branch * theta) / ((branch + n) * tangent) - cos(branch * theta)
     argument = min(1.0, max(-1.0, argument))
     alpha = (branch * theta + acos(argument)) / 2
     return round(1 / cos(alpha), 8)

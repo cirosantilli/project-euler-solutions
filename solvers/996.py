@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from math import comb
 
 MOD = 1234567891
@@ -96,8 +97,8 @@ def _numerator_for_all_valid_vectors(n, mod=None):
     for length in range(2, n + 1):
         block_num[length] = _block_numerator(length, mod)
 
-    total = [[] for _ in range(n + 1)]      # valid prefixes of this length
-    zero_end = [[] for _ in range(n + 1)]   # valid prefixes that may start a block
+    total = [[] for _ in range(n + 1)]  # valid prefixes of this length
+    zero_end = [[] for _ in range(n + 1)]  # valid prefixes that may start a block
     total[0] = [1]
     zero_end[0] = [1]
 

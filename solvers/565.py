@@ -31,9 +31,7 @@ def primes_upto(limit: int) -> list[int]:
     for p in range(2, math.isqrt(limit) + 1):
         if sieve[p]:
             start = p * p
-            sieve[start : limit + 1 : p] = b"\x00" * (
-                (limit - start) // p + 1
-            )
+            sieve[start : limit + 1 : p] = b"\x00" * ((limit - start) // p + 1)
     return [p for p in range(2, limit + 1) if sieve[p]]
 
 

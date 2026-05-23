@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from math import gcd, isqrt
 
 
@@ -61,15 +62,15 @@ def is_minimum_square(sides, twice_area, square_side):
     for i, r in enumerate(ss):
         p = ss[(i + 1) % 3]
         q = ss[(i + 2) % 3]
-        k_num = p * p + q * q - r * r       # 2K
+        k_num = p * p + q * q - r * r  # 2K
         if k_num <= 0:
             continue
         r_den_part = p * p + q * q - 2 * d_area
         if r_den_part <= 0:
             continue
 
-        num = k_num * k_num                 # numerator of 4B^2
-        den = 4 * r_den_part                # denominator of B^2
+        num = k_num * k_num  # numerator of 4B^2
+        den = 4 * r_den_part  # denominator of B^2
 
         # Validity of the four-sided contact pattern: the two adjacent sides
         # must hit the far sides of the square, not miss them or pass a corner.

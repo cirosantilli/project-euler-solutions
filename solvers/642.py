@@ -65,11 +65,7 @@ def build_prime_sum_table(N: int):
         for idx in range(limit):
             value = values[idx]
             quotient = value // p
-            qidx = (
-                idx_small[quotient]
-                if quotient <= root
-                else idx_large[N // quotient]
-            )
+            qidx = idx_small[quotient] if quotient <= root else idx_large[N // quotient]
             prime_sums[idx] = (
                 prime_sums[idx] - p * (prime_sums[qidx] - sum_before_p)
             ) % MOD

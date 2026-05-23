@@ -98,15 +98,12 @@ def compute_B(N: int) -> int:
         low_count = L - rem
 
         final_prefix_total += (
-            low_count * running_prefix
-            + base * low_count * (low_count + 1) // 2
+            low_count * running_prefix + base * low_count * (low_count + 1) // 2
         )
 
         if rem:
             after_low = running_prefix + low_count * base
-            final_prefix_total += (
-                rem * after_low + (base + 1) * rem * (rem + 1) // 2
-            )
+            final_prefix_total += rem * after_low + (base + 1) * rem * (rem + 1) // 2
 
         running_prefix += T
 

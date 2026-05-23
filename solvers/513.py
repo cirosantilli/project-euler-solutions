@@ -43,12 +43,7 @@ def trapezoid_floor_sum(
 
         whole_slope = slope // denominator
         if whole_slope:
-            total += (
-                (upper_x - lower_x)
-                * (upper_x + lower_x + 1)
-                // 2
-                * whole_slope
-            )
+            total += (upper_x - lower_x) * (upper_x + lower_x + 1) // 2 * whole_slope
             slope %= denominator
 
         if slope == 0:
@@ -146,9 +141,7 @@ def primitive_count(n: int) -> int:
 
                     if u * u < 3 * v * v:
                         min_s = root
-                        max_s = n * (3 * v - u) // (
-                            2 * u * v + v * v - u * u
-                        )
+                        max_s = n * (3 * v - u) // (2 * u * v + v * v - u * u)
                         slope0 = u - v
                         slope1 = 3 * v - u
                     else:

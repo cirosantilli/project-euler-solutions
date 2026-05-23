@@ -99,9 +99,7 @@ def F_brutish(n: int, mod: int = MOD) -> int:
                 old_exp = exponents.get(p, 0)
                 new_exp = old_exp + count
                 running = (
-                    running
-                    * (2 * new_exp + 1)
-                    * pow(2 * old_exp + 1, -1, mod)
+                    running * (2 * new_exp + 1) * pow(2 * old_exp + 1, -1, mod)
                 ) % mod
                 exponents[p] = new_exp
             p += 1 if p == 2 else 2

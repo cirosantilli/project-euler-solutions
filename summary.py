@@ -51,9 +51,7 @@ def row_has_solver(id_cell: str) -> bool:
 
 def row_is_solved(parts: list[str]) -> bool:
     error = parts[-1].strip()
-    return not error or (
-        error == MISSING_REFERENCE_ERROR and row_has_solver(parts[0])
-    )
+    return not error or (error == MISSING_REFERENCE_ERROR and row_has_solver(parts[0]))
 
 
 def parse_rows(rows: list[list[str]]) -> tuple[dict[int, int], int, dict[int, bool]]:

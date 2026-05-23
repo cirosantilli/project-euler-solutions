@@ -97,15 +97,9 @@ def python_comment_or_string_hits(text: str, answer: str) -> list[int]:
 def python_line_hits(text: str, answer: str) -> list[int]:
     hits: list[int] = []
     answer_re = re.escape(answer)
-    answer_literal = (
-        rf"(?:['\"]{answer_re}['\"]|(?<![\w.]){answer_re}(?![\w.]))"
-    )
-    action_re = re.compile(
-        rf"\b(?:return|print)\b.*{answer_literal}"
-    )
-    assignment_re = re.compile(
-        rf"(?<![!<>=])=\s*{answer_literal}"
-    )
+    answer_literal = rf"(?:['\"]{answer_re}['\"]|(?<![\w.]){answer_re}(?![\w.]))"
+    action_re = re.compile(rf"\b(?:return|print)\b.*{answer_literal}")
+    assignment_re = re.compile(rf"(?<![!<>=])=\s*{answer_literal}")
     comparison_re = re.compile(
         rf"(?:==|!=)\s*{answer_literal}|{answer_literal}\s*(?:==|!=)"
     )

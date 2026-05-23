@@ -66,8 +66,7 @@ def branch_sum(bound, target, multiplier, flags, odd_primes):
                 and prod * cand <= bound_local
             ):
                 total = (
-                    total
-                    + contribution(prod * cand, bound_local, multiplier_local)
+                    total + contribution(prod * cand, bound_local, multiplier_local)
                 ) % MOD
 
         next_odd_count = odd_count ^ 1

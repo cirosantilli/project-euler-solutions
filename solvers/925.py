@@ -45,7 +45,15 @@ def T_bruteforce(limit: int) -> int:
 
 def square_sum_below_power10(k: int) -> int:
     n = pow(10, k, MOD)
-    return n * ((n - 1) % MOD) % MOD * ((2 * n - 1) % MOD) % MOD * pow(6, MOD - 2, MOD) % MOD
+    return (
+        n
+        * ((n - 1) % MOD)
+        % MOD
+        * ((2 * n - 1) % MOD)
+        % MOD
+        * pow(6, MOD - 2, MOD)
+        % MOD
+    )
 
 
 def correction_sum(k: int) -> int:

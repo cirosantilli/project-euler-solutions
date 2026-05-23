@@ -95,10 +95,7 @@ def precompute_P(n: int):
                 T[(k, m, i)] = acc
 
     # Apply alternating sign factor s = (-1)^(k+1-m)
-    P = [
-        [[None for _ in range(n + 1)] for _ in range(k + 2)]
-        for k in range(n + 1)
-    ]
+    P = [[[None for _ in range(n + 1)] for _ in range(k + 2)] for k in range(n + 1)]
     A0 = [[0] * (k + 2) for k in range(n + 1)]
     for k in range(1, n + 1):
         r = n - k

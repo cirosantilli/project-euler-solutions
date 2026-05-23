@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Project Euler 994 - Counting Triangles
 
@@ -200,8 +200,7 @@ def concurrent_triple_count(m: int, n: int, tp: TotientPrefix) -> int:
 
 def T(m: int, n: int, tp: TotientPrefix) -> int:
     return (
-        nonconcurrent_candidate_count(m, n)
-        - concurrent_triple_count(m, n, tp)
+        nonconcurrent_candidate_count(m, n) - concurrent_triple_count(m, n, tp)
     ) % MOD
 
 

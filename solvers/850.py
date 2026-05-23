@@ -52,9 +52,7 @@ def primes_upto(limit: int) -> list[int]:
     for p in range(2, math.isqrt(limit) + 1):
         if sieve[p]:
             start = p * p
-            sieve[start : limit + 1 : p] = b"\x00" * (
-                (limit - start) // p + 1
-            )
+            sieve[start : limit + 1 : p] = b"\x00" * ((limit - start) // p + 1)
     return [p for p in range(2, limit + 1) if sieve[p]]
 
 
@@ -81,9 +79,7 @@ def compute_twoS_mod(N: int, mod2: int) -> int:
         tail_first = max(3, max_exp + 1)
         if tail_first % 2 == 0:
             tail_first += 1
-        total = (
-            odd_count_from(tail_first, N) % mod2
-        ) * (N // (d * rad)) % mod2
+        total = (odd_count_from(tail_first, N) % mod2) * (N // (d * rad)) % mod2
 
         small_last = min(N, tail_first - 2)
         limit = N // d

@@ -18,8 +18,7 @@ def pack_state(a: int, b: int, c: int, ba: int, cb: int, ac: int) -> int:
 
 def build_transitions() -> list[list[tuple[int, int, int, int, int, int, int]]]:
     transitions: list[list[tuple[int, int, int, int, int, int, int]]] = [
-        []
-        for _ in range(7 * 7 * 7)
+        [] for _ in range(7 * 7 * 7)
     ]
 
     for a_used in range(7):

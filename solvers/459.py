@@ -143,7 +143,9 @@ def make_triangles_upto(n: int) -> List[int]:
     return out
 
 
-def compute_1d_prefix_and_freq(n: int, lengths: List[int]) -> Tuple[List[int], List[int]]:
+def compute_1d_prefix_and_freq(
+    n: int, lengths: List[int]
+) -> Tuple[List[int], List[int]]:
     """
     Computes:
       - C[x] for x=0..n where C[x] is the XOR prefix of the 1D nim-values (see Pearson),

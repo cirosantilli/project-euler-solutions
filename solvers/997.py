@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Count compatible dice arrangements for the given box dimensions.
 
 The script intentionally does not store the requested final numeric answer;

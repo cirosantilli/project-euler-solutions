@@ -80,7 +80,9 @@ def greedy_length(n: int, powers: list[int], zero_index: int) -> int:
     return terms
 
 
-def S(limit: int, powers: list[int] | None = None, zero_index: int | None = None) -> int:
+def S(
+    limit: int, powers: list[int] | None = None, zero_index: int | None = None
+) -> int:
     """
     Compute sum_{n=1..limit} l(n^2).
 

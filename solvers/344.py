@@ -42,9 +42,7 @@ def count_with_ways(total_sum: int, ways: list[int], mod: int | None = None) -> 
                 if mod is None:
                     next_dp[next_carry] += value * count
                 else:
-                    next_dp[next_carry] = (
-                        next_dp[next_carry] + value * count
-                    ) % mod
+                    next_dp[next_carry] = (next_dp[next_carry] + value * count) % mod
 
         dp = next_dp
 

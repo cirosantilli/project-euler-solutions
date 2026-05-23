@@ -50,8 +50,7 @@ def is_full_reptend_prime(p: int) -> bool:
     if not is_prime(p) or p in (2, 5):
         return False
     return all(
-        pow(10, (p - 1) // factor, p) != 1
-        for factor in distinct_prime_factors(p - 1)
+        pow(10, (p - 1) // factor, p) != 1 for factor in distinct_prime_factors(p - 1)
     )
 
 

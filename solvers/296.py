@@ -126,9 +126,9 @@ def count_triangles(limit: int = LIMIT) -> int:
                 continue
 
             reduced_count = reduced_up_to_half - coprime_count(before, divisors)
-            floor_part = coprime_floor_sum(
-                q, g, half_q, divisors
-            ) - coprime_floor_sum(q, g, before, divisors)
+            floor_part = coprime_floor_sum(q, g, half_q, divisors) - coprime_floor_sum(
+                q, g, before, divisors
+            )
             count += floor_part - (min_h - 1) * reduced_count
 
     return count

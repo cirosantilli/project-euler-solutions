@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 """Adapted from https://github.com/igorvanloo/Project-Euler-Explained/blob/19f85895945a2c9b688f85da142bae13f37dab65/Finished%20Problems/pe00793%20-%20Median%20of%20Products.py"""
+
+
 def s(n):
     s0 = 290797
     array = []

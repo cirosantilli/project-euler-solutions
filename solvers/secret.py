@@ -1,6 +1,6 @@
-#!/usr/bin/env bash
+#!/usr/bin/env python
 
-'''
+"""
 Run as:
 
 wget -O data/project-euler-statements/data/images/bonus_secret_statement.png secret.png https://projecteuler.net/resources/images/bonus_secret_statement.png?1738588439
@@ -9,7 +9,7 @@ pypy3 secret.py
 The output image is placed at:
 
 data/project-euler-statements/data/documents/secret.pgm
-'''
+"""
 
 import hashlib
 import struct
@@ -31,7 +31,6 @@ def paeth_predictor(a, b, c):
     if pb <= pc:
         return b
     return c
-
 
 
 def read_png_mod7(path):
@@ -57,9 +56,15 @@ def read_png_mod7(path):
         pos += 4  # Skip CRC.
 
         if chunk_type == b"IHDR":
-            width, height, bit_depth, color_type, compression, filter_method, interlace = struct.unpack(
-                ">IIBBBBB", chunk_data
-            )
+            (
+                width,
+                height,
+                bit_depth,
+                color_type,
+                compression,
+                filter_method,
+                interlace,
+            ) = struct.unpack(">IIBBBBB", chunk_data)
             if compression != 0 or filter_method != 0:
                 raise ValueError("unsupported PNG compression or filter method")
         elif chunk_type == b"IDAT":
@@ -138,7 +143,6 @@ def read_png_mod7(path):
     return rows
 
 
-
 def neighbors(y, x, height, width):
     return (
         ((y - 1) % height, x),
@@ -146,7 +150,6 @@ def neighbors(y, x, height, width):
         (y, (x - 1) % width),
         (y, (x + 1) % width),
     )
-
 
 
 def step_once(grid, vshift, hshift):
@@ -162,9 +165,10 @@ def step_once(grid, vshift, hshift):
         cur = grid[y]
         out_row = out[y]
         for x in range(width):
-            out_row[x] = MOD7_TABLE[up[x] + down[x] + cur[left_index[x]] + cur[right_index[x]]]
+            out_row[x] = MOD7_TABLE[
+                up[x] + down[x] + cur[left_index[x]] + cur[right_index[x]]
+            ]
     return out
-
 
 
 def apply_many_steps_mod7(grid, steps):
@@ -185,7 +189,6 @@ def apply_many_steps_mod7(grid, steps):
     return result
 
 
-
 def write_pgm(path, grid):
     height = len(grid)
     width = len(grid[0])
@@ -195,13 +198,11 @@ def write_pgm(path, grid):
             handle.write(bytes(DISPLAY_LEVELS[value] for value in row))
 
 
-
 def grid_digest(grid):
     digest = hashlib.sha256()
     for row in grid:
         digest.update(row)
     return digest.hexdigest()
-
 
 
 def run_self_tests():
@@ -235,11 +236,10 @@ def run_self_tests():
     assert fast == slow
 
 
-
 def main():
     run_self_tests()
-    grid = read_png_mod7('../images/bonus_secret_statement.png')
-    revealed = apply_many_steps_mod7(grid, 10 ** 12)
+    grid = read_png_mod7("../images/bonus_secret_statement.png")
+    revealed = apply_many_steps_mod7(grid, 10**12)
     write_pgm("secret.pgm", revealed)
 
 

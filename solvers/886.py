@@ -177,9 +177,7 @@ def P(n: int, mod: int = MOD) -> int:
 
             class_size = active_col_counts[col_pos]
             affected = [
-                idx
-                for idx, support in enumerate(supports)
-                if (support >> col_pos) & 1
+                idx for idx, support in enumerate(supports) if (support >> col_pos) & 1
             ]
             for take in range(class_size + 1):
                 if take:

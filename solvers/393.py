@@ -48,12 +48,8 @@ def count_migrations(size: int) -> int:
                     counts[out1 | (out2 << size)] += 1
                 return
 
-            for kind1, next_occupied1, next_out1 in options(
-                occupied1, out1, col
-            ):
-                for kind2, next_occupied2, next_out2 in options(
-                    occupied2, out2, col
-                ):
+            for kind1, next_occupied1, next_out1 in options(occupied1, out1, col):
+                for kind2, next_occupied2, next_out2 in options(occupied2, out2, col):
                     if kind1 != FILLED and kind1 == kind2:
                         continue
                     fill_row(

@@ -226,9 +226,7 @@ def titanic_sets(n: int, sums: TotientSums) -> int:
         r3 = range_s3(lo, hi)
         length = (hi - lo + 1) % MOD
         poly_plain = (
-            p2 * ((r3 + r2) % MOD)
-            + p1 * ((r2 + r1) % MOD)
-            + p0 * ((r1 + length) % MOD)
+            p2 * ((r3 + r2) % MOD) + p1 * ((r2 + r1) % MOD) + p0 * ((r1 + length) % MOD)
         ) % MOD
 
         collinear = (collinear + poly_exp - poly_plain) % MOD

@@ -42,9 +42,7 @@ def solve(limit: int) -> int:
                 )
             else:
                 pairs = (
-                    (left, right)
-                    for left in left_values
-                    for right in right_values
+                    (left, right) for left in left_values for right in right_values
                 )
 
             for left, right in pairs:

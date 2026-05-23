@@ -25,9 +25,7 @@ def solve(num_digits: int) -> int:
                 next_sum = square_sum + digit * digit
                 next_counts[next_sum] = (next_counts[next_sum] + count) % MODULO
                 next_values[next_sum] = (
-                    next_values[next_sum]
-                    + value_sum
-                    + digit * place_value * count
+                    next_values[next_sum] + value_sum + digit * place_value * count
                 ) % MODULO
 
         counts = next_counts

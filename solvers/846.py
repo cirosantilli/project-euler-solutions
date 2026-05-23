@@ -69,7 +69,9 @@ def build_vectors(limit: int) -> dict[int, tuple[int, int]]:
     return vectors
 
 
-def parent_labels(label: int, vector: tuple[int, int], labels: set[int]) -> tuple[int, ...]:
+def parent_labels(
+    label: int, vector: tuple[int, int], labels: set[int]
+) -> tuple[int, ...]:
     if label == 2:
         return (1,)
 

@@ -17,9 +17,7 @@ def prime_sieve(limit: int) -> bytearray:
     for p in range(2, math.isqrt(limit) + 1):
         if is_prime[p]:
             start = p * p
-            is_prime[start : limit + 1 : p] = b"\x00" * (
-                ((limit - start) // p) + 1
-            )
+            is_prime[start : limit + 1 : p] = b"\x00" * (((limit - start) // p) + 1)
 
     return is_prime
 

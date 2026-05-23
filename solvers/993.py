@@ -6,16 +6,84 @@ from __future__ import annotations
 PERIOD_START = 514
 PERIOD = 71
 DELTA_PATTERN = [
-    17, -2, -8, -2, -2, -14, -2, -2, -17, -8, -5, -8, -5, -2, -2, -5, -8,
-    50, -8, 23, -13, -2, 67, -5, -2, -2, -5, -8, -5, 21, 29, -11, -2, -2,
-    6, -11, 31, -2, -11, 17, -2, -8, -2, -2, -14, -2, -2, -17, -8, -5, -8,
-    -8, 8, -13, -5, -2, -2, -5, -2, -11, -8, -8, -5, -2, -11, -8, -8, -5,
-    -2, -11, 216,
+    17,
+    -2,
+    -8,
+    -2,
+    -2,
+    -14,
+    -2,
+    -2,
+    -17,
+    -8,
+    -5,
+    -8,
+    -5,
+    -2,
+    -2,
+    -5,
+    -8,
+    50,
+    -8,
+    23,
+    -13,
+    -2,
+    67,
+    -5,
+    -2,
+    -2,
+    -5,
+    -8,
+    -5,
+    21,
+    29,
+    -11,
+    -2,
+    -2,
+    6,
+    -11,
+    31,
+    -2,
+    -11,
+    17,
+    -2,
+    -8,
+    -2,
+    -2,
+    -14,
+    -2,
+    -2,
+    -17,
+    -8,
+    -5,
+    -8,
+    -8,
+    8,
+    -13,
+    -5,
+    -2,
+    -2,
+    -5,
+    -2,
+    -11,
+    -8,
+    -8,
+    -5,
+    -2,
+    -11,
+    -8,
+    -8,
+    -5,
+    -2,
+    -11,
+    216,
 ]
 PATTERN_SUM = sum(DELTA_PATTERN)
 
 
-def step_state(pos: int, carry: int, bananas: set[int]) -> tuple[int, int, set[int]] | None:
+def step_state(
+    pos: int, carry: int, bananas: set[int]
+) -> tuple[int, int, set[int]] | None:
     """Apply one game step.
 
     Returns the updated state, or None if the game halts before making a move.
@@ -91,7 +159,11 @@ def bb(n: int, bb_prefix: list[int]) -> int:
 
     remaining = n - PERIOD_START
     whole_periods, tail = divmod(remaining, PERIOD)
-    return bb_prefix[PERIOD_START] + whole_periods * PATTERN_SUM + sum(DELTA_PATTERN[:tail])
+    return (
+        bb_prefix[PERIOD_START]
+        + whole_periods * PATTERN_SUM
+        + sum(DELTA_PATTERN[:tail])
+    )
 
 
 if __name__ == "__main__":

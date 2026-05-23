@@ -14,9 +14,7 @@ def sieve_primes(limit: int) -> list[int]:
     sieve[0:2] = b"\x00\x00"
     for p in range(2, math.isqrt(limit) + 1):
         if sieve[p]:
-            sieve[p * p : limit + 1 : p] = b"\x00" * (
-                ((limit - p * p) // p) + 1
-            )
+            sieve[p * p : limit + 1 : p] = b"\x00" * (((limit - p * p) // p) + 1)
     return [i for i in range(2, limit + 1) if sieve[i]]
 
 

@@ -26,10 +26,7 @@ def expected_additional(
         next_buckets[count] -= 1
         next_buckets[current] += 1
         result += (
-            count
-            * ranks
-            / remaining
-            * expected_additional(count - 1, *next_buckets)
+            count * ranks / remaining * expected_additional(count - 1, *next_buckets)
         )
 
     return result

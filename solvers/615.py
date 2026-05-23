@@ -14,9 +14,7 @@ def primes_upto(limit: int) -> list[int]:
     for p in range(2, math.isqrt(limit) + 1):
         if is_prime[p]:
             start = p * p
-            is_prime[start : limit + 1 : p] = b"\x00" * (
-                ((limit - start) // p) + 1
-            )
+            is_prime[start : limit + 1 : p] = b"\x00" * (((limit - start) // p) + 1)
     return [2] + [p for p in range(3, limit + 1, 2) if is_prime[p]]
 
 
@@ -25,7 +23,9 @@ PRIME_LOGS = [math.log(p) for p in PRIMES]
 LOG3 = math.log(3)
 
 
-def values_with_enough_prime_factors(threshold: int, collect: bool) -> tuple[int, list[int]]:
+def values_with_enough_prime_factors(
+    threshold: int, collect: bool
+) -> tuple[int, list[int]]:
     limit = 3**threshold
     log_limit = threshold * LOG3
     values: list[int] = []

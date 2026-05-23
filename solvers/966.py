@@ -366,9 +366,7 @@ def default_workers(item_count: int) -> int:
     return max(1, min(8, os.cpu_count() or 1, item_count))
 
 
-def _chunk_sum(
-    items: list[tuple[tuple[int, int, int], int]]
-) -> float:
+def _chunk_sum(items: list[tuple[tuple[int, int, int], int]]) -> float:
     total = 0.0
     corr = 0.0
 

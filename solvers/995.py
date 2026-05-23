@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from math import gcd, log10
 import sys
 
@@ -20,11 +21,11 @@ def sieve(n):
     if n >= 1:
         is_prime[1] = 0
 
-    r = int(n ** 0.5)
+    r = int(n**0.5)
     for i in range(2, r + 1):
         if is_prime[i]:
             start = i * i
-            is_prime[start:n + 1:i] = b"\x00" * (((n - start) // i) + 1)
+            is_prime[start : n + 1 : i] = b"\x00" * (((n - start) // i) + 1)
     return [i for i in range(n + 1) if is_prime[i]]
 
 
@@ -188,7 +189,7 @@ def scientific_from_int(n, places=5):
         head = int(digits[:significant])
         if int(digits[significant]) >= 5:
             head += 1
-        if head == 10 ** significant:
+        if head == 10**significant:
             head //= 10
             exponent += 1
     else:

@@ -34,9 +34,9 @@ def _height(a: int, b: int, point: tuple[int, int]) -> float:
         return 1.0
 
     x = num / den
-    z = 0.5 - (
-        b * math.cos(a * math.pi * x) + a * math.cos(b * math.pi * x)
-    ) / (2.0 * (a + b))
+    z = 0.5 - (b * math.cos(a * math.pi * x) + a * math.cos(b * math.pi * x)) / (
+        2.0 * (a + b)
+    )
 
     if z < 0.0 and z > -1e-14:
         return 0.0
@@ -50,9 +50,7 @@ def _derivative_interval_sign(
 ) -> int:
     left_num, left_den = left
     right_num, right_den = right
-    x = (left_num * right_den + right_num * left_den) / (
-        2.0 * left_den * right_den
-    )
+    x = (left_num * right_den + right_num * left_den) / (2.0 * left_den * right_den)
 
     value = math.sin((a + b) * math.pi * x * 0.5) * math.cos(
         abs(a - b) * math.pi * x * 0.5

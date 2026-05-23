@@ -654,9 +654,7 @@ def looks_numeric(value: str) -> bool:
 
 def looks_like_model_cell(value: str) -> bool:
     value = value.strip().lower()
-    return value.startswith(
-        ("gpt-", "o1", "o3", "o4", "codex-", "claude-", "gemini-")
-    )
+    return value.startswith(("gpt-", "o1", "o3", "o4", "codex-", "claude-", "gemini-"))
 
 
 def trim_trailing_empty_cells(cells: list[str]) -> list[str]:
@@ -1077,9 +1075,7 @@ def format_benchmark_yaml(rows: dict[int, dict[str, str]]) -> list[str]:
             continue
         yaml_lines.append(f"{pid}:")
         for path in sorted(row_values, key=other_result_path_sort_key):
-            yaml_lines.append(
-                f"  {path}: {format_benchmark_value(row_values[path])}"
-            )
+            yaml_lines.append(f"  {path}: {format_benchmark_value(row_values[path])}")
     return yaml_lines
 
 
@@ -1391,9 +1387,7 @@ def update_readme_not_found() -> None:
     start, end = readme_tables.find_table_block(lines, "// RESULTS TABLE")
     existing_other_rows = load_benchmark_results(lines)
     existing_other_paths = {
-        path
-        for path_values in existing_other_rows.values()
-        for path in path_values
+        path for path_values in existing_other_rows.values() for path in path_values
     }
 
     row_re = re.compile(r"^\|\s+link:([^\[]+)\[")
@@ -1686,11 +1680,7 @@ def run_solver_set_mode(
             sys.exit(2)
     else:
         target_ids = sorted(
-            {
-                pid
-                for targets_by_id in targets_by_set.values()
-                for pid in targets_by_id
-            }
+            {pid for targets_by_id in targets_by_set.values() for pid in targets_by_id}
         )
     if not target_ids:
         print("No solvers found.", file=sys.stderr)
@@ -1721,8 +1711,7 @@ def run_solver_set_mode(
             sys.exit(2)
 
     if any(
-        not res.correct and res.message != MISSING_REFERENCE_MESSAGE
-        for res in results
+        not res.correct and res.message != MISSING_REFERENCE_MESSAGE for res in results
     ):
         sys.exit(1)
 

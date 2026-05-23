@@ -167,9 +167,21 @@ def f(n: int) -> int:
             elif x * x + y * y < n:
                 return
 
-            consider(basis_b, basis_a + basis_b, coeff_b - coeff_a, coeff_a, current_depth + 1)
+            consider(
+                basis_b,
+                basis_a + basis_b,
+                coeff_b - coeff_a,
+                coeff_a,
+                current_depth + 1,
+            )
             if 0 < basis_a < basis_b:
-                consider(basis_a, basis_a + basis_b, coeff_a - coeff_b, coeff_b, current_depth + 1)
+                consider(
+                    basis_a,
+                    basis_a + basis_b,
+                    coeff_a - coeff_b,
+                    coeff_b,
+                    current_depth + 1,
+                )
 
         consider(0, 1, 0, n, 0)
 

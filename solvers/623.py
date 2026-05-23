@@ -54,9 +54,7 @@ def exact_counts(limit):
 
             diagonal = 2 * size
             if diagonal <= max_convolution_index:
-                convolution[diagonal] = (
-                    convolution[diagonal] + value * value
-                ) % MOD
+                convolution[diagonal] = (convolution[diagonal] + value * value) % MOD
 
         next_layer = current
 

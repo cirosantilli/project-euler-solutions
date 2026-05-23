@@ -20,9 +20,7 @@ def first_primes(count):
         flags[0:2] = b"\x00\x00"
         for p in range(2, isqrt(limit) + 1):
             if flags[p]:
-                flags[p * p : limit + 1 : p] = b"\x00" * (
-                    ((limit - p * p) // p) + 1
-                )
+                flags[p * p : limit + 1 : p] = b"\x00" * (((limit - p * p) // p) + 1)
         primes = [i for i in range(2, limit + 1) if flags[i]]
         if len(primes) >= count:
             return primes
