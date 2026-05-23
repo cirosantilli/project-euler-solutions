@@ -1,146 +1,130 @@
 #!/usr/bin/env python
-"""Adapted from https://github.com/igorvanloo/Project-Euler-Explained/blob/19f85895945a2c9b688f85da142bae13f37dab65/Finished%20Problems/pe00650%20-%20Divisors%20of%20Binomial%20Product.py"""
-
 """
-Created on Thu Dec 26 20:46:05 2024
+Project Euler 650: Divisors of Binomial Product
 
-@author: Igor Van Loo
+Track the prime exponents of B_n = prod_k C(n,k) through the factorial identity
+for B_n, and evaluate sigma(B_n) from those exponents modulo 1_000_000_007.
 """
-"""
-Project Euler Problem 650
 
-B(n) = https://oeis.org/A001142
-
-Use divisor function if n = a_1^e_1 * a_2^e_2 * ... * a_k^p_k
-
-then sigma(1, n) = sum of divisors of n = prod (p_i^(a_1 + 1) - 1)/(p_i - 1)
-
-using B(n) = (n!)^(n + 1) / prod_{i = 1}^n (i!)^2
-
-hence we have
-
-B(n) = B(n - 1) * n^n/n!, we can quickly add priem factors of n^n, and subtract prime factors of n!
-with precomputed arrays and we find prime factors of B(n)
-
-"""
-import math
+from math import comb
 
 
-def prime_factors(n):
-    factors = {}
-    d = 2
+LIMIT = 20_000
+MOD = 1_000_000_007
+
+
+def spf_and_primes(limit: int) -> tuple[list[int], list[int]]:
+    spf = [0] * (limit + 1)
+    primes: list[int] = []
+    for x in range(2, limit + 1):
+        if spf[x] == 0:
+            spf[x] = x
+            primes.append(x)
+        spfx = spf[x]
+        for p in primes:
+            y = p * x
+            if y > limit:
+                break
+            spf[y] = p
+            if p == spfx:
+                break
+    return spf, primes
+
+
+def factor_with_spf(n: int, spf: list[int]) -> list[tuple[int, int]]:
+    factors: list[tuple[int, int]] = []
     while n > 1:
-        while n % d == 0:
-            if d in factors:
-                factors[d] += 1
-            else:
-                factors[d] = 1
-            n //= d
-        d = d + 1
-        if d * d > n:
-            if n > 1:
-                n = int(n)
-                factors[n] = 1
-            break
+        p = spf[n]
+        exponent = 0
+        while n % p == 0:
+            n //= p
+            exponent += 1
+        factors.append((p, exponent))
     return factors
 
 
-def divisor(pf, mod):
-    total = 1
-    for p in pf:
-        e = pf[p]
-        total *= (pow(p, e + 1, mod) - 1) * pow(p - 1, -1, mod) % mod
-    return total % mod
+def S(limit: int = LIMIT, mod: int = MOD) -> int:
+    spf, primes = spf_and_primes(limit)
+    prime_index = [0] * (limit + 1)
+    for i, p in enumerate(primes):
+        prime_index[p] = i
+
+    prime_power = [p % mod for p in primes]  # p^(e_{n,p}+1), initially e=0.
+    inv_factorial_power = [1] * len(primes)  # p^(-v_p(n!)).
+    inv_prime = [pow(p, mod - 2, mod) for p in primes]
+    sigma_den_inv = [pow(p - 1, mod - 2, mod) for p in primes]
+
+    active = 0
+    total = 1  # D_1
+
+    for n in range(2, limit + 1):
+        while active < len(primes) and primes[active] <= n:
+            active += 1
+
+        for i in range(active):
+            prime_power[i] = prime_power[i] * inv_factorial_power[i] % mod
+
+        for p, exponent in factor_with_spf(n, spf):
+            i = prime_index[p]
+            prime_power[i] = prime_power[i] * pow(p, (n - 1) * exponent, mod) % mod
+            inv_factorial_power[i] = (
+                inv_factorial_power[i] * pow(inv_prime[i], exponent, mod) % mod
+            )
+
+        divisor_sum = 1
+        for i in range(active):
+            divisor_sum = (
+                divisor_sum
+                * ((prime_power[i] - 1) % mod)
+                % mod
+                * sigma_den_inv[i]
+                % mod
+            )
+
+        total = (total + divisor_sum) % mod
+
+    return total
 
 
-def prime_factors_sieve(limit):
-    result = [{} for _ in range(limit + 1)]
-    for i in range(2, limit + 1):
-        if len(result[i]) == 0:
-            # prime number found
-            for j in range(i, limit + 1, i):
-                n = j
-                if i in result[j]:
-                    while n % i == 0:
-                        n //= i
-                        result[j][i] += 1
-                else:
-                    result[j][i] = 1
-                    n //= i
-                    while n % i == 0:
-                        n //= i
-                        result[j][i] += 1
-    return result
-
-
-def S(n):
-    if n == 1:
-        return 1
-    if n == 2:
-        return 4
-    # pre compute prime factors of all n
-    pf_array = prime_factors_sieve(n + 1)
-
-    # Precompute prime factors of n! iteratively
-    pf_fac = [{} for _ in range(n + 1)]
-    for x in range(2, n + 1):
-        pf_fac[x] = {}
-        for p in pf_fac[x - 1]:
-            pf_fac[x][p] = pf_fac[x - 1][p]
-        v = pf_array[x]
-        for p in v:
-            if p in pf_fac[x]:
-                pf_fac[x][p] += v[p]
-            else:
-                pf_fac[x][p] = v[p]
-
-    mod = 10**9 + 7
-    B = {2: 1}
-
-    D = [0] * (n + 1)
-    D[1] = 1
-    D[2] = 3
-
-    for x in range(3, n + 1):
-        pf_x = pf_array[x]
-        for p in pf_x:
-            if p in B:
-                B[p] += pf_x[p] * x
-            else:
-                B[p] = pf_x[p] * x
-        lpf_x = pf_fac[x]
-        for p in lpf_x:
-            if p in B:
-                B[p] -= lpf_x[p]
-            else:
-                B[p] = lpf_x[p]
-        D[x] = divisor(B, mod)
-    return sum(D) % mod
-
-
-def B_small(n):
+def B_small(n: int) -> int:
     total = 1
     for k in range(n + 1):
-        total *= math.comb(n, k)
+        total *= comb(n, k)
     return total
 
 
-def D_small(n):
-    pf = prime_factors(B_small(n))
+def prime_factors(n: int) -> dict[int, int]:
+    factors: dict[int, int] = {}
+    p = 2
+    while p * p <= n:
+        while n % p == 0:
+            factors[p] = factors.get(p, 0) + 1
+            n //= p
+        p += 1 if p == 2 else 2
+    if n > 1:
+        factors[n] = factors.get(n, 0) + 1
+    return factors
+
+
+def D_small(n: int) -> int:
     total = 1
-    for p, e in pf.items():
-        total *= (p ** (e + 1) - 1) // (p - 1)
+    for p, exponent in prime_factors(B_small(n)).items():
+        total *= (p ** (exponent + 1) - 1) // (p - 1)
     return total
 
 
-def S_exact(n):
+def S_exact(n: int) -> int:
     return sum(D_small(k) for k in range(1, n + 1))
 
 
-if __name__ == "__main__":
+def main() -> None:
     assert B_small(5) == 2500
     assert D_small(5) == 5467
     assert S_exact(5) == 5736
     assert S_exact(10) == 141740594713218418
     assert S(100) == 332792866
-    print(S(20000))
+    print(S())
+
+
+if __name__ == "__main__":
+    main()

@@ -1,69 +1,76 @@
 #!/usr/bin/env python
-"""Adapted from: https://github.com/stbrumme/euler/blob/b426763514558c3b39f2ec507f271d322088d28a/euler-0348.cpp"""
-import heapq
+"""
+Project Euler 348: Sum of a Square and a Cube
+
+Generate palindromes in increasing order.  For each candidate n, count cubes
+b^3 such that n - b^3 is a square a^2 with a,b > 1.
+"""
+
+from math import isqrt
 
 
-def find_palindromes(max_found):
-    heap = []
-    seen = set()
-
-    def push(square, cube):
-        key = (square, cube)
-        if key in seen:
-            return
-        seen.add(key)
-        value = cube * cube * cube + square * square
-        heapq.heappush(heap, (value, cube, square))
-
-    push(2, 2)
-
-    num_found = 0
-    total = 0
-    values = []
-
-    while num_found < max_found:
-        value, cube, square = heapq.heappop(heap)
-        push(square + 1, cube)
-        push(square, cube + 1)
-
-        while (
-            heap and heap[0][0] == value and heap[0][1] == cube and heap[0][2] == square
-        ):
-            heapq.heappop(heap)
-
-        num_same = 1
-        while heap and heap[0][0] == value:
-            num_same += 1
-            same_value, same_cube, same_square = heapq.heappop(heap)
-            push(same_square + 1, same_cube)
-            push(same_square, same_cube + 1)
-
-            while (
-                heap
-                and heap[0][0] == same_value
-                and heap[0][1] == same_cube
-                and heap[0][2] == same_square
-            ):
-                heapq.heappop(heap)
-
-        if num_same == 4:
-            reverse = int(str(value)[::-1])
-            if value == reverse:
-                num_found += 1
-                values.append(value)
-                total += value
-
-    return values
+def reverse_int(n: int) -> int:
+    result = 0
+    while n:
+        result = 10 * result + n % 10
+        n //= 10
+    return result
 
 
-def solve(max_found=5):
-    values = find_palindromes(max_found)
-    return sum(values)
+def make_palindrome(prefix: int, odd_length: bool) -> int:
+    if odd_length:
+        return prefix * (10 ** (len(str(prefix)) - 1)) + reverse_int(prefix // 10)
+    return prefix * (10 ** len(str(prefix))) + reverse_int(prefix)
 
 
-def main():
-    values = find_palindromes(1)
-    assert values[0] == 5229225
+def find_palindromes(target_count: int) -> list[int]:
+    found: list[int] = []
+    cubes: list[int] = []
+    next_cube_base = 2
+    digits = 1
+
+    while len(found) < target_count:
+        half_digits = (digits + 1) // 2
+        start = 1 if half_digits == 1 else 10 ** (half_digits - 1)
+        stop = 10**half_digits
+        odd_length = digits % 2 == 1
+
+        for prefix in range(start, stop):
+            n = make_palindrome(prefix, odd_length)
+            if n < 12:
+                continue
+
+            while next_cube_base**3 <= n - 4:
+                cubes.append(next_cube_base**3)
+                next_cube_base += 1
+
+            representations = 0
+            for cube in cubes:
+                if cube + 4 > n:
+                    break
+                rem = n - cube
+                root = isqrt(rem)
+                if root * root == rem:
+                    representations += 1
+                    if representations > 4:
+                        break
+
+            if representations == 4:
+                found.append(n)
+                if len(found) == target_count:
+                    break
+
+        digits += 1
+
+    return found
+
+
+def solve(target_count: int = 5) -> int:
+    return sum(find_palindromes(target_count))
+
+
+def main() -> None:
+    assert find_palindromes(1)[0] == 5229225
     print(solve())
 
 

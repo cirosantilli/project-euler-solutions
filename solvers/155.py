@@ -1,26 +1,59 @@
 #!/usr/bin/env python
-"""Adapted from: https://github.com/stbrumme/euler/blob/b426763514558c3b39f2ec507f271d322088d28a/euler-0155.cpp"""
-from fractions import Fraction
+"""
+Project Euler 155: Counting Capacitor Circuits
+
+Store each capacitance exactly as a reduced numerator/denominator pair.  The
+reachable values for a fixed number of unit capacitors are closed under
+reciprocal, so it is enough to generate x + y and then insert its reciprocal.
+"""
+
+from math import gcd
+
+
+Capacitance = tuple[int, int]
+
+
+def add_reduced(a: Capacitance, b: Capacitance) -> Capacitance:
+    num = a[0] * b[1] + b[0] * a[1]
+    den = a[1] * b[1]
+    g = gcd(num, den)
+    return num // g, den // g
 
 
 def solve(limit: int) -> int:
-    circuits: list[set[Fraction]] = [set() for _ in range(limit + 1)]
-    circuits[1].add(Fraction(1, 1))
+    exact: list[set[Capacitance]] = [set() for _ in range(limit + 1)]
+    exact[1].add((1, 1))
 
-    for size_c in range(2, limit + 1):
-        current = set()
-        for size_a in range(1, size_c // 2 + 1):
-            size_b = size_c - size_a
-            for circuit_a in circuits[size_a]:
-                for circuit_b in circuits[size_b]:
-                    current.add(circuit_a + circuit_b)
-                    parallel = 1 / (1 / circuit_a + 1 / circuit_b)
-                    current.add(parallel)
-        circuits[size_c] = current
+    all_values: set[Capacitance] = {(1, 1)}
 
-    all_values: set[Fraction] = set()
-    for i in range(1, limit + 1):
-        all_values.update(circuits[i])
+    for total_size in range(2, limit + 1):
+        current: set[Capacitance] = set()
+
+        for left_size in range(1, total_size // 2 + 1):
+            right_size = total_size - left_size
+            left_values = list(exact[left_size])
+            right_values = list(exact[right_size])
+
+            if left_size == right_size:
+                pairs = (
+                    (left_values[i], left_values[j])
+                    for i in range(len(left_values))
+                    for j in range(i, len(left_values))
+                )
+            else:
+                pairs = (
+                    (left, right)
+                    for left in left_values
+                    for right in right_values
+                )
+
+            for left, right in pairs:
+                value = add_reduced(left, right)
+                current.add(value)
+                current.add((value[1], value[0]))
+
+        exact[total_size] = current
+        all_values.update(current)
 
     return len(all_values)
 

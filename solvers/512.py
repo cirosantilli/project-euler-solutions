@@ -1,41 +1,59 @@
 #!/usr/bin/env python
-"""Adapted from https://github.com/igorvanloo/Project-Euler-Explained/blob/19f85895945a2c9b688f85da142bae13f37dab65/Finished%20Problems/pe00512%20-%20Sums%20of%20totients%20of%20powers.py"""
-
 """
-Created on Tue Dec 21 16:10:56 2021
+Project Euler 512: Sums of Totients of Powers
 
-@author: igorvanloo
-"""
-
-"""
-Project Euler Problem 512
-
-It appears that f(n) = 0 when n is even and is equal to phi(n) when n is odd
-
-why?
-phi(n^k) = n^k Prod(p|n^k) (1 - 1/p) = n^(k-1) * (n Prod(p/n <=> p/n^k) (1- 1/p)) = n^(k-1) * phi(n)
-
-Now because phi(n^k) = n^(k-1) * phi(n) => 
-phi(n^k) = (-1)^(k-1) phi(n) mod(n+1)
-
-so f(n) = sum_{k = 1 to n} phi(n^k) mod(n+1) = sum_{k = 1 to n} (-1)^(k-1) phi(n)
-Therefore when n is even we have f(n) = 0
-and when n is odd we have f(n) = phi(n)
+The required value is the prefix sum of phi(m) over odd m.  A divisor identity
+relates it to the summatory odd part of integers, giving a fast memoized
+quotient-block recurrence.
 """
 
+from functools import cache
 
-def totient_sieve(n):
-    phi = [i for i in range(n + 1)]
-    for p in range(3, n + 1, 2):
-        if phi[p] == p:
-            phi[p] -= 1
-            for i in range(3 * p, n + 1, 2 * p):
-                phi[i] -= phi[i] // p
+
+TARGET = 500_000_000
+
+
+def odd_part_sum(n: int) -> int:
+    """Return sum_{1<=x<=n} odd_part(x)."""
     total = 0
-    for x in range(1, len(phi), 2):
-        total += phi[x]
+    while n:
+        odd_count = (n + 1) // 2
+        total += odd_count * odd_count
+        n //= 2
     return total
 
 
+@cache
+def odd_totient_prefix(n: int) -> int:
+    """Return sum(phi(m) for odd m <= n)."""
+    total = odd_part_sum(n)
+
+    lo = 2
+    while lo <= n:
+        q = n // lo
+        hi = n // q
+        total -= (hi - lo + 1) * odd_totient_prefix(q)
+        lo = hi + 1
+
+    return total
+
+
+def totient_sieve(n: int) -> int:
+    """Small direct checker for odd totient prefixes."""
+    phi = list(range(n + 1))
+    for p in range(2, n + 1):
+        if phi[p] == p:
+            for multiple in range(p, n + 1, p):
+                phi[multiple] -= phi[multiple] // p
+    return sum(phi[x] for x in range(1, n + 1, 2))
+
+
+def main() -> None:
+    assert odd_part_sum(10) == 36
+    assert odd_totient_prefix(10) == 19
+    assert odd_totient_prefix(1000) == totient_sieve(1000)
+    print(odd_totient_prefix(TARGET))
+
+
 if __name__ == "__main__":
-    print(totient_sieve(5 * (10**8)))
+    main()

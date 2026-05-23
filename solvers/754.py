@@ -29,19 +29,48 @@ def product_gauss_factorials(n: int) -> int:
     return result
 
 
-def mobius_sieve(n: int) -> bytearray:
+def mobius_interval_aggregates(n: int) -> list[tuple[int, int, int, int]]:
+    """Return (q, product_mu_pos, product_mu_neg, mu_sum) by quotient block."""
+
     # Encode mu as 0 -> 0, 1 -> +1, 2 -> -1.
     mu = bytearray(n + 1)
     mu[1] = 1
     composite = bytearray(n + 1)
     primes: list[int] = []
 
+    aggregates: list[tuple[int, int, int, int]] = []
+    lo = 1
+    q = n
+    hi = 1
+    pos_product = 1
+    neg_product = 1
+    mu_sum = 1
+    aggregates.append((q, pos_product, neg_product, mu_sum))
+
+    lo = hi + 1
+    if lo > n:
+        return aggregates
+    q = n // lo
+    hi = n // q
+    pos_product = 1
+    neg_product = 1
+    mu_sum = 0
+
     for x in range(2, n + 1):
         if not composite[x]:
             primes.append(x)
-            mu[x] = 2
+            mux = 2
+            mu[x] = mux
+        else:
+            mux = mu[x]
 
-        mux = mu[x]
+        if mux == 1:
+            pos_product = pos_product * x % MOD
+            mu_sum += 1
+        elif mux == 2:
+            neg_product = neg_product * x % MOD
+            mu_sum -= 1
+
         for p in primes:
             y = x * p
             if y > n:
@@ -54,18 +83,18 @@ def mobius_sieve(n: int) -> bytearray:
             elif mux == 2:
                 mu[y] = 1
 
-    return mu
+        if x == hi:
+            aggregates.append((q, pos_product, neg_product, mu_sum))
+            lo = hi + 1
+            if lo > n:
+                break
+            q = n // lo
+            hi = n // q
+            pos_product = 1
+            neg_product = 1
+            mu_sum = 0
 
-
-def quotient_ranges(n: int) -> list[tuple[int, int, int]]:
-    ranges = []
-    lo = 1
-    while lo <= n:
-        q = n // lo
-        hi = n // q
-        ranges.append((lo, hi, q))
-        lo = hi + 1
-    return ranges
+    return aggregates
 
 
 def superfactorials_at(keys: list[int]) -> dict[int, int]:
@@ -90,25 +119,12 @@ def superfactorials_at(keys: list[int]) -> dict[int, int]:
 
 
 def solve(limit: int = LIMIT) -> int:
-    mu = mobius_sieve(limit)
-    ranges = quotient_ranges(limit)
-    superfactorial = superfactorials_at([q - 1 for _, _, q in ranges])
+    aggregates = mobius_interval_aggregates(limit)
+    superfactorial = superfactorials_at([q - 1 for q, _, _, _ in aggregates])
 
     result = 1
-    for lo, hi, q in ranges:
+    for q, pos_product, neg_product, mu_sum in aggregates:
         exponent = q * (q - 1) // 2 % EXP_MOD
-        pos_product = 1
-        neg_product = 1
-        mu_sum = 0
-
-        for d in range(lo, hi + 1):
-            sign = mu[d]
-            if sign == 1:
-                pos_product = pos_product * d % MOD
-                mu_sum += 1
-            elif sign == 2:
-                neg_product = neg_product * d % MOD
-                mu_sum -= 1
 
         if exponent:
             result = result * pow(pos_product, exponent, MOD) % MOD

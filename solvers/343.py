@@ -1,188 +1,119 @@
 #!/usr/bin/env python
-"""Adapted from: https://github.com/stbrumme/euler/blob/b426763514558c3b39f2ec507f271d322088d28a/euler-0343.cpp"""
-import math
+"""
+Project Euler 343: Fractional Sequences
 
-sieve = []
-prime_limit = 0
-small_primes = []
+The fraction process gives f(n) = LPF(n + 1) - 1.  For cubes,
+k^3 + 1 = (k + 1)(k^2 - k + 1), so we sieve largest prime factors of both
+factors for all k up to the limit.
+"""
 
-
-def gcd(a, b):
-    while a != 0:
-        a, b = b % a, a
-    return b
+from math import isqrt
 
 
-def is_small_prime(x):
-    if (x & 1) == 0:
-        return x == 2
-    return sieve[x >> 1]
+LIMIT = 2_000_000
 
 
-def fill_sieve(size):
-    global sieve
-    half = (size >> 1) + 1
-    sieve = [True] * half
-    if half > 0:
-        sieve[0] = False
-
-    i = 1
-    while 2 * i * i < half:
-        if sieve[i]:
-            current = 3 * i + 1
-            step = 2 * i + 1
-            while current < half:
-                sieve[current] = False
-                current += step
-        i += 1
+def primes_upto(limit: int) -> list[int]:
+    if limit < 2:
+        return []
+    sieve = bytearray(b"\x01") * (limit + 1)
+    sieve[0:2] = b"\x00\x00"
+    for p in range(2, isqrt(limit) + 1):
+        if sieve[p]:
+            start = p * p
+            sieve[start : limit + 1 : p] = b"\x00" * (((limit - start) // p) + 1)
+    return [p for p in range(2, limit + 1) if sieve[p]]
 
 
-def mulmod(a, b, modulo):
-    return (a * b) % modulo
+def tonelli_shanks(a: int, p: int) -> int:
+    """Return one square root of a modulo the odd prime p."""
+    a %= p
+    if a == 0:
+        return 0
+    if p % 4 == 3:
+        return pow(a, (p + 1) // 4, p)
+
+    q = p - 1
+    s = 0
+    while q % 2 == 0:
+        q //= 2
+        s += 1
+
+    z = 2
+    while pow(z, (p - 1) // 2, p) != p - 1:
+        z += 1
+
+    m = s
+    c = pow(z, q, p)
+    t = pow(a, q, p)
+    r = pow(a, (q + 1) // 2, p)
+
+    while t != 1:
+        i = 1
+        t2 = t * t % p
+        while t2 != 1:
+            t2 = t2 * t2 % p
+            i += 1
+        b = pow(c, 1 << (m - i - 1), p)
+        r = r * b % p
+        t = t * b % p * b % p
+        c = b * b % p
+        m = i
+
+    return r
 
 
-def powmod(base, exponent, modulo):
-    result = 1
-    while exponent > 0:
-        if exponent & 1:
-            result = mulmod(result, base, modulo)
-        base = mulmod(base, base, modulo)
-        exponent >>= 1
-    return result
+def largest_prime_factors_upto(limit: int, primes: list[int]) -> list[int]:
+    lpf = [0] * (limit + 1)
+    for p in primes:
+        for multiple in range(p, limit + 1, p):
+            lpf[multiple] = p
+    return lpf
 
 
-def is_prime(p):
-    if p < prime_limit:
-        return is_small_prime(p)
+def sieve_quadratic_lpf(limit: int, primes: list[int]) -> list[int]:
+    rem = [0] * (limit + 1)
+    lpf = [1] * (limit + 1)
+    for k in range(1, limit + 1):
+        rem[k] = k * k - k + 1
 
-    bitmask_primes_2_to_31 = (
-        (1 << 2)
-        | (1 << 3)
-        | (1 << 5)
-        | (1 << 7)
-        | (1 << 11)
-        | (1 << 13)
-        | (1 << 17)
-        | (1 << 19)
-        | (1 << 23)
-        | (1 << 29)
-    )
-    if p < 31:
-        return (bitmask_primes_2_to_31 & (1 << p)) != 0
+    def strip_prime_from_class(p: int, root: int) -> None:
+        start = root if root else p
+        for k in range(start, limit + 1, p):
+            value = rem[k]
+            if value % p != 0:
+                continue
+            while value % p == 0:
+                value //= p
+            rem[k] = value
+            lpf[k] = p
 
-    if (
-        p % 2 == 0
-        or p % 3 == 0
-        or p % 5 == 0
-        or p % 7 == 0
-        or p % 11 == 0
-        or p % 13 == 0
-        or p % 17 == 0
-    ):
-        return False
-
-    if p < 17 * 19:
-        return True
-
-    test_against_1 = [377687]
-    test_against_2 = [31, 73]
-    test_against_3 = [2, 7, 61]
-    test_against_4 = [2, 13, 23, 1662803]
-    test_against_7 = [2, 325, 9375, 28178, 450775, 9780504, 1795265022]
-
-    if p < 5329:
-        test_against = test_against_1
-    elif p < 9080191:
-        test_against = test_against_2
-    elif p < 4759123141:
-        test_against = test_against_3
-    elif p < 1122004669633:
-        test_against = test_against_4
-    else:
-        test_against = test_against_7
-
-    d = p - 1
-    d >>= 1
-    shift = 0
-    while (d & 1) == 0:
-        shift += 1
-        d >>= 1
-
-    for base in test_against:
-        x = powmod(base, d, p)
-        if x == 1 or x == p - 1:
+    for p in primes:
+        if p == 2:
+            continue
+        if p == 3:
+            strip_prime_from_class(3, 2)
+            continue
+        if p % 3 != 1:
             continue
 
-        maybe_prime = False
-        for _ in range(shift):
-            x = mulmod(x, x, p)
-            if x == 1:
-                return False
-            if x == p - 1:
-                maybe_prime = True
-                break
+        sqrt_disc = tonelli_shanks(p - 3, p)
+        inv2 = (p + 1) // 2
+        root1 = (1 + sqrt_disc) * inv2 % p
+        root2 = (1 - sqrt_disc) * inv2 % p
+        strip_prime_from_class(p, root1)
+        if root2 != root1:
+            strip_prime_from_class(p, root2)
 
-        if not maybe_prime:
-            return False
-
-    return True
-
-
-def get_fermat_factors(n, max_iterations):
-    if n % 2 == 0:
-        return (2, n // 2)
-
-    x = int(math.isqrt(n))
-    if x * x == n:
-        return (x, x)
-
-    while max_iterations > 0:
-        max_iterations -= 1
-        x += 1
-        y2 = x * x - n
-        mod16 = y2 % 16
-        if mod16 in (0, 1, 4, 9):
-            y = int(math.isqrt(y2))
-            if y * y == y2:
-                return (x - y, x + y)
-
-    return (1, n)
+    for k in range(1, limit + 1):
+        if rem[k] > 1:
+            lpf[k] = rem[k]
+    return lpf
 
 
-def get_max_factor(x, min_result=0):
-    if is_prime(x):
-        return x
-
-    result = 1
-    reduce_value = x
-    for factor in small_primes:
-        if factor * factor > reduce_value:
-            break
-
-        found_factor = False
-        while reduce_value % factor == 0:
-            result = max(result, factor)
-            reduce_value //= factor
-
-            if reduce_value < min_result:
-                return result
-
-            found_factor = True
-
-        if found_factor:
-            if is_prime(reduce_value):
-                break
-
-            fermat = get_fermat_factors(reduce_value, 10)
-            if fermat[0] > 1:
-                return max(get_max_factor(fermat[0]), get_max_factor(fermat[1]))
-
-    return max(reduce_value, result)
-
-
-def f_simple(k):
+def f_simple(n: int) -> int:
     x = 1
-    y = k
+    y = n
     while y != 1:
         x += 1
         y -= 1
@@ -192,39 +123,29 @@ def f_simple(k):
     return x
 
 
-def solve(limit=2000000):
-    global prime_limit, small_primes
+def gcd(a: int, b: int) -> int:
+    while b:
+        a, b = b, a % b
+    return a
 
-    prime_limit = limit + 100
-    fill_sieve(prime_limit)
 
-    small_primes = [2]
-    for i in range(3, prime_limit + 1, 2):
-        if is_prime(i):
-            small_primes.append(i)
+def solve(limit: int = LIMIT) -> int:
+    primes = primes_upto(limit + 1)
+    lpf_small = largest_prime_factors_upto(limit + 1, primes)
+    lpf_q = sieve_quadratic_lpf(limit, primes)
 
     total = 0
-    for i in range(1, limit + 1):
-        a = i + 1
-        b = i * i - i + 1
-
-        factor2 = get_max_factor(b)
-        factor1 = 1
-        if factor2 < a:
-            factor1 = get_max_factor(a, factor2)
-
-        factor = max(factor1, factor2)
-        total += factor - 1
-
+    for k in range(1, limit + 1):
+        total += max(lpf_small[k + 1], lpf_q[k]) - 1
     return total
 
 
-def main():
+def main() -> None:
     assert f_simple(1) == 1
     assert f_simple(2) == 2
     assert f_simple(3) == 1
     assert f_simple(20) == 6
-    assert solve(100) == 118937
+    assert solve(100) == 118_937
     print(solve())
 
 

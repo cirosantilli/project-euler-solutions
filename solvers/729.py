@@ -24,8 +24,8 @@ def sum_ranges_upto(P: int) -> float:
     hypot = math.hypot
     fsum = math.fsum
     half = 0.5
-    tol = 1e-16
-    fp_max_iter = 12
+    tol = 1e-15
+    newton_max_iter = 3
     chunk_size = 50_000  # chunked exact summation
 
     total = 0.0
@@ -34,6 +34,7 @@ def sum_ranges_upto(P: int) -> float:
         # a[1..n] holds a binary Lyndon word (aperiodic necklace representative)
         a = [0] * (n + 1)
         chunk: list[float] = []
+        generated = 0
 
         def flush() -> None:
             nonlocal total
@@ -46,22 +47,32 @@ def sum_ranges_upto(P: int) -> float:
             For the current a[1..n] (aperiodic necklace rep), compute its cycle range
             and add n * range to the running chunk.
             """
+            nonlocal generated
+            generated += 1
+
             # Fixed point of the composed inverse branches:
             #   x = inv_{a[1]}(inv_{a[2]}(... inv_{a[n]}(x) ...))
+            # Each inverse branch is a contraction, so Newton from 0 is stable here.
             x = 0.0
-            for _ in range(fp_max_iter):
+            for _ in range(newton_max_iter):
                 y = x
+                dy = 1.0
                 # apply composed inverses
                 for i in range(1, n + 1):
                     s = hypot(y, 2.0)  # sqrt(y*y + 4)
                     if a[i] == 0:
+                        dy *= half * (1.0 + y / s)
                         y = half * (y + s)
                     else:
+                        dy *= half * (1.0 - y / s)
                         y = half * (y - s)
-                if abs(y - x) <= tol * (1.0 + abs(y)):
-                    x = y
+
+                # Newton step for Phi(x) = G(x) - x.
+                next_x = x - (y - x) / (dy - 1.0)
+                if abs(next_x - x) <= tol * (1.0 + abs(next_x)):
+                    x = next_x
                     break
-                x = y
+                x = next_x
 
             # Compute range by walking the cycle via the same inverse branches.
             # This produces the same set of orbit values (in reverse order) but is
@@ -101,9 +112,35 @@ def sum_ranges_upto(P: int) -> float:
                 rec(t + 1, t)
 
         rec(1, 1)
+        assert generated == primitive_necklace_count(n)
         flush()
 
     return total
+
+
+def mobius(n: int) -> int:
+    """Return the Möbius value mu(n), for small n used by the necklace check."""
+    result = 1
+    p = 2
+    while p * p <= n:
+        if n % p == 0:
+            n //= p
+            if n % p == 0:
+                return 0
+            result = -result
+        p += 1 if p == 2 else 2
+    if n > 1:
+        result = -result
+    return result
+
+
+def primitive_necklace_count(n: int) -> int:
+    """Number of primitive binary necklaces of length n."""
+    total = 0
+    for d in range(1, n + 1):
+        if n % d == 0:
+            total += mobius(d) * (1 << (n // d))
+    return total // n
 
 
 def _self_test() -> None:
