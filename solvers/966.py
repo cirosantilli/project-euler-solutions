@@ -16,6 +16,8 @@ No external libraries are used.
 from __future__ import annotations
 
 import math
+import multiprocessing as mp
+import os
 from typing import Dict, Tuple
 
 PI = math.acos(-1.0)
@@ -354,14 +356,23 @@ def build_shape_coeffs(limit: int) -> Dict[Tuple[int, int, int], int]:
     return coeff
 
 
-def solve(limit: int = 200) -> float:
-    coeff = build_shape_coeffs(limit)
+def default_workers(item_count: int) -> int:
+    env = os.environ.get("PE966_PROCS", "").strip()
+    if env:
+        try:
+            return max(1, min(item_count, int(env)))
+        except ValueError:
+            pass
+    return max(1, min(8, os.cpu_count() or 1, item_count))
 
-    # Kahan summation for stability
+
+def _chunk_sum(
+    items: list[tuple[tuple[int, int, int], int]]
+) -> float:
     total = 0.0
     corr = 0.0
 
-    for (a, b, c), w in coeff.items():
+    for (a, b, c), w in items:
         i0 = maximize_intersection_for_triangle(a, b, c)
         term = i0 * w
         y = term - corr
@@ -369,6 +380,39 @@ def solve(limit: int = 200) -> float:
         corr = (t - total) - y
         total = t
 
+    return total
+
+
+def _split_items(
+    items: list[tuple[tuple[int, int, int], int]], chunks: int
+) -> list[list[tuple[tuple[int, int, int], int]]]:
+    chunk_size = (len(items) + chunks - 1) // chunks
+    return [items[i : i + chunk_size] for i in range(0, len(items), chunk_size)]
+
+
+def solve(limit: int = 200, workers: int | None = None) -> float:
+    coeff = build_shape_coeffs(limit)
+    items = list(coeff.items())
+    if workers is None:
+        workers = default_workers(len(items)) if limit == 200 else 1
+
+    if workers <= 1 or len(items) <= 1:
+        partials = [_chunk_sum(items)]
+    else:
+        tasks = _split_items(items, workers)
+        try:
+            with mp.Pool(processes=len(tasks)) as pool:
+                partials = list(pool.imap_unordered(_chunk_sum, tasks, chunksize=1))
+        except Exception:
+            partials = [_chunk_sum(items)]
+
+    total = 0.0
+    corr = 0.0
+    for subtotal in partials:
+        y = subtotal - corr
+        t = total + y
+        corr = (t - total) - y
+        total = t
     return total
 
 

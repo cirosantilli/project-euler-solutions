@@ -1,85 +1,99 @@
 #!/usr/bin/env python
-"""Adapted from https://github.com/igorvanloo/Project-Euler-Explained/blob/19f85895945a2c9b688f85da142bae13f37dab65/Finished%20Problems/pe00609%20-%20pi%20sequences.py"""
 
-"""
-Created on Sat Dec 11 20:49:49 2021
-
-@author: igorvanloo
-"""
-
-"""
-Project Euler Problem 609
-
-pi(n) = number of primes not exceeding n
-u = (u_0, u_1, ..., u_n)
-
-pi sequence if 
-1. u_n ≥ 1 for all n
-2. u_{n+1} = pi(u_n)
-3. u has more than 2 elements
-
-c(u) = number of elements in u that are not prime
-p(n,k) = the number of pi sequence such that u_0 ≤ n and c(u) = k
-P(n) = product of all p(n,k) ≥ 0
-
-First thing to notice is u is deteremined by u_0, an array with all the pi(n) may be necessary
-
-
-    742870469 ~ 10^7
-
-~ 10^8
-"""
-
+from array import array
 import math
 
 
-def list_primality(n):
-    result = [True] * (n + 1)
-    result[0] = result[1] = False
-    for i in range(int(math.sqrt(n)) + 1):
-        if result[i]:
-            for j in range(2 * i, len(result), i):
-                result[j] = False
-    return result
+MOD = 1_000_000_007
 
 
-def list_primes(n):
-    return [i for (i, isprime) in enumerate(list_primality(n)) if isprime]
+def prime_sieve(limit: int) -> bytearray:
+    is_prime = bytearray(b"\x01") * (limit + 1)
+    if limit >= 0:
+        is_prime[0] = 0
+    if limit >= 1:
+        is_prime[1] = 0
+
+    for p in range(2, math.isqrt(limit) + 1):
+        if is_prime[p]:
+            start = p * p
+            is_prime[start : limit + 1 : p] = b"\x00" * (
+                ((limit - start) // p) + 1
+            )
+
+    return is_prime
 
 
-def P(limit, mod=1000000007):
-    prime_gen = list_primality(limit + 50)
-    primes = [x for x in range(len(prime_gen)) if prime_gen[x]]
-    array = [0] * (limit + 1)
-    p_index = 0
+def prime_count_table(is_prime: bytearray, limit: int) -> array:
+    pi = array("I", [0]) * (limit + 1)
+    count = 0
     for x in range(1, limit + 1):
-        while True:
-            if primes[p_index] > x:
-                array[x] = p_index
-                break
-            p_index += 1
-    array2 = [0] * (limit + 1)
-    for x in range(1, limit + 1):
-        prime_non_count = 0
-        if prime_gen[x] == False:
-            prime_non_count += 1
-        curr = x
-        while True:
-            temp = array[curr]
-            if temp == 0:
-                break
-            else:
-                if prime_gen[temp] == False:
-                    prime_non_count += 1
+        if is_prime[x]:
+            count += 1
+        pi[x] = count
+    return pi
 
-            array2[prime_non_count] += 1
-            curr = temp
+
+def add_pending(
+    pending: dict[int, dict[int, int]], value: int, nonprime_count: int, weight: int
+) -> None:
+    counts = pending.get(value)
+    if counts is None:
+        pending[value] = {nonprime_count: weight}
+    else:
+        counts[nonprime_count] = counts.get(nonprime_count, 0) + weight
+
+
+def P(limit: int, mod: int | None = MOD) -> int:
+    is_prime = prime_sieve(limit)
+    primes = [2] if limit >= 2 else []
+    primes.extend(x for x in range(3, limit + 1, 2) if is_prime[x])
+
+    m = len(primes)
+    pi = prime_count_table(is_prime, m)
+    is_nonprime = bytearray(m + 1)
+    for x in range(1, m + 1):
+        is_nonprime[x] = 1 - is_prime[x]
+
+    buckets = [0] * 64
+    pending: dict[int, dict[int, int]] = {}
+
+    for first_value in range(m, 0, -1):
+        tail_counts = pending.pop(first_value, None)
+        if first_value < m:
+            composite_starts = primes[first_value] - primes[first_value - 1] - 1
+        else:
+            composite_starts = limit - primes[-1]
+
+        nonprime_delta = is_nonprime[first_value]
+        next_value = pi[first_value]
+
+        prime_bucket = nonprime_delta
+        buckets[prime_bucket] += 1
+        if next_value:
+            add_pending(pending, next_value, prime_bucket, 1)
+
+        composite_bucket = nonprime_delta + 1
+        buckets[composite_bucket] += composite_starts
+        if composite_starts and next_value:
+            add_pending(pending, next_value, composite_bucket, composite_starts)
+
+        if tail_counts is None:
+            continue
+
+        for nonprime_count, weight in tail_counts.items():
+            bucket = nonprime_count + nonprime_delta
+            buckets[bucket] += weight
+            if next_value:
+                add_pending(pending, next_value, bucket, weight)
+
     total = 1
-    for x in array2:
-        if x != 0:
-            total *= x
+    for count in buckets:
+        if count:
+            total *= count
             if mod is not None:
                 total %= mod
+
     return total if mod is None else total % mod
 
 

@@ -9,6 +9,12 @@ recursion described in the accompanying explanation.
 from math import isqrt
 
 MOD = 10**9
+FLOAT_SQRT_SAFE_LIMIT = 1 << 53
+
+
+def fast_isqrt(n: int) -> int:
+    """Fast floor sqrt for this problem's n < 2^53 recursion bounds."""
+    return int(n**0.5)
 
 
 def sieve_primes(limit: int) -> list[int]:
@@ -72,6 +78,7 @@ def build_prime_sum_table(N: int):
 
 
 def compute(N: int) -> int:
+    assert N < FLOAT_SQRT_SAFE_LIMIT
     root, idx_small, idx_large, prime_sums, primes = build_prime_sum_table(N)
     prime_count = len(primes)
     key_base = prime_count + 1
@@ -107,7 +114,7 @@ def compute(N: int) -> int:
     missing = -1
 
     def contribution(bound: int, idx: int) -> int:
-        end = pi[isqrt(bound)]
+        end = pi[fast_isqrt(bound)]
         total = terminal_prime_sum(bound, idx)
         if idx >= end:
             return total
@@ -125,7 +132,7 @@ def compute(N: int) -> int:
 
             while power <= power_limit:
                 child_bound = bound // power
-                child_end = pi[isqrt(child_bound)]
+                child_end = pi[fast_isqrt(child_bound)]
                 if next_idx >= child_end:
                     child = terminal_prime_sum(child_bound, next_idx)
                 else:

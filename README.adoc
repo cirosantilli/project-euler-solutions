@@ -672,7 +672,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/198.py[198.py] | link:solvers/198.md[198.md] | 0.100 | 52374425 |
 | link:solvers/199.py[199.py] | link:solvers/199.md[199.md] | 0.071 | 0.00396087 |
 | link:solvers/200.py[200.py] | link:solvers/200.md[200.md] | 2.155 | 229161792008 |
-| link:solvers/201.py[201.py] | link:solvers/201.md[201.md] | 10.043 | 115039000 |
+| link:solvers/201.py[201.py] | link:solvers/201.md[201.md] | 1.973 | 115039000 |
 | link:solvers/202.py[202.py] | link:solvers/202.md[202.md] | 0.115 | 1209002624 |
 | link:solvers/203.py[203.py] | link:solvers/203.md[203.md] | 0.058 | 34029210557338 |
 | link:solvers/204.py[204.py] | link:solvers/204.md[204.md] | 0.190 | 2944730 |
@@ -692,7 +692,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/218.py[218.py] | link:solvers/218.md[218.md] | 0.058 | 0 |
 | link:solvers/219.py[219.py] | link:solvers/219.md[219.md] | 0.057 | 64564225042 |
 | link:solvers/220.py[220.py] | link:solvers/220.md[220.md] | 0.088 | 139776,963904 |
-| link:solvers/221.py[221.py] | link:solvers/221.md[221.md] | 8.239 | 1884161251122450 |
+| link:solvers/221.py[221.py] | link:solvers/221.md[221.md] | 0.751 | 1884161251122450 |
 | link:solvers/222.py[222.py] | link:solvers/222.md[222.md] | 0.558 | 1590933 |
 | link:solvers/223.py[223.py] | link:solvers/223.md[223.md] | 1.447 | 61614848 |
 | link:solvers/224.py[224.py] | link:solvers/224.md[224.md] | 0.245 | 4137330 |
@@ -712,7 +712,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/238.py[238.py] | link:solvers/238.md[238.md] | 2.616 | 9922545104535661 |
 | link:solvers/239.py[239.py] | link:solvers/239.md[239.md] | 0.082 | 0.001887854841 |
 | link:solvers/240.py[240.py] | link:solvers/240.md[240.md] | 0.465 | 7448717393364181966 |
-| link:solvers/241.py[241.py] | link:solvers/241.md[241.md] | 5.802 | 482316491800641154 |
+| link:solvers/241.py[241.py] | link:solvers/241.md[241.md] | 0.283 | 482316491800641154 |
 | link:solvers/242.py[242.py] | link:solvers/242.md[242.md] | 0.072 | 997104142249036713 |
 | link:solvers/243.py[243.py] | link:solvers/243.md[243.md] | 0.057 | 892371480 |
 | link:solvers/244.py[244.py] | link:solvers/244.md[244.md] | 0.201 | 96356848 |
@@ -730,7 +730,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/256.py[256.py] | link:solvers/256.md[256.md] | 1.786 | 85765680 |
 | link:solvers/257.py[257.py] | link:solvers/257.md[257.md] | 2.900 | 139012411 |
 | link:solvers/258.py[258.py] | link:solvers/258.md[258.md] | 1.565 | 12747994 |
-| link:solvers/259.py[259.py] | link:solvers/259.md[259.md] | 28.541 | 20101196798 |
+| link:solvers/259.py[259.py] | link:solvers/259.md[259.md] | 5.811 | 20101196798 |
 | link:solvers/260.py[260.py] | link:solvers/260.md[260.md] | 0.965 | 167542057 |
 | link:solvers/261.py[261.py] | link:solvers/261.md[261.md] | 0.162 | 238890850232021 |
 | link:solvers/262.py[262.py] | link:solvers/262.md[262.md] | 0.554 | 2531.205 |
@@ -781,13 +781,13 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/307.py[307.py] | link:solvers/307.md[307.md] | 0.112 | 0.7311720251 |
 | link:solvers/308.py[308.py] | link:solvers/308.md[308.md] | 0.217 | 1539669807660924 |
 | link:solvers/309.py[309.py] | link:solvers/309.md[309.md] | 1.503 | 210139 |
-| link:solvers/310.py[310.py] | link:solvers/310.md[310.md] | 6.476 | 2586528661783 |
+| link:solvers/310.py[310.py] | link:solvers/310.md[310.md] | 0.143 | 2586528661783 |
 | link:solvers/311.py[311.py] | link:solvers/311.md[311.md] | 0.293 | 2466018557 |
 | link:solvers/312.py[312.py] | link:solvers/312.md[312.md] | 0.409 | 324681947 |
 | link:solvers/313.py[313.py] | link:solvers/313.md[313.md] | 0.071 | 2057774861813004 |
 | link:solvers/314.py[314.py] | link:solvers/314.md[314.md] | 1.835 | 132.52756426 |
 | link:solvers/315.py[315.py] | link:solvers/315.md[315.md] | 0.244 | 13625242 |
-| link:solvers/316.py[316.py] | link:solvers/316.md[316.md] | 11.613 | 542934735751917735 |
+| link:solvers/316.py[316.py] | link:solvers/316.md[316.md] | 0.337 | 542934735751917735 |
 | link:solvers/317.py[317.py] | link:solvers/317.md[317.md] | 0.057 | 1856532.8455 |
 | link:solvers/318.py[318.py] | link:solvers/318.md[318.md] | 0.074 | 709313889 |
 | link:solvers/319.py[319.py] | link:solvers/319.md[319.md] | 0.715 | 268457129 |
@@ -813,7 +813,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/339.py[339.py] | link:solvers/339.md[339.md] | 0.113 | 19823.542204 |
 | link:solvers/340.py[340.py] | link:solvers/340.md[340.md] | 0.062 | 291504964 |
 | link:solvers/341.py[341.py] | link:solvers/341.md[341.md] | 0.702 | 56098610614277014 |
-| link:solvers/342.py[342.py] | link:solvers/342.md[342.md] | 11.835 | 5943040885644 |
+| link:solvers/342.py[342.py] | link:solvers/342.md[342.md] | 0.350 | 5943040885644 |
 | link:solvers/343.py[343.py] | link:solvers/343.md[343.md] | 0.383 | 269533451410884183 |
 | link:solvers/344.py[344.py] | link:solvers/344.md[344.md] | 1.638 | 65579304332 |
 | link:solvers/345.py[345.py] | link:solvers/345.md[345.md] | 0.095 | 13938 |
@@ -829,7 +829,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/355.py[355.py] | link:solvers/355.md[355.md] | 0.720 | 1726545007 |
 | link:solvers/356.py[356.py] | link:solvers/356.md[356.md] | 0.110 | 28010159 |
 | link:solvers/357.py[357.py] | link:solvers/357.md[357.md] | 5.254 | 1739023853137 |
-| link:solvers/358.py[358.py] | link:solvers/358.md[358.md] | 14.877 | 3284144505 |
+| link:solvers/358.py[358.py] | link:solvers/358.md[358.md] | 0.063 | 3284144505 |
 | link:solvers/359.py[359.py] | link:solvers/359.md[359.md] | 0.055 | 40632119 |
 | link:solvers/360.py[360.py] | link:solvers/360.md[360.md] | 0.112 | 878825614395267072 |
 | link:solvers/361.py[361.py] | link:solvers/361.md[361.md] | 0.222 | 178476944 |
@@ -864,7 +864,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/390.py[390.py] | link:solvers/390.md[390.md] | 0.127 | 2919133642971 |
 | link:solvers/391.py[391.py] | link:solvers/391.md[391.md] | 1.027 | 61029882288 |
 | link:solvers/392.py[392.py] | link:solvers/392.md[392.md] | 0.080 | 3.1486734435 |
-| link:solvers/393.py[393.py] | link:solvers/393.md[393.md] | 13.176 | 112398351350823112 |
+| link:solvers/393.py[393.py] | link:solvers/393.md[393.md] | 1.371 | 112398351350823112 |
 | link:solvers/394.py[394.py] | link:solvers/394.md[394.md] | 0.088 | 3.2370342194 |
 | link:solvers/395.py[395.py] | link:solvers/395.md[395.md] | 0.245 | 28.2453753155 |
 | link:solvers/396.py[396.py] | link:solvers/396.md[396.md] | 0.116 | 173214653 |
@@ -884,7 +884,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/410.py[410.py] | link:solvers/410.md[410.md] | 1.995 | 799999783589946560 |
 | link:solvers/411.py[411.py] | link:solvers/411.md[411.md] | 13.880 | 9936352 |
 | link:solvers/412.py[412.py] | link:solvers/412.md[412.md] | 0.578 | 38788800 |
-| link:solvers/413.py[413.py] | link:solvers/413.md[413.md] | 18.845 | 3079418648040719 |
+| link:solvers/413.py[413.py] | link:solvers/413.md[413.md] | 11.164 | 3079418648040719 |
 | link:solvers/414.py[414.py] | link:solvers/414.md[414.md] | 13.126 | 552506775824935461 |
 | link:solvers/415.py[415.py] | link:solvers/415.md[415.md] | 5.524 | 55859742 |
 | link:solvers/416.py[416.py] | link:solvers/416.md[416.md] | 6.503 | 898082747 |
@@ -930,13 +930,13 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/456.py[456.py] | link:solvers/456.md[456.md] | 7.393 | 333333208685971546 |
 | link:solvers/457.py[457.py] | link:solvers/457.md[457.md] | 1.024 | 2647787126797397063 |
 | link:solvers/458.py[458.py] | link:solvers/458.md[458.md] | 0.067 | 423341841 |
-| link:solvers/459.py[459.py] | link:solvers/459.md[459.md] | 36.174 | 3996390106631 |
+| link:solvers/459.py[459.py] | link:solvers/459.md[459.md] | 22.230 | 3996390106631 |
 | link:solvers/460.py[460.py] | link:solvers/460.md[460.md] | 1.552 | 18.420738199 |
 | link:solvers/461.py[461.py] | link:solvers/461.md[461.md] | 0.162 | 159820276 |
 | link:solvers/462.py[462.py] | link:solvers/462.md[462.md] | 0.099 | 5.5350769703e1512 |
 | link:solvers/463.py[463.py] | link:solvers/463.md[463.md] | 0.127 | 808981553 |
-| link:solvers/464.py[464.py] | link:solvers/464.md[464.md] | 10.824 | 198775297232878 |
-| link:solvers/465.py[465.py] | link:solvers/465.md[465.md] | 7.407 | 585965659 |
+| link:solvers/464.py[464.py] | link:solvers/464.md[464.md] | 3.534 | 198775297232878 |
+| link:solvers/465.py[465.py] | link:solvers/465.md[465.md] | 3.892 | 585965659 |
 | link:solvers/466.py[466.py] | link:solvers/466.md[466.md] | 7.379 | 258381958195474745 |
 | link:solvers/467.py[467.py] | link:solvers/467.md[467.md] | 0.233 | 775181359 |
 | link:solvers/468.py[468.py] | link:solvers/468.md[468.md] | 0.225 | 852950321 |
@@ -954,7 +954,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/480.py[480.py] | link:solvers/480.md[480.md] | 0.133 | turnthestarson |
 | link:solvers/481.py[481.py] | link:solvers/481.md[481.md] | 0.755 | 729.12106947 |
 | link:solvers/482.py[482.py] | link:solvers/482.md[482.md] | 3.574 | 1400824879147 |
-| link:solvers/483.py[483.py] | link:solvers/483.md[483.md] | 8.307 | 4.993401567e22 |
+| link:solvers/483.py[483.py] | link:solvers/483.md[483.md] | 0.342 | 4.993401567e22 |
 | link:solvers/484.py[484.py] | link:solvers/484.md[484.md] | 1.523 | 8907904768686152599 |
 | link:solvers/485.py[485.py] | link:solvers/485.md[485.md] | 2.056 | 51281274340 |
 | link:solvers/486.py[486.py] | link:solvers/486.md[486.md] | 0.296 | 11408450515 |
@@ -995,7 +995,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/521.py[521.py] | link:solvers/521.md[521.md] | 6.308 | 44389811 |
 | link:solvers/522.py[522.py] | link:solvers/522.md[522.md] | 2.453 | 96772715 |
 | link:solvers/523.py[523.py] | link:solvers/523.md[523.md] | 0.060 | 37125450.44 |
-| link:solvers/524.py[524.py] | link:solvers/524.md[524.md] | 10.055 | 2432925835413407847 |
+| link:solvers/524.py[524.py] | link:solvers/524.md[524.md] | 0.084 | 2432925835413407847 |
 | link:solvers/525.py[525.py] | link:solvers/525.md[525.md] | 0.167 | 44.69921807 |
 | link:solvers/526.py[526.py] | link:solvers/526.md[526.md] | 13.128 | 49601160286750947 |
 | link:solvers/527.py[527.py] | link:solvers/527.md[527.md] | 0.120 | 11.92412011 |
@@ -1011,7 +1011,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/537.py[537.py] | link:solvers/537.md[537.md] | 0.848 | 779429131 |
 | link:solvers/538.py[538.py] | link:solvers/538.md[538.md] | 1.363 | 22472871503401097 |
 | link:solvers/539.py[539.py] | link:solvers/539.md[539.md] | 0.104 | 426334056 |
-| link:solvers/540.py[540.py] | link:solvers/540.md[540.md] | 9.710 | 500000000002845 |
+| link:solvers/540.py[540.py] | link:solvers/540.md[540.md] | 2.220 | 500000000002845 |
 | link:solvers/541.py[541.py] | link:solvers/541.md[541.md] | 0.154 | 4580726482872451 |
 | link:solvers/542.py[542.py] | link:solvers/542.md[542.md] | 1.065 | 697586734240314852 |
 | link:solvers/543.py[543.py] | link:solvers/543.md[543.md] | 0.706 | 199007746081234640 |
@@ -1036,13 +1036,13 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/562.py[562.py] | link:solvers/562.md[562.md] | 0.416 | 51208732914368 |
 | link:solvers/563.py[563.py] | link:solvers/563.md[563.md] | 4.428 | 27186308211734760 |
 | link:solvers/564.py[564.py] | link:solvers/564.md[564.md] | 2.307 | 12363.698850 |
-| link:solvers/565.py[565.py] | link:solvers/565.md[565.md] | 16.009 | 2992480851924313898 |
+| link:solvers/565.py[565.py] | link:solvers/565.md[565.md] | 0.738 | 2992480851924313898 |
 | link:solvers/566.py[566.py] | link:solvers/566.md[566.md] | 0.101 | 329569369413585 |
 | link:solvers/567.py[567.py] | link:solvers/567.md[567.md] | 0.101 | 75.44817535 |
 | link:solvers/568.py[568.py] | link:solvers/568.md[568.md] | 0.122 | 4228020 |
 | link:solvers/569.py[569.py] | link:solvers/569.md[569.md] | 2.061 | 21025060 |
 | link:solvers/570.py[570.py] | link:solvers/570.md[570.md] | 3.488 | 271197444 |
-| link:solvers/571.py[571.py] | link:solvers/571.md[571.md] | 37.492 | 30510390701978 |
+| link:solvers/571.py[571.py] | link:solvers/571.md[571.md] | 17.235 | 30510390701978 |
 | link:solvers/572.py[572.py] | link:solvers/572.md[572.md] | 1.163 | 19737656 |
 | link:solvers/573.py[573.py] | link:solvers/573.md[573.md] | 0.105 | 1252.9809 |
 | link:solvers/574.py[574.py] | link:solvers/574.md[574.md] | 0.247 | 5780447552057000454 |
@@ -1080,13 +1080,13 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/606.py[606.py] | link:solvers/606.md[606.md] | 6.217 | 158452775 |
 | link:solvers/607.py[607.py] | link:solvers/607.md[607.md] | 0.088 | 13.1265108586 |
 | link:solvers/608.py[608.py] | link:solvers/608.md[608.md] | 3.452 | 439689828 |
-| link:solvers/609.py[609.py] | link:solvers/609.md[609.md] | 13.965 | 172023848 |
+| link:solvers/609.py[609.py] | link:solvers/609.md[609.md] | 2.060 | 172023848 |
 | link:solvers/610.py[610.py] | link:solvers/610.md[610.md] | 0.173 | 319.30207833 |
 | link:solvers/611.py[611.py] | link:solvers/611.md[611.md] | 12.964 | 49283233900 |
 | link:solvers/612.py[612.py] | link:solvers/612.md[612.md] | 0.122 | 819963842 |
 | link:solvers/613.py[613.py] | link:solvers/613.md[613.md] | 0.061 | 0.3916721504 |
 | link:solvers/614.py[614.py] | link:solvers/614.md[614.md] | 0.066 | 130694090 |
-| link:solvers/615.py[615.py] | link:solvers/615.md[615.md] | 10.299 | 108424772 |
+| link:solvers/615.py[615.py] | link:solvers/615.md[615.md] | 0.599 | 108424772 |
 | link:solvers/616.py[616.py] | link:solvers/616.md[616.md] | 0.416 | 310884668312456458 |
 | link:solvers/617.py[617.py] | link:solvers/617.md[617.md] | 0.111 | 1001133757 |
 | link:solvers/618.py[618.py] | link:solvers/618.md[618.md] | 0.616 | 634212216 |
@@ -1094,7 +1094,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/620.py[620.py] | link:solvers/620.md[620.md] | 1.225 | 1470337306 |
 | link:solvers/621.py[621.py] | link:solvers/621.md[621.md] | 0.303 | 11429712 |
 | link:solvers/622.py[622.py] | link:solvers/622.md[622.md] | 2.659 | 3010983666182123972 |
-| link:solvers/623.py[623.py] | link:solvers/623.md[623.md] | 8.766 | 3679796 |
+| link:solvers/623.py[623.py] | link:solvers/623.md[623.md] | 0.404 | 3679796 |
 | link:solvers/624.py[624.py] | link:solvers/624.md[624.md] | 0.127 | 984524441 |
 | link:solvers/625.py[625.py] | link:solvers/625.md[625.md] | 1.877 | 551614306 |
 | link:solvers/626.py[626.py] | link:solvers/626.md[626.md] | 0.216 | 695577663 |
@@ -1113,7 +1113,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/639.py[639.py] | link:solvers/639.md[639.md] | 4.653 | 797866893 |
 | link:solvers/640.py[640.py] | link:solvers/640.md[640.md] | 1.630 | 50.317928 |
 | link:solvers/641.py[641.py] | link:solvers/641.md[641.md] | 1.280 | 793525366 |
-| link:solvers/642.py[642.py] | link:solvers/642.md[642.md] | 9.612 | 631499044 |
+| link:solvers/642.py[642.py] | link:solvers/642.md[642.md] | 5.295 | 631499044 |
 | link:solvers/643.py[643.py] | link:solvers/643.md[643.md] | 1.146 | 968274154 |
 | link:solvers/644.py[644.py] | link:solvers/644.md[644.md] | 3.547 | 20.11208767 |
 | link:solvers/645.py[645.py] | link:solvers/645.md[645.md] | 0.117 | 48894.2174 |
@@ -1204,7 +1204,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/730.py[730.py] | link:solvers/730.md[730.md] | 34.591 | 1315965924 |
 | link:solvers/731.py[731.py] | link:solvers/731.md[731.md] | 0.084 | 6086371427 |
 | link:solvers/732.py[732.py] | link:solvers/732.md[732.md] | 0.382 | 45609 |
-| link:solvers/733.py[733.py] | link:solvers/733.md[733.md] | 8.167 | 574368578 |
+| link:solvers/733.py[733.py] | link:solvers/733.md[733.md] | 1.353 | 574368578 |
 | link:solvers/734.py[734.py] | link:solvers/734.md[734.md] | 0.689 | 557988060 |
 | link:solvers/735.py[735.py] | link:solvers/735.md[735.md] | 16.234 | 174848216767932 |
 | link:solvers/736.py[736.py] | link:solvers/736.md[736.md] | 0.158 | 25332747903959376 |
@@ -1223,7 +1223,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/749.py[749.py] | link:solvers/749.md[749.md] | 1.652 | 13459471903176422 |
 | link:solvers/750.py[750.py] | link:solvers/750.md[750.md] | 1.133 | 160640 |
 | link:solvers/751.py[751.py] | link:solvers/751.md[751.md] | 0.072 | 2.223561019313554106173177 |
-| link:solvers/752.py[752.py] | link:solvers/752.md[752.md] | 5.407 | 5610899769745488 |
+| link:solvers/752.py[752.py] | link:solvers/752.md[752.md] | 0.458 | 5610899769745488 |
 | link:solvers/753.py[753.py] | link:solvers/753.md[753.md] | 0.203 | 4714126766770661630 |
 | link:solvers/754.py[754.py] | link:solvers/754.md[754.md] | 4.879 | 785845900 |
 | link:solvers/755.py[755.py] | link:solvers/755.md[755.md] | 0.098 | 2877071595975576960 |
@@ -1308,7 +1308,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/834.py[834.py] | link:solvers/834.md[834.md] | 1.494 | 1254404167198752370 |
 | link:solvers/835.py[835.py] | link:solvers/835.md[835.md] | 0.095 | 1050923942 |
 | link:solvers/836.py[836.py] | link:solvers/836.md[836.md] | 0.096 | aprilfoolsjoke |
-| link:solvers/837.py[837.py] | link:solvers/837.md[837.md] | 12.890 | 428074856 |
+| link:solvers/837.py[837.py] | link:solvers/837.md[837.md] | 4.946 | 428074856 |
 | link:solvers/838.py[838.py] | link:solvers/838.md[838.md] | 0.167 | 250591.442792 |
 | link:solvers/839.py[839.py] | link:solvers/839.md[839.md] | 2.525 | 150893234438294408 |
 | link:solvers/840.py[840.py] | link:solvers/840.md[840.md] | 1.390 | 194396971 |
@@ -1321,7 +1321,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/847.py[847.py] | link:solvers/847.md[847.md] | 0.107 | 381868244 |
 | link:solvers/848.py[848.py] | link:solvers/848.md[848.md] | 0.094 | 188.45503259 |
 | link:solvers/849.py[849.py] | link:solvers/849.md[849.md] | 2.254 | 936203459 |
-| link:solvers/850.py[850.py] | link:solvers/850.md[850.md] | 15.404 | 878255725 |
+| link:solvers/850.py[850.py] | link:solvers/850.md[850.md] | 1.594 | 878255725 |
 | link:solvers/851.py[851.py] | link:solvers/851.md[851.md] | 0.327 | 726358482 |
 | link:solvers/852.py[852.py] | link:solvers/852.md[852.md] | 0.367 | 130.313496 |
 | link:solvers/853.py[853.py] | link:solvers/853.md[853.md] | 0.134 | 44511058204 |
@@ -1351,7 +1351,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/877.py[877.py] | link:solvers/877.md[877.md] | 0.095 | 336785000760344621 |
 | link:solvers/878.py[878.py] | link:solvers/878.md[878.md] | 0.260 | 23707109 |
 | link:solvers/879.py[879.py] | link:solvers/879.md[879.md] | 0.214 | 4350069824940 |
-| link:solvers/880.py[880.py] | link:solvers/880.md[880.md] | 10.848 | 522095328 |
+| link:solvers/880.py[880.py] | link:solvers/880.md[880.md] | 0.922 | 522095328 |
 | link:solvers/881.py[881.py] | link:solvers/881.md[881.md] | 0.139 | 205702861096933200 |
 | link:solvers/882.py[882.py] | link:solvers/882.md[882.md] | 0.149 | 15800662276 |
 | link:solvers/883.py[883.py] | link:solvers/883.md[883.md] | 3.323 | 14854003484704 |
@@ -1433,11 +1433,11 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/959.py[959.py] | link:solvers/959.md[959.md] | 2.264 | 0.857162085 |
 | link:solvers/960.py[960.py] | link:solvers/960.md[960.md] | 0.061 | 243559751 |
 | link:solvers/961.py[961.py] | link:solvers/961.md[961.md] | 1.306 | 166666666689036288 |
-| link:solvers/962.py[962.py] | link:solvers/962.md[962.md] | 27.947 | 7259046 |
+| link:solvers/962.py[962.py] | link:solvers/962.md[962.md] | 12.629 | 7259046 |
 | link:solvers/963.py[963.py] | link:solvers/963.md[963.md] | 15.752 | 55129975871328418 |
 | link:solvers/964.py[964.py] | link:solvers/964.md[964.md] | 0.114 | 4.7126135532e-29 |
 | link:solvers/965.py[965.py] | link:solvers/965.md[965.md] | 0.708 | 0.0003452201133 |
-| link:solvers/966.py[966.py] | link:solvers/966.md[966.md] | 36.829 | 29337152.09 |
+| link:solvers/966.py[966.py] | link:solvers/966.md[966.md] | 8.765 | 29337152.09 |
 | link:solvers/967.py[967.py] | link:solvers/967.md[967.md] | 1.591 | 357591131712034236 |
 | link:solvers/968.py[968.py] | link:solvers/968.md[968.md] | 0.932 | 885362394 |
 | link:solvers/969.py[969.py] | link:solvers/969.md[969.md] | 0.065 | 412543690 |
@@ -1446,7 +1446,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/972.py[972.py] | link:solvers/972.md[972.md] | 24.472 | 3575508 |
 | link:solvers/973.py[973.py] | link:solvers/973.md[973.md] | 0.423 | 427278142 |
 | link:solvers/974.py[974.py] | link:solvers/974.md[974.md] | 0.320 | 13313751171933973557517973175 |
-| link:solvers/975.py[975.py] | link:solvers/975.md[975.md] | 18.081 | 88597366.47748 |
+| link:solvers/975.py[975.py] | link:solvers/975.md[975.md] | 5.874 | 88597366.47748 |
 | link:solvers/976.py[976.py] | link:solvers/976.md[976.md] | 0.706 | 675608326 |
 | link:solvers/977.py[977.py] | link:solvers/977.md[977.md] | 1.616 | 537945304 |
 | link:solvers/978.py[978.py] | link:solvers/978.md[978.md] | 0.070 | 254.54470757 |
@@ -2351,7 +2351,7 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/eulersolve/200.py[]: 0.203
 ** link:solvers/eulersolve/200.cpp[]: 0.017
 * 201
-** link:solvers/201.py[]: 10.043
+** link:solvers/201.py[]: 1.973
 ** link:solvers/eulersolve/201.py[]: 2.749
 ** link:solvers/eulersolve/201.cpp[]: 0.154
 * 202
@@ -2431,7 +2431,7 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/eulersolve/220.py[]: 0.056
 ** link:solvers/eulersolve/220.cpp[]: 0.002
 * 221
-** link:solvers/221.py[]: 8.239
+** link:solvers/221.py[]: 0.751
 ** link:solvers/eulersolve/221.py[]: 1.094
 ** link:solvers/eulersolve/221.cpp[]: 0.419
 * 222
@@ -2511,7 +2511,7 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/eulersolve/240.py[]: 0.072
 ** link:solvers/eulersolve/240.cpp[]: 0.004
 * 241
-** link:solvers/241.py[]: 5.802
+** link:solvers/241.py[]: 0.283
 ** link:solvers/eulersolve/241.py[]: 0.363
 ** link:solvers/eulersolve/241.cpp[]: 0.014
 * 242
@@ -2583,7 +2583,7 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/eulersolve/258.py[]: 1.743
 ** link:solvers/eulersolve/258.cpp[]: 0.519
 * 259
-** link:solvers/259.py[]: 28.541
+** link:solvers/259.py[]: 5.811
 ** link:solvers/eulersolve/259.py[]: 20.416
 ** link:solvers/eulersolve/259.cpp[]: 23.371
 * 260
@@ -2787,7 +2787,7 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/eulersolve/309.py[]: 6.423
 ** link:solvers/eulersolve/309.cpp[]: 1.055
 * 310
-** link:solvers/310.py[]: 6.476
+** link:solvers/310.py[]: 0.143
 ** link:solvers/eulersolve/310.py[]: 0.107
 ** link:solvers/eulersolve/310.cpp[]: 0.031
 * 311
@@ -2811,7 +2811,7 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/eulersolve/315.py[]: 3.131
 ** link:solvers/eulersolve/315.cpp[]: 0.176
 * 316
-** link:solvers/316.py[]: 11.613
+** link:solvers/316.py[]: 0.337
 ** link:solvers/eulersolve/316.py[]: 0.202
 ** link:solvers/eulersolve/316.cpp[]: 0.046
 * 317
@@ -2915,7 +2915,7 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/eulersolve/341.py[]: 0.717
 ** link:solvers/eulersolve/341.cpp[]: 0.079
 * 342
-** link:solvers/342.py[]: 11.835
+** link:solvers/342.py[]: 0.350
 ** link:solvers/eulersolve/342.py[]: 0.444
 ** link:solvers/eulersolve/342.cpp[]: 0.189
 * 343
@@ -2979,7 +2979,7 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/eulersolve/357.py[]: 2.498
 ** link:solvers/eulersolve/357.cpp[]: 0.744
 * 358
-** link:solvers/358.py[]: 14.877
+** link:solvers/358.py[]: 0.063
 ** link:solvers/eulersolve/358.py[]: 0.057
 ** link:solvers/eulersolve/358.cpp[]: 0.003
 * 359
@@ -3119,7 +3119,7 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/eulersolve/392.py[]: 0.063
 ** link:solvers/eulersolve/392.cpp[]: 0.005
 * 393
-** link:solvers/393.py[]: 13.176
+** link:solvers/393.py[]: 1.371
 ** link:solvers/eulersolve/393.py[]: 0.748
 ** link:solvers/eulersolve/393.cpp[]: 0.061
 * 394
@@ -3199,7 +3199,7 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/eulersolve/412.py[]: 0.590
 ** link:solvers/eulersolve/412.cpp[]: 0.327
 * 413
-** link:solvers/413.py[]: 18.845
+** link:solvers/413.py[]: 11.164
 ** link:solvers/eulersolve/413.py[]: 11.439
 ** link:solvers/eulersolve/413.cpp[]: 3.163
 * 414
@@ -3383,7 +3383,7 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/eulersolve/458.py[]: 8.222
 ** link:solvers/eulersolve/458.cpp[]: 0.258
 * 459
-** link:solvers/459.py[]: 36.174
+** link:solvers/459.py[]: 22.230
 ** link:solvers/eulersolve/459.py[]: 19.962
 ** link:solvers/eulersolve/459.cpp[]: 5.066
 * 460
@@ -3403,11 +3403,11 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/eulersolve/463.py[]: 0.056
 ** link:solvers/eulersolve/463.cpp[]: 0.003
 * 464
-** link:solvers/464.py[]: 10.824
+** link:solvers/464.py[]: 3.534
 ** link:solvers/eulersolve/464.py[]: 5.221
 ** link:solvers/eulersolve/464.cpp[]: 2.192
 * 465
-** link:solvers/465.py[]: 7.407
+** link:solvers/465.py[]: 3.892
 ** link:solvers/eulersolve/465.py[]: 2.270
 ** link:solvers/eulersolve/465.cpp[]: 1.158
 * 466
@@ -3479,7 +3479,7 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/eulersolve/482.py[]: 4.565
 ** link:solvers/eulersolve/482.cpp[]: 1.260
 * 483
-** link:solvers/483.py[]: 8.307
+** link:solvers/483.py[]: 0.342
 ** link:solvers/eulersolve/483.py[]: 0.695
 ** link:solvers/eulersolve/483.cpp[]: 0.222
 * 484
@@ -3643,7 +3643,7 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/eulersolve/523.py[]: 0.055
 ** link:solvers/eulersolve/523.cpp[]: 0.003
 * 524
-** link:solvers/524.py[]: 10.055
+** link:solvers/524.py[]: 0.084
 ** link:solvers/eulersolve/524.py[]: 0.063
 ** link:solvers/eulersolve/524.cpp[]: 0.029
 * 525
@@ -3707,7 +3707,7 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/eulersolve/539.py[]: 0.057
 ** link:solvers/eulersolve/539.cpp[]: 0.003
 * 540
-** link:solvers/540.py[]: 9.710
+** link:solvers/540.py[]: 2.220
 ** link:solvers/eulersolve/540.py[]: 2.195
 ** link:solvers/eulersolve/540.cpp[]: 0.442
 * 541
@@ -3807,7 +3807,7 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/eulersolve/564.py[]: 9.658
 ** link:solvers/eulersolve/564.cpp[]: 8.982
 * 565
-** link:solvers/565.py[]: 16.009
+** link:solvers/565.py[]: 0.738
 ** link:solvers/eulersolve/565.py[]: 0.926
 ** link:solvers/eulersolve/565.cpp[]: 0.467
 * 566
@@ -3831,7 +3831,7 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/eulersolve/570.py[]: 3.721
 ** link:solvers/eulersolve/570.cpp[]: 2.244
 * 571
-** link:solvers/571.py[]: 37.492
+** link:solvers/571.py[]: 17.235
 ** link:solvers/eulersolve/571.py[]: 24.582
 ** link:solvers/eulersolve/571.cpp[]: 4.546
 * 572
@@ -3983,7 +3983,7 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/eulersolve/608.py[]: 2.138
 ** link:solvers/eulersolve/608.cpp[]: 0.874
 * 609
-** link:solvers/609.py[]: 13.965
+** link:solvers/609.py[]: 2.060
 ** link:solvers/eulersolve/609.py[]: 2.742
 ** link:solvers/eulersolve/609.cpp[]: 0.748
 * 610
@@ -4007,7 +4007,7 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/eulersolve/614.py[]: 15.046
 ** link:solvers/eulersolve/614.cpp[]: 3.963
 * 615
-** link:solvers/615.py[]: 10.299
+** link:solvers/615.py[]: 0.599
 ** link:solvers/eulersolve/615.py[]: 0.460
 ** link:solvers/eulersolve/615.cpp[]: 0.138
 * 616
@@ -4039,7 +4039,7 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/eulersolve/622.py[]: 0.091
 ** link:solvers/eulersolve/622.cpp[]: 0.003
 * 623
-** link:solvers/623.py[]: 8.766
+** link:solvers/623.py[]: 0.404
 ** link:solvers/eulersolve/623.py[]: 2.877
 ** link:solvers/eulersolve/623.cpp[]: 0.139
 * 624
@@ -4115,7 +4115,7 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/eulersolve/641.py[]: 1.670
 ** link:solvers/eulersolve/641.cpp[]: 0.159
 * 642
-** link:solvers/642.py[]: 9.612
+** link:solvers/642.py[]: 5.295
 ** link:solvers/eulersolve/642.py[]: 2.125
 ** link:solvers/eulersolve/642.cpp[]: 0.926
 * 643
@@ -4479,7 +4479,7 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/eulersolve/732.py[]: 0.185
 ** link:solvers/eulersolve/732.cpp[]: 0.028
 * 733
-** link:solvers/733.py[]: 8.167
+** link:solvers/733.py[]: 1.353
 ** link:solvers/eulersolve/733.py[]: 2.660
 ** link:solvers/eulersolve/733.cpp[]: 1.160
 * 734
@@ -4555,7 +4555,7 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/eulersolve/751.py[]: 0.132
 ** link:solvers/eulersolve/751.cpp[]: 0.003
 * 752
-** link:solvers/752.py[]: 5.407
+** link:solvers/752.py[]: 0.458
 ** link:solvers/eulersolve/752.py[]: 0.394
 ** link:solvers/eulersolve/752.cpp[]: 0.148
 * 753
@@ -4895,7 +4895,7 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/eulersolve/836.py[]: 0.059
 ** link:solvers/eulersolve/836.cpp[]: 0.002
 * 837
-** link:solvers/837.py[]: 12.890
+** link:solvers/837.py[]: 4.946
 ** link:solvers/eulersolve/837.py[]: 6.335
 ** link:solvers/eulersolve/837.cpp[]: 2.778
 * 838
@@ -4947,7 +4947,7 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/eulersolve/849.py[]: 9.284
 ** link:solvers/eulersolve/849.cpp[]: 3.170
 * 850
-** link:solvers/850.py[]: 15.404
+** link:solvers/850.py[]: 1.594
 ** link:solvers/eulersolve/850.py[]: 2.122
 ** link:solvers/eulersolve/850.cpp[]: 0.492
 * 851
@@ -5067,7 +5067,7 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/eulersolve/879.py[]: 0.771
 ** link:solvers/eulersolve/879.cpp[]: 0.047
 * 880
-** link:solvers/880.py[]: 10.848
+** link:solvers/880.py[]: 0.922
 ** link:solvers/eulersolve/880.py[]: 1.073
 ** link:solvers/eulersolve/880.cpp[]: 0.427
 * 881
@@ -5395,7 +5395,7 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/eulersolve/961.py[]: 0.478
 ** link:solvers/eulersolve/961.cpp[]: 0.017
 * 962
-** link:solvers/962.py[]: 27.947
+** link:solvers/962.py[]: 12.629
 ** link:solvers/eulersolve/962.py[]: 13.115
 ** link:solvers/eulersolve/962.cpp[]: 3.579
 * 963
@@ -5411,7 +5411,7 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/eulersolve/965.py[]: 0.283
 ** link:solvers/eulersolve/965.cpp[]: 0.243
 * 966
-** link:solvers/966.py[]: 36.829
+** link:solvers/966.py[]: 8.765
 ** link:solvers/eulersolve/966.py[]: 29.129
 ** link:solvers/eulersolve/966.cpp[]: 34.067
 * 967
@@ -5447,7 +5447,7 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/eulersolve/974.py[]: 0.562
 ** link:solvers/eulersolve/974.cpp[]: 0.221
 * 975
-** link:solvers/975.py[]: 18.081
+** link:solvers/975.py[]: 5.874
 ** link:solvers/eulersolve/975.py[]: 5.151
 ** link:solvers/eulersolve/975.cpp[]: 8.205
 * 976

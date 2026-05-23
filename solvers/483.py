@@ -27,20 +27,16 @@ def _lcm(a: int, b: int) -> int:
     return a // gcd(a, b) * b
 
 
-def _sieve_primes(n: int) -> list[int]:
-    if n < 2:
-        return []
-    is_prime = bytearray(b"\x01") * (n + 1)
-    is_prime[0:2] = b"\x00\x00"
-    p = 2
-    while p * p <= n:
-        if is_prime[p]:
-            step = p
-            start = p * p
-            for x in range(start, n + 1, step):
-                is_prime[x] = 0
-        p += 1
-    return [i for i in range(2, n + 1) if is_prime[i]]
+def _largest_prime_factors(n: int) -> tuple[list[int], list[int]]:
+    lpf = [0] * (n + 1)
+    primes: list[int] = []
+    for p in range(2, n + 1):
+        if lpf[p]:
+            continue
+        primes.append(p)
+        for m in range(p, n + 1, p):
+            lpf[m] = p
+    return lpf, primes
 
 
 def format_sci_10(x: float) -> str:
@@ -57,107 +53,75 @@ def g(n: int) -> float:
     """
     Compute g(n) as defined in Project Euler 483.
 
-    DP state:
-        dp[used][L] = accumulated contribution where
-          - used is the total number of elements consumed by chosen cycles so far
-          - L is a "tracked" LCM component that only keeps prime-power information
-            that can still be influenced by future (smaller) cycle lengths.
-
-    We iterate cycle lengths i from n down to 1, and choose how many i-cycles to use.
-    For multiplicity a >= 1, the weight factor is 1 / (a! * i^a).
-
-    Prime-power extraction trick:
-        When we move from length i to i-1, any prime power p^k = i can no longer appear
-        in future cycles. If the tracked LCM currently has exponent >= k (i.e. divisible
-        by p^k), we can "lock in" one factor p into the final LCM^2 by multiplying the
-        contribution by p^2 and dividing the tracked LCM by p (reducing the exponent by 1).
-        This preserves correct interactions with remaining smaller powers of p.
+    Cycle lengths are processed in descending blocks of largest prime factor.
+    After finishing the block for a prime p, no later cycle length can contain p,
+    so all p-powers in the tracked LCM can be absorbed into the weight as p^(2a).
     """
     if n < 0:
         raise ValueError("n must be non-negative")
     if n == 0:
         return 1.0
 
-    # For each i, extract[i] contains the prime p such that i == p^k for some k>=1.
-    # (For i>=2, this list has length 1 exactly when i is a prime power, else 0.)
-    extract: list[list[int]] = [[] for _ in range(n + 1)]
-    for p in _sieve_primes(n):
-        pk = p
-        while pk <= n:
-            extract[pk].append(p)
-            pk *= p
+    lpf, primes = _largest_prime_factors(n)
+    by_lpf: list[list[int]] = [[] for _ in range(n + 1)]
+    for c in range(2, n + 1):
+        by_lpf[lpf[c]].append(c)
 
-    # dp[used] is a dict {tracked_lcm: value}
+    # Start with fixed points only: t one-cycles have weight 1/t!.
     dp: list[dict[int, float]] = [dict() for _ in range(n + 1)]
     dp[0][1] = 1.0
+    fixed_weight = 1.0
+    for used in range(1, n + 1):
+        fixed_weight /= used
+        dp[used][1] = fixed_weight
 
-    for i in range(n, 0, -1):
-        ii = i
-        inv_i = 1.0 / ii
-        new: list[dict[int, float]] = [dict() for _ in range(n + 1)]
+    for p in reversed(primes):
+        for c in by_lpf[p]:
+            new = [d.copy() for d in dp]
 
-        for used in range(n + 1):
-            d = dp[used]
-            if not d:
-                continue
-            max_a = (n - used) // ii
-            for L0, v0 in d.items():
-                # a = 0 (use no i-cycles)
-                nd0 = new[used]
-                try:
-                    nd0[L0] += v0
-                except KeyError:
-                    nd0[L0] = v0
+            factors: list[float] = []
+            term = 1.0
+            for m in range(1, n // c + 1):
+                term /= c * m
+                factors.append(term)
 
-                if max_a == 0:
-                    continue
-
-                # a >= 1 (use i-cycles); LCM changes once if we use at least one i-cycle.
-                L1 = _lcm(L0, ii)
-
-                # t holds v0 / (a! * i^a) for current a; update iteratively for speed.
-                t = v0 * inv_i  # a = 1
-                used1 = used + ii
-                nd = new[used1]
-                try:
-                    nd[L1] += t
-                except KeyError:
-                    nd[L1] = t
-
-                for a in range(2, max_a + 1):
-                    t /= a * ii  # now t = v0 / (a! * i^a)
-                    used1 += ii
-                    nd = new[used1]
-                    try:
-                        nd[L1] += t
-                    except KeyError:
-                        nd[L1] = t
-
-        # Extract prime-power information that became "too large" when stepping below i.
-        if extract[i]:
-            comp: list[dict[int, float]] = [dict() for _ in range(n + 1)]
-            div_check = i  # i == p^k
-            for used in range(n + 1):
-                d = new[used]
+            for used in range(n - c + 1):
+                d = dp[used]
                 if not d:
                     continue
-                cd = comp[used]
-                for L, v in d.items():
-                    l = L
-                    val = v
-                    for p in extract[i]:
-                        if l % div_check == 0:
-                            l //= p
-                            val *= float(p * p)
-                    try:
-                        cd[l] += val
-                    except KeyError:
-                        cd[l] = val
-            new = comp
+                max_m = (n - used) // c
+                for L0, v0 in d.items():
+                    L1 = _lcm(L0, c)
+                    used1 = used
+                    for m in range(max_m):
+                        used1 += c
+                        nd = new[used1]
+                        val = v0 * factors[m]
+                        try:
+                            nd[L1] += val
+                        except KeyError:
+                            nd[L1] = val
 
-        dp = new
+            dp = new
 
-    return dp[n].get(1, 0.0)
+        p2 = float(p * p)
+        for used, d in enumerate(dp):
+            if not d:
+                continue
+            compressed: dict[int, float] = {}
+            for L, v in d.items():
+                l = L
+                val = v
+                while l % p == 0:
+                    l //= p
+                    val *= p2
+                try:
+                    compressed[l] += val
+                except KeyError:
+                    compressed[l] = val
+            dp[used] = compressed
+
+    return sum(float(L * L) * v for L, v in dp[n].items())
 
 
 def main() -> None:

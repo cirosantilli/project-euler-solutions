@@ -1,85 +1,144 @@
 #!/usr/bin/env python
-"""Adapted from https://github.com/igorvanloo/Project-Euler-Explained/blob/19f85895945a2c9b688f85da142bae13f37dab65/Finished%20Problems/pe00540%20-%20Counting%20Primitive%20Pythagorean%20Triples.py"""
+"""Project Euler 540: Counting Primitive Pythagorean Triples."""
 
-"""
-Created on Sat Jul 29 15:46:58 2023
+from __future__ import annotations
 
-@author: igorvanloo
-"""
-"""
-Project Euler Problem 540
-
-Optimizing an optimized version of my pythagorean_triples function 
-
-we can find the count quite quickly for up to 10^8 which is too slow, but it is correct according to 
-https://oeis.org/A101931 - Answer for 10^n
-
-1. https://mathworld.wolfram.com/PythagoreanTriple.html
-Lehmer finds that the P(n) ~ n/(2*pi)
-So we expect P(3141592653589793) ~ pi*10^15/2*pi = 5*10^14
-
-2. Algorithm to find number of primitive triples is here https://vixra.org/pdf/1310.0211v1.pdf but it is
-Barely faster than my optimized method
-
-3. Following this paper https://www.sciencedirect.com/science/article/pii/S0377042701004964 we can get an answer
-See website for details
-
-"""
 import math
 
-
-def mobius_k_sieve(limit, k=2):
-    isprime = [1] * (limit + 1)
-    isprime[0] = isprime[1] = 0
-    mob = [0] + [1] * (limit)
-    for p in range(2, limit + 1):
-        if isprime[p]:
-            mob[p] *= -1
-            for i in range(2 * p, limit + 1, p):
-                isprime[i] = 0
-                mob[i] *= -1
-            sq = pow(p, k)
-            if sq <= limit:
-                for j in range(sq, limit + 1, sq):
-                    mob[j] = 0
-    return mob
+N = 3141592653589793
 
 
-def P(n):
-    mu = mobius_k_sieve(int(math.sqrt(n)) + 1)
+def icbrt(n: int) -> int:
+    """Floor integer cube root for n >= 0."""
+    if n <= 1:
+        return n
+    r = int(round(n ** (1.0 / 3.0)))
+    while (r + 1) ** 3 <= n:
+        r += 1
+    while r**3 > n:
+        r -= 1
+    return r
 
-    R_cache = {}
 
-    def R(n):
-        if n in R_cache:
-            return R_cache[n]
-        c = 0
-        for x in range(int(math.sqrt(n)) + 1):
-            min_y, max_y = x + 1, int(math.sqrt(n - x * x))
-            if max_y < min_y:
-                break
-            c += max_y - min_y + 1
-        R_cache[n] = c
-        return c
+def odd_ge3_count_le(n: int) -> int:
+    """Count odd d with 3 <= d <= n."""
+    return (n - 1) // 2 if n >= 3 else 0
 
-    def Q(n):
-        total = 0
-        m = math.sqrt(n)
-        for d in range(1, int(m) + 1):
-            total += mu[d] * R(n // (d * d))
+
+def raw_opposite_parity_count(limit: int) -> int:
+    """Count m > n > 0, m^2+n^2 <= limit, with m and n of opposite parity."""
+    if limit < 5:
+        return 0
+
+    isqrt = math.isqrt
+
+    # Full rows satisfy m^2 + (m-1)^2 <= limit.
+    full = (1 + isqrt(2 * limit - 1)) // 2
+    while (full + 1) * (full + 1) + full * full <= limit:
+        full += 1
+    while full * full + (full - 1) * (full - 1) > limit:
+        full -= 1
+
+    k = full // 2
+    total = k * k
+
+    m = 2 * k + 1
+    if m * m > limit:
         return total
 
-    c = 0
-    k = 0
-    while 2**k <= n:
-        x = Q(n // pow(2, k))
-        c += pow(-1, k) * x
-        k += 1
-    return c
+    y = isqrt(limit - m * m)
+    while m * m + 1 <= limit:
+        rem = limit - m * m
+        while y * y > rem:
+            y -= 1
+
+        nmax = y if y < m else m - 1
+        if m & 1:
+            total += nmax // 2
+        else:
+            total += (nmax + 1) // 2
+        m += 1
+
+    return total
+
+
+def _small_primitive_table(limit: int) -> list[int]:
+    """Return P(x) for 0 <= x <= limit using grouped odd-gcd recurrence."""
+    isqrt = math.isqrt
+    small = [0] * (limit + 1)
+
+    for x in range(1, limit + 1):
+        total = raw_opposite_parity_count(x)
+        max_d = isqrt(x)
+        split = icbrt(x)
+
+        d = 3
+        while d <= max_d and d <= split:
+            total -= small[x // (d * d)]
+            d += 2
+
+        if d <= max_d:
+            max_z = x // (d * d)
+            for z in range(1, max_z + 1):
+                hi = odd_ge3_count_le(isqrt(x // z))
+                lo = odd_ge3_count_le(isqrt(x // (z + 1)))
+                total -= (hi - lo) * small[z]
+
+        small[x] = total
+
+    return small
+
+
+def P(limit: int) -> int:
+    """Count primitive Pythagorean triples with hypotenuse at most limit."""
+    if limit < 5:
+        return 0
+
+    isqrt = math.isqrt
+    cube = icbrt(limit)
+    small = _small_primitive_table(cube)
+
+    # Tail sums:
+    #   tail[t] = sum small[limit // s^2] over odd multiples s of t with s > cube.
+    # Values below 5 contribute zero, so the useful s range stops at sqrt(limit/5).
+    tail = [0] * (cube + 1)
+    s_max = isqrt(limit // 5)
+    for t in range(1, cube + 1, 2):
+        s = (cube // t + 1) * t
+        if s % 2 == 0:
+            s += t
+
+        acc = 0
+        step = 2 * t
+        while s <= s_max:
+            acc += small[limit // (s * s)]
+            s += step
+        tail[t] = acc
+
+    transformed = [0] * (cube + 1)
+    start = cube if cube & 1 else cube - 1
+    for t in range(start, 0, -2):
+        x = limit // (t * t)
+        total = raw_opposite_parity_count(x)
+
+        s = 3 * t
+        step = 2 * t
+        while s <= cube:
+            total -= transformed[s]
+            s += step
+
+        total -= tail[t]
+        transformed[t] = total
+
+    return transformed[1]
+
+
+def main() -> None:
+    assert P(20) == 3
+    assert P(50) == 7
+    assert P(10**6) == 159139
+    print(P(N))
 
 
 if __name__ == "__main__":
-    # TODO extra assert
-    # assert P(20) == 3
-    assert P(10**6) == 159139
-    print(P(3141592653589793))
+    main()

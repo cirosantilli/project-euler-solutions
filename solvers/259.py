@@ -7,6 +7,8 @@ operations, and arbitrary parentheses.  Sum the distinct positive integers that
 can be reached exactly.
 """
 
+import multiprocessing as mp
+import os
 from math import gcd
 
 
@@ -119,13 +121,64 @@ def all_results(values: list[int], ops: list[int]) -> set[tuple[int, int]]:
     return dp[0][count - 1]
 
 
-def reachable_integers(digits: str = DIGITS) -> set[int]:
-    integers: set[int] = set()
-    for code in range(5 ** (len(digits) - 1)):
+def dedupe_sorted(values: list[int]) -> list[int]:
+    if not values:
+        return []
+    values.sort()
+    out = [values[0]]
+    last = values[0]
+    for value in values[1:]:
+        if value != last:
+            out.append(value)
+            last = value
+    return out
+
+
+def collect_for_range(args: tuple[str, int, int]) -> list[int]:
+    digits, start, stop = args
+    found: list[int] = []
+    append = found.append
+
+    for code in range(start, stop):
         values, ops = decode_pattern(digits, code)
         for num, den in all_results(values, ops):
             if den == 1 and num > 0:
-                integers.add(num)
+                append(num)
+
+    return dedupe_sorted(found)
+
+
+def default_workers(total_patterns: int) -> int:
+    env = os.environ.get("PE259_PROCS", "").strip()
+    if env:
+        try:
+            return max(1, min(total_patterns, int(env)))
+        except ValueError:
+            pass
+    return max(1, min(8, os.cpu_count() or 1, total_patterns))
+
+
+def reachable_integers(digits: str = DIGITS, workers: int | None = None) -> set[int]:
+    total_patterns = 5 ** (len(digits) - 1)
+    if workers is None:
+        workers = default_workers(total_patterns) if digits == DIGITS else 1
+
+    if workers <= 1 or total_patterns == 1:
+        return set(collect_for_range((digits, 0, total_patterns)))
+
+    chunk = (total_patterns + workers - 1) // workers
+    tasks = []
+    for start in range(0, total_patterns, chunk):
+        tasks.append((digits, start, min(total_patterns, start + chunk)))
+
+    integers: set[int] = set()
+    try:
+        with mp.Pool(processes=len(tasks)) as pool:
+            for values in pool.imap_unordered(collect_for_range, tasks, chunksize=1):
+                integers.update(values)
+    except Exception:
+        integers = set(collect_for_range((digits, 0, total_patterns)))
+
     return integers
 
 

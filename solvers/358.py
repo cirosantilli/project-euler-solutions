@@ -1,78 +1,80 @@
 #!/usr/bin/env python
-"""Adapted from: https://github.com/stbrumme/euler/blob/b426763514558c3b39f2ec507f271d322088d28a/euler-0358.cpp"""
-sieve = []
+from __future__ import annotations
+
+import math
 
 
-def is_prime(x):
-    if (x & 1) == 0:
-        return x == 2
-    return sieve[x >> 1]
+PREFIX_SCALE = 10**11
+PREFIX_VALUE = 137
+SUFFIX_VALUE = 56789
+SUFFIX_MODULUS = 10**5
 
 
-def fill_sieve(size):
-    global sieve
-    half = (size >> 1) + 1
-    sieve = [True] * half
-    if half > 0:
-        sieve[0] = False
-
-    i = 1
-    while 2 * i * i < half:
-        if sieve[i]:
-            current = 3 * i + 1
-            step = 2 * i + 1
-            while current < half:
-                sieve[current] = False
-                current += step
-        i += 1
-
-
-def ends_with_56789(prime):
-    cyclic = 56789
-    modulo = 100000
-    product = cyclic * prime
-    return (product + 1) % modulo == 0
+def is_prime(n: int) -> bool:
+    if n < 2:
+        return False
+    if n % 2 == 0:
+        return n == 2
+    if n % 3 == 0:
+        return n == 3
+    limit = math.isqrt(n)
+    d = 5
+    step = 2
+    while d <= limit:
+        if n % d == 0:
+            return False
+        d += step
+        step = 6 - step
+    return True
 
 
-def starts_with_137(prime):
-    cyclic = 1.0 / prime
-    return 0.00000000137 < cyclic < 0.00000000138
+def distinct_prime_factors(n: int) -> list[int]:
+    factors = []
+    if n % 2 == 0:
+        factors.append(2)
+        while n % 2 == 0:
+            n //= 2
+    d = 3
+    while d * d <= n:
+        if n % d == 0:
+            factors.append(d)
+            while n % d == 0:
+                n //= d
+        d += 2
+    if n > 1:
+        factors.append(n)
+    return factors
 
 
-def cyclic_digit_sum(prime):
-    result = 0
-    numerator = 1
-    cycle_length = 0
-    while True:
-        cycle_length += 1
-        numerator *= 10
-        result += numerator // prime
-        numerator %= prime
-        if numerator <= 1 or cycle_length == prime:
-            break
-
-    if cycle_length != prime - 1:
-        return 0
-
-    return result
+def is_full_reptend_prime(p: int) -> bool:
+    if not is_prime(p) or p in (2, 5):
+        return False
+    return all(
+        pow(10, (p - 1) // factor, p) != 1
+        for factor in distinct_prime_factors(p - 1)
+    )
 
 
-def solve(limit=750000000):
-    fill_sieve(limit)
+def candidate_prime() -> int:
+    low = PREFIX_SCALE // (PREFIX_VALUE + 1) + 1
+    high = PREFIX_SCALE // PREFIX_VALUE
 
-    prime = limit - 1
-    while prime > 1:
-        if is_prime(prime):
-            if starts_with_137(prime) and ends_with_56789(prime):
-                digit_sum = cyclic_digit_sum(prime)
-                if digit_sum > 0:
-                    return digit_sum
-        prime -= 2
-
-    return 0
+    residue = (-pow(SUFFIX_VALUE, -1, SUFFIX_MODULUS)) % SUFFIX_MODULUS
+    p = low + (residue - low) % SUFFIX_MODULUS
+    while p <= high:
+        if PREFIX_SCALE // p == PREFIX_VALUE and is_full_reptend_prime(p):
+            return p
+        p += SUFFIX_MODULUS
+    raise RuntimeError("no matching full reptend prime found")
 
 
-def main():
+def solve() -> int:
+    p = candidate_prime()
+    return 9 * (p - 1) // 2
+
+
+def main() -> None:
+    assert is_full_reptend_prime(7)
     print(solve())
 
 

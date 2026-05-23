@@ -1,142 +1,88 @@
 #!/usr/bin/env python
-"""Adapted from: https://github.com/stbrumme/euler/blob/b426763514558c3b39f2ec507f271d322088d28a/euler-0393.cpp"""
-MAX_SIZE = 10
-size = 10
+from __future__ import annotations
 
-NO_ANT = 0
-
-MOVE_UP = 0
-MOVE_RIGHT = 1
-MOVE_DOWN = 2
-MOVE_LEFT = 3
-
-BITS_PER_MOVE = 2
-NUMBER_OF_MOVES = 4
-MOVE_MASK = 3
-
-cache = {}
+from collections import defaultdict
+from functools import lru_cache
 
 
-def get_move(bits, pos):
-    mypos = size - (pos + 1)
-    return (bits >> (BITS_PER_MOVE * mypos)) & MOVE_MASK
+FILLED = 0
+HORIZONTAL = 1
+VERTICAL = 2
 
 
-def search(row=0, down=NO_ANT, up=NO_ANT):
-    if row == size:
-        symmetries = 2
-        return symmetries if down == 0 and up == 0 else 0
+def count_migrations(size: int) -> int:
+    if size & 1:
+        return 0
 
-    state = (row, down, up)
-    if state in cache:
-        return cache[state]
+    full = (1 << size) - 1
 
-    result = 0
-    combinations = 1 << (BITS_PER_MOVE * size)
-    i = 0
-    while i < combinations:
-        first_move = get_move(i, 0)
-        if first_move == MOVE_LEFT:
-            skip_squares = size - 1
-            skip_ids = 1 << (BITS_PER_MOVE * skip_squares)
-            i += skip_ids
-            continue
+    @lru_cache(maxsize=None)
+    def transitions(state: int, last_row: bool) -> tuple[tuple[int, int], ...]:
+        in1 = state & full
+        in2 = state >> size
+        counts: dict[int, int] = defaultdict(int)
 
-        last_move = get_move(i, size - 1)
-        if last_move == MOVE_RIGHT:
-            i += 1
-            continue
+        def options(occupied: int, out: int, col: int):
+            bit = 1 << col
+            if occupied & bit:
+                yield FILLED, occupied, out
+                return
 
-        if row == 0 and first_move != MOVE_RIGHT:
-            i += 1
-            continue
+            if col + 1 < size:
+                next_bit = bit << 1
+                if not (occupied & next_bit):
+                    yield HORIZONTAL, occupied | bit | next_bit, out
 
-        previous = MOVE_RIGHT
-        invalid = False
-        failed_at = 0
-        for pos in range(size):
-            current = get_move(i, pos)
-            bit = 1 << pos
+            if not last_row:
+                yield VERTICAL, occupied | bit, out | bit
 
-            if current == MOVE_UP and (down & bit):
-                invalid = True
-            if current == MOVE_UP and not (up & bit):
-                invalid = True
-            if current != MOVE_UP and (up & bit):
-                invalid = True
+        def fill_row(
+            col: int,
+            occupied1: int,
+            occupied2: int,
+            out1: int,
+            out2: int,
+        ) -> None:
+            if col == size:
+                if occupied1 == full and occupied2 == full:
+                    counts[out1 | (out2 << size)] += 1
+                return
 
-            if current == MOVE_LEFT and previous == MOVE_RIGHT:
-                invalid = True
+            for kind1, next_occupied1, next_out1 in options(
+                occupied1, out1, col
+            ):
+                for kind2, next_occupied2, next_out2 in options(
+                    occupied2, out2, col
+                ):
+                    if kind1 != FILLED and kind1 == kind2:
+                        continue
+                    fill_row(
+                        col + 1,
+                        next_occupied1,
+                        next_occupied2,
+                        next_out1,
+                        next_out2,
+                    )
 
-            if current == MOVE_DOWN and row + 1 == size:
-                invalid = True
+        fill_row(0, in1, in2, 0, 0)
+        return tuple(counts.items())
 
-            if invalid:
-                failed_at = pos
-                break
-
-            previous = current
-
-        if invalid:
-            if failed_at != size - 1:
-                skip_squares = size - (failed_at + 1)
-                skip_ids = 1 << (BITS_PER_MOVE * skip_squares)
-                i += skip_ids
-                continue
-            i += 1
-            continue
-
-        movement = [0] * MAX_SIZE
-        for pos in range(size):
-            bit = 1 << pos
-            if down & bit:
-                movement[pos] += 1
-
-            movement[pos] -= 1
-
-            current = get_move(i, pos)
-            if current == MOVE_LEFT:
-                movement[pos - 1] += 1
-            elif current == MOVE_RIGHT:
-                movement[pos + 1] += 1
-
-        next_down = NO_ANT
-        next_up = NO_ANT
-        for pos in range(size):
-            bit = 1 << pos
-            current = get_move(i, pos)
-
-            if current == MOVE_DOWN:
-                next_down |= bit
-                invalid = invalid or (row + 1 == size)
-
-            if movement[pos] > 0 or movement[pos] < -1:
-                invalid = True
-
-            if movement[pos] == -1:
-                next_up |= bit
-                if current == MOVE_DOWN:
-                    invalid = True
-
-        if not invalid:
-            result += search(row + 1, next_down, next_up)
-
-        i += 1
-
-    cache[state] = result
-    return result
+    dp = {0: 1}
+    for row in range(size):
+        last_row = row + 1 == size
+        next_dp: dict[int, int] = defaultdict(int)
+        for state, ways in dp.items():
+            for out_state, multiplicity in transitions(state, last_row):
+                next_dp[out_state] += ways * multiplicity
+        dp = dict(next_dp)
+    return dp.get(0, 0)
 
 
-def solve(target_size=10):
-    global size, cache
-    size = target_size
-    cache = {}
-    return search()
-
-
-def main():
-    assert solve(4) == 88
-    print(solve())
+def main() -> None:
+    assert count_migrations(2) == 2
+    assert count_migrations(3) == 0
+    assert count_migrations(4) == 88
+    print(count_migrations(10))
 
 
 if __name__ == "__main__":

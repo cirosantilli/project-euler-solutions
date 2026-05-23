@@ -13,8 +13,7 @@ This version does NOT hardcode the OEIS list; it generates all solutions
 
 from __future__ import annotations
 
-from math import gcd, isqrt
-from fractions import Fraction
+from math import gcd
 from functools import lru_cache
 
 
@@ -41,23 +40,6 @@ def sigma_trial(n: int) -> int:
     if x > 1:
         result *= 1 + x
     return result
-
-
-# ---------- Prime sieve (for bounding) ----------
-
-
-def primes_upto(n: int) -> list[int]:
-    sieve = bytearray(b"\x01") * (n + 1)
-    sieve[:2] = b"\x00\x00"
-    for i in range(2, isqrt(n) + 1):
-        if sieve[i]:
-            step = i
-            start = i * i
-            sieve[start : n + 1 : step] = b"\x00" * (((n - start) // step) + 1)
-    return [i for i in range(n + 1) if sieve[i]]
-
-
-PRIMES = primes_upto(5000)
 
 
 # ---------- Deterministic Miller–Rabin for 64-bit ----------
@@ -146,8 +128,8 @@ def factor_int(n: int, out: dict[int, int] | None = None) -> dict[int, int]:
 
 
 @lru_cache(maxsize=None)
-def prime_factors_tuple(n: int) -> tuple[int, ...]:
-    return tuple(sorted(factor_int(n).keys()))
+def factor_items_tuple(n: int) -> tuple[tuple[int, int], ...]:
+    return tuple(sorted(factor_int(n).items()))
 
 
 # ---------- Arithmetic helpers ----------
@@ -158,122 +140,73 @@ def sigma_prime_power(p: int, e: int) -> int:
     return (pow(p, e + 1) - 1) // (p - 1)
 
 
-def compute_m_max(limit: int) -> int:
+def search_target(target_numerator: int, limit: int) -> list[int]:
     """
-    Upper-bound m = 2σ(n)/n using:
-        σ(n)/n <= ∏_{p|n} p/(p-1)
-    Max occurs by taking smallest primes until product exceeds limit.
-    """
-    prod = 1
-    I = Fraction(1, 1)
-    for p in PRIMES:
-        if prod * p > limit:
-            break
-        prod *= p
-        I *= Fraction(p, p - 1)
-    mmax = (2 * I.numerator) // I.denominator
-    if mmax % 2 == 0:
-        mmax -= 1
-    return mmax
+    Search for sigma(n) / n == target_numerator / 2.
 
+    A state stores Q = T*n/sigma(n) = numerator/denominator.  In any completion,
+    the denominator must divide the remaining cofactor, so its smallest prime
+    divisor is the next forced prime.
+    """
+    solutions: list[int] = []
+    stack = [(1, target_numerator, 2, ())]
 
-def max_upper_multiplier(
-    n_current: int, used_primes: frozenset[int], limit: int
-) -> Fraction:
-    """
-    Greedy over smallest unused primes, multiplying an upper bound factor p/(p-1),
-    while keeping n_current * (product of chosen primes) <= limit.
-    """
-    mult = Fraction(1, 1)
-    prod = 1
-    for p in PRIMES:
-        if p == 2 or p in used_primes:
+    while stack:
+        n, numerator, denominator, used_primes = stack.pop()
+
+        if numerator == denominator:
+            solutions.append(n)
             continue
-        if n_current * prod * p > limit:
-            break
-        prod *= p
-        mult *= Fraction(p, p - 1)
-    return mult
+        if numerator < denominator:
+            continue
+        if n * denominator > limit:
+            continue
+        if denominator == 1:
+            continue
 
+        p, min_exponent = factor_items_tuple(denominator)[0]
+        if p in used_primes:
+            continue
 
-def search_for_m(m: int, limit: int) -> set[int]:
-    """
-    Find all n <= limit such that 2σ(n)/n == m (m odd),
-    via DFS from n = 2^a and only extending by primes that appear
-    in the *current reduced numerator*.
-    """
-    sols: set[int] = set()
-    max_a = limit.bit_length() - 1
+        prime_power = 1
+        sigma_power = 1
+        for _ in range(min_exponent):
+            prime_power *= p
+            sigma_power += prime_power
 
-    for a in range(1, max_a + 1):
-        n0 = 1 << a
-        if n0 > limit:
-            break
+        while n * prime_power <= limit:
+            new_numerator = numerator * prime_power
+            new_denominator = denominator * sigma_power
+            common = gcd(new_numerator, new_denominator)
+            new_numerator //= common
+            new_denominator //= common
 
-        # Start from n=2^a:
-        # 2σ(2^a)/2^a = (2^(a+1)-1)/2^(a-1)
-        num0 = (1 << (a + 1)) - 1
-        den0 = 1 << (a - 1)
-        g = gcd(num0, den0)
-        num0 //= g
-        den0 //= g
+            if new_numerator < new_denominator:
+                break
 
-        stack = [(n0, num0, den0, frozenset([2]))]
-        seen_n: set[int] = set()
+            stack.append(
+                (
+                    n * prime_power,
+                    new_numerator,
+                    new_denominator,
+                    used_primes + (p,),
+                )
+            )
 
-        while stack:
-            n, num, den, used = stack.pop()
+            prime_power *= p
+            sigma_power += prime_power
 
-            if n in seen_n:
-                continue
-            seen_n.add(n)
-
-            if num > m * den:
-                continue
-
-            # if even with best-case extra primes we can't reach m, prune
-            q = Fraction(num, den)
-            if q * max_upper_multiplier(n, used, limit) < m:
-                continue
-
-            if den == 1 and num == m:
-                sols.add(n)
-                continue
-
-            for p in prime_factors_tuple(num):
-                if p == 2 or p in used:
-                    continue
-
-                pe = p
-                e = 1
-                while n * pe <= limit:
-                    sig = sigma_prime_power(p, e)
-                    new_num = num * sig
-                    new_den = den * pe
-                    gg = gcd(new_num, new_den)
-                    new_num //= gg
-                    new_den //= gg
-
-                    if new_num > m * new_den:
-                        break
-
-                    stack.append((n * pe, new_num, new_den, used | {p}))
-
-                    e += 1
-                    pe *= p
-
-    return sols
+    return solutions
 
 
 # ---------- Public solve() ----------
 
 
 def solve(limit: int = 10**18) -> int:
-    mmax = compute_m_max(limit)
-    sols: set[int] = set()
-    for m in range(3, mmax + 1, 2):
-        sols |= search_for_m(m, limit)
-    return sum(sols)
+    return sum(
+        sum(search_target(target_numerator, limit))
+        for target_numerator in (3, 5, 7, 9, 11, 13)
+    )
 
 
 def main() -> None:

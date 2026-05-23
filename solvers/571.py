@@ -1,52 +1,67 @@
 #!/usr/bin/env python
-"""Adapted from: https://github.com/stbrumme/euler/blob/b426763514558c3b39f2ec507f271d322088d28a/euler-0571.cpp"""
 import itertools
 
 
-def is_pandigital(number, base):
+def is_pandigital(number, base, all_bits):
     used = 0
-    all_bits = (1 << base) - 1
 
-    while number >= base:
+    while number:
         digit = number % base
         used |= 1 << digit
+        if used == all_bits:
+            return True
         number //= base
 
-    used |= 1 << number
     return used == all_bits
 
 
+def is_pandigital_base8(number):
+    used = 0
+
+    while number:
+        used |= 1 << (number & 7)
+        if used == 0xFF:
+            return True
+        number >>= 3
+
+    return used == 0xFF
+
+
 def solve(base=12, num_results=10):
-    digits = list(range(12))
-    digits[0] = 1
-    digits[1] = 0
-    digits = digits[:base]
+    digits = tuple(range(base))
+    check_bases = list(range(base - 1, 1, -1))
+    if 8 in check_bases:
+        check_bases.remove(8)
+        check_bases.insert(0, 8)
+    all_bits = [0] * base
+    for b in check_bases:
+        all_bits[b] = (1 << b) - 1
 
     num_found = 0
     total = 0
 
-    for perm in itertools.permutations(digits):
-        if perm[0] == 0:
-            continue
+    for first_digit in range(1, base):
+        remaining = digits[:first_digit] + digits[first_digit + 1 :]
+        for tail in itertools.permutations(remaining):
+            current = first_digit
+            for digit in tail:
+                current = current * base + digit
 
-        current = 0
-        for digit in perm:
-            current = current * base + digit
+            is_good = True
+            for b in check_bases:
+                if b == 8:
+                    if not is_pandigital_base8(current):
+                        is_good = False
+                        break
+                elif not is_pandigital(current, b, all_bits[b]):
+                    is_good = False
+                    break
 
-        if base >= 8 and not is_pandigital(current, 8):
-            continue
-
-        is_good = True
-        for b in range(base - 1, 1, -1):
-            if not is_pandigital(current, b):
-                is_good = False
-                break
-
-        if is_good:
-            total += current
-            num_found += 1
-            if num_found == num_results:
-                break
+            if is_good:
+                total += current
+                num_found += 1
+                if num_found == num_results:
+                    return total
 
     return total
 

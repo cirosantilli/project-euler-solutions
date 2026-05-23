@@ -57,129 +57,87 @@ def compute_C(n: int) -> int:
         return 0
 
     mu = mobius_sieve(n)
-
-    # Build compressed squarefree walk + gap weights.
-    # Store u_k = k + 199*W_k and v_k = k - 199*W_k, but u_k,v_k are always even,
-    # so we store (u_k/2, v_k/2) with a large bias in uint32.
-    BIAS = 1 << 30
-
-    U = array("I", [BIAS])  # u_0/2
-    V = array("I", [BIAS])  # v_0/2
-    start_w = array("I")  # start weights per prefix
-    end_w = array("I", [0])  # end weights per squarefree index (0 unused)
-
-    min_vk = BIAS
-    max_vk = BIAS
-
-    prev_pos = 0
-    sf_count = 0
-    W = 0
-    zero_intervals = 0
+    prefix_a = prefix_b = 0
+    min_a = max_a = 0
+    min_b = max_b = 0
 
     for pos in range(1, n + 1):
         m = mu[pos]
-        if m == 0:
-            continue
+        if m == 1:
+            prefix_a += 99
+            prefix_b -= 100
+        elif m == -1:
+            prefix_a -= 100
+            prefix_b += 99
 
-        gap = pos - prev_pos
-        zeros = gap - 1
-        if zeros:
-            zero_intervals += zeros * (zeros + 1) // 2
+        if prefix_a < min_a:
+            min_a = prefix_a
+        elif prefix_a > max_a:
+            max_a = prefix_a
 
-        start_w.append(gap)
-        if sf_count >= 1:
-            end_w[sf_count] = gap
+        if prefix_b < min_b:
+            min_b = prefix_b
+        elif prefix_b > max_b:
+            max_b = prefix_b
 
-        prev_pos = pos
-        sf_count += 1
-        W += m  # m is ±1 for squarefree
+    range_a = max_a - min_a + 1
+    range_b = max_b - min_b + 1
+    bit_a = array("I", [0]) * (range_a + 2)
+    bit_b = array("I", [0]) * (range_b + 2)
+    offset_a = 1 - min_a
+    offset_b = 1 - min_b
+    limit_a = range_a + 1
+    limit_b = range_b + 1
 
-        u = sf_count + 199 * W
-        v = sf_count - 199 * W
+    pos = offset_a
+    while pos <= limit_a:
+        bit_a[pos] += 1
+        pos += pos & -pos
 
-        uk = (u >> 1) + BIAS
-        vk = (v >> 1) + BIAS
+    pos = offset_b
+    while pos <= limit_b:
+        bit_b[pos] += 1
+        pos += pos & -pos
 
-        U.append(uk)
-        V.append(vk)
-        end_w.append(0)
+    prefix_a = prefix_b = 0
+    bad_a = bad_b = 0
 
-        if vk < min_vk:
-            min_vk = vk
-        elif vk > max_vk:
-            max_vk = vk
+    for pos in range(1, n + 1):
+        m = mu[pos]
+        if m == 1:
+            prefix_a += 99
+            prefix_b -= 100
+        elif m == -1:
+            prefix_a -= 100
+            prefix_b += 99
 
-    # Tail after last squarefree
-    tail_gap = (n + 1) - prev_pos
-    tail_zeros = n - prev_pos
-    if tail_zeros:
-        zero_intervals += tail_zeros * (tail_zeros + 1) // 2
+        idx = prefix_a + offset_a
+        subtotal = 0
+        t = idx - 1
+        while t:
+            subtotal += bit_a[t]
+            t -= t & -t
+        bad_a += subtotal
 
-    end_w[sf_count] = tail_gap
-    start_w.append(0)  # prefix M doesn't start any non-empty segment
-    del mu
+        t = idx
+        while t <= limit_a:
+            bit_a[t] += 1
+            t += t & -t
 
-    M = sf_count
-    npts = M + 1
+        idx = prefix_b + offset_b
+        subtotal = 0
+        t = idx - 1
+        while t:
+            subtotal += bit_b[t]
+            t -= t & -t
+        bad_b += subtotal
 
-    # Radix sort indices by (U,V): stable sort by V, then stable sort by U.
-    indices = array("I", range(npts))
-    tmp = array("I", [0]) * npts
-    mask = 0xFFFF
+        t = idx
+        while t <= limit_b:
+            bit_b[t] += 1
+            t += t & -t
 
-    for key in (V, U):
-        for shift in (0, 16):
-            counts = [0] * 65536
-            for idx in indices:
-                counts[(key[idx] >> shift) & mask] += 1
-
-            total = 0
-            for i in range(65536):
-                c = counts[i]
-                counts[i] = total
-                total += c
-
-            for idx in indices:
-                d = (key[idx] >> shift) & mask
-                tmp[counts[d]] = idx
-                counts[d] += 1
-
-            indices, tmp = tmp, indices
-
-    del tmp, U
-
-    # Fenwick tree over V
-    range_v = max_vk - min_vk + 1
-    bit = array("Q", [0]) * (range_v + 2)
-    bit_limit = range_v + 1
-
-    V_local = V
-    sw_local = start_w
-    ew_local = end_w
-    min_vk_local = min_vk
-    bit_local = bit
-
-    weighted_segments = 0
-
-    for idx in indices:
-        if idx:
-            pos = V_local[idx] - min_vk_local + 1
-            s = 0
-            t = pos
-            while t:
-                s += bit_local[t]
-                t -= t & -t
-            weighted_segments += ew_local[idx] * s
-
-        sw = sw_local[idx]
-        if sw:
-            pos = V_local[idx] - min_vk_local + 1
-            t = pos
-            while t <= bit_limit:
-                bit_local[t] += sw
-                t += t & -t
-
-    return zero_intervals + weighted_segments
+    return n * (n + 1) // 2 - bad_a - bad_b
 
 
 def main() -> None:

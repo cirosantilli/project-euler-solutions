@@ -90,106 +90,57 @@ def binom_mod(n: int, k: int, mod: int = MOD, block: int = 200_000) -> int:
     return res
 
 
-def coeff_phi6_power(k: int, m: int, mod: int = MOD, block: int = 200_000) -> int:
-    """
-    Compute D = [z^m] (z^2 - z + 1)^k  (mod mod), for 0 <= m <= 2k.
-
-    Write z^2 - z + 1 = (1 + z^3)/(1 + z), then:
-      (z^2 - z + 1)^k = (1 + z^3)^k * (1 + z)^(-k)
-
-    Coefficient identity (finite sum):
-      D = Σ_{j=0..⌊m/3⌋} (-1)^{m-3j} * C(k,j) * C(k + (m-3j) - 1, m-3j)
-
-    We evaluate from j = ⌊m/3⌋ down to 0 using a rational ratio between
-    consecutive terms, batching modular inverses.
-    """
-    if m < 0 or m > 2 * k:
-        return 0
-
-    J = m // 3
-    r0 = m - 3 * J  # 0,1,2
-
-    # term at j=J has r=r0, so the second binomial is tiny.
-    term = binom_mod(k, J, mod, block)
-
-    if r0 == 1:
-        term = (term * (k % mod)) % mod
-    elif r0 == 2:
-        term = (term * (k % mod)) % mod
-        term = (term * ((k + 1) % mod)) % mod
-        term = (term * modinv(2, mod)) % mod
-
-    # multiply by (-1)^r0
-    if r0 & 1:
-        term = (-term) % mod
-
-    total = term
-
-    j = J
-    r = r0  # r associated with current term T(j)
-
-    neg1 = mod - 1
-
-    while j > 0:
-        t = block if j >= block else j
-
-        dens = [0] * t
-        nums = [0] * t
-
-        # For step i=0..t-1, we update from T(j-i) -> T(j-i-1).
-        # Let j_cur = j - i, r_cur = r + 3*i.
-        # Ratio:
-        #   T(j_cur-1)/T(j_cur) =
-        #     - j_cur/(k-j_cur+1) * (k+r_cur)(k+r_cur+1)(k+r_cur+2) / ((r_cur+1)(r_cur+2)(r_cur+3))
-        for i in range(t):
-            j_cur = j - i
-            r_cur = r + 3 * i
-
-            num = j_cur % mod
-            num = (num * ((k + r_cur) % mod)) % mod
-            num = (num * ((k + r_cur + 1) % mod)) % mod
-            num = (num * ((k + r_cur + 2) % mod)) % mod
-            nums[i] = num
-
-            den = (k - j_cur + 1) % mod
-            den = (den * ((r_cur + 1) % mod)) % mod
-            den = (den * ((r_cur + 2) % mod)) % mod
-            den = (den * ((r_cur + 3) % mod)) % mod
-            dens[i] = den
-
-        inv_dens = _invert_list(dens, mod)
-
-        for i in range(t):
-            term = (term * neg1) % mod
-            term = (term * nums[i]) % mod
-            term = (term * inv_dens[i]) % mod
-            total += term
-            if total >= mod:
-                total -= mod
-
-        j -= t
-        r += 3 * t
-
-    return total % mod
-
-
 def amidakuji_count_mod(m: int, n: int, mod: int = MOD) -> int:
     """
     Return a(m,n) modulo `mod` (prime).
 
-    Using S3 character decomposition:
-      a(m,n) = ( C(m+n,m) + 2*D ) / 3  (mod)
-    where D = [z^m] (z^2 - z + 1)^{(m+n)/2} and a(m,n)=0 if m+n is odd.
+    Pair adjacent letters. If k pairs are mixed (AB or BA), then
+      T_k = t! / (((m-k)/2)! ((n-k)/2)! k!)
+    chooses the pair layout, and
+      R_k = (2^k + 2*(-1)^k) / 3
+    chooses mixed orientations whose product in the order-3 subgroup is identity.
     """
     L = m + n
     if L & 1:
         return 0
-    k = L // 2
 
-    C = binom_mod(L, m, mod)
-    D = coeff_phi6_power(k, m, mod)
+    t = L // 2
+    k = m & 1
+    limit = min(m, n)
+
+    if k == 0:
+        layout = binom_mod(t, m // 2, mod)
+    else:
+        layout = (t % mod) * binom_mod(t - 1, (m - 1) // 2, mod) % mod
+
     inv3 = modinv(3, mod)
-    return ((C + 2 * D) % mod) * inv3 % mod
+    pow2 = 1 if k == 0 else 2
+    sign = mod - 1 if k else 1
+
+    total = 0
+    block = 200_000
+    while k <= limit:
+        steps = min(block, ((limit - k) // 2) + 1)
+        nums = [0] * steps
+        dens = [0] * steps
+
+        kk = k
+        for i in range(steps):
+            nums[i] = ((m - kk) % mod) * ((n - kk) % mod) % mod
+            dens[i] = (4 * (kk + 1) % mod) * ((kk + 2) % mod) % mod
+            kk += 2
+
+        inv_dens = _invert_list(dens, mod)
+
+        for i in range(steps):
+            orientations = (pow2 + 2 * sign) % mod * inv3 % mod
+            total = (total + layout * orientations) % mod
+            layout = layout * nums[i] % mod * inv_dens[i] % mod
+            pow2 = pow2 * 4 % mod
+
+        k += 2 * steps
+
+    return total
 
 
 def _self_test():

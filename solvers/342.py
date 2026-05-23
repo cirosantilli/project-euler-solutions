@@ -1,68 +1,32 @@
 #!/usr/bin/env python
-"""
-Project Euler 342 - The Totient of a Square Is a Cube
-
-Find the sum of all integers n, 1 < n < 10^10, such that phi(n^2) is a perfect cube.
-
-No external libraries are used.
-"""
+"""Project Euler 342 - The Totient of a Square Is a Cube."""
 
 from __future__ import annotations
 
 import math
+import sys
+from bisect import bisect_right
 
 
 LIMIT_N = 10**10
 
 
-def iroot3_floor(n: int) -> int:
-    """Return floor(cuberoot(n)) for n >= 0 using integer arithmetic."""
-    if n < 0:
-        raise ValueError("n must be non-negative")
-    if n < 8:
-        return 1 if n >= 1 else 0
-
-    hi = 1
-    while hi * hi * hi <= n:
-        hi <<= 1
-    lo = hi >> 1
-
-    while lo + 1 < hi:
-        mid = (lo + hi) >> 1
-        m3 = mid * mid * mid
-        if m3 <= n:
-            lo = mid
-        else:
-            hi = mid
-    return lo
-
-
 def build_spf(limit: int) -> list[int]:
-    """
-    Build an array 'spf' where spf[x] is the smallest prime factor of x (spf[0]=spf[1]=0).
-    Linear sieve, O(limit).
-    """
-    spf = [0] * (limit + 1)
-    primes: list[int] = []
-    for i in range(2, limit + 1):
-        if spf[i] == 0:
-            spf[i] = i
-            primes.append(i)
-        si = spf[i]
-        for p in primes:
-            ip = i * p
-            if ip > limit:
-                break
-            spf[ip] = p
-            if p == si:
-                break
+    spf = list(range(limit + 1))
+    if limit >= 1:
+        spf[1] = 0
+
+    for p in range(2, math.isqrt(limit) + 1):
+        if spf[p] != p:
+            continue
+        for multiple in range(p * p, limit + 1, p):
+            if spf[multiple] == multiple:
+                spf[multiple] = p
+
     return spf
 
 
 def phi(n: int) -> int:
-    """Euler's totient function via trial division (used only for the statement assert)."""
-    if n <= 0:
-        raise ValueError("n must be positive")
     result = n
     x = n
     p = 2
@@ -78,108 +42,121 @@ def phi(n: int) -> int:
 
 
 def is_perfect_cube(x: int) -> bool:
-    """Return True iff x is a perfect cube (x >= 0)."""
-    if x < 0:
-        return False
-    r = int(round(x ** (1.0 / 3.0)))
-    while (r + 1) ** 3 <= x:
-        r += 1
-    while r**3 > x:
-        r -= 1
-    return r**3 == x
+    root = round(x ** (1.0 / 3.0))
+    return any(candidate >= 0 and candidate**3 == x for candidate in range(root - 1, root + 2))
+
+
+def p_minus_1_factors_mod3(p: int, spf: list[int]) -> tuple[tuple[int, int], ...]:
+    x = p - 1
+    factors: list[tuple[int, int]] = []
+
+    while x > 1:
+        q = spf[x]
+        exponent = 0
+        while x % q == 0:
+            x //= q
+            exponent += 1
+        exponent %= 3
+        if exponent:
+            factors.append((q, exponent))
+
+    return tuple(factors)
 
 
 def solve(limit_n: int = LIMIT_N) -> int:
-    """
-    Main solver.
+    max_prime = math.isqrt(limit_n - 1)
+    spf = build_spf(max_prime)
+    primes = [p for p in range(2, max_prime + 1) if spf[p] == p]
+    prime_index = {p: i for i, p in enumerate(primes)}
+    factors_mod3 = [()] * (max_prime + 1)
+    for p in primes:
+        factors_mod3[p] = p_minus_1_factors_mod3(p, spf)
 
-    Write phi(n^2) = i^3. Then every prime dividing phi(n^2) divides i, hence <= i.
-    Since n^2 < limit_n^2, we have i^3 < limit_n^2, so i <= floor(cuberoot(limit_n^2 - 1)).
-
-    For fixed i, let P be the set of distinct primes dividing n. Using:
-        phi(n^2) = n^2 * Π_{p in P} (p-1)/p
-    we get:
-        n^2 = i^3 * Π_{p in P} p/(p-1)
-
-    Also p|n => p|phi(n^2) => p|i, so P is a subset of the distinct prime factors of i.
-    We enumerate all such subsets and test whether the resulting n^2 is a perfect square with
-    prime set exactly P.
-    """
-    limit_n2 = limit_n * limit_n
-    max_i = iroot3_floor(limit_n2 - 1)
-
-    spf = build_spf(max_i)
-
-    gcd = math.gcd
-    isqrt = math.isqrt
-
+    residues = [0] * (max_prime + 1)
+    nonzero_primes: set[int] = set()
+    selected_primes: list[int] = []
     total = 0
 
-    for i in range(2, max_i + 1):
-        # Distinct prime factors of i via SPF
-        x = i
-        primes: list[int] = []
-        while x > 1:
-            p = spf[x]
-            primes.append(p)
-            while x % p == 0:
-                x //= p
+    sys.setrecursionlimit(len(primes) + 100)
 
-        k = len(primes)
-        if k == 0:
-            continue
+    def add_residue(p: int, delta: int) -> None:
+        old = residues[p]
+        new = (old + delta) % 3
+        if old == 0 and new:
+            nonzero_primes.add(p)
+        elif old and new == 0:
+            nonzero_primes.remove(p)
+        residues[p] = new
 
-        base = i * i * i  # i^3
+    def add_factor_residues(p: int, sign: int) -> None:
+        for q, exponent in factors_mod3[p]:
+            add_residue(q, sign * exponent)
 
-        # Precompute subset products
-        size = 1 << k
-        prodp = [1] * size  # Π p
-        prodd = [1] * size  # Π (p-1)
-        for mask in range(1, size):
-            lsb = mask & -mask
-            j = lsb.bit_length() - 1
-            prev = mask ^ lsb
-            p = primes[j]
-            prodp[mask] = prodp[prev] * p
-            prodd[mask] = prodd[prev] * (p - 1)
+    def multiplier_sum(index: int, current: int, max_multiplier: int) -> int:
+        if index == len(selected_primes):
+            return current
 
-        for mask in range(1, size):
-            numer = base
-            denom = prodd[mask]
+        p3 = selected_primes[index] ** 3
+        subtotal = 0
+        value = current
+        while value <= max_multiplier:
+            subtotal += multiplier_sum(index + 1, value, max_multiplier)
+            value *= p3
+        return subtotal
 
-            g = gcd(numer, denom)
-            numer //= g
-            denom //= g
+    def add_family(base: int) -> None:
+        nonlocal total
 
-            mult = prodp[mask]
-            g = gcd(mult, denom)
-            mult //= g
-            denom //= g
+        if base > 1:
+            total += base * multiplier_sum(0, 1, (limit_n - 1) // base)
 
-            if denom != 1:
-                continue
+    def include_optional(index: int, base: int) -> None:
+        p = primes[index]
+        selected_primes.append(p)
+        add_factor_residues(p, 1)
+        dfs(index - 1, base * p * p)
+        add_factor_residues(p, -1)
+        selected_primes.pop()
 
-            n2 = numer * mult
-            if n2 >= limit_n2:
-                continue
+    def force_prime(index: int, base: int) -> None:
+        p = primes[index]
+        residue = residues[p]
+        exponent = 3 if residue == 1 else 1
+        next_base = base * (p**exponent)
+        if next_base >= limit_n:
+            return
 
-            n = isqrt(n2)
-            if n <= 1 or n * n != n2:
-                continue
+        add_residue(p, -residue)
+        selected_primes.append(p)
+        add_factor_residues(p, 1)
+        dfs(index - 1, next_base)
+        add_factor_residues(p, -1)
+        selected_primes.pop()
+        add_residue(p, residue)
 
-            # Verify the prime set is exactly the subset
-            tmp = n
-            ok = True
-            for j, p in enumerate(primes):
-                if (mask >> j) & 1:
-                    if tmp % p != 0:
-                        ok = False
-                        break
-                    while tmp % p == 0:
-                        tmp //= p
-            if ok and tmp == 1:
-                total += n
+    def dfs(high_index: int, base: int) -> None:
+        if high_index < 0:
+            if not nonzero_primes:
+                add_family(base)
+            return
 
+        max_optional = math.isqrt((limit_n - 1) // base)
+        optional_end = min(high_index, bisect_right(primes, max_optional) - 1)
+
+        if nonzero_primes:
+            forced_prime = max(nonzero_primes)
+            forced_index = prime_index[forced_prime]
+
+            for index in range(optional_end, forced_index, -1):
+                include_optional(index, base)
+            force_prime(forced_index, base)
+            return
+
+        add_family(base)
+        for index in range(optional_end, -1, -1):
+            include_optional(index, base)
+
+    dfs(len(primes) - 1, 1)
     return total
 
 

@@ -17,10 +17,6 @@ P = 10_000_019
 BASE = 153
 MOD = 1_000_000_007
 
-# Pack (count, sum) into one 64-bit integer to halve Fenwick traversals.
-SHIFT = 32
-MASK = (1 << SHIFT) - 1
-
 
 def _gen_values_u32(n: int) -> array:
     """Generate a_1..a_n as unsigned 32-bit values."""
@@ -32,56 +28,20 @@ def _gen_values_u32(n: int) -> array:
     return vals
 
 
-def _compress_to_ranks(vals: array) -> tuple[array, int]:
-    """
-    Coordinate-compress vals to ranks 1..m (stable under < comparison).
-    Returns (ranks, m).
-    """
-    n = len(vals)
-    idx = list(range(n))
-    idx.sort(key=vals.__getitem__)
+def _rank_lookup(vals: array) -> tuple[array, int]:
+    """Return value -> compressed rank lookup and the number of ranks."""
+    seen = bytearray(P)
+    for value in vals:
+        seen[value] = 1
 
-    ranks = array("I", [0]) * n
+    rank_of = array("I", [0]) * P
     rank = 0
-    prev = None
-    for i in idx:
-        v = vals[i]
-        if v != prev:
+    for value, is_present in enumerate(seen):
+        if is_present:
             rank += 1
-            prev = v
-        ranks[i] = rank
+            rank_of[value] = rank
 
-    return ranks, rank
-
-
-def _fenwick_sum_packed(bit: array, i: int) -> tuple[int, int]:
-    """Return (count, sum) prefix up to i (both mod MOD), packed BIT."""
-    c = 0
-    s = 0
-    while i:
-        p = bit[i]
-        c += p >> SHIFT
-        s += p & MASK
-        i -= i & -i
-    return c % MOD, s % MOD
-
-
-def _fenwick_add_packed(bit: array, n: int, i: int, dc: int, ds: int) -> None:
-    """Add (dc, ds) (mod MOD) at position i, packed BIT."""
-    # Ensure deltas are in [0, MOD).
-    dc %= MOD
-    ds %= MOD
-
-    while i <= n:
-        p = bit[i]
-        c = (p >> SHIFT) + dc
-        if c >= MOD:
-            c -= MOD
-        s = (p & MASK) + ds
-        if s >= MOD:
-            s -= MOD
-        bit[i] = (c << SHIFT) | s
-        i += i & -i
+    return rank_of, rank
 
 
 def compute_S_mod(n: int) -> int:
@@ -93,38 +53,92 @@ def compute_S_mod(n: int) -> int:
       of length L ending at each value.
     """
     vals = _gen_values_u32(n)
-    ranks, m = _compress_to_ranks(vals)
+    rank_of, m = _rank_lookup(vals)
 
-    # Three packed Fenwick trees for lengths 1,2,3.
-    bit1 = array("Q", [0]) * (m + 1)
-    bit2 = array("Q", [0]) * (m + 1)
-    bit3 = array("Q", [0]) * (m + 1)
+    bit1_count = array("I", [0]) * (m + 1)
+    bit1_sum = array("I", [0]) * (m + 1)
+    bit2_count = array("I", [0]) * (m + 1)
+    bit2_sum = array("I", [0]) * (m + 1)
+    bit3_count = array("I", [0]) * (m + 1)
+    bit3_sum = array("I", [0]) * (m + 1)
 
     total = 0
-
-    # Local bindings for speed.
-    fen_sum = _fenwick_sum_packed
-    fen_add = _fenwick_add_packed
     mod = MOD
 
-    for x, r in zip(vals, ranks):
-        x_mod = int(x)  # < MOD already
-        rm1 = int(r) - 1
+    for x in vals:
+        rank = rank_of[x]
+        query_rank = rank - 1
 
-        # Length 4 contribution ending here:
-        c3, s3 = fen_sum(bit3, rm1)
-        total = (total + s3 + (c3 * x_mod) % mod) % mod
+        count3 = sum3 = 0
+        i = query_rank
+        while i:
+            count3 += bit3_count[i]
+            sum3 += bit3_sum[i]
+            i -= i & -i
+        count3 %= mod
+        sum3 %= mod
+        total = (total + sum3 + count3 * x) % mod
 
-        # Build length 3 subsequences ending here from length 2:
-        c2, s2 = fen_sum(bit2, rm1)
-        fen_add(bit3, m, int(r), c2, s2 + (c2 * x_mod) % mod)
+        count2 = sum2 = 0
+        i = query_rank
+        while i:
+            count2 += bit2_count[i]
+            sum2 += bit2_sum[i]
+            i -= i & -i
+        count2 %= mod
+        sum2 %= mod
 
-        # Build length 2 subsequences ending here from length 1:
-        c1, s1 = fen_sum(bit1, rm1)
-        fen_add(bit2, m, int(r), c1, s1 + (c1 * x_mod) % mod)
+        delta_count = count2
+        delta_sum = (sum2 + count2 * x) % mod
+        i = rank
+        while i <= m:
+            value = bit3_count[i] + delta_count
+            if value >= mod:
+                value -= mod
+            bit3_count[i] = value
 
-        # Length 1 subsequence (the element alone):
-        fen_add(bit1, m, int(r), 1, x_mod)
+            value = bit3_sum[i] + delta_sum
+            if value >= mod:
+                value -= mod
+            bit3_sum[i] = value
+            i += i & -i
+
+        count1 = sum1 = 0
+        i = query_rank
+        while i:
+            count1 += bit1_count[i]
+            sum1 += bit1_sum[i]
+            i -= i & -i
+        count1 %= mod
+        sum1 %= mod
+
+        delta_count = count1
+        delta_sum = (sum1 + count1 * x) % mod
+        i = rank
+        while i <= m:
+            value = bit2_count[i] + delta_count
+            if value >= mod:
+                value -= mod
+            bit2_count[i] = value
+
+            value = bit2_sum[i] + delta_sum
+            if value >= mod:
+                value -= mod
+            bit2_sum[i] = value
+            i += i & -i
+
+        i = rank
+        while i <= m:
+            value = bit1_count[i] + 1
+            if value >= mod:
+                value -= mod
+            bit1_count[i] = value
+
+            value = bit1_sum[i] + x
+            if value >= mod:
+                value -= mod
+            bit1_sum[i] = value
+            i += i & -i
 
     return total
 

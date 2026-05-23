@@ -194,9 +194,10 @@ def main() -> None:
         n = 7**13
 
     # Totient-sum precompute size:
-    # Default is tuned for a reasonable memory footprint in Python.
+    # The default favors the Euler target runtime; set PE465_LIMIT lower for a
+    # smaller memory footprint.
     # You can override with environment variable PE465_LIMIT.
-    default_limit = 5_000_000
+    default_limit = 30_000_000
     limit_env = os.getenv("PE465_LIMIT")
     if limit_env is not None:
         try:
