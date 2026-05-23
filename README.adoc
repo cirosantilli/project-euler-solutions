@@ -13,7 +13,7 @@
 This repo aims to solve **ALL** https://projecteuler.net[Project Euler] problems in openly licensed Python code, mostly using LLMs to generate the bulk of the solutions. Status:
 
 // STATUS TABLE
-* no entries found
+* **1-998**: done
 
 Tested on Python 3.13.7, PyPy 7.3.20, Ubuntu 25.10.
 

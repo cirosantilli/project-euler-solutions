@@ -17,24 +17,27 @@ MISSING_REFERENCE_ERROR = "error: missing reference answer"
 def iter_table_rows(lines: list[str]) -> list[list[str]]:
     rows: list[list[str]] = []
     in_table = False
-    found_header = False
+    header_width = 0
     for raw in lines:
         line = raw.rstrip("\n")
         if line.startswith("|==="):
-            if in_table and found_header:
-                break
-            in_table = True
+            if in_table:
+                if header_width:
+                    break
+                in_table = False
+            else:
+                in_table = True
             continue
         if not in_table or not line.startswith("|"):
             continue
         parts = [part.strip() for part in line.split("|")[1:]]
-        if not found_header:
-            if len(parts) >= 7 and parts[0] == "ID" and parts[-1] == "Error":
-                found_header = True
+        if not header_width:
+            if len(parts) >= 5 and parts[0] == "ID" and parts[-1] == "Error":
+                header_width = len(parts)
             continue
-        if len(parts) < 7:
+        if len(parts) < header_width:
             continue
-        rows.append(parts[:7])
+        rows.append(parts[:header_width])
     return rows
 
 
@@ -47,7 +50,7 @@ def row_has_solver(id_cell: str) -> bool:
 
 
 def row_is_solved(parts: list[str]) -> bool:
-    error = parts[6].strip()
+    error = parts[-1].strip()
     return not error or (
         error == MISSING_REFERENCE_ERROR and row_has_solver(parts[0])
     )
