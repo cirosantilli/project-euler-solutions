@@ -1,122 +1,149 @@
 #!/usr/bin/env python
-"""Adapted from https://github.com/igorvanloo/Project-Euler-Explained/blob/19f85895945a2c9b688f85da142bae13f37dab65/Finished%20Problems/pe00642%20-%20Sum%20of%20largest%20prime%20factors.py"""
-
 """
-Created on Sun Mar 13 22:54:43 2022
+Project Euler 642: Sum of largest prime factors.
 
-@author: igorvanloo
+The solver follows the Min_25-style prime-sum table plus sparse prime-power
+recursion described in the accompanying explanation.
 """
-"""
-Project Euler Problem 642
 
-See website for clearer notes
+from math import isqrt
 
-"""
-import math
-from functools import cache
+MOD = 10**9
 
 
-def list_primality(n):
-    result = [True] * (n + 1)
-    result[0] = result[1] = False
-    for i in range(int(math.sqrt(n)) + 1):
-        if result[i]:
-            for j in range(2 * i, len(result), i):
-                result[j] = False
-    return result
+def sieve_primes(limit: int) -> list[int]:
+    if limit < 2:
+        return []
+
+    size = limit // 2 + 1
+    sieve = bytearray(b"\x01") * size
+    sieve[0] = 0
+    root = isqrt(limit)
+    for i in range(1, root // 2 + 1):
+        if sieve[i]:
+            p = 2 * i + 1
+            start = p * p // 2
+            sieve[start::p] = b"\x00" * (((size - 1 - start) // p) + 1)
+
+    primes = [2]
+    primes.extend(2 * i + 1 for i in range(1, size) if sieve[i] and 2 * i + 1 <= limit)
+    return primes
 
 
-def list_primes(n):
-    return [i for (i, isprime) in enumerate(list_primality(n)) if isprime]
+def build_prime_sum_table(N: int):
+    """
+    Build prime sums modulo MOD on the usual distinct floor-division domain.
+    """
+    root = isqrt(N)
+    large = [N // i for i in range(1, root + 1)]
+    values = large + list(range(large[-1] - 1, 0, -1))
+
+    idx_small = [0] * (root + 1)
+    idx_large = [0] * (root + 1)
+    for idx, value in enumerate(values):
+        if value <= root:
+            idx_small[value] = idx
+        else:
+            idx_large[N // value] = idx
+
+    prime_sums = [((value * (value + 1) // 2) - 1) % MOD for value in values]
+    primes = sieve_primes(root)
+
+    limit = len(values)
+    for p in primes:
+        p2 = p * p
+        while limit > 0 and values[limit - 1] < p2:
+            limit -= 1
+
+        sum_before_p = prime_sums[idx_small[p - 1]]
+        for idx in range(limit):
+            value = values[idx]
+            quotient = value // p
+            qidx = (
+                idx_small[quotient]
+                if quotient <= root
+                else idx_large[N // quotient]
+            )
+            prime_sums[idx] = (
+                prime_sums[idx] - p * (prime_sums[qidx] - sum_before_p)
+            ) % MOD
+
+    return root, idx_small, idx_large, prime_sums, primes
 
 
-def sum_of_primes(n):
-    r = int(math.sqrt(n))
-    primes = []
+def compute(N: int) -> int:
+    root, idx_small, idx_large, prime_sums, primes = build_prime_sum_table(N)
+    prime_count = len(primes)
+    key_base = prime_count + 1
 
-    V = [n // i for i in range(1, r + 1)]
-    V += list(range(V[-1] - 1, 0, -1))
-    S = {i: i * (i + 1) // 2 - 1 for i in V}
+    pi = [0] * (root + 1)
+    count = 0
+    prime_idx = 0
+    for value in range(root + 1):
+        if prime_idx < prime_count and primes[prime_idx] == value:
+            count += 1
+            prime_idx += 1
+        pi[value] = count
 
-    for p in range(2, r + 1):
-        if S[p] > S[p - 1]:  # p is prime
-            primes += [p]
-            sp = S[p - 1]  # sum of primes smaller than p
-            p2 = p * p
-            for v in V:
-                if v < p2:
-                    break
-                S[v] -= p * (S[v // p] - sp)
-    return S, primes
+    lower_prime_sum = [0] * (prime_count + 1)
+    for idx, p in enumerate(primes):
+        lower_prime_sum[idx] = prime_sums[idx_small[p - 1]]
+    lower_prime_sum[prime_count] = prime_sums[idx_small[primes[-1]]]
 
+    def prime_sum_upto(x: int) -> int:
+        if x <= root:
+            return prime_sums[idx_small[x]]
+        return prime_sums[idx_large[N // x]]
 
-def compute(N, p):
-    S, primes = sum_of_primes(N)
-
-    @cache
-    def r(N, p):
-        if N == p:
-            return p
-        if N < 0:
+    def terminal_prime_sum(x: int, idx: int) -> int:
+        if idx >= prime_count:
+            if x <= primes[-1]:
+                return 0
+        elif x < primes[idx]:
             return 0
-        total = S[N] - S[p - 1]
-        sqrt_N = math.floor(math.sqrt(N))
+        return (prime_sum_upto(x) - lower_prime_sum[idx]) % MOD
 
-        for prime in primes:
-            if prime > sqrt_N:
-                break
-            if prime >= p:
-                v = r(N // prime, prime)
-                total += v
+    memo: dict[int, int] = {}
+    missing = -1
 
+    def contribution(bound: int, idx: int) -> int:
+        end = pi[isqrt(bound)]
+        total = terminal_prime_sum(bound, idx)
+        if idx >= end:
+            return total
+
+        key = bound * key_base + idx
+        cached = memo.get(key, missing)
+        if cached is not missing:
+            return cached
+
+        for i in range(idx, end):
+            p = primes[i]
+            power = p
+            power_limit = bound // p
+            next_idx = i + 1
+
+            while power <= power_limit:
+                child_bound = bound // power
+                child_end = pi[isqrt(child_bound)]
+                if next_idx >= child_end:
+                    child = terminal_prime_sum(child_bound, next_idx)
+                else:
+                    child_key = child_bound * key_base + next_idx
+                    child = memo.get(child_key, missing)
+                    if child is missing:
+                        child = contribution(child_bound, next_idx)
+                total += child + p
+                power *= p
+
+        total %= MOD
+        memo[key] = total
         return total
 
-    return r(N, p) % 10**9
+    return contribution(N, 0)
 
 
-def compute1(N):
-
-    sqrtN = math.floor(math.sqrt(N))
-
-    S, primes = sum_of_primes(N)
-    k_cache = {}
-
-    def k_smooth(n, i):
-        p = primes[i]
-        if n <= 0:
-            return 0
-        if i == 0:
-            return int(math.log(n, 2)) + 1
-
-        total = 0
-
-        if (n, i - 1) in k_cache:
-            total += k_cache[(n, i - 1)]
-        else:
-            k_cache[(n, i - 1)] = k_smooth(n, i - 1)
-            total += k_cache[(n, i - 1)]
-
-        if (n // p, i) in k_cache:
-            total += k_cache[(n // p, i)]
-        else:
-            k_cache[(n // p, i)] = k_smooth(n // p, i)
-            total += k_cache[(n // p, i)]
-        return total
-
-    total = 0
-    # sum 1
-    for i in range(len(primes)):
-        p = primes[i]
-        total += p * k_smooth(N // p, i)
-
-    # sum 2
-    total -= sqrtN * S[N // (sqrtN + 1)]
-    for a in range(1, sqrtN + 1):
-        total += S[N // a]
-    return total % 10**9
-
-
-def F_small(n):
+def F_small(n: int) -> int:
     lpf = [0] * (n + 1)
     for p in range(2, n + 1):
         if lpf[p] == 0:
@@ -129,4 +156,7 @@ if __name__ == "__main__":
     assert F_small(10) == 32
     assert F_small(100) == 1915
     assert F_small(10000) == 10118280
-    print(compute(201820182018, 2))
+    assert compute(10) == 32
+    assert compute(100) == 1915
+    assert compute(10000) == 10118280
+    print(compute(201820182018))

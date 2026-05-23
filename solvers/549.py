@@ -1,95 +1,81 @@
 #!/usr/bin/env python
-"""Adapted from: https://github.com/stbrumme/euler/blob/b426763514558c3b39f2ec507f271d322088d28a/euler-0549.cpp"""
-sieve = []
+
+from array import array
+from math import isqrt
 
 
-def is_prime(x):
-    if (x & 1) == 0:
-        return x == 2
-    return sieve[x >> 1]
+def prime_flags(limit):
+    half = (limit >> 1) + 1
+    flags = bytearray(b"\x01") * half
+    flags[0] = 0
+
+    for p in range(3, isqrt(limit) + 1, 2):
+        if flags[p >> 1]:
+            start = (p * p) >> 1
+            count = ((half - 1 - start) // p) + 1
+            flags[start::p] = b"\x00" * count
+
+    return flags
 
 
-def fill_sieve(size):
-    global sieve
-    half = (size >> 1) + 1
-    sieve = [True] * half
-    sieve[0] = False
+def iter_primes(flags, limit):
+    if limit >= 2:
+        yield 2
+    for i in range(1, (limit >> 1) + 1):
+        if flags[i]:
+            yield (i << 1) + 1
 
-    i = 1
-    while 2 * i * i < half:
-        if sieve[i]:
-            current = 3 * i + 1
-            step = 2 * i + 1
-            while current < half:
-                sieve[current] = False
-                current += step
-        i += 1
+
+def factorial_valuation(n, p):
+    total = 0
+    while n:
+        n //= p
+        total += n
+    return total
+
+
+def prime_power_threshold(p, exponent):
+    lo = 1
+    hi = p * exponent
+    while lo < hi:
+        mid = (lo + hi) >> 1
+        if factorial_valuation(mid, p) >= exponent:
+            hi = mid
+        else:
+            lo = mid + 1
+    return lo
+
+
+def solve(limit=100_000_000):
+    flags = prime_flags(limit)
+    least = array("I", [0]) * (limit + 1)
+
+    values = least
+    for p in iter_primes(flags, limit):
+        for multiple in range(p, limit + 1, p):
+            values[multiple] = p
+
+    for p in iter_primes(flags, isqrt(limit)):
+        power = p * p
+        exponent = 2
+        while power <= limit:
+            threshold = prime_power_threshold(p, exponent)
+            for multiple in range(power, limit + 1, power):
+                if values[multiple] < threshold:
+                    values[multiple] = threshold
+            power *= p
+            exponent += 1
+
+    return sum(values[2:])
 
 
 def naive(n):
     factorial = 1
     result = 0
-    while factorial % n != 0:
+    while factorial % n:
         result += 1
-        factorial *= result
-        factorial %= n
+        factorial = (factorial * result) % n
     return result
-
-
-primes = []
-cache = {}
-
-
-def get_smallest_factorial(n):
-    best = 0
-    for p in primes:
-        if n % p != 0:
-            continue
-
-        prime_power = 1
-        while n % p == 0:
-            n //= p
-            prime_power *= p
-
-        best = max(best, cache.get(prime_power, 0))
-
-        if n == 1:
-            return best
-        if is_prime(n):
-            return max(best, n)
-
-    return best
-
-
-def solve(limit=100000000):
-    total = 0
-
-    fill_sieve(limit)
-    for i in range(2, limit):
-        if is_prime(i):
-            primes.append(i)
-
-    for i in range(2, limit + 1):
-        if is_prime(i):
-            power = i * i
-            exponent = 2
-            while power <= limit:
-                factorial = i
-                result = i
-                while True:
-                    result += i
-                    factorial = (factorial * result) % power
-                    if factorial % power == 0:
-                        break
-                cache[power] = result
-                power *= i
-                exponent += 1
-
-            total += i
-        else:
-            total += get_smallest_factorial(i)
-
-    return total
 
 
 def main():

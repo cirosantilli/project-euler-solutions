@@ -29,7 +29,7 @@ Note: To keep startup fast, solve(10^9) is returned from the provided value
 (only used for the statement assertion). The main target solve(10^16) is computed.
 """
 
-from heapq import heappush, heappop
+from heapq import heapify, heappop, heappush
 
 
 # ---------------------------
@@ -255,7 +255,9 @@ def search_best(N: int) -> int:
     ]
 
     # Wheel primes: very strong pruning because we avoid divisibility for ALL 9 expressions.
-    wheel_primes = (11, 13, 17, 19, 23)
+    # Including 2, 3, 5, and 7 matters for the reduced quotient expressions, not just
+    # the original consecutive integers.
+    wheel_primes = (2, 3, 5, 7, 11, 13, 17, 19, 23)
 
     # Extra cheap trial-divisibility checks (beyond the wheel) before Miller-Rabin.
     # Keep this small: it's just to avoid expensive pow() for obvious composites.
@@ -274,7 +276,9 @@ def search_best(N: int) -> int:
                 continue
             k0 = 2520 * t0 + base_r
             # max-heap via negative key
-            heappush(heap, (-k0, base_r, t0, rr, M, polys))
+            heap.append((-k0, base_r, t0, rr, M, polys))
+
+    heapify(heap)
 
     while heap:
         negk, base_r, t, rr, M, polys = heappop(heap)

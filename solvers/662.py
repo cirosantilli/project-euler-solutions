@@ -53,10 +53,10 @@ def step_vectors(W: int, H: int) -> list[tuple[int, int]]:
 
 def count_paths(W: int, H: int, mod: int = MOD) -> int:
     """
-    Dynamic programming over the W x H grid, using a rolling buffer on y.
+    Dynamic programming over columns.
 
-    dp[y][x] = number of paths to (x,y)
-    dp[y][x] = sum_{(dx,dy) in steps, x>=dx, y>=dy} dp[y-dy][x-dx], with dp[0][0]=1.
+    First accumulate every contribution from earlier columns, then fill the
+    current column bottom-up so vertical same-column dependencies are ready.
     """
     if W < 0 or H < 0:
         return 0
@@ -65,47 +65,51 @@ def count_paths(W: int, H: int, mod: int = MOD) -> int:
 
     steps = step_vectors(W, H)
 
-    # Split out dy==0 steps to allow in-row dependencies (horizontal-only moves)
-    horiz = []
-    other = []
-    max_dy = 0
+    vertical = []
+    previous_columns = []
+    max_dx = 0
     for dx, dy in steps:
-        if dy == 0:
-            horiz.append(dx)
+        if dx == 0:
+            vertical.append(dy)
         else:
-            other.append((dx, dy))
-            if dy > max_dy:
-                max_dy = dy
+            previous_columns.append((dx, dy))
+            if dx > max_dx:
+                max_dx = dx
 
-    # Rolling buffer: store rows for y % (max_dy+1)
-    buf = max_dy + 1
-    # Each row is an array('I') to keep memory lower than Python int lists.
-    buffer = [array("I", [0]) * (W + 1) for _ in range(buf)]
+    vertical.sort()
+    previous_columns.sort()
 
-    for y in range(H + 1):
-        idx = y % buf
-        row = buffer[idx]
+    buf = max_dx + 1
+    buffer = [array("I", [0]) * (H + 1) for _ in range(buf)]
 
-        # reset this row to 0
-        for x in range(W + 1):
-            row[x] = 0
+    for x in range(W + 1):
+        column = buffer[x % buf]
+        incoming = [0] * (H + 1)
 
-        for x in range(W + 1):
-            val = 1 if (x == 0 and y == 0) else 0
+        for dx, dy in previous_columns:
+            if dx > x:
+                break
+            source = buffer[(x - dx) % buf]
+            if dy == 0:
+                for y in range(H + 1):
+                    incoming[y] += source[y]
+            else:
+                limit = H - dy
+                for y in range(limit + 1):
+                    incoming[y + dy] += source[y]
 
-            # horizontal (dy=0) steps depend on current row values
-            for dx in horiz:
-                if x >= dx:
-                    val += row[x - dx]
+        if x == 0:
+            incoming[0] += 1
 
-            # steps with dy>0 read from earlier rows in the ring buffer
-            for dx, dy in other:
-                if y >= dy and x >= dx:
-                    val += buffer[(y - dy) % buf][x - dx]
+        for y in range(H + 1):
+            val = incoming[y]
+            for dy in vertical:
+                if dy > y:
+                    break
+                val += column[y - dy]
+            column[y] = val % mod
 
-            row[x] = val % mod
-
-    return int(buffer[H % buf][W])
+    return int(buffer[W % buf][H])
 
 
 def main() -> None:

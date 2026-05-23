@@ -3,7 +3,7 @@
 # By GPT-5.2. Runtime: 0m0.497s on pypy3 1m22.322s, Ubuntu 25.10, Lenovo ThinkPad P14s.
 
 from functools import lru_cache
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 W = [1, 3, 2, 6, 4, 5]
 MASK7 = 0x7F
@@ -64,11 +64,11 @@ perm = [[(i + add) % 7 for i in range(7)] for add in range(7)]
 
 
 def advance(
-    dp: Dict[int, Tuple[int, int, int, int, int, int, int]],
+    dp: Dict[int, List[int]],
     pos: int,
     target_r: int,
     is_MSD: bool,
-) -> Dict[int, Tuple[int, int, int, int, int, int, int]]:
+) -> Dict[int, List[int]]:
     c = pos % 6
     shiftc = SHIFT[c]
     mask_func = mask_no0_of_bits if is_MSD else mask_all_of_bits
@@ -114,12 +114,12 @@ def advance(
                 arr[p[4]] += cnts[4] * 2
                 arr[p[5]] += cnts[5] * 2
                 arr[p[6]] += cnts[6] * 2
-    return {st: tuple(v) for st, v in newdp.items()}
+    return newdp
 
 
 @lru_cache(maxsize=None)
 def count_len_res(L: int, target_r: int) -> int:
-    dp = {0: (1, 0, 0, 0, 0, 0, 0)}
+    dp = {0: [1, 0, 0, 0, 0, 0, 0]}
     for pos in range(L):
         dp = advance(dp, pos, target_r, is_MSD=(pos == L - 1))
     return sum(cnts[target_r] for cnts in dp.values())

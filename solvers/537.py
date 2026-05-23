@@ -1,147 +1,122 @@
 #!/usr/bin/env python
-"""Adapted from https://github.com/igorvanloo/Project-Euler-Explained/blob/19f85895945a2c9b688f85da142bae13f37dab65/Finished%20Problems/pe00537%20-%20Counting%20Tuples.py"""
 
-"""
-Created on Wed May 17 20:45:25 2023
+from math import isqrt, log
 
-@author: igorvanloo
-"""
-"""
-Project Euler Problem 537
-
-Find partitions of n, then for each partition calculate number of possibilities
-
-for example T(3, 3)
-
-3 = 3 + 0 + 0 = 2 + 1 + 0 = 1 + 1 + 1
-
-1. 3 + 0 + 0
-    There is only 1 number such that pi(n) = 0, that is n = 1
-    There are 2 numbers such that pi(n) = 3, n = 5, 6
-    Therefore we have 3!/2! * 2 = 6 different combinations of this form:
-        (1,1,5), (1,5,1), (5,1,1), (1,1,6), (1,6,1), (6,1,1)
-
-2. 2 + 1 + 0
-    pi(n) = 0 => n = 1
-    pi(n) = 1 => n = 2
-    pi(n) = 2 => n = 3 or 4
-    total 3!/(1! * 1! * 1!) * 2 = 12 combs of this form:
-        (1,2,3), (1,3,2), (2,1,3), (2,3,1), (3,1,2), (3,2,1), (1,2,4), (1,4,2), (2,1,4), (2,4,1), (4,1,2), (4,2,1)
-
-3. 1 + 1 + 1
-    pi(n) = 1 => n = 2
-    3!/3! * 1 = 1 comb of this form:
-        (2, 2, 2)
-
-Works but partitions are hard to generate, too slow. Need to think of another method
-
-Notice that if a + b = k
-let s = sum_{i = 1 to a} pi(x_i)
-then n - s = sum_{i = a + 1 to k} pi(x_i)
-
-so T(n, k) = sum_{s = 0 to n} T(s, a)T(n - s, b) - Convolution https://en.wikipedia.org/wiki/Convolution
-
-Now T(n, 1) = number of numbers such that pi(x) = n we want to reduce T(n, k) into a sum and product of
-T(n, 1)'s
-
-T(3, 3) = sum_{s = 0 to 3} T(s, a)T(3 - s, b)
-        = T(0, 1)T(3, 2) + T(1, 1)T(2, 2) + T(2, 1)T(1, 2) + T(3, 1)T(0, 2)
-        
-A = [T(0, 1), T(1, 1), T(2, 1), T(3, 1)]
-B = [T(0, 2), T(1, 2), T(2, 2), T(3, 2)]
-
-Then T(3, 3) = A[0]*B[3] + A[1]*B[2] + A[2]*B[1] + A[3]*B[0]
-
-We know how to calculate A, how do we calculate B?
-
-Then notice that
-T(3, 2) = sum_{s = 0 to 3} T(s, a)T(3 - s, b)
-        = T(0, 1)T(3, 1) + T(1, 1)T(2, 1) + T(2, 1)T(1, 1) + T(3, 1)T(0, 1)
-
-T(2, 2) = sum_{s = 0 to 2} T(s, a)T(2 - s, b)
-        = T(0, 1)T(2, 1) + T(1, 1)T(1, 1) + T(2, 1)T(0, 1)
-
-T(1, 2) = sum_{s = 0 to 1} T(s, a)T(1 - s, b)
-        = T(0, 1)T(1, 1) + T(1, 1)T(0, 1)
-        
-T(0, 2) = sum_{s = 0 to 1} T(s, a)T(1 - s, b)
-        = T(0, 1)T(0, 1)
-
-Clearly there is a pattern
-
-the array [T(0, 2), T(1, 2), T(2, 2), T(3, 2)] can be generated through 
-the array [T(0, 1), T(1, 1), T(2, 1), T(3, 1)] again!
-
-Let let x = [T(0, 1), T(1, 1), T(2, 1), T(3, 1)]
-For i in range(4):
-    T(i, 2) = 0
-    for j in range(i + 1):
-        T(i, 2) += x[j]*x[i - j]
-        
-        #For example if i = 0, y = T(0, 2)
-        #The for j in range(i + 1) only includes j = 0
-        #So T(0, 2) = x[j]*x[i - j] = T(0, 1)T(0, 1) which is correct
-        
-So now we know how to generate any array of this form!
-
-We just binary exponentiation to do it quickly and we are done
-
-"""
-import math
+MOD = 1_004_535_809
+ROOT = 3
 
 
-def list_primality(n):
-    result = [True] * (n + 1)
-    result[0] = result[1] = False
-    for i in range(int(math.sqrt(n)) + 1):
-        if result[i]:
-            for j in range(2 * i, len(result), i):
-                result[j] = False
-    return result
+def prime_bound(count):
+    if count < 6:
+        return 15
+    x = count + 1
+    return int(x * (log(x) + log(log(x)))) + 20
 
 
-def list_primes(n):
-    return [i for (i, isprime) in enumerate(list_primality(n)) if isprime]
+def first_primes(count):
+    limit = prime_bound(count)
+    while True:
+        flags = bytearray(b"\x01") * (limit + 1)
+        flags[0:2] = b"\x00\x00"
+        for p in range(2, isqrt(limit) + 1):
+            if flags[p]:
+                flags[p * p : limit + 1 : p] = b"\x00" * (
+                    ((limit - p * p) // p) + 1
+                )
+        primes = [i for i in range(2, limit + 1) if flags[i]]
+        if len(primes) >= count:
+            return primes
+        limit *= 2
 
 
-def pi(n):
-    return sum(list_primality(n))
+def ntt(a, invert=False):
+    n = len(a)
+    j = 0
+    for i in range(1, n):
+        bit = n >> 1
+        while j & bit:
+            j ^= bit
+            bit >>= 1
+        j ^= bit
+        if i < j:
+            a[i], a[j] = a[j], a[i]
+
+    length = 2
+    mod = MOD
+    while length <= n:
+        wlen = pow(ROOT, (mod - 1) // length, mod)
+        if invert:
+            wlen = pow(wlen, mod - 2, mod)
+        half = length >> 1
+        for i in range(0, n, length):
+            w = 1
+            end = i + half
+            for j in range(i, end):
+                u = a[j]
+                v = a[j + half] * w % mod
+                x = u + v
+                if x >= mod:
+                    x -= mod
+                y = u - v
+                if y < 0:
+                    y += mod
+                a[j] = x
+                a[j + half] = y
+                w = w * wlen % mod
+        length <<= 1
+
+    if invert:
+        inv_n = pow(n, mod - 2, mod)
+        for i, value in enumerate(a):
+            a[i] = value * inv_n % mod
+
+
+def multiply(a, b, degree):
+    if len(a) == 1:
+        factor = a[0]
+        return [(factor * x) % MOD for x in b[: degree + 1]]
+    if len(b) == 1:
+        factor = b[0]
+        return [(factor * x) % MOD for x in a[: degree + 1]]
+
+    result_len = min(len(a) + len(b) - 1, degree + 1)
+    size = 1
+    full_len = len(a) + len(b) - 1
+    while size < full_len:
+        size <<= 1
+
+    fa = a[:] + [0] * (size - len(a))
+    fb = b[:] + [0] * (size - len(b))
+    ntt(fa)
+    ntt(fb)
+    for i in range(size):
+        fa[i] = fa[i] * fb[i] % MOD
+    ntt(fa, True)
+    return fa[:result_len]
+
+
+def coefficient_weights(n):
+    primes = first_primes(n + 1)
+    weights = [1]
+    for r in range(1, n + 1):
+        weights.append(primes[r] - primes[r - 1])
+    return weights
 
 
 def T(n, k):
-    mod = 1004535809
-    primes = list_primes(300000)
-    t1 = [1]
-    for i in range(n + 1):
-        t1.append(primes[i + 1] - primes[i])
-
-    def conv(A, B):
-        array = []
-        for i, x in enumerate(A):
-            t = 0
-            for j in range(i + 1):
-                t += A[j] * B[i - j]
-                t %= mod
-            array.append(t)
-        return array
-
-    res = [1] + [0] * (n)
-    sq = t1
-    while k != 0:
-        if k % 2 != 0:
-            res = conv(res, sq)
-            k -= 1
-        sq = conv(sq, sq)
-        k //= 2
-    return res[-1] % mod
+    result = [1]
+    base = coefficient_weights(n)
+    while k:
+        if k & 1:
+            result = multiply(result, base, n)
+        k >>= 1
+        if k:
+            base = multiply(base, base, n)
+    return result[n] if n < len(result) else 0
 
 
 if __name__ == "__main__":
-    mod = 1004535809
-    assert pi(1) == 0
-    assert pi(2) == 1
-    assert pi(100) == 25
     assert T(3, 3) == 19
     assert T(10, 10) == 869985
-    assert T(1000, 1000) % mod == 578270566
-    print(T(2 * 10**4, 2 * 10**4))
+    assert T(1000, 1000) == 578270566
+    print(T(20_000, 20_000))

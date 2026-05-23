@@ -21,7 +21,7 @@ def sum_ranges_upto(P: int) -> float:
     if P < 2:
         return 0.0
 
-    hypot = math.hypot
+    sqrt = math.sqrt
     fsum = math.fsum
     half = 0.5
     tol = 1e-15
@@ -59,7 +59,7 @@ def sum_ranges_upto(P: int) -> float:
                 dy = 1.0
                 # apply composed inverses
                 for i in range(1, n + 1):
-                    s = hypot(y, 2.0)  # sqrt(y*y + 4)
+                    s = sqrt(y * y + 4.0)
                     if a[i] == 0:
                         dy *= half * (1.0 + y / s)
                         y = half * (y + s)
@@ -81,7 +81,7 @@ def sum_ranges_upto(P: int) -> float:
             mn = y
             mx = y
             for i in range(1, n):
-                s = hypot(y, 2.0)
+                s = sqrt(y * y + 4.0)
                 if a[i] == 0:
                     y = half * (y + s)
                 else:

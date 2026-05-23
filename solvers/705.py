@@ -21,10 +21,18 @@ MOD = 1_000_000_007
 
 # Number of divisors for each digit 1..9 (0 unused)
 W = [0, 1, 2, 2, 3, 2, 4, 2, 4, 3]
-
-INV2 = pow(2, MOD - 2, MOD)
-INV3 = pow(3, MOD - 2, MOD)
-INV4 = pow(4, MOD - 2, MOD)
+DIVISORS = (
+    (),
+    (1,),
+    (1, 2),
+    (1, 3),
+    (1, 2, 4),
+    (1, 5),
+    (1, 2, 3, 6),
+    (1, 7),
+    (1, 2, 4, 8),
+    (1, 3, 9),
+)
 
 
 def _build_chunk_digits():
@@ -51,6 +59,77 @@ def _build_chunk_digits():
 
 
 CHUNK_DIGITS = _build_chunk_digits()
+
+
+def _build_chunk_transforms():
+    """
+    Precompute the linear DP transform for each base-10000 digit chunk.
+
+    The direct DP state is:
+      T       = number of divided prefixes
+      I       = total inversion count over those prefixes
+      A[v]    = total occurrences of value v over all prefixes
+
+    A whole chunk transforms the state as:
+      T'    = m*T
+      A'[v] = m*A[v] + b[v]*T
+      I'    = m*I + sum_v c[v]*A[v] + e*T
+    """
+    transforms = []
+
+    for digits in CHUNK_DIGITS:
+        m = 1
+        b = [0] * 10
+        c = [0] * 10
+        e = 0
+
+        for d in digits:
+            w = W[d]
+            divisors = DIVISORS[d]
+
+            suffix_from_b = 0
+            less_count = [0] * 10
+            for v in divisors:
+                for u in range(v + 1, 10):
+                    suffix_from_b += b[u]
+                    less_count[u] += 1
+
+            old_m = m
+            m = (m * w) % MOD
+            for u in range(1, 10):
+                c[u] = (w * c[u] + old_m * less_count[u]) % MOD
+                b[u] = (w * b[u] + (old_m if u in divisors else 0)) % MOD
+            e = (w * e + suffix_from_b) % MOD
+
+        transforms.append(
+            (
+                m,
+                b[1],
+                b[2],
+                b[3],
+                b[4],
+                b[5],
+                b[6],
+                b[7],
+                b[8],
+                b[9],
+                c[1],
+                c[2],
+                c[3],
+                c[4],
+                c[5],
+                c[6],
+                c[7],
+                c[8],
+                c[9],
+                e,
+            )
+        )
+
+    return transforms
+
+
+CHUNK_TRANSFORMS = _build_chunk_transforms()
 
 
 def _base_primes_upto(limit: int):
@@ -122,703 +201,115 @@ def compute_F(N: int) -> int:
     """
     Compute F(N) modulo MOD.
 
-    Let each position choose uniformly among divisors of its master digit.
-    Maintain:
-      - A[v] = sum_{positions so far} P(chosen digit == v)  for v=1..9
-      - E    = expected inversion count accumulated so far (mod MOD)
-      - nmod = number of processed digits so far (mod MOD)
-
-    Then for a new position with distribution P_j:
-      contribution = sum_t P_j(t) * sum_{u>t} A[u]
-    and we add P_j into A afterwards.
+    The state tracks totals over all divided prefixes directly.  Each base-10000
+    chunk has a precomputed linear transform, so every prime contributes at most
+    two compact state updates instead of one update per decimal digit.
     """
     if N <= 2:
         return 0
 
-    counts = [
-        0
-    ] * 10  # counts of original (master) digits 1..9, with zeros already ignored
-
-    # A1..A9 are A[1]..A[9] in mod space
+    T = 1
+    I = 0
     A1 = A2 = A3 = A4 = A5 = A6 = A7 = A8 = A9 = 0
-
-    E = 0
-    nmod = 0  # number of processed digits so far, modulo MOD
+    transforms = CHUNK_TRANSFORMS
 
     for p in _primes_below(N):
         q, r = divmod(p, 10000)
-        # Process high chunk, then low chunk (both ignore zeros via CHUNK_DIGITS)
-        for d in CHUNK_DIGITS[q]:
-            # ---- process digit d ----
-            counts[d] += 1
-            s1 = A1  # prefix sum up to 1
 
-            if d == 1:
-                t1 = nmod - s1
-                if t1 < 0:
-                    t1 += MOD
-                E += t1
-                if E >= MOD:
-                    E -= MOD
-                A1 = s1 + 1
-                if A1 >= MOD:
-                    A1 -= MOD
+        if q:
+            (
+                m,
+                b1,
+                b2,
+                b3,
+                b4,
+                b5,
+                b6,
+                b7,
+                b8,
+                b9,
+                c1,
+                c2,
+                c3,
+                c4,
+                c5,
+                c6,
+                c7,
+                c8,
+                c9,
+                e,
+            ) = transforms[q]
+            I = (
+                m * I
+                + c1 * A1
+                + c2 * A2
+                + c3 * A3
+                + c4 * A4
+                + c5 * A5
+                + c6 * A6
+                + c7 * A7
+                + c8 * A8
+                + c9 * A9
+                + e * T
+            ) % MOD
+            A1 = (m * A1 + b1 * T) % MOD
+            A2 = (m * A2 + b2 * T) % MOD
+            A3 = (m * A3 + b3 * T) % MOD
+            A4 = (m * A4 + b4 * T) % MOD
+            A5 = (m * A5 + b5 * T) % MOD
+            A6 = (m * A6 + b6 * T) % MOD
+            A7 = (m * A7 + b7 * T) % MOD
+            A8 = (m * A8 + b8 * T) % MOD
+            A9 = (m * A9 + b9 * T) % MOD
+            T = (m * T) % MOD
 
-            elif d == 2:
-                inv = INV2
-                s2 = s1 + A2
-                if s2 >= MOD:
-                    s2 -= MOD
-                t1 = nmod - s1
-                if t1 < 0:
-                    t1 += MOD
-                t2 = nmod - s2
-                if t2 < 0:
-                    t2 += MOD
-                term = t1 + t2
-                if term >= MOD:
-                    term -= MOD
-                add = (inv * term) % MOD
-                E += add
-                if E >= MOD:
-                    E -= MOD
-                A1 = s1 + inv
-                if A1 >= MOD:
-                    A1 -= MOD
-                A2 += inv
-                if A2 >= MOD:
-                    A2 -= MOD
+        (
+            m,
+            b1,
+            b2,
+            b3,
+            b4,
+            b5,
+            b6,
+            b7,
+            b8,
+            b9,
+            c1,
+            c2,
+            c3,
+            c4,
+            c5,
+            c6,
+            c7,
+            c8,
+            c9,
+            e,
+        ) = transforms[r]
+        I = (
+            m * I
+            + c1 * A1
+            + c2 * A2
+            + c3 * A3
+            + c4 * A4
+            + c5 * A5
+            + c6 * A6
+            + c7 * A7
+            + c8 * A8
+            + c9 * A9
+            + e * T
+        ) % MOD
+        A1 = (m * A1 + b1 * T) % MOD
+        A2 = (m * A2 + b2 * T) % MOD
+        A3 = (m * A3 + b3 * T) % MOD
+        A4 = (m * A4 + b4 * T) % MOD
+        A5 = (m * A5 + b5 * T) % MOD
+        A6 = (m * A6 + b6 * T) % MOD
+        A7 = (m * A7 + b7 * T) % MOD
+        A8 = (m * A8 + b8 * T) % MOD
+        A9 = (m * A9 + b9 * T) % MOD
+        T = (m * T) % MOD
 
-            elif d == 3:
-                inv = INV2
-                s2 = s1 + A2
-                if s2 >= MOD:
-                    s2 -= MOD
-                s3 = s2 + A3
-                if s3 >= MOD:
-                    s3 -= MOD
-                t1 = nmod - s1
-                if t1 < 0:
-                    t1 += MOD
-                t3 = nmod - s3
-                if t3 < 0:
-                    t3 += MOD
-                term = t1 + t3
-                if term >= MOD:
-                    term -= MOD
-                add = (inv * term) % MOD
-                E += add
-                if E >= MOD:
-                    E -= MOD
-                A1 = s1 + inv
-                if A1 >= MOD:
-                    A1 -= MOD
-                A3 += inv
-                if A3 >= MOD:
-                    A3 -= MOD
-
-            elif d == 4:
-                inv = INV3
-                s2 = s1 + A2
-                if s2 >= MOD:
-                    s2 -= MOD
-                s3 = s2 + A3
-                if s3 >= MOD:
-                    s3 -= MOD
-                s4 = s3 + A4
-                if s4 >= MOD:
-                    s4 -= MOD
-                t1 = nmod - s1
-                if t1 < 0:
-                    t1 += MOD
-                t2 = nmod - s2
-                if t2 < 0:
-                    t2 += MOD
-                t4 = nmod - s4
-                if t4 < 0:
-                    t4 += MOD
-                term = t1 + t2
-                if term >= MOD:
-                    term -= MOD
-                term += t4
-                if term >= MOD:
-                    term -= MOD
-                add = (inv * term) % MOD
-                E += add
-                if E >= MOD:
-                    E -= MOD
-                A1 = s1 + inv
-                if A1 >= MOD:
-                    A1 -= MOD
-                A2 += inv
-                if A2 >= MOD:
-                    A2 -= MOD
-                A4 += inv
-                if A4 >= MOD:
-                    A4 -= MOD
-
-            elif d == 5:
-                inv = INV2
-                s2 = s1 + A2
-                if s2 >= MOD:
-                    s2 -= MOD
-                s3 = s2 + A3
-                if s3 >= MOD:
-                    s3 -= MOD
-                s4 = s3 + A4
-                if s4 >= MOD:
-                    s4 -= MOD
-                s5 = s4 + A5
-                if s5 >= MOD:
-                    s5 -= MOD
-                t1 = nmod - s1
-                if t1 < 0:
-                    t1 += MOD
-                t5 = nmod - s5
-                if t5 < 0:
-                    t5 += MOD
-                term = t1 + t5
-                if term >= MOD:
-                    term -= MOD
-                add = (inv * term) % MOD
-                E += add
-                if E >= MOD:
-                    E -= MOD
-                A1 = s1 + inv
-                if A1 >= MOD:
-                    A1 -= MOD
-                A5 += inv
-                if A5 >= MOD:
-                    A5 -= MOD
-
-            elif d == 6:
-                inv = INV4
-                s2 = s1 + A2
-                if s2 >= MOD:
-                    s2 -= MOD
-                s3 = s2 + A3
-                if s3 >= MOD:
-                    s3 -= MOD
-                s4 = s3 + A4
-                if s4 >= MOD:
-                    s4 -= MOD
-                s5 = s4 + A5
-                if s5 >= MOD:
-                    s5 -= MOD
-                s6 = s5 + A6
-                if s6 >= MOD:
-                    s6 -= MOD
-                t1 = nmod - s1
-                if t1 < 0:
-                    t1 += MOD
-                t2 = nmod - s2
-                if t2 < 0:
-                    t2 += MOD
-                t3 = nmod - s3
-                if t3 < 0:
-                    t3 += MOD
-                t6 = nmod - s6
-                if t6 < 0:
-                    t6 += MOD
-                term = t1 + t2
-                if term >= MOD:
-                    term -= MOD
-                term += t3
-                if term >= MOD:
-                    term -= MOD
-                term += t6
-                if term >= MOD:
-                    term -= MOD
-                add = (inv * term) % MOD
-                E += add
-                if E >= MOD:
-                    E -= MOD
-                A1 = s1 + inv
-                if A1 >= MOD:
-                    A1 -= MOD
-                A2 += inv
-                if A2 >= MOD:
-                    A2 -= MOD
-                A3 += inv
-                if A3 >= MOD:
-                    A3 -= MOD
-                A6 += inv
-                if A6 >= MOD:
-                    A6 -= MOD
-
-            elif d == 7:
-                inv = INV2
-                s2 = s1 + A2
-                if s2 >= MOD:
-                    s2 -= MOD
-                s3 = s2 + A3
-                if s3 >= MOD:
-                    s3 -= MOD
-                s4 = s3 + A4
-                if s4 >= MOD:
-                    s4 -= MOD
-                s5 = s4 + A5
-                if s5 >= MOD:
-                    s5 -= MOD
-                s6 = s5 + A6
-                if s6 >= MOD:
-                    s6 -= MOD
-                s7 = s6 + A7
-                if s7 >= MOD:
-                    s7 -= MOD
-                t1 = nmod - s1
-                if t1 < 0:
-                    t1 += MOD
-                t7 = nmod - s7
-                if t7 < 0:
-                    t7 += MOD
-                term = t1 + t7
-                if term >= MOD:
-                    term -= MOD
-                add = (inv * term) % MOD
-                E += add
-                if E >= MOD:
-                    E -= MOD
-                A1 = s1 + inv
-                if A1 >= MOD:
-                    A1 -= MOD
-                A7 += inv
-                if A7 >= MOD:
-                    A7 -= MOD
-
-            elif d == 8:
-                inv = INV4
-                s2 = s1 + A2
-                if s2 >= MOD:
-                    s2 -= MOD
-                s3 = s2 + A3
-                if s3 >= MOD:
-                    s3 -= MOD
-                s4 = s3 + A4
-                if s4 >= MOD:
-                    s4 -= MOD
-                s5 = s4 + A5
-                if s5 >= MOD:
-                    s5 -= MOD
-                s6 = s5 + A6
-                if s6 >= MOD:
-                    s6 -= MOD
-                s7 = s6 + A7
-                if s7 >= MOD:
-                    s7 -= MOD
-                s8 = s7 + A8
-                if s8 >= MOD:
-                    s8 -= MOD
-                t1 = nmod - s1
-                if t1 < 0:
-                    t1 += MOD
-                t2 = nmod - s2
-                if t2 < 0:
-                    t2 += MOD
-                t4 = nmod - s4
-                if t4 < 0:
-                    t4 += MOD
-                t8 = nmod - s8
-                if t8 < 0:
-                    t8 += MOD
-                term = t1 + t2
-                if term >= MOD:
-                    term -= MOD
-                term += t4
-                if term >= MOD:
-                    term -= MOD
-                term += t8
-                if term >= MOD:
-                    term -= MOD
-                add = (inv * term) % MOD
-                E += add
-                if E >= MOD:
-                    E -= MOD
-                A1 = s1 + inv
-                if A1 >= MOD:
-                    A1 -= MOD
-                A2 += inv
-                if A2 >= MOD:
-                    A2 -= MOD
-                A4 += inv
-                if A4 >= MOD:
-                    A4 -= MOD
-                A8 += inv
-                if A8 >= MOD:
-                    A8 -= MOD
-
-            else:  # d == 9
-                inv = INV3
-                s2 = s1 + A2
-                if s2 >= MOD:
-                    s2 -= MOD
-                s3 = s2 + A3
-                if s3 >= MOD:
-                    s3 -= MOD
-                t1 = nmod - s1
-                if t1 < 0:
-                    t1 += MOD
-                t3 = nmod - s3
-                if t3 < 0:
-                    t3 += MOD
-                term = t1 + t3
-                if term >= MOD:
-                    term -= MOD
-                add = (inv * term) % MOD
-                E += add
-                if E >= MOD:
-                    E -= MOD
-                A1 = s1 + inv
-                if A1 >= MOD:
-                    A1 -= MOD
-                A3 += inv
-                if A3 >= MOD:
-                    A3 -= MOD
-
-            nmod += 1
-            if nmod == MOD:
-                nmod = 0
-
-        for d in CHUNK_DIGITS[r]:
-            # ---- process digit d ----
-            counts[d] += 1
-            s1 = A1
-
-            if d == 1:
-                t1 = nmod - s1
-                if t1 < 0:
-                    t1 += MOD
-                E += t1
-                if E >= MOD:
-                    E -= MOD
-                A1 = s1 + 1
-                if A1 >= MOD:
-                    A1 -= MOD
-
-            elif d == 2:
-                inv = INV2
-                s2 = s1 + A2
-                if s2 >= MOD:
-                    s2 -= MOD
-                t1 = nmod - s1
-                if t1 < 0:
-                    t1 += MOD
-                t2 = nmod - s2
-                if t2 < 0:
-                    t2 += MOD
-                term = t1 + t2
-                if term >= MOD:
-                    term -= MOD
-                add = (inv * term) % MOD
-                E += add
-                if E >= MOD:
-                    E -= MOD
-                A1 = s1 + inv
-                if A1 >= MOD:
-                    A1 -= MOD
-                A2 += inv
-                if A2 >= MOD:
-                    A2 -= MOD
-
-            elif d == 3:
-                inv = INV2
-                s2 = s1 + A2
-                if s2 >= MOD:
-                    s2 -= MOD
-                s3 = s2 + A3
-                if s3 >= MOD:
-                    s3 -= MOD
-                t1 = nmod - s1
-                if t1 < 0:
-                    t1 += MOD
-                t3 = nmod - s3
-                if t3 < 0:
-                    t3 += MOD
-                term = t1 + t3
-                if term >= MOD:
-                    term -= MOD
-                add = (inv * term) % MOD
-                E += add
-                if E >= MOD:
-                    E -= MOD
-                A1 = s1 + inv
-                if A1 >= MOD:
-                    A1 -= MOD
-                A3 += inv
-                if A3 >= MOD:
-                    A3 -= MOD
-
-            elif d == 4:
-                inv = INV3
-                s2 = s1 + A2
-                if s2 >= MOD:
-                    s2 -= MOD
-                s3 = s2 + A3
-                if s3 >= MOD:
-                    s3 -= MOD
-                s4 = s3 + A4
-                if s4 >= MOD:
-                    s4 -= MOD
-                t1 = nmod - s1
-                if t1 < 0:
-                    t1 += MOD
-                t2 = nmod - s2
-                if t2 < 0:
-                    t2 += MOD
-                t4 = nmod - s4
-                if t4 < 0:
-                    t4 += MOD
-                term = t1 + t2
-                if term >= MOD:
-                    term -= MOD
-                term += t4
-                if term >= MOD:
-                    term -= MOD
-                add = (inv * term) % MOD
-                E += add
-                if E >= MOD:
-                    E -= MOD
-                A1 = s1 + inv
-                if A1 >= MOD:
-                    A1 -= MOD
-                A2 += inv
-                if A2 >= MOD:
-                    A2 -= MOD
-                A4 += inv
-                if A4 >= MOD:
-                    A4 -= MOD
-
-            elif d == 5:
-                inv = INV2
-                s2 = s1 + A2
-                if s2 >= MOD:
-                    s2 -= MOD
-                s3 = s2 + A3
-                if s3 >= MOD:
-                    s3 -= MOD
-                s4 = s3 + A4
-                if s4 >= MOD:
-                    s4 -= MOD
-                s5 = s4 + A5
-                if s5 >= MOD:
-                    s5 -= MOD
-                t1 = nmod - s1
-                if t1 < 0:
-                    t1 += MOD
-                t5 = nmod - s5
-                if t5 < 0:
-                    t5 += MOD
-                term = t1 + t5
-                if term >= MOD:
-                    term -= MOD
-                add = (inv * term) % MOD
-                E += add
-                if E >= MOD:
-                    E -= MOD
-                A1 = s1 + inv
-                if A1 >= MOD:
-                    A1 -= MOD
-                A5 += inv
-                if A5 >= MOD:
-                    A5 -= MOD
-
-            elif d == 6:
-                inv = INV4
-                s2 = s1 + A2
-                if s2 >= MOD:
-                    s2 -= MOD
-                s3 = s2 + A3
-                if s3 >= MOD:
-                    s3 -= MOD
-                s4 = s3 + A4
-                if s4 >= MOD:
-                    s4 -= MOD
-                s5 = s4 + A5
-                if s5 >= MOD:
-                    s5 -= MOD
-                s6 = s5 + A6
-                if s6 >= MOD:
-                    s6 -= MOD
-                t1 = nmod - s1
-                if t1 < 0:
-                    t1 += MOD
-                t2 = nmod - s2
-                if t2 < 0:
-                    t2 += MOD
-                t3 = nmod - s3
-                if t3 < 0:
-                    t3 += MOD
-                t6 = nmod - s6
-                if t6 < 0:
-                    t6 += MOD
-                term = t1 + t2
-                if term >= MOD:
-                    term -= MOD
-                term += t3
-                if term >= MOD:
-                    term -= MOD
-                term += t6
-                if term >= MOD:
-                    term -= MOD
-                add = (inv * term) % MOD
-                E += add
-                if E >= MOD:
-                    E -= MOD
-                A1 = s1 + inv
-                if A1 >= MOD:
-                    A1 -= MOD
-                A2 += inv
-                if A2 >= MOD:
-                    A2 -= MOD
-                A3 += inv
-                if A3 >= MOD:
-                    A3 -= MOD
-                A6 += inv
-                if A6 >= MOD:
-                    A6 -= MOD
-
-            elif d == 7:
-                inv = INV2
-                s2 = s1 + A2
-                if s2 >= MOD:
-                    s2 -= MOD
-                s3 = s2 + A3
-                if s3 >= MOD:
-                    s3 -= MOD
-                s4 = s3 + A4
-                if s4 >= MOD:
-                    s4 -= MOD
-                s5 = s4 + A5
-                if s5 >= MOD:
-                    s5 -= MOD
-                s6 = s5 + A6
-                if s6 >= MOD:
-                    s6 -= MOD
-                s7 = s6 + A7
-                if s7 >= MOD:
-                    s7 -= MOD
-                t1 = nmod - s1
-                if t1 < 0:
-                    t1 += MOD
-                t7 = nmod - s7
-                if t7 < 0:
-                    t7 += MOD
-                term = t1 + t7
-                if term >= MOD:
-                    term -= MOD
-                add = (inv * term) % MOD
-                E += add
-                if E >= MOD:
-                    E -= MOD
-                A1 = s1 + inv
-                if A1 >= MOD:
-                    A1 -= MOD
-                A7 += inv
-                if A7 >= MOD:
-                    A7 -= MOD
-
-            elif d == 8:
-                inv = INV4
-                s2 = s1 + A2
-                if s2 >= MOD:
-                    s2 -= MOD
-                s3 = s2 + A3
-                if s3 >= MOD:
-                    s3 -= MOD
-                s4 = s3 + A4
-                if s4 >= MOD:
-                    s4 -= MOD
-                s5 = s4 + A5
-                if s5 >= MOD:
-                    s5 -= MOD
-                s6 = s5 + A6
-                if s6 >= MOD:
-                    s6 -= MOD
-                s7 = s6 + A7
-                if s7 >= MOD:
-                    s7 -= MOD
-                s8 = s7 + A8
-                if s8 >= MOD:
-                    s8 -= MOD
-                t1 = nmod - s1
-                if t1 < 0:
-                    t1 += MOD
-                t2 = nmod - s2
-                if t2 < 0:
-                    t2 += MOD
-                t4 = nmod - s4
-                if t4 < 0:
-                    t4 += MOD
-                t8 = nmod - s8
-                if t8 < 0:
-                    t8 += MOD
-                term = t1 + t2
-                if term >= MOD:
-                    term -= MOD
-                term += t4
-                if term >= MOD:
-                    term -= MOD
-                term += t8
-                if term >= MOD:
-                    term -= MOD
-                add = (inv * term) % MOD
-                E += add
-                if E >= MOD:
-                    E -= MOD
-                A1 = s1 + inv
-                if A1 >= MOD:
-                    A1 -= MOD
-                A2 += inv
-                if A2 >= MOD:
-                    A2 -= MOD
-                A4 += inv
-                if A4 >= MOD:
-                    A4 -= MOD
-                A8 += inv
-                if A8 >= MOD:
-                    A8 -= MOD
-
-            else:  # d == 9
-                inv = INV3
-                s2 = s1 + A2
-                if s2 >= MOD:
-                    s2 -= MOD
-                s3 = s2 + A3
-                if s3 >= MOD:
-                    s3 -= MOD
-                t1 = nmod - s1
-                if t1 < 0:
-                    t1 += MOD
-                t3 = nmod - s3
-                if t3 < 0:
-                    t3 += MOD
-                term = t1 + t3
-                if term >= MOD:
-                    term -= MOD
-                add = (inv * term) % MOD
-                E += add
-                if E >= MOD:
-                    E -= MOD
-                A1 = s1 + inv
-                if A1 >= MOD:
-                    A1 -= MOD
-                A3 += inv
-                if A3 >= MOD:
-                    A3 -= MOD
-
-            nmod += 1
-            if nmod == MOD:
-                nmod = 0
-
-    # Number of divided sequences: M = product over positions of W[d_position].
-    # Compute via digit counts: M = Π_d W[d]^(count[d]).
-    M = 1
-    for d in range(1, 10):
-        c = counts[d]
-        if c:
-            M = (M * pow(W[d], c, MOD)) % MOD
-
-    return (M * E) % MOD
+    return I
 
 
 def main():

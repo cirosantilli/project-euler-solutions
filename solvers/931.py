@@ -8,7 +8,6 @@ No external libraries are used.
 
 from __future__ import annotations
 
-from array import array
 from math import isqrt
 
 
@@ -110,14 +109,15 @@ def min25_pi_and_prime_sum_mod(n: int, mod: int):
     v = isqrt(n)
     primes = sieve_primes(v)
 
-    # 1-indexed arrays for the large side: index i represents x = n//i
-    vals = array("Q", [0]) * (v + 1)
-    g_large = array("Q", [0]) * (v + 1)
-    h_large = array("Q", [0]) * (v + 1)
+    # 1-indexed arrays for the large side: index i represents x = n//i.
+    # Plain lists are faster than array.array in PyPy for these hot loops.
+    vals = [0] * (v + 1)
+    g_large = [0] * (v + 1)
+    h_large = [0] * (v + 1)
 
-    # 0..v arrays for the small side: index x represents x itself
-    g_small = array("Q", [0]) * (v + 1)
-    h_small = array("Q", [0]) * (v + 1)
+    # 0..v arrays for the small side: index x represents x itself.
+    g_small = [0] * (v + 1)
+    h_small = [0] * (v + 1)
 
     # Initialize
     for x in range(0, v + 1):
@@ -138,21 +138,14 @@ def min25_pi_and_prime_sum_mod(n: int, mod: int):
             g_large[i] = 0
             h_large[i] = 0
 
-    def get_g_h(x: int) -> tuple[int, int]:
-        if x <= v:
-            return int(g_small[x]), int(h_small[x])
-        # x is guaranteed to be exactly n//k for some 1<=k<=v when x>v
-        k = n // x
-        return int(g_large[k]), int(h_large[k])
-
     # Process primes
     for p in primes:
         p2 = p * p
         if p2 > n:
             break
 
-        g_p1 = int(g_small[p - 1])
-        h_p1 = int(h_small[p - 1])
+        g_p1 = g_small[p - 1]
+        h_p1 = h_small[p - 1]
 
         # Update large values first, in increasing i.
         i_max = n // p2
@@ -160,25 +153,31 @@ def min25_pi_and_prime_sum_mod(n: int, mod: int):
             i_max = v
 
         for i in range(1, i_max + 1):
-            y = int(vals[i] // p)  # equals floor(n / (i*p))
-            g_y, h_y = get_g_h(y)
+            y = vals[i] // p  # equals floor(n / (i*p))
+            if y <= v:
+                g_y = g_small[y]
+                h_y = h_small[y]
+            else:
+                k = n // y
+                g_y = g_large[k]
+                h_y = h_large[k]
 
             g_large[i] -= g_y - g_p1
 
             diff = h_y - h_p1
             if diff < 0:
                 diff += mod
-            h_large[i] = (int(h_large[i]) - p * diff) % mod
+            h_large[i] = (h_large[i] - p * diff) % mod
 
         # Update small values descending so y=x//p hasn't been touched for this p.
         for x in range(v, p2 - 1, -1):
             y = x // p
-            g_small[x] -= int(g_small[y]) - g_p1
+            g_small[x] -= g_small[y] - g_p1
 
-            diff = int(h_small[y]) - h_p1
+            diff = h_small[y] - h_p1
             if diff < 0:
                 diff += mod
-            h_small[x] = (int(h_small[x]) - p * diff) % mod
+            h_small[x] = (h_small[x] - p * diff) % mod
 
     return v, primes, vals, g_small, h_small, g_large, h_large
 
@@ -209,13 +208,13 @@ def compute_T_mod(N: int, mod: int) -> int:
 
     def pi(x: int) -> int:
         if x <= v:
-            return int(g_small[x])
-        return int(g_large[N // x])
+            return g_small[x]
+        return g_large[N // x]
 
     def psum(x: int) -> int:
         if x <= v:
-            return int(h_small[x])
-        return int(h_large[N // x])
+            return h_small[x]
+        return h_large[N // x]
 
     total = 0
 

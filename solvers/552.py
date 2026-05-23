@@ -15,7 +15,6 @@ This program uses only the Python standard library.
 
 from __future__ import annotations
 
-import math
 import sys
 from typing import List
 
@@ -75,20 +74,12 @@ def compute_S(limit: int, block_size: int = 64) -> int:
     """
     Compute S(limit): sum of primes <= limit dividing at least one A_n.
 
-    Key idea:
-    - Build A_n incrementally (exact integers A and P).
-    - Track A_n modulo many primes at once using blocks:
-        For each block we keep:
-            M  = product of remaining "eligible" primes in that block,
-            aM = A mod M,
-            pM = P mod M.
-    - At step n with current prime p_n, any primes <= p_n can never divide A_n
-      (they are in the constraint list), so we *remove* them from each block
-      by dividing M and reducing residues mod the smaller modulus.
-    - A prime q divides A_n iff gcd(A mod q, q) == q.
-      Inside a block, gcd(aM, M) reveals which primes in that block divide A_n.
+    Only residues modulo primes <= limit are tracked.  Once a prime has entered
+    the CRT system it can no longer divide a later A_n, so at stage i the code
+    updates and tests only primes after p_i.
 
-    block_size=64 is a good performance sweet spot in Python.
+    ``block_size`` is retained for backward-compatible callers; it is unused by
+    the residue-array implementation.
     """
     if limit < 2:
         return 0
@@ -98,90 +89,23 @@ def compute_S(limit: int, block_size: int = 64) -> int:
     if m <= 1:
         return 0
 
-    # Partition primes into consecutive blocks.
-    blocks: List[List[int]] = [
-        primes[i : i + block_size] for i in range(0, m, block_size)
-    ]
-    B = len(blocks)
+    a_mod = [1 % q for q in primes]  # A_1 mod q
+    m_mod = [2 % q for q in primes]  # M_1 mod q
+    found = bytearray(m)
 
-    # For each block: pointer to first prime still "eligible" (> current p_n),
-    # current modulus M = product of eligible primes,
-    # residues a_mod = A mod M, P_mod = P mod M.
-    ptr = [0] * B
-    mod = [1] * B
-    a_mod = [0] * B
-    P_mod = [1] * B
+    for idx in range(1, m):
+        p = primes[idx]
+        t = ((idx + 1 - a_mod[idx]) * pow(m_mod[idx], p - 2, p)) % p
 
-    for j, bl in enumerate(blocks):
-        prod = 1
-        for q in bl:
-            prod *= q
-        mod[j] = prod
+        for j in range(idx + 1, m):
+            q = primes[j]
+            a = (a_mod[j] + m_mod[j] * t) % q
+            a_mod[j] = a
+            m_mod[j] = (m_mod[j] * p) % q
+            if a == 0:
+                found[j] = 1
 
-    found = bytearray(limit + 1)  # found[q] = 1 if prime q divides some A_n
-
-    A = 0
-    P = 1
-    gcd = math.gcd  # local alias for speed
-
-    active = list(range(B))  # blocks with mod > 1
-
-    for idx in range(1, m):  # n = 1..m-1 (primes beyond p_n may divide A_n)
-        p = primes[idx - 1]
-
-        # Compute update coefficient t for CRT extension.
-        Ap = A % p
-        Pp = P % p
-        inv = pow(Pp, p - 2, p)
-        t = ((idx - Ap) * inv) % p
-
-        # Update exact A and P.
-        A += t * P
-        P *= p
-
-        new_active = []
-        for j in active:
-            bl = blocks[j]
-            k = ptr[j]
-            M = mod[j]
-
-            # Shrink: drop all primes <= current p (ineligible now and forever).
-            if k < len(bl) and bl[k] <= p:
-                while k < len(bl) and bl[k] <= p:
-                    M //= bl[k]
-                    k += 1
-                ptr[j] = k
-                mod[j] = M
-                if M == 1:
-                    continue
-                a_mod[j] %= M
-                P_mod[j] %= M
-
-            # Update residues mod current M.
-            am = (a_mod[j] + t * P_mod[j]) % M
-            pm = (P_mod[j] * p) % M
-            a_mod[j] = am
-            P_mod[j] = pm
-
-            # Detect any prime divisors remaining in this block.
-            g = gcd(am, M)
-            if g != 1:
-                # Because block_size is small, trial dividing by the remaining primes is cheap.
-                for q in bl[ptr[j] :]:
-                    if g % q == 0:
-                        found[q] = 1
-                        while g % q == 0:
-                            g //= q
-                        if g == 1:
-                            break
-
-            new_active.append(j)
-
-        active = new_active
-        if not active:
-            break
-
-    return sum(q for q in primes if found[q])
+    return sum(q for q, hit in zip(primes, found) if hit)
 
 
 def _self_test() -> None:

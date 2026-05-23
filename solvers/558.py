@@ -2,173 +2,142 @@
 """
 Project Euler 558 - Irrational Base
 
-We work with the unique representation of integers in base r (real root of r^3 = r^2 + 1)
-using digits {0,1} with the spacing constraint: no two 1s occur within distance < 3.
-
-The key operation is: "insert a 1 at exponent e and renormalize", implemented as a small
-deterministic rewrite automaton (stack-based).
-
-We compute:
-  S(N) = sum_{n=1..N} w(n^2)
-incrementally using n^2 = (n-1)^2 + (2n-1).
-
-No external libraries are used.
+For the real root r of x^3 - x^2 - 1, the greedy representation of an
+integer uses powers whose exponents are at least three apart.  The solver
+precomputes enough powers of r as high-scale integers, then performs the
+greedy subtraction with integer comparisons only.
 """
 
 from __future__ import annotations
+
 import sys
+from bisect import bisect_right
+from decimal import Decimal, ROUND_FLOOR, localcontext
 
 
-# We store a representation as a bitset in a Python int.
-# Bit index i corresponds to exponent (i - SHIFT). We choose SHIFT big enough
-# so all indices stay non-negative, and aligned to 8 bits (requested "8-bit").
-SHIFT = 256  # exponent 0 lives at index SHIFT
+SCALE = 10**90
+DECIMAL_PRECISION = 150
+MIN_EXPONENT = -200
+MAX_EXPONENT = 128
+DEFAULT_LIMIT = 5_000_000
 
 
-def _build_pow2(limit: int) -> list[int]:
-    """Precompute powers of two up to 'limit' inclusive."""
-    return [1 << i for i in range(limit + 1)]
+def base_root() -> Decimal:
+    """Return the real root of x^3 - x^2 - 1 with the active precision."""
+    x = Decimal(3) / Decimal(2)
+    for _ in range(24):
+        x -= (x * x * x - x * x - 1) / (3 * x * x - 2 * x)
+    return +x
 
 
-# Indices stay in a few hundred bits for N=5_000_000, but keep generous headroom.
-_POW2 = _build_pow2(1400)
-
-
-def _dfs_insert_many(bits: int, stack: list[int]) -> int:
+def build_scaled_powers() -> tuple[list[int], int]:
     """
-    Add 1 at each position in 'stack' to the canonical representation 'bits',
-    renormalizing after each local rewrite.
+    Precompute floor(r^e * SCALE) for the target exponent window.
 
-    This is the exact automaton used by a known fast approach:
-    it repeatedly rewrites around the insertion point using identities
-    derived from r^3 = r^2 + 1, preserving the represented integer while
-    maintaining the spacing constraint.
+    The scale is intentionally much finer than the smallest retained power, so
+    truncation dust cannot be mistaken for another greedy term.
     """
-    pow2 = _POW2
-    pop = stack.pop
-    append = stack.append
+    with localcontext() as ctx:
+        ctx.prec = DECIMAL_PRECISION
+        r = base_root()
+        values: dict[int, Decimal] = {0: Decimal(1), 1: r, 2: r * r}
 
-    while stack:
-        x = pop()
+        for exponent in range(2, MAX_EXPONENT):
+            values[exponent + 1] = values[exponent] + values[exponent - 2]
+        for offset in range(1, -MIN_EXPONENT + 1):
+            values[-offset] = values[-offset + 3] - values[-offset + 2]
 
-        # The SHIFT choice guarantees x stays comfortably >= 7 for this problem size.
-        # (If this ever fails, increase SHIFT.)
-        # We keep this check cheap and only in debug-style form.
-        if x < 7:
-            raise RuntimeError(f"Index underflow at {x}; increase SHIFT")
+        decimal_scale = Decimal(SCALE)
+        powers = [
+            int(
+                (values[exponent] * decimal_scale).to_integral_value(
+                    rounding=ROUND_FLOOR
+                )
+            )
+            for exponent in range(MIN_EXPONENT, MAX_EXPONENT + 1)
+        ]
 
-        # Rewrite rules (same order as the canonical insertion algorithm)
-        m = pow2[x + 2]
-        if bits & m:
-            bits ^= m
-            append(x + 3)
-            continue
-
-        m = pow2[x - 2]
-        if bits & m:
-            bits ^= m
-            append(x + 1)
-            continue
-
-        m = pow2[x - 1]
-        if bits & m:
-            bits ^= m
-            append(x + 1)
-            append(x - 4)
-            continue
-
-        m = pow2[x + 1]
-        if bits & m:
-            bits ^= m
-            append(x + 2)
-            append(x - 3)
-            continue
-
-        m = pow2[x]
-        if bits & m:
-            bits ^= m
-            append(x + 1)
-            append(x - 2)
-            append(x - 7)
-            continue
-
-        # No conflicts: set the bit.
-        bits |= m
-
-    return bits
+    return powers, -MIN_EXPONENT
 
 
-def _repr_of_int(n: int) -> int:
-    """Return the canonical representation (as bitset int) of the ordinary integer n."""
-    bits = 0
-    stk: list[int] = []
-    for _ in range(n):
-        stk.clear()
-        stk.append(SHIFT)
-        bits = _dfs_insert_many(bits, stk)
-    return bits
+def greedy_length(n: int, powers: list[int], zero_index: int) -> int:
+    """Count the powers in the greedy representation of a positive integer."""
+    scaled_n = n * SCALE
+    lead = bisect_right(powers, scaled_n) - 1
+    residual = scaled_n - powers[lead]
+    terms = 1
+    pos = lead - 3
+
+    while pos >= 0:
+        while pos >= 0 and powers[pos] > residual:
+            pos -= 1
+        if pos < 0:
+            break
+        residual -= powers[pos]
+        terms += 1
+        pos -= 3
+
+    return terms
 
 
-def w(n: int) -> int:
-    """w(n) = number of terms (1-bits) in the canonical representation of integer n."""
-    return _repr_of_int(n).bit_count()
-
-
-def S(limit: int) -> int:
+def S(limit: int, powers: list[int] | None = None, zero_index: int | None = None) -> int:
     """
-    Compute S(limit) = sum_{i=1..limit} w(i^2) using:
-        i^2 = (i-1)^2 + (2i-1)
-    maintaining representations of the running odd increment and the running square.
+    Compute sum_{n=1..limit} l(n^2).
+
+    Since n^2 is increasing, the leading exponent pointer only moves forward.
     """
-    f = 0  # representation of current odd number (2i-1)
-    g = 0  # representation of i^2
-    ans = 0
+    if powers is None or zero_index is None:
+        powers, zero_index = build_scaled_powers()
 
-    stk_f: list[int] = []
-    stk_g: list[int] = []
+    lead = zero_index
+    square = 0
+    odd_increment = SCALE
+    two = 2 * SCALE
+    total = 0
+    power_count = len(powers)
 
-    dfs = _dfs_insert_many
+    for _ in range(limit):
+        square += odd_increment
+        odd_increment += two
 
-    for i in range(1, limit + 1):
-        # Update odd increment: f <- f + 2 (except the first step gives 1)
-        stk_f.clear()
-        stk_f.append(SHIFT)
-        if i != 1:
-            stk_f.append(SHIFT)
-        f = dfs(f, stk_f)
+        while lead + 1 < power_count and powers[lead + 1] <= square:
+            lead += 1
 
-        # Add f into g: g <- g + f  (f is sparse; push all its 1-bits into one stack)
-        stk_g.clear()
-        t = f
-        while t:
-            lsb = t & -t
-            stk_g.append(lsb.bit_length() - 1)
-            t ^= lsb
-        g = dfs(g, stk_g)
+        residual = square - powers[lead]
+        terms = 1
+        pos = lead - 3
 
-        ans += g.bit_count()
+        while pos >= 0:
+            while pos >= 0 and powers[pos] > residual:
+                pos -= 1
+            if pos < 0:
+                break
+            residual -= powers[pos]
+            terms += 1
+            pos -= 3
 
-    return ans
+        total += terms
+
+    return total
 
 
-def solve(n: int = 5_000_000) -> int:
-    return S(n)
+def solve(limit: int = DEFAULT_LIMIT) -> int:
+    powers, zero_index = build_scaled_powers()
+    return S(limit, powers, zero_index)
 
 
 def _self_test() -> None:
-    # Examples from the statement:
-    # 3 = r^{-10} + r^{-5} + r^{-1} + r^2  => w(3) = 4
-    # 10 = r^{-10} + r^{-7} + r^6          => w(10) = 3
-    assert w(3) == 4
-    assert w(10) == 3
-
-    # Also given: S(1000) = 19403
-    assert S(1000) == 19403
+    powers, zero_index = build_scaled_powers()
+    assert greedy_length(3, powers, zero_index) == 4
+    assert greedy_length(4, powers, zero_index) == 4
+    assert greedy_length(10, powers, zero_index) == 3
+    assert S(10, powers, zero_index) == 61
+    assert S(1000, powers, zero_index) == 19403
 
 
 if __name__ == "__main__":
     _self_test()
-    n = 5_000_000
+    n = DEFAULT_LIMIT
     if len(sys.argv) >= 2:
         n = int(sys.argv[1])
     print(solve(n))

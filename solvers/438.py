@@ -95,8 +95,11 @@ def precompute_P(n: int):
                 T[(k, m, i)] = acc
 
     # Apply alternating sign factor s = (-1)^(k+1-m)
-    P = {}
-    A0 = {}
+    P = [
+        [[None for _ in range(n + 1)] for _ in range(k + 2)]
+        for k in range(n + 1)
+    ]
+    A0 = [[0] * (k + 2) for k in range(n + 1)]
     for k in range(1, n + 1):
         r = n - k
         fact = 1
@@ -107,10 +110,10 @@ def precompute_P(n: int):
             for i in range(0, k + 1):
                 poly = T[(k, m, i)]
                 if s == 1:
-                    P[(k, m, i)] = poly
+                    P[k][m][i] = poly
                 else:
-                    P[(k, m, i)] = [-x for x in poly]
-            A0[(k, m)] = s * fact  # coefficient for a_k (constant)
+                    P[k][m][i] = [-x for x in poly]
+            A0[k][m] = s * fact  # coefficient for a_k (constant)
     return P, A0
 
 
@@ -138,19 +141,21 @@ def solve(n: int):
     # B[(k,m)] is ε-polynomial for the current "constant part" of inequality
     #   A0(k,m)*a_k + B(k,m) > 0
     # after substituting fixed a1..a_{k-1}.
-    B = {}
+    B = [[None] * (k + 2) for k in range(n + 1)]
     for k in range(1, n + 1):
         for m in range(1, k + 2):
-            B[(k, m)] = P[(k, m, 0)].copy()  # contribution from a0=1
+            B[k][m] = P[k][m][0].copy()  # contribution from a0=1
 
     def apply(i: int, val: int):
         """Update all future B(kp,m) by adding val * P(kp,m,i)."""
         if val == 0:
             return
         for kp in range(i + 1, n + 1):
+            Pkp = P[kp]
+            Bkp = B[kp]
             for m in range(1, kp + 2):
-                poly = P[(kp, m, i)]
-                Bb = B[(kp, m)]
+                poly = Pkp[m][i]
+                Bb = Bkp[m]
                 for d in range(n + 1):
                     Bb[d] += val * poly[d]
 
@@ -188,7 +193,7 @@ def solve(n: int):
         lb = -(10**30)
         ub = 10**30
         for m in range(1, k + 2):
-            typ, bnd = bound_from_ineq(A0[(k, m)], B[(k, m)])
+            typ, bnd = bound_from_ineq(A0[k][m], B[k][m])
             if typ == "lb":
                 if bnd > lb:
                     lb = bnd

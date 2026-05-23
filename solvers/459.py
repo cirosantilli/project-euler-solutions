@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import math
 import sys
-from array import array
 from typing import List, Tuple, Dict
 
 
@@ -144,7 +143,7 @@ def make_triangles_upto(n: int) -> List[int]:
     return out
 
 
-def compute_1d_prefix_and_freq(n: int, lengths: List[int]) -> Tuple[array, array]:
+def compute_1d_prefix_and_freq(n: int, lengths: List[int]) -> Tuple[List[int], List[int]]:
     """
     Computes:
       - C[x] for x=0..n where C[x] is the XOR prefix of the 1D nim-values (see Pearson),
@@ -160,8 +159,10 @@ def compute_1d_prefix_and_freq(n: int, lengths: List[int]) -> Tuple[array, array
     - We also count multiplicities of candidate values at each x, then update strip frequencies
       with one pass over distinct candidates (avoids re-indexing C twice).
     """
-    C = array("H", [0]) * (n + 1)  # values stay < 1024
-    freq = array("Q", [0]) * M
+    # Plain lists are substantially faster than array.array for PyPy's tight
+    # integer-indexed loops, and the memory footprint is still small here.
+    C = [0] * (n + 1)  # values stay < 1024
+    freq = [0] * M
 
     mark = [0] * M  # timestamp (current x) if present
     cnt = [0] * M  # multiplicity for current x

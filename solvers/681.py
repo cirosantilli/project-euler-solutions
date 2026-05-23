@@ -21,6 +21,7 @@ So for each integer area k:
 We sum p = U+V+W+T over all such solutions with k <= n.
 """
 
+from bisect import bisect_left
 from math import isqrt
 
 
@@ -97,21 +98,24 @@ def sp(n: int) -> int:
 
         for ti in range(dlen):
             T = divs[ti]
+            if T * T > k:
+                break
+
             k2_div_T = k2 // T
 
             for wi in range(ti, dlen):
                 W = divs[wi]
+                if W * W * W > k2_div_T:
+                    break
 
                 # Need T*W | k^2
-                if W > k2_div_T:
-                    break
                 if k2_div_T % W:
                     continue
 
                 R = k2_div_T // W  # R = k^2/(T*W)
                 vmax = isqrt(R)
                 if vmax < W:
-                    continue
+                    break
                 if vmax > k:
                     vmax = k
 
@@ -127,13 +131,7 @@ def sp(n: int) -> int:
                     continue
 
                 # find first index in divs >= vmin
-                lo, hi = 0, dlen
-                while lo < hi:
-                    mid = (lo + hi) >> 1
-                    if divs[mid] < vmin:
-                        lo = mid + 1
-                    else:
-                        hi = mid
+                lo = bisect_left(divs, vmin, wi, dlen)
 
                 for vi in range(lo, dlen):
                     V = divs[vi]

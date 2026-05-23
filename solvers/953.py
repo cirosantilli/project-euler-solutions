@@ -1,89 +1,96 @@
 #!/usr/bin/env python
-"""
-By GPT-5.1. Runtime: 1.22s on pypy3 3.11.13, Ubuntu 25.10, Lenovo ThinkPad P14s.
-"""
 
-import math
-from typing import List, Tuple
+from math import isqrt
 
-MOD: int = 10**9 + 7
-PRIME_LIMIT: int = 1 << 24
+MOD = 10**9 + 7
+INV6 = pow(6, MOD - 2, MOD)
 
 
-def sieve(limit: int) -> Tuple[bytearray, List[int]]:
-    is_prime: bytearray = bytearray(b"\x01") * (limit + 1)
-    is_prime[0:2] = b"\x00\x00"
-    upper: int = int(limit**0.5)
-    for p in range(2, upper + 1):
-        if is_prime[p]:
-            step: int = p
-            start: int = p * p
-            is_prime[start : limit + 1 : step] = b"\x00" * (
-                ((limit - start) // step) + 1
-            )
-    primes: List[int] = [i for i in range(2, limit + 1) if is_prime[i]]
-    return is_prime, primes
+def prime_sieve(limit):
+    flags = bytearray(b"\x01") * (limit + 1)
+    flags[0:2] = b"\x00\x00"
+    for p in range(2, isqrt(limit) + 1):
+        if flags[p]:
+            start = p * p
+            flags[start : limit + 1 : p] = b"\x00" * (((limit - start) // p) + 1)
+    odd_primes = [p for p in range(3, limit + 1, 2) if flags[p]]
+    return flags, odd_primes
 
 
-is_prime, primes = sieve(PRIME_LIMIT)
-INV6: int = pow(6, MOD - 2, MOD)
+def sum_sq(n):
+    n %= MOD
+    return n * (n + 1) % MOD * (2 * n + 1) % MOD * INV6 % MOD
 
 
-def sum_sq(T: int) -> int:
-    T_mod: int = T % MOD
-    return (T_mod * (T_mod + 1) % MOD * (2 * T_mod + 1) % MOD) * INV6 % MOD
+def contribution(kernel, bound, multiplier):
+    t = isqrt(bound // kernel)
+    return multiplier * (kernel % MOD) % MOD * sum_sq(t) % MOD
 
 
-def contribution_for_m(m: int, N: int) -> int:
-    if m > N:
+def can_complete(prod, last, odd_count, bound):
+    first = last + 2
+    if odd_count:
+        return prod * first <= bound
+    return prod * first * (first + 2) <= bound
+
+
+def branch_sum(bound, target, multiplier, flags, odd_primes):
+    if bound <= 0:
         return 0
-    T: int = math.isqrt(N // m)
-    if T == 0:
-        return 0
-    return (m % MOD) * sum_sq(T) % MOD
 
+    total = contribution(1, bound, multiplier) if target == 0 else 0
+    stack = []
+    plen = len(odd_primes)
 
-def compute_S(N: int) -> int:
-    ans: int = contribution_for_m(1, N) % MOD
-    sqrtN: int = math.isqrt(N)
-    prefix_end: int = 0
-    for i, p in enumerate(primes):
-        if p > sqrtN:
+    for idx, p in enumerate(odd_primes):
+        if not can_complete(p, p, 1, bound):
             break
-        prefix_end = i + 1
-    stack: List[Tuple[int, int, int, int]] = []
-    for idx in range(prefix_end):
-        p: int = primes[idx]
-        if p * p > N:
-            break
-        stack.append((idx + 1, p, p, p))
-    primes_local: List[int] = primes
-    is_prime_local: bytearray = is_prime
-    PRIME_LIMIT_LOCAL: int = PRIME_LIMIT
-    N_local: int = N
+        stack.append((idx + 1, p, p, p, 1))
+
+    flags_local = flags
+    primes_local = odd_primes
+    limit = len(flags_local) - 1
+    bound_local = bound
+    target_local = target
+    multiplier_local = multiplier
+
     while stack:
-        next_idx, prod, xor_val, last_p = stack.pop()
-        cand: int = xor_val
-        if (
-            cand > last_p
-            and cand <= PRIME_LIMIT_LOCAL
-            and is_prime_local[cand]
-            and prod * cand <= N_local
-        ):
-            m: int = prod * cand
-            ans = (ans + contribution_for_m(m, N_local)) % MOD
-        N_div_prod: int = N_local // prod
-        for j in range(next_idx, prefix_end):
-            q: int = primes_local[j]
-            if q * q > N_div_prod:
+        next_idx, prod, xor_val, last, odd_count = stack.pop()
+
+        if odd_count:
+            cand = target_local ^ xor_val
+            if (
+                cand > last
+                and cand <= limit
+                and flags_local[cand]
+                and prod * cand <= bound_local
+            ):
+                total = (
+                    total
+                    + contribution(prod * cand, bound_local, multiplier_local)
+                ) % MOD
+
+        next_odd_count = odd_count ^ 1
+        for j in range(next_idx, plen):
+            q = primes_local[j]
+            new_prod = prod * q
+            if not can_complete(new_prod, q, next_odd_count, bound_local):
                 break
-            new_prod: int = prod * q
-            new_xor: int = xor_val ^ q
-            stack.append((j + 1, new_prod, new_xor, q))
-    return ans % MOD
+            stack.append((j + 1, new_prod, xor_val ^ q, q, next_odd_count))
+
+    return total % MOD
+
+
+def compute_S(n):
+    prime_limit = isqrt(2 * n) + 10
+    flags, odd_primes = prime_sieve(prime_limit)
+    return (
+        branch_sum(n, 0, 1, flags, odd_primes)
+        + branch_sum(n // 2, 2, 2, flags, odd_primes)
+    ) % MOD
 
 
 if __name__ == "__main__":
     assert compute_S(10) == 14
     assert compute_S(100) == 455
-    print(compute_S(10**14) % MOD)
+    print(compute_S(10**14))

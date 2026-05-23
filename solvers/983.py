@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 from __future__ import annotations
 
-import itertools
 import math
 from typing import Dict, List, Sequence, Tuple
 
@@ -42,6 +41,88 @@ def opposite_pairs(points: Sequence[Point]) -> List[Tuple[Point, Point]]:
         used.add(w)
         pairs.append((v, w))
     return pairs
+
+
+def antipodal_pair_count(m: int) -> int:
+    """
+    Count antipodal lattice-point pairs on x^2 + y^2 = m.
+
+    By the two-squares theorem, primes 3 mod 4 must occur to even powers, and
+    each prime 1 mod 4 with exponent a contributes a factor a + 1 to the
+    number of lattice points.
+    """
+    x = m
+    while x % 2 == 0:
+        x //= 2
+
+    product = 1
+    p = 3
+    while p * p <= x:
+        if x % p == 0:
+            exponent = 0
+            while x % p == 0:
+                x //= p
+                exponent += 1
+            if p % 4 == 1:
+                product *= exponent + 1
+            elif exponent & 1:
+                return 0
+        p += 2
+
+    if x > 1:
+        if x % 4 == 1:
+            product *= 2
+        elif x % 4 == 3:
+            return 0
+
+    return 2 * product
+
+
+def _displacement_set(points: Sequence[Point]) -> set[int]:
+    deltas: set[int] = set()
+    for ax, ay in points:
+        for bx, by in points:
+            if ax != bx or ay != by:
+                deltas.add(_encode(ax - bx, ay - by))
+    return deltas
+
+
+def _passes_four_vector_prune(
+    selected: Sequence[Point], candidate: Point, deltas: set[int]
+) -> bool:
+    """
+    Reject a branch if a signed sum of four selected directions is already a
+    displacement between two radius vectors.
+    """
+    if len(selected) < 3:
+        return True
+
+    vx, vy = candidate
+    selected_len = len(selected)
+    for i in range(selected_len - 2):
+        ax, ay = selected[i]
+        for j in range(i + 1, selected_len - 1):
+            bx, by = selected[j]
+            for k in range(j + 1, selected_len):
+                cx, cy = selected[k]
+                for sa in (1, -1):
+                    x1 = vx + sa * ax
+                    y1 = vy + sa * ay
+                    for sb in (1, -1):
+                        x2 = x1 + sb * bx
+                        y2 = y1 + sb * by
+
+                        x = x2 + cx
+                        y = y2 + cy
+                        if (x or y) and _encode(x, y) in deltas:
+                            return False
+
+                        x = x2 - cx
+                        y = y2 - cy
+                        if (x or y) and _encode(x, y) in deltas:
+                            return False
+
+    return True
 
 
 def _even_masks(k: int) -> List[int]:
@@ -157,6 +238,40 @@ def _has_unit_coordinate(points: Sequence[Point]) -> bool:
     return False
 
 
+def _has_valid_oriented_vectors(
+    pairs: Sequence[Tuple[Point, Point]],
+    circle_points: Sequence[Point],
+    k: int,
+    masks: Sequence[int],
+    n: int,
+) -> bool:
+    deltas = _displacement_set(circle_points)
+    selected: List[Point] = []
+
+    def dfs(start: int) -> bool:
+        if len(selected) == k:
+            centers = _centers_from_vectors(selected, masks)
+            return _quick_harmony_count_equals_n(
+                centers, circle_points, n
+            ) and _strict_perfect_check(centers, circle_points, n)
+
+        needed = k - len(selected)
+        for pair_index in range(start, len(pairs) - needed + 1):
+            # A global sign flip leaves the construction equivalent, so the
+            # first chosen pair needs only one orientation.
+            choices = (pairs[pair_index][0],) if not selected else pairs[pair_index]
+            for vector in choices:
+                if not _passes_four_vector_prune(selected, vector, deltas):
+                    continue
+                selected.append(vector)
+                if dfs(pair_index + 1):
+                    return True
+                selected.pop()
+        return False
+
+    return dfs(0)
+
+
 def find_min_radius_sq_for_parity_family(k: int, m_limit: int, filtered: bool) -> int:
     """
     Search the parity-subset construction with k vectors:
@@ -166,15 +281,17 @@ def find_min_radius_sq_for_parity_family(k: int, m_limit: int, filtered: bool) -
     n = 1 << (k - 1)
 
     for m in range(1, m_limit + 1):
-        circle_points = lattice_points_on_circle(m)
-        p = len(circle_points) // 2
+        p = antipodal_pair_count(m)
         if p < k:
             continue
 
         # Filters from the previous verified rollout: they keep the k=10 search practical.
+        if filtered and p not in (k, k + 2):
+            continue
+
+        circle_points = lattice_points_on_circle(m)
+
         if filtered:
-            if p not in (k, k + 2):
-                continue
             if not _has_unit_coordinate(circle_points):
                 continue
 
@@ -182,20 +299,8 @@ def find_min_radius_sq_for_parity_family(k: int, m_limit: int, filtered: bool) -
         if len(pairs) != p:
             continue
 
-        for comb in itertools.combinations(range(p), k):
-            chosen_pairs = [pairs[i] for i in comb]
-
-            # Global sign flip leaves the construction equivalent.
-            for bits in range(1 << (k - 1)):
-                oriented: List[Point] = [chosen_pairs[0][0]]
-                for i in range(1, k):
-                    oriented.append(chosen_pairs[i][(bits >> (i - 1)) & 1])
-
-                centers = _centers_from_vectors(oriented, masks)
-                if not _quick_harmony_count_equals_n(centers, circle_points, n):
-                    continue
-                if _strict_perfect_check(centers, circle_points, n):
-                    return m
+        if _has_valid_oriented_vectors(pairs, circle_points, k, masks, n):
+            return m
 
     raise RuntimeError(f"No solution found up to m={m_limit}")
 

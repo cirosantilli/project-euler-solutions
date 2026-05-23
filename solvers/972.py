@@ -1,123 +1,101 @@
 #!/usr/bin/env python
 
-"""
-By GPT-5. Runtime: 53.2s on pypy3 3.11.13, Ubuntu 25.10, Lenovo ThinkPad P14s.
-"""
-
-# Save as solve_euler_972.py and run: python solve_euler_972.py
-from math import gcd
-from collections import defaultdict
-from math import lcm
-import time
+from math import gcd, lcm
 
 
-def rationals_pairs(N):
-    lst = []
-    for d in range(1, N + 1):
-        for n in range(-d + 1, d):
-            if gcd(abs(n), d) == 1:
-                lst.append((n, d))
-    return lst
+def coordinate_values(n):
+    scale = 1
+    for d in range(1, n + 1):
+        scale = lcm(scale, d)
+
+    values = {0}
+    for d in range(2, n + 1):
+        step = scale // d
+        for a in range(1, d):
+            if gcd(a, d) == 1:
+                v = a * step
+                values.add(v)
+                values.add(-v)
+
+    return scale, sorted(values)
 
 
-def build_points(N):
-    X = rationals_pairs(N)
-    pts = []
-    # For each pair of rational coords (x = nx/dx, y = ny/dy) keep if inside unit circle
-    for nx, dx in X:
-        dx2 = dx * dx
-        for ny, dy in X:
-            dy2 = dy * dy
-            if nx * nx * dy2 + ny * ny * dx2 < dx2 * dy2:
-                pts.append((nx, dx, ny, dy))
-    return pts
+def build_lifted_points(n):
+    scale, coords = coordinate_values(n)
+    scale2 = scale * scale
+    squares = {x: x * x for x in coords}
+
+    points = []
+    for x in coords:
+        x2 = squares[x]
+        for y in coords:
+            z0 = x2 + squares[y]
+            if z0 < scale2:
+                points.append((x, y, z0 + scale2))
+    return points
 
 
-def to_scaled_components(nx1, dx1, ny1, dy1, nx2, dx2, ny2, dy2):
-    D1 = lcm(dx1, dy1)
-    X1 = nx1 * (D1 // dx1)
-    Y1 = ny1 * (D1 // dy1)
-    D2 = lcm(dx2, dy2)
-    X2 = nx2 * (D2 // dx2)
-    Y2 = ny2 * (D2 // dy2)
-    D = lcm(D1, D2)
-    mul1 = D // D1
-    mul2 = D // D2
-    X1 *= mul1
-    Y1 *= mul1
-    X2 *= mul2
-    Y2 *= mul2
-    return X1, Y1, X2, Y2, D
-
-
-def normalized_dir_from_scaled(X, Y):
-    xi = X
-    yi = Y
-    if xi == 0 and yi == 0:
-        return (0, 0)
-    g = gcd(abs(xi), abs(yi))
-    xi //= g
-    yi //= g
-    if xi < 0 or (xi == 0 and yi < 0):
-        xi = -xi
-        yi = -yi
-    return (xi, yi)
-
-
-def geodesic_id_fast_int(p, q):
-    nx1, dx1, ny1, dy1 = p
-    nx2, dx2, ny2, dy2 = q
-    X1, Y1, X2, Y2, D = to_scaled_components(nx1, dx1, ny1, dy1, nx2, dx2, ny2, dy2)
-    cross = X1 * Y2 - Y1 * X2
-    if cross == 0:
-        if X1 == 0 and Y1 == 0:
-            dirpair = normalized_dir_from_scaled(X2, Y2)
-        else:
-            dirpair = normalized_dir_from_scaled(X1, Y1)
-        return ("L", dirpair)
-    # R1 = X1^2 + Y1^2 + D^2 ; R2 similar
-    R1 = X1 * X1 + Y1 * Y1 + D * D
-    R2 = X2 * X2 + Y2 * Y2 + D * D
-    # integer numerators for center formula (see explanation)
-    numx = R1 * Y2 - Y1 * R2
-    numy = X1 * R2 - R1 * X2
-    den = 2 * D * cross
-    if den < 0:
-        den = -den
-        numx = -numx
-        numy = -numy
-    g = gcd(gcd(abs(numx), abs(numy)), den)
-    if g > 1:
-        numx //= g
-        numy //= g
-        den //= g
-    return ("C", (numx, numy, den))
-
-
-def compute_T(N):
-    pts = build_points(N)
-    n = len(pts)
-    start = time.time()
-    geods = {}
-    for i in range(n):
-        p = pts[i]
-        for j in range(i + 1, n):
-            gid = geodesic_id_fast_int(p, pts[j])
-            if gid in geods:
-                s = geods[gid]
-                s.add(i)
-                s.add(j)
-            else:
-                geods[gid] = {i, j}
-    total = 0
-    for s in geods.values():
-        k = len(s)
-        if k >= 3:
-            total += k * (k - 1) * (k - 2)
+def add_run(total, run_len):
+    if run_len >= 2:
+        total += run_len * (run_len - 1) // 2
     return total
+
+
+def count_unordered_triples(points):
+    total = 0
+    m = len(points)
+
+    for i in range(m - 2):
+        px, py, pz = points[i]
+        keys = []
+
+        if px:
+            for j in range(i + 1, m):
+                qx, qy, qz = points[j]
+                a = py * qx - px * qy
+                b = pz * qx - px * qz
+                g = gcd(abs(a), abs(b))
+                a //= g
+                b //= g
+                if a < 0 or (a == 0 and b < 0):
+                    a = -a
+                    b = -b
+                keys.append((a, b))
+        else:
+            for j in range(i + 1, m):
+                qx, qy, qz = points[j]
+                a = qx
+                b = pz * qy - py * qz
+                g = gcd(abs(a), abs(b))
+                a //= g
+                b //= g
+                if a < 0 or (a == 0 and b < 0):
+                    a = -a
+                    b = -b
+                keys.append((a, b))
+
+        keys.sort()
+        run_len = 1
+        prev = keys[0]
+        for key in keys[1:]:
+            if key == prev:
+                run_len += 1
+            else:
+                total = add_run(total, run_len)
+                prev = key
+                run_len = 1
+        total = add_run(total, run_len)
+
+    return total
+
+
+def compute_T(n):
+    points = build_lifted_points(n)
+    return 6 * count_unordered_triples(points)
 
 
 if __name__ == "__main__":
     assert compute_T(2) == 24
     assert compute_T(3) == 1296
+    assert compute_T(4) == 5052
     print(compute_T(12))

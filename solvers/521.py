@@ -8,7 +8,6 @@ smallest prime factor is p are counted once and then removed from the filtered
 tables.
 """
 
-from array import array
 from math import isqrt
 
 
@@ -41,14 +40,14 @@ def filtered_smpf_sum(n: int) -> int:
 
     root = isqrt(n)
 
-    count_small = array("Q", [0]) * (root + 1)
-    sum_small = array("I", [0]) * (root + 1)
+    count_small = [0] * (root + 1)
+    sum_small = [0] * (root + 1)
     for x in range(1, root + 1):
         count_small[x] = x - 1
         sum_small[x] = initial_sum(x)
 
-    count_large = array("Q", [0]) * (root + 1)
-    sum_large = array("I", [0]) * (root + 1)
+    count_large = [0] * (root + 1)
+    sum_large = [0] * (root + 1)
     for d in range(1, root + 1):
         x = n // d
         count_large[d] = x - 1

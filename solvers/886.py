@@ -1,282 +1,257 @@
 #!/usr/bin/env python
 """
-Project Euler 886: Coprime Permutations
+Project Euler 886: Coprime permutations.
 
-Count permutations of {2,3,...,n} such that adjacent numbers are coprime.
-For n=34, output P(34) mod 83,456,729.
-
-Key observations used:
-- All even numbers are pairwise non-coprime (share factor 2), so evens cannot be adjacent.
-- Therefore any valid permutation must alternate parity.
-- Reduce cross-parity coprimality checks to bitmasks of *relevant odd primes*.
-- Compress numbers into "types" by their relevant-prime masks.
-- Count alternating type-sequences via DP with memoization over remaining type-counts.
-- Multiply by factorials within each type to restore distinct labels.
-
-No external libraries used.
+For n = 2m, adding the vertex 1 turns the forced alternating path into a
+Hamiltonian cycle in a balanced bipartite coprimality graph.  The count is then
+evaluated by the determinant/permanent inclusion-exclusion identity described
+in 886.md.
 """
 
-import sys
-
+from itertools import combinations
+from math import gcd
 
 MOD = 83_456_729
 
 
-def sieve_primes_upto(n: int) -> list[int]:
-    if n < 2:
-        return []
-    sieve = bytearray(b"\x01") * (n + 1)
-    sieve[0:2] = b"\x00\x00"
-    p = 2
-    while p * p <= n:
-        if sieve[p]:
-            step = p
-            start = p * p
-            sieve[start : n + 1 : step] = b"\x00" * (((n - start) // step) + 1)
-        p += 1
-    return [i for i in range(2, n + 1) if sieve[i]]
+def binomial_table(n: int) -> list[list[int]]:
+    comb = [[0] * (n + 1) for _ in range(n + 1)]
+    for i in range(n + 1):
+        comb[i][0] = comb[i][i] = 1
+        for j in range(1, i):
+            comb[i][j] = comb[i - 1][j - 1] + comb[i - 1][j]
+    return comb
 
 
-def odd_prime_factors_set(x: int, primes: list[int]) -> set[int]:
-    """Return set of odd prime factors of x (removing all powers of 2 first)."""
-    while (x & 1) == 0:
-        x //= 2
-    s: set[int] = set()
-    for p in primes:
-        if p == 2:
-            continue
-        if p * p > x:
-            break
-        if x % p == 0:
-            s.add(p)
-            while x % p == 0:
-                x //= p
-    if x > 1:  # remaining odd prime
-        s.add(x)
-    return s
+def determinant_mod(matrix: list[list[int]], mod: int) -> int:
+    size = len(matrix)
+    if size == 0:
+        return 1
 
-
-def build_mixed_radix_tables(max_counts: list[int]):
-    """
-    Build:
-      - multipliers for encoding a vector of remaining counts into an int index
-      - dec[idx][i] = idx' if we decrement count i (or -1 if not possible)
-      - sum_counts[idx] = sum of digits (remaining total items in that side)
-    """
-    rad = [c + 1 for c in max_counts]
-    mult = [1] * len(max_counts)
-    prod = 1
-    for i in range(len(max_counts)):
-        mult[i] = prod
-        prod *= rad[i]
-    total_states = prod
-
-    # Precompute decrement transitions and sums
-    dec = [[-1] * len(max_counts) for _ in range(total_states)]
-    sum_counts = [0] * total_states
-    for idx in range(total_states):
-        s = 0
-        for i in range(len(max_counts)):
-            d = (idx // mult[i]) % rad[i]
-            s += d
-            if d:
-                dec[idx][i] = idx - mult[i]
-        sum_counts[idx] = s
-
-    init_idx = 0
-    for c, m in zip(max_counts, mult):
-        init_idx += c * m
-
-    return total_states, mult, dec, sum_counts, init_idx
-
-
-def factorials_mod(n: int, mod: int) -> list[int]:
-    f = [1] * (n + 1)
-    for i in range(2, n + 1):
-        f[i] = (f[i - 1] * i) % mod
-    return f
-
-
-def count_alternating_sequences(
-    even_masks: list[int],
-    even_counts: list[int],
-    odd_masks: list[int],
-    odd_counts: list[int],
-    mod: int,
-    start_with_even: bool,
-) -> int:
-    """
-    Count alternating sequences of type-masks using all items from both sides exactly once:
-      if start_with_even:
-        E O E O ... (end parity determined by counts)
-      else:
-        O E O E ...
-    Items within each mask-type are indistinguishable here.
-    """
-    # Build mixed-radix encodings for remaining-count vectors
-    odd_total, _, odd_dec, odd_sum, odd_init = build_mixed_radix_tables(odd_counts)
-    even_total, _, even_dec, even_sum, even_init = build_mixed_radix_tables(even_counts)
-
-    # Compatibility lists: type i on one side can follow type j on the other iff masks disjoint
-    even_to_odd = [[] for _ in range(len(even_masks))]
-    odd_to_even = [[] for _ in range(len(odd_masks))]
-    for i, em in enumerate(even_masks):
-        for j, om in enumerate(odd_masks):
-            if (em & om) == 0:
-                even_to_odd[i].append(j)
-                odd_to_even[j].append(i)
-
-    # Memoization dictionaries keyed by packed integers
-    memo_even: dict[int, int] = {}
-    memo_odd: dict[int, int] = {}
-
-    # Pack keys tightly to reduce tuple overhead
-    # For dp_even: key = ((e_idx * odd_total + o_idx) * len(even_masks) + last_even_type)
-    # For dp_odd:  key = ((e_idx * odd_total + o_idx) * len(odd_masks)  + last_odd_type)
-    def dp_even(last_i: int, e_idx: int, o_idx: int) -> int:
-        if even_sum[e_idx] == 0 and odd_sum[o_idx] == 0:
-            return 1
-        if odd_sum[o_idx] == 0:
+    a = [row[:] for row in matrix]
+    det = 1
+    for col in range(size):
+        pivot = -1
+        for row in range(col, size):
+            if a[row][col] % mod:
+                pivot = row
+                break
+        if pivot < 0:
             return 0
-        key = (e_idx * odd_total + o_idx) * len(even_masks) + last_i
-        v = memo_even.get(key)
-        if v is not None:
-            return v
 
-        total = 0
-        for j in even_to_odd[last_i]:
-            no = odd_dec[o_idx][j]
-            if no != -1:
-                total += dp_odd(j, e_idx, no)
-        total %= mod
-        memo_even[key] = total
-        return total
+        if pivot != col:
+            a[col], a[pivot] = a[pivot], a[col]
+            det = -det
 
-    def dp_odd(last_j: int, e_idx: int, o_idx: int) -> int:
-        if even_sum[e_idx] == 0 and odd_sum[o_idx] == 0:
-            return 1
-        if even_sum[e_idx] == 0:
-            return 0
-        key = (e_idx * odd_total + o_idx) * len(odd_masks) + last_j
-        v = memo_odd.get(key)
-        if v is not None:
-            return v
+        pivot_value = a[col][col] % mod
+        det = (det * pivot_value) % mod
+        inv_pivot = pow(pivot_value, mod - 2, mod)
 
-        total = 0
-        for i in odd_to_even[last_j]:
-            ne = even_dec[e_idx][i]
-            if ne != -1:
-                total += dp_even(i, ne, o_idx)
-        total %= mod
-        memo_odd[key] = total
-        return total
+        for row in range(col + 1, size):
+            if a[row][col]:
+                factor = a[row][col] * inv_pivot % mod
+                target = a[row]
+                source = a[col]
+                for j in range(col, size):
+                    target[j] = (target[j] - factor * source[j]) % mod
 
-    total = 0
-    if start_with_even:
-        # First choose an even type, then alternate
-        for i in range(len(even_masks)):
-            ne = even_dec[even_init][i]
-            if ne != -1:
-                total += dp_even(i, ne, odd_init)
-    else:
-        # First choose an odd type, then alternate
-        for j in range(len(odd_masks)):
-            no = odd_dec[odd_init][j]
-            if no != -1:
-                total += dp_odd(j, even_init, no)
+    return det % mod
 
-    return total % mod
+
+def grouped_classes(masks: list[int]) -> list[tuple[int, int, int]]:
+    """
+    Return (representative_index, count, mask), preserving first-seen order.
+    """
+    seen: dict[int, int] = {}
+    classes: list[list[int]] = []
+    for idx, mask in enumerate(masks):
+        class_idx = seen.get(mask)
+        if class_idx is None:
+            seen[mask] = len(classes)
+            classes.append([idx, 1, mask])
+        else:
+            classes[class_idx][1] += 1
+    return [(rep, count, mask) for rep, count, mask in classes]
 
 
 def P(n: int, mod: int = MOD) -> int:
-    """
-    Return P(n) modulo mod.
-    """
     if n < 2:
         return 0
+    if n & 1:
+        raise ValueError("this implementation expects even n")
 
-    nums = list(range(2, n + 1))
-    evens = [x for x in nums if (x & 1) == 0]
-    odds = [x for x in nums if (x & 1) == 1]
+    m = n // 2
+    odds = list(range(1, n, 2))
+    evens = list(range(2, n + 1, 2))
 
-    # Parity alternation feasibility
-    if abs(len(evens) - len(odds)) > 1:
-        return 0
+    matrix = [[1 if gcd(u, v) == 1 else 0 for v in evens] for u in odds]
 
-    primes = sieve_primes_upto(n)
+    row_masks = []
+    for row in range(1, m):
+        mask = 0
+        for col in range(m):
+            if matrix[row][col]:
+                mask |= 1 << col
+        row_masks.append(mask)
 
-    # Only odd primes that appear in *evens* can ever block coprimality across parity.
-    relevant_primes_set: set[int] = set()
-    for e in evens:
-        relevant_primes_set |= odd_prime_factors_set(e, primes)
+    col_masks = []
+    for col in range(m):
+        mask = 0
+        for row in range(m):
+            if matrix[row][col]:
+                mask |= 1 << row
+        col_masks.append(mask)
 
-    relevant_primes = sorted(relevant_primes_set)
-    prime_to_bit = {p: i for i, p in enumerate(relevant_primes)}
+    row_classes = grouped_classes(row_masks)
+    col_classes = grouped_classes(col_masks)
+    row_class_count = len(row_classes)
+    col_class_count = len(col_classes)
 
-    def mask_of(x: int) -> int:
-        # mask over relevant odd primes only
-        m = 0
-        for p in relevant_primes:
-            if x % p == 0:
-                m |= 1 << prime_to_bit[p]
-        return m
+    # Edges between row-class representatives and column-class representatives.
+    class_entry = [
+        [matrix[row_rep + 1][col_rep] for col_rep, _, _ in col_classes]
+        for row_rep, _, _ in row_classes
+    ]
 
-    # Compress each side by mask
-    even_count_map: dict[int, int] = {}
-    odd_count_map: dict[int, int] = {}
-    for e in evens:
-        m = mask_of(e)
-        even_count_map[m] = even_count_map.get(m, 0) + 1
-    for o in odds:
-        m = mask_of(o)
-        odd_count_map[m] = odd_count_map.get(m, 0) + 1
+    # Row support over column classes; the distinguished row 1 sees every column.
+    row_supports = []
+    for row_rep, _, _ in row_classes:
+        support = 0
+        for col_class, (col_rep, _, _) in enumerate(col_classes):
+            if matrix[row_rep + 1][col_rep]:
+                support |= 1 << col_class
+        row_supports.append(support)
+    distinguished_support = (1 << col_class_count) - 1
 
-    even_masks = sorted(even_count_map.keys())
-    odd_masks = sorted(odd_count_map.keys())
-    even_counts = [even_count_map[m] for m in even_masks]
-    odd_counts = [odd_count_map[m] for m in odd_masks]
+    comb = binomial_table(m)
+    permanent_cache: dict[tuple[int, int], int] = {}
 
-    # Count alternating type-sequences (indistinguishable within each type)
-    seq_count = 0
-    if len(evens) == len(odds) + 1:
-        # Must start/end with even
-        seq_count = count_alternating_sequences(
-            even_masks, even_counts, odd_masks, odd_counts, mod, start_with_even=True
-        )
-    elif len(odds) == len(evens) + 1:
-        # Must start/end with odd
-        seq_count = count_alternating_sequences(
-            even_masks, even_counts, odd_masks, odd_counts, mod, start_with_even=False
-        )
-    else:
-        # Equal sizes: can start with either parity
-        a = count_alternating_sequences(
-            even_masks, even_counts, odd_masks, odd_counts, mod, start_with_even=True
-        )
-        b = count_alternating_sequences(
-            even_masks, even_counts, odd_masks, odd_counts, mod, start_with_even=False
-        )
-        seq_count = (a + b) % mod
+    def grouped_permanent(row_selected: int, col_selected: int) -> int:
+        key = (row_selected, col_selected)
+        cached = permanent_cache.get(key)
+        if cached is not None:
+            return cached
 
-    # Multiply by factorials within each mask-type to distinguish labels
-    facts = factorials_mod(n, mod)
-    ways_with_labels = seq_count
-    for c in even_counts:
-        ways_with_labels = (ways_with_labels * facts[c]) % mod
-    for c in odd_counts:
-        ways_with_labels = (ways_with_labels * facts[c]) % mod
+        active_col_classes = []
+        active_col_counts = []
+        for col_class, (_, count, _) in enumerate(col_classes):
+            remaining = count - ((col_selected >> col_class) & 1)
+            if remaining:
+                active_col_classes.append(col_class)
+                active_col_counts.append(remaining)
 
-    return ways_with_labels
+        active_count = len(active_col_classes)
+        row_groups: dict[int, int] = {((1 << active_count) - 1): 1}
+
+        for row_class, (_, count, _) in enumerate(row_classes):
+            remaining = count - ((row_selected >> row_class) & 1)
+            if not remaining:
+                continue
+
+            support = 0
+            original_support = row_supports[row_class]
+            for new_col, old_col in enumerate(active_col_classes):
+                if (original_support >> old_col) & 1:
+                    support |= 1 << new_col
+            row_groups[support] = row_groups.get(support, 0) + remaining
+
+        supports = list(row_groups.keys())
+        row_counts = list(row_groups.values())
+        row_total = sum(row_counts)
+        row_sums = [0] * len(supports)
+        total = 0
+
+        def rec(col_pos: int, chosen: int, coeff: int) -> None:
+            nonlocal total
+            if col_pos == active_count:
+                product = coeff
+                for value, count in zip(row_sums, row_counts):
+                    if value == 0:
+                        return
+                    product = product * pow(value, count, mod) % mod
+                if chosen & 1:
+                    total -= product
+                else:
+                    total += product
+                return
+
+            class_size = active_col_counts[col_pos]
+            affected = [
+                idx
+                for idx, support in enumerate(supports)
+                if (support >> col_pos) & 1
+            ]
+            for take in range(class_size + 1):
+                if take:
+                    for idx in affected:
+                        row_sums[idx] += take
+                rec(
+                    col_pos + 1,
+                    chosen + take,
+                    coeff * comb[class_size][take] % mod,
+                )
+                if take:
+                    for idx in affected:
+                        row_sums[idx] -= take
+
+        rec(0, 0, 1)
+        if row_total & 1:
+            total = -total
+        total %= mod
+        permanent_cache[key] = total
+        return total
+
+    row_combinations: list[list[tuple[tuple[int, ...], int, int]]] = [
+        [] for _ in range(col_class_count + 1)
+    ]
+    col_combinations: list[list[tuple[tuple[int, ...], int, int]]] = [
+        [] for _ in range(col_class_count + 1)
+    ]
+
+    for size in range(col_class_count + 1):
+        for chosen in combinations(range(row_class_count), size):
+            mask = 0
+            multiplicity = 1
+            for row_class in chosen:
+                mask |= 1 << row_class
+                multiplicity *= row_classes[row_class][1]
+            row_combinations[size].append((chosen, mask, multiplicity % mod))
+
+        for chosen in combinations(range(col_class_count), size):
+            mask = 0
+            multiplicity = 1
+            for col_class in chosen:
+                mask |= 1 << col_class
+                multiplicity *= col_classes[col_class][1]
+            col_combinations[size].append((chosen, mask, multiplicity % mod))
+
+    answer = 0
+    for size in range(col_class_count + 1):
+        sign = -1 if size & 1 else 1
+        for row_choice, row_mask, row_mult in row_combinations[size]:
+            for col_choice, col_mask, col_mult in col_combinations[size]:
+                det_matrix = [
+                    [class_entry[row_class][col_class] for col_class in col_choice]
+                    for row_class in row_choice
+                ]
+                det = determinant_mod(det_matrix, mod)
+                if det == 0:
+                    continue
+
+                perm = grouped_permanent(row_mask, col_mask)
+                term = row_mult * col_mult % mod
+                term = term * det * det % mod
+                term = term * perm * perm % mod
+                answer += sign * term
+
+    return answer % mod
 
 
 def main() -> None:
-    # Test values from the problem statement
     assert P(4, MOD) == 2
     assert P(10, MOD) == 576
-
     print(P(34, MOD))
 
 
 if __name__ == "__main__":
-    sys.setrecursionlimit(1_000_000)
     main()

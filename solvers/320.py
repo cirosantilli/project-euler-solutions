@@ -1,124 +1,85 @@
 #!/usr/bin/env python
-"""Adapted from https://github.com/igorvanloo/Project-Euler-Explained/blob/19f85895945a2c9b688f85da142bae13f37dab65/Finished%20Problems/pe00320%20-%20Factorials%20divisible%20by%20a%20huge%20integer.py"""
 
-"""
-Created on Sun Jun 12 23:04:41 2022
-
-@author: igorvanloo
-"""
-
-"""
-Project Euler Problem 320
-
-if (i!)^1234567890 divides n!
-We can use legendres formula to find how many times a prime occurs in n! using legendres formula, say e,
-then we can perform a bisection algorithm to find the smallest factorial such that there are e*1234567890 factors 
-of i in its factorial
-
-"""
-import math
+K = 1_234_567_890
+MOD = 10**18
 
 
-def prime_factors_sieve(limit):
-    result = [{} for _ in range(limit + 1)]
+def build_spf(limit):
+    spf = [0] * (limit + 1)
     for i in range(2, limit + 1):
-        if len(result[i]) == 0:
-            # prime number found
-            for j in range(i, limit + 1, i):
-                n = j
-                if i in result[j]:
-                    while n % i == 0:
-                        n //= i
-                        result[j][i] += 1
-                else:
-                    result[j][i] = 1
-                    n //= i
-                    while n % i == 0:
-                        n //= i
-                        result[j][i] += 1
-    return result
+        if spf[i] == 0:
+            spf[i] = i
+            if i * i <= limit:
+                for j in range(i * i, limit + 1, i):
+                    if spf[j] == 0:
+                        spf[j] = i
+    return spf
 
 
-def prime_factors(n):
-    factors = {}
-    d = 2
-    while n > 1:
-        while n % d == 0:
-            if d in factors:
-                factors[d] += 1
-            else:
-                factors[d] = 1
-            n /= d
-        d = d + 1
-        if d * d > n:
-            if n > 1:
-                n = int(n)
-                if d in factors:
-                    factors[n] += 1
-                else:
-                    factors[n] = 1
-            break
-    return factors
-
-
-def legendre_factorial(n, p):
-    # Modified legendre factorial function, finds number of factors of p in n!
+def factorial_valuation(n, p):
     total = 0
-    for i in range(1, int(math.floor(math.log(n, p))) + 1):
-        total += n // (p**i)
+    while n:
+        n //= p
+        total += n
     return total
 
 
-def inv_legendre_factorial(p, e):
-    # Finds smallest number, n, such that p^e divides n!
-    # Use bisection method
-    low = p  # Low guess is n = p
-    high = p * e  # high guess is n = p*e
-    while high - low > 1:
-        mid = (low + high) // 2
-        if legendre_factorial(mid, p) >= e:
-            # If middle number has more factors of p than needed
-            # make high = mid
-            high = mid
+def inverse_factorial_valuation(p, target, lower_bound):
+    if factorial_valuation(lower_bound, p) >= target:
+        return lower_bound
+
+    lo = lower_bound
+    step = p
+    hi = lo + step
+    while factorial_valuation(hi, p) < target:
+        lo = hi
+        step <<= 1
+        hi += step
+
+    while hi - lo > 1:
+        mid = (lo + hi) >> 1
+        if factorial_valuation(mid, p) >= target:
+            hi = mid
         else:
-            # Otherwise low = mid
-            low = mid
-    # After high and low are one integer apart we test high and low
-    if legendre_factorial(low, p) >= e:
-        # If low has enough prime factors, we return low
-        return low
-    else:
-        # Otherwise return high
-        return high
+            lo = mid
+    return hi
 
 
-def compute(limit):
-    exp = 1234567890
-    mod = 10**18
-    S = 0
+def compute(limit=1_000_000):
+    spf = build_spf(limit)
+    targets = [0] * (limit + 1)
+    witnesses = [0] * (limit + 1)
+    current = 0
+    total = 0
 
-    pf = prime_factors_sieve(limit)
-    curr_pf = {2: 7, 3: 4, 5: 1, 7: 1}
+    for i in range(2, limit + 1):
+        n = i
+        while n > 1:
+            p = spf[n]
+            exponent = 0
+            while n % p == 0:
+                n //= p
+                exponent += 1
 
-    curr_N = 9876543138
+            target = targets[p] + K * exponent
+            targets[p] = target
+            if factorial_valuation(current, p) >= target:
+                continue
 
-    for n in range(10, limit + 1):
-        new_pf = pf[n]
-        for p in new_pf:
-            if p in curr_pf:
-                curr_pf[p] += new_pf[p]
-                t = inv_legendre_factorial(p, curr_pf[p] * exp)
-                if t > curr_N:
-                    curr_N = t
-            else:
-                curr_pf[p] = new_pf[p]
-                t = inv_legendre_factorial(p, curr_pf[p] * exp)
-                if t > curr_N:
-                    curr_N = t
-        S += curr_N
-        S %= mod
-    return S % mod
+            lower = target * (p - 1)
+            if witnesses[p] > lower:
+                lower = witnesses[p]
+            witness = inverse_factorial_valuation(p, target, lower)
+            witnesses[p] = witness
+            if witness > current:
+                current = witness
+
+        if i >= 10:
+            total = (total + current) % MOD
+
+    return total
 
 
 if __name__ == "__main__":
-    print(compute(1000000))
+    assert compute(1000) == 614_538_266_565_663
+    print(compute())

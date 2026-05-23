@@ -196,22 +196,32 @@ def solve(N: int) -> int:
 
     P = len(primes)
     base = P + 1  # for compact memo keys
-
-    def idx_of(x: int) -> int:
-        if x <= root:
-            return idx_small[x]
-        return idx_large[N // x]
+    prime_squares = [p * p for p in primes]
+    prime_cubes = [(p * p % MOD) * p % MOD for p in primes]
+    prime_chi = [chi(p) for p in primes]
+    prime_weights = [(prime_cubes[i] - prime_chi[i]) % MOD for i in range(P)]
 
     def prime_sum_upto(x: int) -> int:
         if x < 2:
             return 0
-        return gprime[idx_of(x)]
+        if x <= root:
+            return gprime[idx_small[x]]
+        return gprime[idx_large[N // x]]
 
-    def prime_sum_range(lo: int, hi: int) -> int:
-        """Sum over primes p with lo < p <= hi of (p^3 - chi(p)) mod MOD."""
-        if hi <= lo:
+    # prefix_before[i] = sum_{j < i} g(primes[j]), with the same weight used
+    # by gprime.  Recursion ranges always begin immediately after a prime.
+    prefix_before = [0] * (P + 1)
+    for i, p in enumerate(primes):
+        prefix_before[i + 1] = prime_sum_upto(p)
+
+    def tail_prime_sum(x: int, idx: int) -> int:
+        """Sum g(p) over primes p >= primes[idx] and p <= x."""
+        if idx >= P:
+            if P == 0 or x <= primes[-1]:
+                return 0
+        elif x < primes[idx]:
             return 0
-        return (prime_sum_upto(hi) - prime_sum_upto(lo)) % MOD
+        return prime_sum_upto(x) - prefix_before[idx]
 
     memo = {}
 
@@ -226,53 +236,61 @@ def solve(N: int) -> int:
 
         if idx >= P:
             # only primes > last listed prime can appear (besides 1)
-            lo = primes[P - 1]
-            return (1 + prime_sum_range(lo, n)) % MOD
+            return (1 + tail_prime_sum(n, idx)) % MOD
 
         p0 = primes[idx]
         if p0 > n:
             return 1
 
-        key = n * base + idx
-        if key in memo:
-            return memo[key]
-
-        lo = primes[idx - 1] if idx > 0 else 1
-
         # If p0^2 > n, there are no composites built from primes >= p0.
-        if p0 * p0 > n:
-            res = (1 + prime_sum_range(lo, n)) % MOD
-            memo[key] = res
-            return res
+        if prime_squares[idx] > n:
+            return (1 + tail_prime_sum(n, idx)) % MOD
 
-        res = (1 + prime_sum_range(lo, n)) % MOD
+        key = n * base + idx
+        cached = memo.get(key)
+        if cached is not None:
+            return cached
+
+        res = 1 + tail_prime_sum(n, idx)
 
         for j in range(idx, P):
             p = primes[j]
-            pp = p * p
+            pp = prime_squares[j]
             if pp > n:
                 break
 
             # exponent 1: composite part only (avoid counting the prime itself twice)
-            gp1 = ((p * p % MOD) * p - chi(p)) % MOD  # g(p)
-            res = (res + gp1 * ((S(n // p, j + 1) - 1) % MOD)) % MOD
+            q = n // p
+            next_idx = j + 1
+            gp1 = prime_weights[j]  # g(p)
+            if next_idx >= P or prime_squares[next_idx] > q:
+                rest = tail_prime_sum(q, next_idx)
+            else:
+                rest = S(q, next_idx) - 1
+            res += gp1 * rest
 
             # exponents >= 2
-            sign = chi(p)
-            p3 = (p * p % MOD) * p % MOD
+            sign = prime_chi[j]
+            p3 = prime_cubes[j]
             prev = p3  # p^(3*1)
             cur = (prev * p3) % MOD  # p^(3*2)
             pe_int = pp
 
             while pe_int <= n:
                 gp = (cur - sign * prev) % MOD  # g(p^e)
-                res = (res + gp * S(n // pe_int, j + 1)) % MOD
+                q = n // pe_int
+                if next_idx >= P or prime_squares[next_idx] > q:
+                    rest = 1 + tail_prime_sum(q, next_idx)
+                else:
+                    rest = S(q, next_idx)
+                res += gp * rest
 
                 if pe_int > n // p:
                     break
                 pe_int *= p
                 prev, cur = cur, (cur * p3) % MOD
 
+        res %= MOD
         memo[key] = res
         return res
 

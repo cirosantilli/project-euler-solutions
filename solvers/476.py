@@ -22,7 +22,6 @@ from __future__ import annotations
 
 import math
 import sys
-from array import array
 from typing import Tuple
 
 
@@ -104,26 +103,18 @@ def S(n: int) -> float:
         x = a+b-c  (so c = a+b-x), and 1 ≤ x ≤ a.
     This removes a subtraction and makes several expressions cheaper.
 
-    Uses a precomputed sqrt and invsqrt table for integers up to 4*n*n to avoid
-    per-triangle sqrt() calls for half-angle sines.
+    The full run touches hundreds of millions of triangles, so large lookup
+    tables for square roots are slower than direct sqrt calls: the table access
+    pattern loses too much to cache misses.  The formula below keeps memory
+    constant and leaves the tight loop as arithmetic plus two square roots.
     """
     if n < 2:
         return 0.0
 
-    maxv = 4 * n * n
-    sqrt_tab = array("d", [0.0]) * (maxv + 1)
-    inv_tab = array("d", [0.0]) * (maxv + 1)
-
-    for i in range(1, maxv + 1):
-        s = math.sqrt(i)
-        sqrt_tab[i] = s
-        inv_tab[i] = 1.0 / s
-
     total_count = _count_triangles(n)
 
-    pi = math.pi
+    sqrt = math.sqrt
     total = 0.0
-    comp = 0.0  # Kahan compensation
 
     n2 = n // 2
     for a in range(1, n2 + 1):
@@ -131,8 +122,6 @@ def S(n: int) -> float:
         foura = 4 * a
         for b in range(a, n - a + 1):
             s_ab = a + b
-            if s_ab > n:
-                break
             twos = 2 * s_ab
             twob = 2 * b
             fourb = 4 * b
@@ -147,12 +136,12 @@ def S(n: int) -> float:
                 r2 = (x * t1 * t2) / (4.0 * (twos - x))
 
                 # sin(A/2)^2 = x(2a-x) / (4*b*c)
-                sA = sqrt_tab[x * t1] * inv_tab[fourb * c]
+                sA = sqrt((x * t1) / (fourb * c))
                 kA = (1.0 - sA) / (1.0 + sA)
                 kA2 = kA * kA
 
                 # sin(B/2)^2 = x(2b-x) / (4*a*c)
-                sB = sqrt_tab[x * t2] * inv_tab[foura * c]
+                sB = sqrt((x * t2) / (foura * c))
 
                 # Decide configuration:
                 # if sin(A/2) ≥ tan(B/4) then 3rd circle goes to angle B; else stack at A.
@@ -163,15 +152,9 @@ def S(n: int) -> float:
                 else:
                     factor = 1.0 + kA2 + kA2 * kA2
 
-                Rval = pi * r2 * factor
+                total += r2 * factor
 
-                # Kahan summation
-                y = Rval - comp
-                t = total + y
-                comp = (t - total) - y
-                total = t
-
-    return total / total_count
+    return math.pi * total / total_count
 
 
 def main() -> None:
