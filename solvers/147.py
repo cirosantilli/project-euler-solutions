@@ -1,10 +1,25 @@
 #!/usr/bin/env python
 """Adapted from: https://github.com/stbrumme/euler/blob/b426763514558c3b39f2ec507f271d322088d28a/euler-0147.cpp"""
-MODULO = 1000000007
 
 
 def grid(width: int, height: int) -> int:
     return (width * (width + 1) // 2) * (height * (height + 1) // 2)
+
+
+def capped_descending_sum(cap: int, start: int, last_index: int) -> int:
+    first_descending = min(last_index, start - cap)
+    total = 0
+
+    if first_descending >= 0:
+        total += (first_descending + 1) * cap
+
+    if last_index > first_descending:
+        count = last_index - first_descending
+        lo = first_descending + 1
+        hi = last_index
+        total += count * start - (lo + hi) * count // 2
+
+    return total
 
 
 def diagonal(width: int, height: int, cache) -> int:
@@ -22,30 +37,13 @@ def diagonal(width: int, height: int, cache) -> int:
             for parity in (0, 1):
                 start_x = 2 * i + 1 + parity
                 start_y = 2 * j + 2 - parity
+                x_limit = 2 * a - start_x
+                y_limit = 2 * b - start_y
+                cap = min(x_limit, y_limit)
+                last_width = min(start_y - 1, x_limit - 1)
 
-                stop = False
-                max_height = 999999999
-                current_width = 0
-                while not stop:
-                    current_x = start_x + current_width
-                    current_y = start_y - current_width
-                    if current_y <= 0:
-                        break
-
-                    current_height = 0
-                    while current_height < max_height:
-                        end_x = current_x + current_height
-                        end_y = current_y + current_height
-                        if end_x >= 2 * a or end_y >= 2 * b:
-                            if max_height > current_height:
-                                max_height = current_height
-                            stop = current_height == 0
-                            break
-
-                        count += 1
-                        current_height += 1
-
-                    current_width += 1
+                if cap > 0 and last_width >= 0:
+                    count += capped_descending_sum(cap, x_limit, last_width)
 
     cache[key] = count
     return count

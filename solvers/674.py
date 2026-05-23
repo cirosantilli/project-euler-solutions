@@ -238,7 +238,7 @@ def least_simultaneous_value(e1: Term, e2: Term, mod: Optional[int]) -> int:
 
 
 def load_expressions() -> List[str]:
-    with open("p674_i_expressions.txt", "r", encoding="utf-8") as f:
+    with open("0674_i_expressions.txt", "r", encoding="utf-8") as f:
         return [line.strip() for line in f if line.strip()]
 
 

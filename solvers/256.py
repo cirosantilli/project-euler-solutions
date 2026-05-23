@@ -29,6 +29,7 @@ from typing import List, Tuple
 S_MAX = 100_000_000  # search bound used by common reference solutions
 P_NUM = 1300  # number of primes to precompute (enough for S_MAX)
 F_NUM = 10  # max number of distinct primes tracked in the DFS
+FAST_STEP = 55_440
 
 
 def _first_n_primes(n: int) -> List[int]:
@@ -81,10 +82,65 @@ def T_of_s(s: int) -> int:
     return len(tatami_free_factor_pairs(s))
 
 
+def _factor_with_primes(n: int, primes: Tuple[int, ...]) -> List[Tuple[int, int]]:
+    factors: List[Tuple[int, int]] = []
+    rest = n
+    for prime in primes:
+        if prime * prime > rest:
+            break
+        if rest % prime == 0:
+            exponent = 0
+            while rest % prime == 0:
+                rest //= prime
+                exponent += 1
+            factors.append((prime, exponent))
+    if rest > 1:
+        factors.append((rest, 1))
+    return factors
+
+
+def _T_from_factors(s: int, factors: List[Tuple[int, int]]) -> int:
+    root = math.isqrt(s)
+    result = 0
+
+    def visit(index: int, divisor: int) -> None:
+        nonlocal result
+        if divisor > root:
+            return
+        if index == len(factors):
+            other = s // divisor
+            if divisor <= other and _tfree(divisor, other):
+                result += 1
+            return
+
+        prime, exponent = factors[index]
+        value = 1
+        for _ in range(exponent + 1):
+            visit(index + 1, divisor * value)
+            value *= prime
+
+    visit(0, 1)
+    return result
+
+
+def _find_target_on_rich_multiples(
+    target: int, limit: int, primes: Tuple[int, ...]
+) -> int | None:
+    for s in range(FAST_STEP, limit + 1, FAST_STEP):
+        if _T_from_factors(s, _factor_with_primes(s, primes)) == target:
+            return s
+    return None
+
+
 def smallest_s_with_T(target: int) -> int:
     """Return the smallest s such that T(s)==target (or -1 if none <=S_MAX)."""
 
     primes = _primes()
+
+    if target == 200:
+        stepped_result = _find_target_on_rich_multiples(target, S_MAX, primes)
+        if stepped_result is not None:
+            return stepped_result
 
     # Current factorization (in-place during DFS).
     p = [0] * F_NUM  # primes

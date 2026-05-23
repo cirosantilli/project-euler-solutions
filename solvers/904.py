@@ -10,7 +10,6 @@ No external libraries are used. Single core, no multithreading.
 """
 
 import math
-from math import gcd
 
 
 _DEG2RAD = math.pi / 180.0
@@ -28,7 +27,7 @@ def _g_of_t(t: float) -> float:
 def _root_left(y: float) -> float:
     """Solve g(t)=y on [0, t0] (increasing), by binary search."""
     lo, hi = 0.0, _T0
-    for _ in range(80):
+    for _ in range(35):
         mid = (lo + hi) * 0.5
         if _g_of_t(mid) < y:
             lo = mid
@@ -40,7 +39,7 @@ def _root_left(y: float) -> float:
 def _root_right(y: float) -> float:
     """Solve g(t)=y on [t0, 1] (decreasing), by binary search."""
     lo, hi = _T0, 1.0
-    for _ in range(80):
+    for _ in range(35):
         mid = (lo + hi) * 0.5
         if _g_of_t(mid) > y:
             lo = mid
@@ -116,15 +115,15 @@ def _cf_candidates_circle(x: float, L: int):
 
 def _triangle_from_mn(m: int, n: int):
     """
-    Construct Euclid triple from (m,n), then reduce by gcd(a,b,c) so we work with the
-    underlying primitive shape even if (m,n) is not a primitive generator.
+    Construct the primitive shape represented by the Euclid pair.
     Returns (a,b,c) with a,b legs and c hypotenuse.
     """
     a = m * m - n * n
     b = 2 * m * n
     c = m * m + n * n
-    g = gcd(a, gcd(b, c))
-    return a // g, b // g, c // g
+    if (m + n) % 2 == 0:
+        return a // 2, b // 2, c // 2
+    return a, b, c
 
 
 def _tan_theta_from_legs(a: int, b: int) -> float:
