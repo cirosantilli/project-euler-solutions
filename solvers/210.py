@@ -16,6 +16,23 @@
 
 from __future__ import annotations
 import math
+import os
+from multiprocessing import Pool
+
+
+PARALLEL_STRIP_THRESHOLD = 1_000_000
+MAX_WORKERS = 8
+
+
+def strip_points(args: tuple[int, int, int]) -> int:
+    n, start, stop = args
+    isqrt = math.isqrt
+    total = 0
+    rem = n - start * start
+    for x in range(start, stop):
+        total += 2 * isqrt(rem) + 1
+        rem -= 2 * x + 1
+    return total
 
 
 def circle_points_leq(n: int) -> int:
@@ -39,15 +56,22 @@ def circle_points_leq(n: int) -> int:
     total = (2 * m + 1) ** 2  # all points in the inscribed square
 
     # Count points in the right strip x = m+1..r, y in [-ymax..ymax]
-    strip = 0
-    x = m + 1
-    rem = n - x * x  # rem = n - x^2
-    while x <= r:
-        y = isqrt(rem)
-        strip += 2 * y + 1
-        # Update rem for next x: (x+1)^2 - x^2 = 2x + 1
-        rem -= 2 * x + 1
-        x += 1
+    start = m + 1
+    stop = r + 1
+    strip_count = stop - start
+    if strip_count < PARALLEL_STRIP_THRESHOLD:
+        strip = strip_points((n, start, stop))
+    else:
+        worker_count = min(MAX_WORKERS, os.cpu_count() or 1, strip_count)
+        chunk_size = (strip_count + worker_count - 1) // worker_count
+        chunks = []
+        for i in range(worker_count):
+            chunk_start = start + i * chunk_size
+            chunk_stop = min(start + (i + 1) * chunk_size, stop)
+            if chunk_start < chunk_stop:
+                chunks.append((n, chunk_start, chunk_stop))
+        with Pool(len(chunks)) as pool:
+            strip = sum(pool.map(strip_points, chunks))
 
     total += 4 * strip
     return total

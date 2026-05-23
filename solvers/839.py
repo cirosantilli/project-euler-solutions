@@ -16,22 +16,9 @@ No external libraries are used (only Python standard library).
 
 from __future__ import annotations
 
-from array import array
-
-
 MOD = 50515093
 S0 = 290797
 TARGET_N = 10**7
-
-
-def _new_u64_array() -> array:
-    """Return an array suitable for holding up to ~5e14 without overflow."""
-    # 'Q' is unsigned long long (typically 64-bit). Fallbacks are unlikely to be
-    # needed on the judge, but provided for completeness.
-    try:
-        return array("Q")
-    except ValueError:
-        return array("L")
 
 
 def compute_B(N: int) -> int:
@@ -48,35 +35,42 @@ def compute_B(N: int) -> int:
       * Adjacent blocks are valid iff last(left) <= first(right), i.e.:
             ceil(T_left/L_left) <= floor(T_right/L_right)
         If violated, merge the two blocks and re-evaluate (amortized O(N)).
-      * Each move increases the potential sum(i * a[i]) by exactly 1, so:
-            B(N) = potential(final) - potential(initial)
+      * Each rightward move decreases exactly the prefix sums it crosses, so:
+            B(N) = sum(prefix(initial)) - sum(prefix(final))
     """
     if N <= 1:
         return 0
 
     # Stacks of block lengths and block sums.
-    lens = array("I")
-    sums = _new_u64_array()
+    lens: list[int] = []
+    sums: list[int] = []
 
     s = S0
-    init_potential = 0  # Python int (can grow beyond 64-bit)
+    prefix = 0
+    initial_prefix_total = 0
 
     append_len = lens.append
     append_sum = sums.append
+    pop_len = lens.pop
+    pop_sum = sums.pop
+    size = 0
 
-    for i in range(N):
+    for _ in range(N):
         v = s
-        init_potential += i * v
+        prefix += v
+        initial_prefix_total += prefix
 
         append_len(1)
         append_sum(v)
+        size += 1
 
         # Merge while last(left) > first(right).
-        while len(lens) >= 2:
-            l_left = lens[-2]
-            t_left = sums[-2]
-            l_right = lens[-1]
-            t_right = sums[-1]
+        while size >= 2:
+            last = size - 1
+            l_left = lens[last - 1]
+            t_left = sums[last - 1]
+            l_right = lens[last]
+            t_right = sums[last]
 
             # last(left) = ceil(t_left / l_left)
             # first(right) = floor(t_right / l_right)
@@ -84,35 +78,39 @@ def compute_B(N: int) -> int:
                 break
 
             # merge
-            lens[-2] = l_left + l_right
-            sums[-2] = t_left + t_right
-            lens.pop()
-            sums.pop()
+            lens[last - 1] = l_left + l_right
+            sums[last - 1] = t_left + t_right
+            pop_len()
+            pop_sum()
+            size -= 1
 
         s = (v * v) % MOD
 
-    # Compute potential(final) from the blocks, without expanding to length N.
-    pos = 0
-    final_potential = 0
+    # Compute sum(prefix(final)) from the blocks, without expanding to length N.
+    running_prefix = 0
+    final_prefix_total = 0
 
-    for L, T in zip(lens, sums):
+    for index in range(size):
+        L = lens[index]
+        T = sums[index]
         # Block distribution: base (L-rem times), then base+1 (rem times).
-        base = T // L
-        rem = T - base * L  # same as T % L
+        base, rem = divmod(T, L)
+        low_count = L - rem
 
-        # Sum of indices in [pos, pos+L-1]
-        sum_all = L * (2 * pos + L - 1) // 2
-        final_potential += base * sum_all
+        final_prefix_total += (
+            low_count * running_prefix
+            + base * low_count * (low_count + 1) // 2
+        )
 
         if rem:
-            # Extra +1 on the last rem indices.
-            start_extra = pos + L - rem
-            sum_extra = rem * (2 * start_extra + rem - 1) // 2
-            final_potential += sum_extra
+            after_low = running_prefix + low_count * base
+            final_prefix_total += (
+                rem * after_low + (base + 1) * rem * (rem + 1) // 2
+            )
 
-        pos += L
+        running_prefix += T
 
-    return final_potential - init_potential
+    return initial_prefix_total - final_prefix_total
 
 
 def main() -> None:

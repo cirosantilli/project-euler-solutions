@@ -1,32 +1,53 @@
 #!/usr/bin/env python
-"""Adapted from: https://github.com/stbrumme/euler/blob/b426763514558c3b39f2ec507f271d322088d28a/euler-0145.cpp"""
 
 
-def reverse_number(x: int) -> int:
+def reverse_number(value: int) -> int:
     result = 0
-    while x > 9:
-        digit = x % 10
-        result = result * 10 + digit
-        x //= 10
-    return result * 10 + x
+    while value:
+        result = 10 * result + value % 10
+        value //= 10
+    return result
 
 
-def only_odd(x: int) -> bool:
-    while x > 0:
-        if x % 2 == 0:
+def only_odd(value: int) -> bool:
+    while value:
+        if value % 2 == 0:
             return False
-        x //= 10
+        value //= 10
     return True
 
 
-def count_reversible(limit: int) -> int:
-    factor = 2
+def brute_count_range(start: int, stop: int) -> int:
     count = 0
-    upper = min(limit, 100_000_000)
-    for i in range(11, upper, factor):
-        if only_odd(i + reverse_number(i)):
-            count += factor
+    for value in range(start, stop):
+        if value % 10 != 0 and only_odd(value + reverse_number(value)):
+            count += 1
     return count
+
+
+def count_by_length(length: int) -> int:
+    if length % 2 == 0:
+        return 20 * 30 ** (length // 2 - 1)
+    if length % 4 == 3:
+        return 100 * 500 ** ((length - 3) // 4)
+    return 0
+
+
+def count_reversible(limit: int) -> int:
+    total = 0
+    next_power = 10
+    length = 1
+
+    while next_power <= limit:
+        total += count_by_length(length)
+        next_power *= 10
+        length += 1
+
+    previous_power = next_power // 10
+    if previous_power < limit:
+        total += brute_count_range(previous_power, limit)
+
+    return total
 
 
 def main() -> None:

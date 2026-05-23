@@ -1,57 +1,52 @@
 #!/usr/bin/env python
-"""Adapted from https://github.com/igorvanloo/Project-Euler-Explained/blob/19f85895945a2c9b688f85da142bae13f37dab65/Finished%20Problems/pe00622%20-%20Riffle%20Shuffles.py"""
-
-"""
-Created on Fri Dec 16 16:06:37 2022
-
-@author: IP176077
-"""
-"""
-Project Euler Problem 622
-
-For some reason the "Riffle suffle" is actually known as the Faro Shuffle: https://en.wikipedia.org/wiki/Faro_shuffle
-Specifically we are talking about a faro out-shuffle
-
-In general, k perfect in-shuffles will restore the order of an n-card deck if 2^{k} = 1 (mod n - 1)
-For example, 8 consecutive iout-shuffles restore the order of a 52-card deck, because 2^{8} = 256 = 1 (mod 51)
-
-Therefore, the sum of all n s.t. s(n) = 8 is all n s.t. 2^8 = 1 (mod n - 1) 
-and no divisor of n does it as well
-
-2^8 - 1 = (n - 1)l => 255 = (n - 1)l
-
-Therefore we find the divisors of 255, they are our candidate numbers.
-For each candidate number, x, we check if 2^n (mod x) = 1, if yes then we need to check it is indeed the smallest
-Knowing that 2^n = 1 (mod x), we know that either this is the order of 2 or a divisor of 60 is,
-simply check each divisor of 60
-
-"""
-import math
 
 
-def Divisors_of(x):  # Find the divisors of a number
-    divisors = set([x])
-    for i in range(2, int(math.sqrt(x)) + 1):
-        if x % i == 0:
-            divisors.add(i)
-            divisors.add(x // i)
-    return list(sorted(divisors))
+def factorization(number: int) -> dict[int, int]:
+    factors: dict[int, int] = {}
+
+    count = 0
+    while number % 2 == 0:
+        count += 1
+        number //= 2
+    if count:
+        factors[2] = count
+
+    factor = 3
+    while factor * factor <= number:
+        count = 0
+        while number % factor == 0:
+            count += 1
+            number //= factor
+        if count:
+            factors[factor] = count
+        factor += 2
+
+    if number > 1:
+        factors[number] = factors.get(number, 0) + 1
+    return factors
 
 
-def compute(n):
-    div = Divisors_of(pow(2, n) - 1)
-    div_n = Divisors_of(n)
+def divisors_from_factorization(factors: dict[int, int]) -> list[int]:
+    divisors = [1]
+    for prime, exponent in factors.items():
+        powers = [prime**power for power in range(exponent + 1)]
+        divisors = [divisor * power for divisor in divisors for power in powers]
+    return divisors
+
+
+def compute(order: int) -> int:
+    target_factors = factorization((1 << order) - 1)
+    order_prime_divisors = tuple(factorization(order))
+
     total = 0
-    # We go through the divisors of 2^n - 1 = xk
-    for x in div:
-        # We test to see if 2^n = 1 (mod x)
-        if pow(2, n, x) == 1:
-            # Now we know 2^n = 1 (mod x), now we test if any divisor, y, of n does it earlier
-            # Because then s(x + 1) = y
-            if all([pow(2, y, x) != 1 for y in div_n[: len(div_n) - 1]]):
-                total += x + 1
+    for divisor in divisors_from_factorization(target_factors):
+        if divisor == 1:
+            continue
+        if all(pow(2, order // prime, divisor) != 1 for prime in order_prime_divisors):
+            total += divisor + 1
     return total
 
 
 if __name__ == "__main__":
+    assert compute(8) == 412
     print(compute(60))

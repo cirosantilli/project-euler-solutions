@@ -1,40 +1,39 @@
 #!/usr/bin/env python
-"""Adapted from: https://github.com/stbrumme/euler/blob/b426763514558c3b39f2ec507f271d322088d28a/euler-0172.cpp"""
-MAX_BITS = 1 << 20
 
 
-def search(
-    counts: list[int], digits: int, max_digits: int, max_use: int, cache: dict
-) -> int:
-    if digits == max_digits:
-        return 1
-
-    key = tuple(counts)
-    if key in cache:
-        return cache[key]
-
-    result = 0
-    if digits > 0 and counts[0] < max_use:
-        counts[0] += 1
-        result += search(counts, digits + 1, max_digits, max_use, cache)
-        counts[0] -= 1
-
-    for digit in range(1, 10):
-        if counts[digit] < max_use:
-            counts[digit] += 1
-            result += search(counts, digits + 1, max_digits, max_use, cache)
-            counts[digit] -= 1
-
-    cache[key] = result
-    return result
-
-
-def solve(max_digits: int, max_use: int) -> int:
-    if max_digits == 0 or max_digits > 29 or max_use == 0 or max_use > 3:
+def solve(length: int, max_use: int) -> int:
+    if length <= 0 or max_use <= 0:
         return 0
-    counts = [0] * 10
-    cache: dict[tuple[int, ...], int] = {}
-    return search(counts, 0, max_digits, max_use, cache)
+
+    factorials = [1] * (length + 1)
+    for i in range(1, length + 1):
+        factorials[i] = factorials[i - 1] * i
+
+    base = factorials[length - 1]
+    total = 0
+
+    def search(digit: int, remaining: int, denominator: int, zero_count: int) -> None:
+        nonlocal total
+        if digit == 10:
+            if remaining == 0:
+                total += (length - zero_count) * base // denominator
+            return
+
+        remaining_digits = 10 - digit
+        if remaining > remaining_digits * max_use:
+            return
+
+        limit = min(max_use, remaining)
+        for count in range(limit + 1):
+            search(
+                digit + 1,
+                remaining - count,
+                denominator * factorials[count],
+                count if digit == 0 else zero_count,
+            )
+
+    search(0, length, 1, 0)
+    return total
 
 
 if __name__ == "__main__":

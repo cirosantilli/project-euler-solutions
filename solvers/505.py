@@ -1,141 +1,167 @@
 #!/usr/bin/env python
 """
-Project Euler 505: Bidirectional Recurrence (Exact, Derived)
+Project Euler 505: Bidirectional Recurrence
 
-We are given:
-
-x(0)=0, x(1)=1
-x(2k)   = (3*x(k) + 2*x(floor(k/2))) mod 2^60
-x(2k+1) = (2*x(k) + 3*x(floor(k/2))) mod 2^60
-
-y_n(k)= x(k) if k>=n
-y_n(k)= 2^60-1 - max(y_n(2k), y_n(2k+1)) if k<n
-
-A(n)=y_n(1)
-
-Technique:
-- Convert to alternating minimax via complement transform (see README).
-- Evaluate exactly via Principal Variation Search (PVS) / alpha-beta.
-- Compute x-values incrementally along the game tree.
-
-No external libraries.
+The boundary of y_n is not at a uniform depth.  Split the frontier of the
+complete tree into maximal uniform blocks: blocks wholly before the boundary
+evaluate as x-subtrees, while blocks past the boundary evaluate through the
+complement transform.  The block values are then folded upward by alternating
+min/max operations.
 """
 
-MOD = 1 << 60
-MASK = MOD - 1
+MASK = (1 << 60) - 1
+
+
+def combine(a: int, b: int, c: int, d: int) -> int:
+    return (a * b + c * d) & MASK
+
+
+def state_at(k: int) -> tuple[int, int]:
+    """Return (x(k), x(k//2))."""
+    if k == 0:
+        return 0, 0
+
+    x = 1
+    parent = 0
+    for bit in range(k.bit_length() - 2, -1, -1):
+        if (k >> bit) & 1:
+            next_x = combine(2, x, 3, parent)
+        else:
+            next_x = combine(3, x, 2, parent)
+        parent = x
+        x = next_x
+
+    return x, parent
+
+
+def minimax_subtree(x: int, parent: int, depth: int, alpha: int, beta: int) -> int:
+    if depth == 0:
+        return x
+
+    left = combine(3, x, 2, parent)
+    right = combine(2, x, 3, parent)
+
+    if depth & 1:
+        if left < right:
+            left, right = right, left
+        if depth == 1:
+            return left
+
+        value = minimax_subtree(left, x, depth - 1, alpha, beta)
+        if value > alpha:
+            alpha = value
+        if alpha >= beta:
+            return alpha
+
+        value = minimax_subtree(right, x, depth - 1, alpha, beta)
+        return value if value > alpha else alpha
+
+    if left > right:
+        left, right = right, left
+    if depth == 1:
+        return left
+
+    value = minimax_subtree(left, x, depth - 1, alpha, beta)
+    if value < beta:
+        beta = value
+    if alpha >= beta:
+        return beta
+
+    value = minimax_subtree(right, x, depth - 1, alpha, beta)
+    return value if value < beta else beta
+
+
+def evaluate_subtree(k: int, depth: int) -> int:
+    x, parent = state_at(k)
+    return minimax_subtree(x, parent, depth, 0, MASK)
+
+
+def collect_blocks(
+    start: int, depth: int, left_length: int, blocks: list[tuple[int, int, bool]]
+) -> None:
+    size = 1 << depth
+    if start + size <= left_length:
+        blocks.append((start, depth, False))
+        return
+    if start >= left_length:
+        blocks.append((start, depth, True))
+        return
+
+    half = size >> 1
+    collect_blocks(start, depth - 1, left_length, blocks)
+    collect_blocks(start + half, depth - 1, left_length, blocks)
+
+
+def block_value(start: int, depth: int, right_side: bool, base: int) -> int:
+    leaf_start = base + start
+
+    if not right_side:
+        return evaluate_subtree(leaf_start >> depth, depth)
+
+    if depth == 0:
+        x, _ = state_at(leaf_start >> 1)
+        return MASK - x
+
+    return MASK - evaluate_subtree(leaf_start >> depth, depth - 1)
+
+
+def A(n: int) -> int:
+    if n <= 0:
+        raise ValueError("n must be positive")
+    if n == 1:
+        return 1
+
+    total_nodes = 2 * n - 1
+    height = total_nodes.bit_length() - 1
+    base = 1 << height
+    boundary = 2 * n
+    left_length = boundary - base
+
+    blocks: list[tuple[int, int, bool]] = []
+    collect_blocks(0, height, left_length, blocks)
+
+    values: dict[int, int] = {}
+    for start, depth, right_side in blocks:
+        values[(start << 6) | depth] = block_value(start, depth, right_side, base)
+
+    def fold(start: int, depth: int) -> int:
+        key = (start << 6) | depth
+        cached = values.get(key)
+        if cached is not None:
+            return cached
+
+        half = 1 << (depth - 1)
+        left = fold(start, depth - 1)
+        right = fold(start + half, depth - 1)
+        return max(left, right) if depth & 1 else min(left, right)
+
+    value = fold(0, height)
+    return MASK - value if height & 1 else value
 
 
 def brute_A(n: int) -> int:
-    """Brute for small n; used only for sample asserts."""
     x = [0] * (2 * n + 1)
     if 2 * n >= 1:
         x[1] = 1
     for k in range(1, n):
-        v = x[k]
-        p = x[k // 2]
-        a = 2 * k
-        x[a] = (3 * v + 2 * p) & MASK
-        x[a + 1] = (2 * v + 3 * p) & MASK
+        current = x[k]
+        parent = x[k // 2]
+        x[2 * k] = (3 * current + 2 * parent) & MASK
+        x[2 * k + 1] = (2 * current + 3 * parent) & MASK
 
     y = [0] * (2 * n)
     for k in range(2 * n - 1, 0, -1):
         if k >= n:
             y[k] = x[k]
         else:
-            left = y[2 * k]
-            right = y[2 * k + 1]
-            y[k] = MASK - (left if left > right else right)
+            y[k] = MASK - max(y[2 * k], y[2 * k + 1])
     return y[1]
 
 
-def A(n: int) -> int:
-    """Exact computation of A(n)=y_n(1) using derived minimax + PVS."""
-    if n <= 0:
-        raise ValueError("n must be positive")
-    if n == 1:
-        return 1
-
-    d = n.bit_length() - 1  # floor(log2 n)
-
-    # In s-space, a node at depth t uses s=y (even depth) or s=MASK-y (odd depth).
-    # Leaves occur at depths d and d+1 in the truncated tree.
-    # Therefore:
-    # - leaves that are originally at depth d (k>=n at depth d): flipB depends on parity of d
-    # - leaves at depth d+1 (children of k<n at depth d): flipA depends on parity of d+1
-    flipA = MASK if ((d + 1) & 1) else 0
-    flipB = MASK if (d & 1) else 0
-
-    # At depth d, the minimax operator is MIN if d even else MAX (because depth 0 is MIN).
-    terminal_is_max = (d & 1) == 1
-
-    _MASK = MASK
-    _MOD = MOD
-    _n = n
-    _flipA = flipA
-    _flipB = flipB
-    _term_is_max = terminal_is_max
-
-    # Principal Variation Search (PVS) with fixed move ordering: bit=1 first, then bit=0.
-    def rec(k: int, depth: int, a: int, b: int, alpha: int, beta: int) -> int:
-        # a = x(k), b = x(k//2)
-        if depth == d:
-            # Terminal evaluation at depth d:
-            if k >= _n:
-                return a ^ _flipB
-            # k < n: its children (2k,2k+1) are leaves at depth d+1
-            a0 = (3 * a + 2 * b) & _MASK
-            a1 = (2 * a + 3 * b) & _MASK
-            v0 = a0 ^ _flipA
-            v1 = a1 ^ _flipA
-            if _term_is_max:
-                return v0 if v0 >= v1 else v1
-            else:
-                return v0 if v0 <= v1 else v1
-
-        if depth & 1:
-            # MAX node
-            # First child: bit=1 full window
-            a1 = (2 * a + 3 * b) & _MASK
-            best = rec((k << 1) | 1, depth + 1, a1, a, alpha, beta)
-            if best > alpha:
-                alpha = best
-            if alpha >= beta:
-                return best
-
-            # Second child: bit=0 null window then (maybe) re-search
-            a0 = (3 * a + 2 * b) & _MASK
-            v = rec(k << 1, depth + 1, a0, a, alpha, alpha + 1)
-            if v > alpha and v < beta:
-                v = rec(k << 1, depth + 1, a0, a, alpha, beta)
-            return v if v > best else best
-
-        else:
-            # MIN node
-            # First child: bit=1 full window
-            a1 = (2 * a + 3 * b) & _MASK
-            best = rec((k << 1) | 1, depth + 1, a1, a, alpha, beta)
-            if best < beta:
-                beta = best
-            if alpha >= beta:
-                return best
-
-            # Second child: bit=0 null window then (maybe) re-search
-            a0 = (3 * a + 2 * b) & _MASK
-            v = rec(k << 1, depth + 1, a0, a, beta - 1, beta)
-            if v < beta and v > alpha:
-                v = rec(k << 1, depth + 1, a0, a, alpha, beta)
-            return v if v < best else best
-
-    # Search root: depth 0 is MIN. Values are in [0..MASK].
-    return rec(1, 0, 1, 0, -1, _MOD)
-
-
-def main():
-    # Asserts from the problem statement:
+def main() -> None:
     assert A(4) == 8
     assert A(10) == (1 << 60) - 34
     assert A(1000) == 101881
-
     print(A(10**12))
 
 

@@ -1,30 +1,26 @@
 #!/usr/bin/env python
-"""Adapted from https://github.com/igorvanloo/Project-Euler-Explained/blob/19f85895945a2c9b688f85da142bae13f37dab65/Finished%20Problems/pe00761%20-%20Runner%20and%20Swimmer.py"""
 
-"""
-Created on Tue Jun 20 00:37:09 2023
-
-@author: igorvanloo
-"""
-"""
-Project Euler Problem 761
-
-"""
-from sympy import sin, cos, tan, pi, acos
+from math import acos, cos, pi, sin, tan
 
 
-def compute(n):
-    K = 0
+def compute(n: int) -> float:
     theta = pi / n
-    f = lambda k: sin(k * theta) - (k + n) * tan(theta) * cos(k * theta)
+    tangent = tan(theta)
 
-    while f(K) < 0:
-        K += 1
-    K -= 1
-    a = (
-        K * theta + acos(2 * sin(K * theta) / ((K + n) * tan(theta)) - cos(K * theta))
-    ) / 2
-    return round(1 / cos(a), 8)
+    branch = 0
+    for k in range(n + 1):
+        value = sin(k * theta) - (k + n) * tangent * cos(k * theta)
+        if value >= 0:
+            branch = k - 1
+            break
+
+    argument = (
+        2 * sin(branch * theta) / ((branch + n) * tangent)
+        - cos(branch * theta)
+    )
+    argument = min(1.0, max(-1.0, argument))
+    alpha = (branch * theta + acos(argument)) / 2
+    return round(1 / cos(alpha), 8)
 
 
 if __name__ == "__main__":

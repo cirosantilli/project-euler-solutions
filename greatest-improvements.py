@@ -5,7 +5,7 @@ import argparse
 import csv
 import sys
 from dataclasses import dataclass
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 import yaml
@@ -29,6 +29,10 @@ class Improvement:
     @property
     def seconds(self) -> Decimal:
         return self.reference.runtime - self.better.runtime
+
+    @property
+    def ratio(self) -> Decimal:
+        return self.better.runtime / self.reference.runtime
 
 
 def problem_improvement(
@@ -58,6 +62,7 @@ def print_greatest_improvements(
     benchmark_path: Path,
     reference_set: str,
     language: str,
+    max_ratio: Decimal | None,
 ) -> None:
     root = load_benchmark(benchmark_path)
     if root is None:
@@ -73,6 +78,12 @@ def print_greatest_improvements(
         if (improvement := problem_improvement(problem, entries, reference_set))
         is not None
     ]
+    if max_ratio is not None:
+        improvements = [
+            improvement
+            for improvement in improvements
+            if improvement.ratio <= max_ratio
+        ]
     improvements.sort(
         key=lambda improvement: (-improvement.seconds, improvement.problem)
     )
@@ -82,6 +93,7 @@ def print_greatest_improvements(
         [
             "problem",
             "improvement_seconds",
+            "ratio",
             "reference_path",
             "reference_runtime_seconds",
             "better_path",
@@ -93,12 +105,23 @@ def print_greatest_improvements(
             [
                 improvement.problem,
                 format_seconds(improvement.seconds),
+                f"{improvement.ratio:.2f}",
                 improvement.reference.path,
                 improvement.reference.time_text,
                 improvement.better.path,
                 improvement.better.time_text,
             ]
         )
+
+
+def parse_decimal(value: str) -> Decimal:
+    try:
+        decimal = Decimal(value)
+    except InvalidOperation as exc:
+        raise argparse.ArgumentTypeError(f"invalid decimal value: {value}") from exc
+    if not decimal.is_finite():
+        raise argparse.ArgumentTypeError(f"invalid decimal value: {value}")
+    return decimal
 
 
 def parse_args() -> argparse.Namespace:
@@ -129,6 +152,12 @@ def parse_args() -> argparse.Namespace:
         default="py",
         help="solver file extension to compare",
     )
+    parser.add_argument(
+        "--max-ratio",
+        type=parse_decimal,
+        default=None,
+        help="only include improvements with better/reference runtime ratio at most this value",
+    )
     return parser.parse_args()
 
 
@@ -137,7 +166,12 @@ def main() -> int:
     language = normalize_language(args.language)
     reference_set = args.reference_set or f"solvers/*.{language}"
     try:
-        print_greatest_improvements(args.benchmark, reference_set, language)
+        print_greatest_improvements(
+            args.benchmark,
+            reference_set,
+            language,
+            args.max_ratio,
+        )
     except (OSError, ValueError, yaml.YAMLError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1

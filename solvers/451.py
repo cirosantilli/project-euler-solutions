@@ -7,76 +7,77 @@ the full root set from prime-power roots using CRT projectors, then take the
 largest root below the trivial root n - 1.
 """
 
-from array import array
-
-
 LIMIT = 20_000_000
 
 
-def smallest_prime_factors(n: int) -> array:
-    spf = array("I", [0]) * (n + 1)
-    primes: list[int] = []
-    for x in range(2, n + 1):
-        if spf[x] == 0:
-            spf[x] = x
-            primes.append(x)
-        spfx = spf[x]
-        for p in primes:
-            y = p * x
-            if y > n:
-                break
-            spf[y] = p
-            if p == spfx:
-                break
+def smallest_prime_factors(n: int) -> list[int]:
+    spf = list(range(n + 1))
+    root = int(n**0.5)
+    for p in range(2, root + 1):
+        if spf[p] != p:
+            continue
+        for multiple in range(p * p, n + 1, p):
+            if spf[multiple] == multiple:
+                spf[multiple] = p
     return spf
 
 
-def prime_power_factors(n: int, spf: array) -> list[tuple[int, int, int]]:
-    factors: list[tuple[int, int, int]] = []
-    while n > 1:
-        p = spf[n]
-        exponent = 0
-        prime_power = 1
-        while n % p == 0:
-            n //= p
-            exponent += 1
-            prime_power *= p
-        factors.append((p, exponent, prime_power))
-    return factors
+def modular_inverse(a: int, modulus: int) -> int:
+    b = modulus
+    x0 = 1
+    x1 = 0
+    while b:
+        q = a // b
+        a, b = b, a - q * b
+        x0, x1 = x1, x0 - q * x1
+    return x0 % modulus
 
 
-def nonzero_root_offsets_from_minus_one(p: int, exponent: int) -> tuple[int, ...]:
-    if p == 2:
-        if exponent == 1:
-            return ()
-        if exponent == 2:
-            return (2,)
-        half = 1 << (exponent - 1)
-        return (2, half, half + 2)
-    return (2,)
-
-
-def I(n: int, spf: array) -> int:
+def I(n: int, spf: list[int]) -> int:
     roots = [n - 1]
+    best = 1
+    remaining = n
 
-    for p, exponent, prime_power in prime_power_factors(n, spf):
-        offsets = nonzero_root_offsets_from_minus_one(p, exponent)
-        if not offsets:
+    while remaining > 1:
+        p = spf[remaining]
+        prime_power = 1
+        while remaining % p == 0:
+            remaining //= p
+            prime_power *= p
+
+        if prime_power == 2:
             continue
 
         cofactor = n // prime_power
-        projector = cofactor * pow(cofactor, -1, prime_power) % n
-        previous_roots = roots
-        roots = previous_roots[:]
-        for offset in offsets:
-            delta = offset * projector % n
-            roots.extend((root + delta) % n for root in previous_roots)
+        projector = cofactor * modular_inverse(cofactor % prime_power, prime_power) % n
+        delta_two = (2 * projector) % n
 
-    excluded = n - 1
-    best = 1
-    for root in roots:
-        if best < root < excluded:
-            best = root
+        delta_half = 0
+        delta_half_plus_two = 0
+        has_extra_two_roots = prime_power % 2 == 0 and prime_power >= 8
+        if has_extra_two_roots:
+            half = prime_power // 2
+            delta_half = (half * projector) % n
+            delta_half_plus_two = ((half + 2) * projector) % n
+
+        previous_roots = list(roots)
+        for root in previous_roots:
+            candidate = (root + delta_two) % n
+            roots.append(candidate)
+            if best < candidate < n - 1:
+                best = candidate
+
+            if has_extra_two_roots:
+                candidate = (root + delta_half) % n
+                roots.append(candidate)
+                if best < candidate < n - 1:
+                    best = candidate
+
+                candidate = (root + delta_half_plus_two) % n
+                roots.append(candidate)
+                if best < candidate < n - 1:
+                    best = candidate
+
     return best
 
 

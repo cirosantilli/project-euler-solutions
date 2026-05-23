@@ -1,148 +1,124 @@
 #!/usr/bin/env python
-"""Adapted from: https://github.com/stbrumme/euler/blob/b426763514558c3b39f2ec507f271d322088d28a/euler-0200.cpp"""
-from typing import Set
+
+import math
 
 
-def mulmod(a: int, b: int, modulo: int) -> int:
-    return (a * b) % modulo
+def primes_upto(limit: int) -> list[int]:
+    sieve = bytearray(b"\x01") * (limit + 1)
+    if limit >= 0:
+        sieve[0] = 0
+    if limit >= 1:
+        sieve[1] = 0
+    for number in range(2, math.isqrt(limit) + 1):
+        if sieve[number]:
+            start = number * number
+            sieve[start : limit + 1 : number] = b"\x00" * (
+                (limit - start) // number + 1
+            )
+    return [number for number in range(2, limit + 1) if sieve[number]]
 
 
-def powmod(base: int, exponent: int, modulo: int) -> int:
-    result = 1
-    while exponent > 0:
-        if exponent & 1:
-            result = mulmod(result, base, modulo)
-        base = mulmod(base, base, modulo)
-        exponent >>= 1
-    return result
-
-
-def is_prime(p: int) -> bool:
-    small_mask = (
-        (1 << 2)
-        | (1 << 3)
-        | (1 << 5)
-        | (1 << 7)
-        | (1 << 11)
-        | (1 << 13)
-        | (1 << 17)
-        | (1 << 19)
-        | (1 << 23)
-        | (1 << 29)
-    )
-    if p < 31:
-        return (small_mask & (1 << p)) != 0
-
-    if (
-        p % 2 == 0
-        or p % 3 == 0
-        or p % 5 == 0
-        or p % 7 == 0
-        or p % 11 == 0
-        or p % 13 == 0
-        or p % 17 == 0
-    ):
+def is_prime(value: int) -> bool:
+    if value < 2:
         return False
+    small_primes = (2, 3, 5, 7, 11, 13, 17, 19, 23, 29)
+    for prime in small_primes:
+        if value == prime:
+            return True
+        if value % prime == 0:
+            return False
 
-    if p < 17 * 19:
-        return True
-
-    test_against1 = (377687, 0)
-    test_against2 = (31, 73, 0)
-    test_against3 = (2, 7, 61, 0)
-    test_against4 = (2, 13, 23, 1662803, 0)
-    test_against7 = (2, 325, 9375, 28178, 450775, 9780504, 1795265022, 0)
-
-    if p < 5329:
-        test_against = test_against1
-    elif p < 9080191:
-        test_against = test_against2
-    elif p < 4759123141:
-        test_against = test_against3
-    elif p < 1122004669633:
-        test_against = test_against4
-    else:
-        test_against = test_against7
-
-    d = p - 1
-    shift = 0
+    d = value - 1
+    shifts = 0
     while d % 2 == 0:
         d //= 2
-        shift += 1
+        shifts += 1
 
-    for base in test_against:
-        if base == 0:
-            break
-        x = powmod(base, d, p)
-        if x == 1 or x == p - 1:
+    if value < 4_759_123_141:
+        bases = (2, 7, 61)
+    elif value < 1_122_004_669_633:
+        bases = (2, 13, 23, 1_662_803)
+    else:
+        bases = (2, 325, 9375, 28178, 450775, 9780504, 1795265022)
+
+    for base in bases:
+        x = pow(base, d, value)
+        if x == 1 or x == value - 1:
             continue
-        maybe_prime = False
-        for _ in range(shift):
-            x = mulmod(x, x, p)
-            if x == 1:
-                return False
-            if x == p - 1:
-                maybe_prime = True
+        for _ in range(shifts - 1):
+            x = (x * x) % value
+            if x == value - 1:
                 break
-        if not maybe_prime:
+        else:
             return False
 
     return True
 
 
 def is_prime_proof(value: int) -> bool:
-    str_value = str(value)
-    for pos in range(len(str_value)):
-        if value % 2 == 0:
-            pos = len(str_value) - 1
+    digits = []
+    powers = []
+    power = 1
+    remaining = value
+    while remaining:
+        digits.append(remaining % 10)
+        powers.append(power)
+        remaining //= 10
+        power *= 10
 
-        for digit in "0123456789":
-            if digit == "0" and pos == 0:
+    leading_position = len(digits) - 1
+    for position, original_digit in enumerate(digits):
+        first_digit = 1 if position == leading_position else 0
+        place = powers[position]
+        for digit in range(first_digit, 10):
+            if digit == original_digit:
                 continue
-            if (ord(digit) % 2 == 0) and pos == len(str_value) - 1:
+            if position == 0 and (digit % 2 == 0 or digit == 5):
                 continue
-            if digit == str_value[pos]:
-                continue
-
-            modified = int(str_value[:pos] + digit + str_value[pos + 1 :])
+            modified = value + (digit - original_digit) * place
             if is_prime(modified):
                 return False
-
     return True
 
 
-def next_prime(start: int, other: int) -> int:
-    value = start
-    while value == other or not is_prime(value):
-        value += 1
-    return value
+def generate_squbes(limit: int) -> list[int]:
+    primes = primes_upto(math.isqrt(limit // 8) + 1)
+    squbes = []
+
+    for p in primes:
+        p_squared = p * p
+        if p_squared * 8 > limit:
+            break
+        for q in primes:
+            if q == p:
+                continue
+            value = p_squared * q * q * q
+            if value > limit:
+                break
+            squbes.append(value)
+
+    squbes.sort()
+    return squbes
 
 
 def solve(target: int, token: str) -> tuple[int, int]:
-    count = 0
-    second_value = -1
-
-    squbes: Set[tuple[int, int, int]] = set()
-    squbes.add((3, 2, 3 * 3 * 2 * 2 * 2))
-    squbes.add((2, 3, 2 * 2 * 3 * 3 * 3))
+    limit = 1_000_000_000_000
 
     while True:
-        current = min(squbes, key=lambda x: x[2])
-        squbes.remove(current)
-        p, q, value = current
+        count = 0
+        second_value = -1
 
-        if token in str(value) and is_prime_proof(value):
+        for value in generate_squbes(limit):
+            if token not in str(value) or not is_prime_proof(value):
+                continue
+
             count += 1
             if count == 2:
                 second_value = value
             if count == target:
                 return value, second_value
 
-        next_p = next_prime(p + 1, q)
-        squbes.add((next_p, q, next_p * next_p * q * q * q))
-
-        next_q = next_prime(q + 1, p)
-        squbes.add((p, next_q, p * p * next_q * next_q * next_q))
+        limit *= 2
 
 
 if __name__ == "__main__":
