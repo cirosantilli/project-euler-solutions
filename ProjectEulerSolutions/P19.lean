@@ -37,5 +37,7 @@ partial def countSundaysOnFirst (startYear endYear : Nat) : Nat :=
   loopYear 1900 0 0
 
 def solve (startDate endDate : ProjectEulerStatements.P19.Date) : Nat :=
-  ProjectEulerStatements.P19.naive startDate endDate
+  countSundaysOnFirst startDate.year endDate.year
+
+example : countSundaysOnFirst 1901 2000 = 171 := by native_decide
 end ProjectEulerSolutions.P19
