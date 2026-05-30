@@ -90,6 +90,4 @@ example : countPrimePowerTriples 50 = 4 := by
 
 def solve (_n : Nat) :=
   countPrimePowerTriples 50000000
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P87.naive n = solve n := sorry
 end ProjectEulerSolutions.P87

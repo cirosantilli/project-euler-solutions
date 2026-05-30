@@ -43,6 +43,4 @@ def solve (digits : Nat) : Nat :=
     | d + 1 => Nat.pow 10 d
   let hi := Nat.pow 10 digits - 1
   (largestPalindromeProduct lo hi).1
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P4.naive n = solve n := sorry
 end ProjectEulerSolutions.P4

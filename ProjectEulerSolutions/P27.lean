@@ -100,7 +100,4 @@ partial def solve (limitA limitB : Nat) : Int :=
         let (bestLen', bestA', bestB') := loopA 0 bestLen bestA bestB
         loopB rest bestLen' bestA' bestB'
     loopB bCandidates 0 0 0
-
-theorem equiv (limitA limitB : Nat) :
-    ProjectEulerStatements.P27.naive limitA limitB = solve limitA limitB := sorry
 end ProjectEulerSolutions.P27

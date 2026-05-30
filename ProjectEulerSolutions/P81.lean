@@ -52,6 +52,4 @@ example :
 
 def solve (matrix : List (List Nat)) : Nat :=
   minPathSum matrix
-
-theorem equiv (matrix : List (List Nat)) : ProjectEulerStatements.P81.naive matrix = solve matrix := sorry
 end ProjectEulerSolutions.P81

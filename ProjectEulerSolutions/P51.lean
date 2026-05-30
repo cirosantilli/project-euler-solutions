@@ -168,7 +168,4 @@ example : countPrimeFamilyForPositions 56003 [2, 3] = 7 := by
 
 def solve (target : Nat) : Nat :=
   solveCore target 1000000
-
-theorem equiv (target : Nat) :
-    ProjectEulerStatements.P51.naive target = solve target := sorry
 end ProjectEulerSolutions.P51

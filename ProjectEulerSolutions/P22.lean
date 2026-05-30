@@ -57,6 +57,4 @@ def colinPosScore (names : List String) : Nat × Nat :=
 
 example : colinPosScore (parseNames "\"COLIN\"") = (1, 53) := by
   native_decide
-
-theorem equiv (names : List String) : ProjectEulerStatements.P22.naive names = solve names := sorry
 end ProjectEulerSolutions.P22

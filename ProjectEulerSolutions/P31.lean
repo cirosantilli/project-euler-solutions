@@ -37,6 +37,4 @@ example : countWays 10 [1, 2, 5, 10, 20, 50, 100, 200] = 11 := by
 def solve (amt : Nat) :=
   let coins := [1, 2, 5, 10, 20, 50, 100, 200]
   countWays amt coins
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P31.naive n = solve n := sorry
 end ProjectEulerSolutions.P31

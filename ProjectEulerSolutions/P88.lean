@@ -42,8 +42,6 @@ example : minProductSumNumbersSum 12 = 61 := by
   native_decide
 
 
-def solve (_n : Nat) :=
-  minProductSumNumbersSum 12000
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P88.naive ([] : List Nat) = solve n := sorry
+def solve (kMax : Nat) :=
+  minProductSumNumbersSum kMax
 end ProjectEulerSolutions.P88

@@ -50,7 +50,4 @@ example : collatzLength 1 = 1 := by
 
 example : collatzLength 13 = 10 := by
   native_decide
-
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P14.naive n = solve n := sorry
 end ProjectEulerSolutions.P14

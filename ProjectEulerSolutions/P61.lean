@@ -104,7 +104,4 @@ example : polygonal 4 91 = 8281 := by
 
 example : polygonal 5 44 = 2882 := by
   native_decide
-
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P61.naive n = solve n := sorry
 end ProjectEulerSolutions.P61

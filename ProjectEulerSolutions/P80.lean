@@ -44,7 +44,4 @@ partial def solve (limit digits : Nat) : Nat :=
 
 example : digitSumDigitsOfSqrt 2 100 = 475 := by
   native_decide
-
-
-theorem equiv (n digits : Nat) : ProjectEulerStatements.P80.naive n digits = solve n digits := sorry
 end ProjectEulerSolutions.P80

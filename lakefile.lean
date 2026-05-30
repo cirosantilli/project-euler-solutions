@@ -62,6 +62,7 @@ require mathlib from git
 require ProjectEulerStatements from
   "data/project-euler-statements/data/lean"
 
+@[default_target]
 lean_lib ProjectEulerSolutions where
   srcDir := ".."
 

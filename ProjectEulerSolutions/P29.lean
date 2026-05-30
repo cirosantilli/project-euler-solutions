@@ -19,6 +19,4 @@ partial def solve (maxA maxB : Nat) : Nat :=
 
 example : solve 5 5 = 15 := by
   native_decide
-
-theorem equiv (aMax bMax : Nat) : ProjectEulerStatements.P29.naive aMax bMax = solve aMax bMax := sorry
 end ProjectEulerSolutions.P29

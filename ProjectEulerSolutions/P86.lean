@@ -73,6 +73,4 @@ example : countSolutionsUpTo 100 = 2060 := by
 
 def solve (_n : Nat) :=
   leastMExceeding 1000000
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P86.naive n = solve n := sorry
 end ProjectEulerSolutions.P86

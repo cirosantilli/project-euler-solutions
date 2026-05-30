@@ -93,7 +93,4 @@ example :
     let isPrime := sieve 1000000
     isTruncatablePrime 7 isPrime = false := by
   native_decide
-
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P37.naive n = solve n := sorry
 end ProjectEulerSolutions.P37

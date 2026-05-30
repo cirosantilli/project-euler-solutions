@@ -96,6 +96,4 @@ example : digitSignature 87109 = digitSignature 79180 := by
 
 def solve (_n : Nat) :=
   solveCore MAX_N
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P70.naive n = solve n := sorry
 end ProjectEulerSolutions.P70

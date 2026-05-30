@@ -34,8 +34,7 @@ example : rectangleCount 3 2 = 18 := by
   native_decide
 
 
-def solve (_n : Nat) :=
-  bestGridAreaNear TARGET
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P85.naive n n = solve n := sorry
+def solve (target limit : Nat) :=
+  let _ := limit
+  bestGridAreaNear target
 end ProjectEulerSolutions.P85

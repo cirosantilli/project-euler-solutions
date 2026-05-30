@@ -24,6 +24,4 @@ example : latticePaths 2 2 = 6 := by
 
 def solve (n : Nat) : Nat :=
   latticePaths n n
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P15.naive n = solve n := sorry
 end ProjectEulerSolutions.P15

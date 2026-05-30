@@ -45,7 +45,4 @@ def defaultLimit : Nat :=
   let nineFact := facts[9]!
   let n := findNBound nineFact 1 10
   (n - 1) * nineFact
-
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P34.naive n = solve n := sorry
 end ProjectEulerSolutions.P34

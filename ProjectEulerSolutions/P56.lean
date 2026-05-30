@@ -32,8 +32,4 @@ example : digitSum (Nat.pow 2 15) = 26 := by
 
 def solve (n : Nat) :=
   (maxDigitalSum n).1
-
-theorem equiv (n : Nat) :
-    ProjectEulerStatements.P56.naive n = solve n := sorry
-
 end ProjectEulerSolutions.P56

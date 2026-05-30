@@ -41,8 +41,4 @@ partial def smallestPermutedMultiple (limitMul : Nat) : Nat :=
 
 def solve (limitMul : Nat) :=
   smallestPermutedMultiple limitMul
-
-theorem equiv (limitMul : Nat) :
-    ProjectEulerStatements.P52.naive limitMul = solve limitMul := sorry
-
 end ProjectEulerSolutions.P52

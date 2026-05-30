@@ -14,10 +14,13 @@ ROOT = Path(__file__).resolve().parent
 SOLUTIONS_PATH = ROOT / "data/projecteuler-solutions/Solutions.md"
 SOLVERS_DIR = ROOT / "solvers"
 LEAN_SOLVERS_DIR = ROOT / "ProjectEulerSolutions"
+LEAN_EQUIV_DIR = LEAN_SOLVERS_DIR / "Equiv"
 VALID_PYTHON_SHEBANG = "#!/usr/bin/env python"
 SOURCE_EXTENSIONS = (".py", ".c", ".cpp")
 
 LINE_RE = re.compile(r"^(\d+)\.\s+(.*)$")
+LEAN_SOLUTION_STEM_RE = re.compile(r"^P(\d+)$")
+LEAN_EQUIV_STEM_RE = re.compile(r"^P(\d+)$")
 FORBIDDEN_TOKENS = ("Solutions.md",)
 FORBIDDEN_LEAN_PATTERNS = (r"\bpartial\s+def\b",)
 FORBIDDEN_LEAN_DEF_ARG_RE = re.compile(r"\bdef\s+\w+[^\n]*\b_[A-Za-z0-9_]*\b")
@@ -51,8 +54,12 @@ def parse_solver_id(path: Path) -> int | None:
     stem = path.stem
     if stem.isdigit():
         return int(stem)
-    if stem.startswith("P") and stem[1:].isdigit():
-        return int(stem[1:])
+    match = LEAN_SOLUTION_STEM_RE.match(stem)
+    if match:
+        return int(match.group(1))
+    match = LEAN_EQUIV_STEM_RE.match(stem)
+    if match:
+        return int(match.group(1))
     if "_" in stem:
         prefix = stem.split("_", 1)[0]
         if prefix.isdigit():
@@ -280,7 +287,7 @@ def lint_paths(
                             context,
                         )
                     )
-            else:
+            elif path.parent == LEAN_EQUIV_DIR and LEAN_EQUIV_STEM_RE.match(path.stem):
                 normalized_text = " ".join(text.split())
                 theorem_re = re.compile(
                     rf"theorem equiv\b.*?: "
@@ -288,7 +295,7 @@ def lint_paths(
                     rf"\(?(\w+)(?:\s+(.+?))?\)? := "
                 )
                 match = theorem_re.search(normalized_text)
-                allowed_solvers = {"solve", "solveTriangle"}
+                allowed_solvers = {"solve"}
                 args_ok = False
                 if match and match.group(2) in allowed_solvers:
                     naive_args = match.group(1)
@@ -332,6 +339,26 @@ def lint_paths(
                             pid,
                             path,
                             "must reference ProjectEulerStatements.P<n>.naive exactly once",
+                            context,
+                        )
+                    )
+            elif path.parent == LEAN_SOLVERS_DIR and LEAN_SOLUTION_STEM_RE.match(path.stem):
+                theorem_hits = [
+                    idx
+                    for idx, line in enumerate(lines, 1)
+                    if re.search(r"\btheorem\s+equiv\b", line)
+                ]
+                if theorem_hits:
+                    context = [
+                        (line_no, lines[line_no - 1].rstrip())
+                        for line_no in theorem_hits
+                    ]
+                    violations.append(
+                        Violation(
+                            "lean",
+                            pid,
+                            path,
+                            "theorem equiv belongs in Equiv/P<n>.lean",
                             context,
                         )
                     )
@@ -471,6 +498,7 @@ def main() -> int:
             paths = [path for path in paths if path.suffix == ".lean"]
         elif args.source_set is None:
             paths = sorted(LEAN_SOLVERS_DIR.glob("*.lean"))
+            paths.extend(sorted(LEAN_EQUIV_DIR.glob("*.lean")))
             paths.extend(sorted(SOLVERS_DIR.glob("*.lean")))
         else:
             paths = [path for path in paths if path.suffix == ".lean"]

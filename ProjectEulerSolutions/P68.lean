@@ -133,8 +133,6 @@ partial def magic5GonMax16Digit : String :=
 
 
 
-def solve (_n : Nat) :=
+def solve : Nat :=
   magic5GonMax16Digit.toNat!
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P68.naive = solve n := sorry
 end ProjectEulerSolutions.P68

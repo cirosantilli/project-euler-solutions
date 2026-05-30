@@ -26,7 +26,4 @@ example : (toString (Nat.pow 7 5)).length = 5 := by
 
 example : (toString (Nat.pow 8 9)).length = 9 := by
   native_decide
-
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P63.naive n = solve n := sorry
 end ProjectEulerSolutions.P63

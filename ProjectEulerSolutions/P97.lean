@@ -10,11 +10,10 @@ partial def powMod (a e mod : Nat) : Nat :=
       loop ((base * base) % mod) (exp / 2) acc
   if mod == 1 then 0 else loop (a % mod) e 1
 
-partial def solve (k exp digits : Nat) : Nat :=
+partial def solveWithParams (k exp digits : Nat) : Nat :=
   let mod := Nat.pow 10 digits
   (k * powMod 2 exp mod + 1) % mod
 
-
-
-theorem equiv : ProjectEulerStatements.P97.naive = solve 28433 7830457 10 := sorry
+def solve : Nat :=
+  solveWithParams 28433 7830457 10
 end ProjectEulerSolutions.P97

@@ -37,7 +37,4 @@ example :
 
 example : digitSum 1457 = 17 := by
   native_decide
-
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P65.naive n = solve n := sorry
 end ProjectEulerSolutions.P65

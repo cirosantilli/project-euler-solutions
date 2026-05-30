@@ -168,8 +168,4 @@ partial def solve (words : List String) : Nat :=
               loopW ws (loopSq candidates best)
         loopGroups gs (loopW g best)
   loopGroups groups 0
-
-
-
-theorem equiv (words : List String) : ProjectEulerStatements.P98.naive words = solve words := sorry
 end ProjectEulerSolutions.P98

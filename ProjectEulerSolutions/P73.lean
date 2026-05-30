@@ -30,6 +30,4 @@ example : countBetweenOneThirdAndOneHalf 8 = 3 := by
 
 def solve (_n : Nat) :=
   countBetweenOneThirdAndOneHalf 12000
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P73.naive n = solve n := sorry
 end ProjectEulerSolutions.P73

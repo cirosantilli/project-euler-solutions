@@ -12,6 +12,4 @@ partial def solve (limit : Nat) : Nat :=
   go 1 2 0
 
 example : solve 4000000 = 4613732 := by native_decide
-theorem equiv (n : Nat) : ProjectEulerStatements.P2.naive n = solve n := sorry
-
 end ProjectEulerSolutions.P2

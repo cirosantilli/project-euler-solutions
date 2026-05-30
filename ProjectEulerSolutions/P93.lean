@@ -118,8 +118,6 @@ example :
   native_decide
 
 
-def solve (_n : Nat) :=
+def solve : Nat :=
   (solveCore).1.toNat!
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P93.naive ([] : List Nat) = solve n := sorry
 end ProjectEulerSolutions.P93

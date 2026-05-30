@@ -56,8 +56,7 @@ example : smallestCubeWithKPermutations 3 = 41063625 := by
   native_decide
 
 
-def solve (_n : Nat) :=
-  smallestCubeWithKPermutations 5
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P62.naive n n = solve n := sorry
+def solve (limit target : Nat) :=
+  let _ := limit
+  smallestCubeWithKPermutations target
 end ProjectEulerSolutions.P62

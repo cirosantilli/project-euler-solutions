@@ -46,6 +46,4 @@ example : firstConsecutiveWithKFactors 3 3 2000 = 644 := by
 def solve (n : Nat) :=
   let _ := ProjectEulerStatements.P47.exists_consecutive_with_n_factors n
   firstConsecutiveWithKFactors n n (n + 10)
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P47.naive n = solve n := sorry
 end ProjectEulerSolutions.P47

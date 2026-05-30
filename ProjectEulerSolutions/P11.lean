@@ -113,8 +113,4 @@ def solve (grid : List (List Nat)) (k : Nat) : Nat :=
 
 example : 26 * 63 * 78 * 14 = 1788696 := by
   native_decide
-
-
-theorem equiv (grid : List (List Nat)) (n : Nat) :
-    ProjectEulerStatements.P11.naive grid n = solve grid n := sorry
 end ProjectEulerSolutions.P11

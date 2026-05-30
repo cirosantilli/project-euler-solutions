@@ -117,7 +117,4 @@ example : chainLenSimple 540 = 2 := by
 
 example : chainLenSimple 169 = 3 := by
   native_decide
-
-theorem equiv (limit target : Nat) :
-    ProjectEulerStatements.P74.naive limit target = solve limit target := sorry
 end ProjectEulerSolutions.P74

@@ -69,8 +69,4 @@ def solve (n : ProjectEulerStatements.P3.NatGE2) : Nat :=
 
 example : solve ⟨13195, by decide⟩ = 29 := by
   native_decide
-
-theorem equiv (n : ProjectEulerStatements.P3.NatGE2) :
-    ProjectEulerStatements.P3.naive n = solve n := sorry
-
 end ProjectEulerSolutions.P3

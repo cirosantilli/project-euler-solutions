@@ -56,6 +56,4 @@ example : properDivisorSumFactorization 220 = 284 := by
 
 example : properDivisorSumFactorization 284 = 220 := by
   native_decide
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P21.naive n = solve n := sorry
 end ProjectEulerSolutions.P21

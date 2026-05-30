@@ -60,7 +60,4 @@ example : pentagonal 165 = 40755 := by
 
 example : hexagonal 143 = 40755 := by
   native_decide
-
-
-theorem equiv (start limit : Nat) : ProjectEulerStatements.P45.naive start limit = solve start limit := sorry
 end ProjectEulerSolutions.P45

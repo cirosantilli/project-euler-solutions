@@ -49,6 +49,4 @@ example : countOddPeriods 13 = 4 := by
 
 def solve (limit : Nat) :=
   countOddPeriods limit
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P64.naive n = solve n := sorry
 end ProjectEulerSolutions.P64

@@ -20,8 +20,4 @@ example : countSqrt2Convergents 8 = 1 := by
 
 def solve (limit : Nat) :=
   countSqrt2Convergents limit
-
-theorem equiv (limit : Nat) :
-    ProjectEulerStatements.P57.naive limit = solve limit := sorry
-
 end ProjectEulerSolutions.P57

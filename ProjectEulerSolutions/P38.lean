@@ -56,6 +56,4 @@ example : concatUpTo 9 5 = "918273645" := by
 
 example : isPandigital "918273645" = true := by
   native_decide
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P38.naive n = solve n := sorry
 end ProjectEulerSolutions.P38

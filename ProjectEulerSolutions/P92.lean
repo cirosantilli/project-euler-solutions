@@ -79,6 +79,4 @@ example :
 
 def solve (limit : Nat) :=
   countEndingAt89 limit
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P92.naive n = solve n := sorry
 end ProjectEulerSolutions.P92

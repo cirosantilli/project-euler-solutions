@@ -113,7 +113,4 @@ def solve : Nat :=
 
 example : isPandigitalSubstringProperty 1406357289 = true := by
   native_decide
-
-
-theorem equiv : ProjectEulerStatements.P43.naive = solve := sorry
 end ProjectEulerSolutions.P43

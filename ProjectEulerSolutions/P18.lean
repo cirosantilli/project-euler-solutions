@@ -35,7 +35,7 @@ abbrev triangle : List (List Nat) := [
   [4, 62, 98, 27, 23, 9, 70, 98, 73, 93, 38, 53, 60, 4, 23]
 ]
 
-def triangleT : ProjectEulerStatements.P18.Triangle 15 := by
+def triangleT : ProjectEulerStatements.P18.Triangle := by
   refine ⟨triangle, ?_⟩
   decide
 
@@ -44,9 +44,6 @@ example : maxPathSum [[3], [7, 4], [2, 4, 6], [8, 5, 9, 3]] = 23 := by
   native_decide
 
 
-def solve {n : Nat} (tri : ProjectEulerStatements.P18.Triangle n) : Nat :=
+def solve (tri : ProjectEulerStatements.P18.Triangle) : Nat :=
   maxPathSum tri.1
-
-theorem equiv {n : Nat} (tri : ProjectEulerStatements.P18.Triangle n) :
-    ProjectEulerStatements.P18.naive tri = solve tri := sorry
 end ProjectEulerSolutions.P18

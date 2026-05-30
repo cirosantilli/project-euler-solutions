@@ -73,7 +73,4 @@ example :
     let primes := [2, 3]
     [9, 15, 21, 25, 27, 33].all (fun x => canBeWritten x primes) = true := by
   native_decide
-
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P46.naive n = solve n := sorry
 end ProjectEulerSolutions.P46

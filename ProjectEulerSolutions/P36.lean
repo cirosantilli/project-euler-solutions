@@ -50,6 +50,4 @@ example : isPalindromeBase2 585 = true := by
 
 def solve (limit : Nat) :=
   solveCore limit
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P36.naive n = solve n := sorry
 end ProjectEulerSolutions.P36

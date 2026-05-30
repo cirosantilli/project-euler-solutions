@@ -73,6 +73,4 @@ example : isPentagonal (pentagonal 7 - pentagonal 4) = false := by
 
 def solve (limit : Nat) :=
   findMinDifference limit
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P44.naive n = solve n := sorry
 end ProjectEulerSolutions.P44

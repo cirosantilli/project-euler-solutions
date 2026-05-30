@@ -86,6 +86,4 @@ example : intToMinRoman 4999 = "MMMMCMXCIX" := by
 
 def solve (lines : List String) : Nat :=
   totalCharactersSaved lines
-
-theorem equiv (lines : List String) : ProjectEulerStatements.P89.naive lines = solve lines := sorry
 end ProjectEulerSolutions.P89

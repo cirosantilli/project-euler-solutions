@@ -54,6 +54,4 @@ example : generatePerimeters 1000 = [16, 50, 196, 722] := by
 
 def solve (_n : Nat) :=
   sumPerimeters LIMIT
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P94.naive n = solve n := sorry
 end ProjectEulerSolutions.P94

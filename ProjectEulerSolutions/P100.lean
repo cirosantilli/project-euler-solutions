@@ -31,6 +31,4 @@ example :
 
 def solve (limit : Nat) :=
   (blueRedForTotalLimit limit).1
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P100.naive n = solve n := sorry
 end ProjectEulerSolutions.P100

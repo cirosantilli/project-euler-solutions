@@ -28,6 +28,4 @@ partial def bestLineNumber (pairs : List (Nat × Nat)) : Nat :=
 
 def solve (pairs : List (Nat × Nat)) : Nat :=
   bestLineNumber pairs
-
-theorem equiv (pairs : List (Nat × Nat)) : ProjectEulerStatements.P99.naive pairs = solve pairs := sorry
 end ProjectEulerSolutions.P99

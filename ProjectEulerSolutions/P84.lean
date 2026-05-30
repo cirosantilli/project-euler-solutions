@@ -207,6 +207,4 @@ example : modalString 6 = "102400" := by
 
 def solve (_n : Nat) :=
   (modalString 4).toNat!
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P84.naive n = solve n := sorry
 end ProjectEulerSolutions.P84

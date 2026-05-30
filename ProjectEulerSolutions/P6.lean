@@ -13,7 +13,4 @@ def solve (n : Nat) : Nat :=
 
 example : solve 10 = 2640 := by
   native_decide
-
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P6.naive n = solve n := sorry
 end ProjectEulerSolutions.P6

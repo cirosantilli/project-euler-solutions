@@ -11,6 +11,4 @@ def solve (n : Nat) : Nat :=
   sumOfMultiples 3 n' + sumOfMultiples 5 n' - sumOfMultiples 15 n'
 
 example : solve 10 = 23 := rfl
-theorem equiv (n : Nat) : ProjectEulerStatements.P1.naive n = solve n := sorry
-
 end ProjectEulerSolutions.P1

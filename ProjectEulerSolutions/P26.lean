@@ -35,6 +35,4 @@ example : recurringCycleLength 7 = 6 := by native_decide
 example : recurringCycleLength 8 = 0 := by native_decide
 example : recurringCycleLength 9 = 1 := by native_decide
 example : recurringCycleLength 10 = 0 := by native_decide
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P26.naive n = solve n := sorry
 end ProjectEulerSolutions.P26

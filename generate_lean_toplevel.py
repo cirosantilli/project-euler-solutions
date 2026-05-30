@@ -7,9 +7,12 @@ import re
 ROOT = Path(__file__).resolve().parent
 SOLVERS_DIR = ROOT / "solvers"
 LIB_DIR = ROOT / "ProjectEulerSolutions"
+EQUIV_DIR = LIB_DIR / "Equiv"
 OUTPUT = ROOT / "ProjectEulerSolutions.lean"
 
 IDENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+CONST_EQUIV = {"33", "43", "53", "68", "90", "93", "97"}
 
 
 def module_name(stem: str) -> str:
@@ -27,7 +30,7 @@ def sort_key(stem: str):
 
 
 def main() -> int:
-    lib_stems = [p.stem for p in LIB_DIR.glob("P*.lean")]
+    lib_stems = [p.stem for p in EQUIV_DIR.glob("P*.lean")]
     solver_stems = [p.stem for p in SOLVERS_DIR.glob("*.lean")]
     solver_stems = [s for s in solver_stems if s != "ProjectEulerSolutions"]
     lib_stems.sort(key=sort_key)
@@ -36,7 +39,7 @@ def main() -> int:
     lines: list[str] = []
     lines.append("import Lean")
     for stem in lib_stems:
-        lines.append(f"import ProjectEulerSolutions.{module_name(stem)}")
+        lines.append(f"import ProjectEulerSolutions.Equiv.{module_name(stem)}")
 
     lines.append("")
     lines.append("open Lean Elab Command Meta")
@@ -116,13 +119,21 @@ def main() -> int:
         if not stem.startswith("P") or not stem[1:].isdigit():
             continue
         n = stem[1:]
-        lines.append(f"def p{n}solve := ProjectEulerSolutions.P{n}.solve")
+        solve_expr = f"ProjectEulerSolutions.P{n}.solve"
+        lines.append(f"def p{n}solve := {solve_expr}")
         lines.append("")
+        lhs_expr = f"ProjectEulerStatements.P{n}.naive"
+        rhs_expr = f"p{n}solve"
         lines.append(
-            f"def p{n}equiv : ProjectEulerStatements.P{n}.naive = p{n}solve := by"
+            f"def p{n}equiv : {lhs_expr} = {rhs_expr} := by"
         )
-        lines.append("  apply (funext_iff).2")
-        lines.append(f"  simpa [funext_iff] using ProjectEulerSolutions.P{n}.equiv")
+        if n in CONST_EQUIV:
+            lines.append(f"  exact ProjectEulerSolutions.P{n}.equiv")
+        else:
+            lines.append("  apply (funext_iff).2")
+            lines.append(
+                f"  simpa [funext_iff] using ProjectEulerSolutions.P{n}.equiv"
+            )
         lines.append("")
 
     OUTPUT.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")

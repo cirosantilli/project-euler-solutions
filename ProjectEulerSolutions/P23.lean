@@ -71,6 +71,4 @@ example :
 
 def solve (limit : Nat) :=
   nonAbundantSums limit
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P23.naive n = solve n := sorry
 end ProjectEulerSolutions.P23

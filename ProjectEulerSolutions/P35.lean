@@ -114,6 +114,4 @@ example : isCircularPrime 197 (primeSieve 1000) = true := by
 
 def solve (limit : Nat) :=
   circularPrimeCount limit
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P35.naive n = solve n := sorry
 end ProjectEulerSolutions.P35

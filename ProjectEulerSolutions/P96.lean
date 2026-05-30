@@ -205,8 +205,4 @@ partial def solve (puzzles : List (List (List Nat))) : Nat :=
         | some solve => loop gs (acc + topLeftNumber solve)
         | none => loop gs acc
   loop puzzles 0
-
-
-
-theorem equiv (grids : List (List (List Nat))) : ProjectEulerStatements.P96.naive grids = solve grids := sorry
 end ProjectEulerSolutions.P96

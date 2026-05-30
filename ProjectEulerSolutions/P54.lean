@@ -207,8 +207,4 @@ def solve (hands : List (List Card × List Card)) : Nat :=
 
 def solveLines (lines : List String) : Nat :=
   solve (parseHands lines)
-
-theorem equiv (hands : List (List Card × List Card)) :
-    ProjectEulerStatements.P54.naive hands = solve hands := rfl
-
 end ProjectEulerSolutions.P54

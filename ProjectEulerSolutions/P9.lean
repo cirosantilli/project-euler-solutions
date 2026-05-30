@@ -28,6 +28,4 @@ partial def solve (total : Nat) : Nat :=
 
 example : solve 12 = 60 := by
   native_decide
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P9.naive n = solve n := sorry
 end ProjectEulerSolutions.P9

@@ -72,6 +72,4 @@ example :
 
 def solve (matrix : List (List Nat)) : Nat :=
   dijkstraMinPathSum matrix
-
-theorem equiv (matrix : List (List Nat)) : ProjectEulerStatements.P83.naive matrix = solve matrix := sorry
 end ProjectEulerSolutions.P83

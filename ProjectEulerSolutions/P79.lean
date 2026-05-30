@@ -65,11 +65,9 @@ partial def derivePasscode (attempts : List String) : String :=
   let digits := topoSort adj indeg present
   digits.foldl (fun acc d => acc ++ toString d) ""
 
-def solveChars (attempts : List String) : List Char :=
+def solve (attempts : List String) : List Char :=
   (derivePasscode attempts).data
 
-def solve (attempts : List String) : String :=
-  derivePasscode attempts
-
-theorem equiv (attempts : List String) : ProjectEulerStatements.P79.naive attempts = solveChars attempts := sorry
+def serialize (chars : List Char) : String :=
+  String.mk chars
 end ProjectEulerSolutions.P79

@@ -37,6 +37,4 @@ def solve (digits : List Nat) (n : Nat) : List Nat :=
 
 def serialize (ds : List Nat) : String :=
   String.mk (ds.map (fun d => Char.ofNat (d + 48)))
-
-theorem equiv (digits : List Nat) (n : Nat) : (ProjectEulerStatements.P24.naive digits n) = (solve digits n) := sorry
 end ProjectEulerSolutions.P24

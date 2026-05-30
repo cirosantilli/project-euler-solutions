@@ -114,8 +114,4 @@ partial def solve (maxA maxB : Nat) : Nat :=
       let acc' := if products[i]! then acc + i else acc
       sum (i + 1) acc'
   sum 0 0
-
-
-
-theorem equiv (maxA maxB : Nat) : ProjectEulerStatements.P32.naive maxA maxB = solve maxA maxB := sorry
 end ProjectEulerSolutions.P32

@@ -62,6 +62,4 @@ example : solveCore 50 = 6 := by
 
 def solve (_n : Nat) :=
   solveCore 1500000
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P75.naive n = solve n := sorry
 end ProjectEulerSolutions.P75

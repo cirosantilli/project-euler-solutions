@@ -35,6 +35,4 @@ example : countRightTriangles 2 = 14 := by
 
 def solve (_n : Nat) :=
   countRightTriangles 50
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P91.naive n = solve n := sorry
 end ProjectEulerSolutions.P91

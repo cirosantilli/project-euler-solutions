@@ -42,10 +42,4 @@ example :
 
 def solve (triangle : List (List Nat)) : Nat :=
   maxPathSum triangle
-
-def solveTriangle {n : Nat} (triangle : ProjectEulerStatements.P18.Triangle n) : Nat :=
-  solve triangle.1
-
-theorem equiv {n : Nat} (triangle : ProjectEulerStatements.P18.Triangle n) :
-    ProjectEulerStatements.P67.naive triangle = solveTriangle triangle := sorry
 end ProjectEulerSolutions.P67

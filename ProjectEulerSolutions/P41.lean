@@ -86,7 +86,4 @@ example : isPrime 1 = false := by
 
 example : isPrime 9 = false := by
   native_decide
-
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P41.naive n = solve n := sorry
 end ProjectEulerSolutions.P41

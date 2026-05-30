@@ -54,6 +54,4 @@ def solve (p : Nat) :=
     matchesList.foldl (fun acc n => acc + n) 0
   else
     sumPowerDigits p
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P30.naive n = solve n := sorry
 end ProjectEulerSolutions.P30

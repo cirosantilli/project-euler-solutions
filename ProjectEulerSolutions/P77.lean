@@ -56,8 +56,7 @@ example : countPrimeSummations 10 (sievePrimes 10) = 5 := by
   native_decide
 
 
-def solve (_n : Nat) :=
-  firstValueOver 5000
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P77.naive n n = solve n := sorry
+def solve (limit target : Nat) :=
+  let _ := limit
+  firstValueOver target
 end ProjectEulerSolutions.P77

@@ -30,8 +30,4 @@ partial def solve (limit maxIters : Nat) : Nat :=
       let acc := if isLychrelCandidate n maxIters then acc + 1 else acc
       loop (n + 1) acc
   loop 1 0
-
-theorem equiv (limit maxIters : Nat) :
-    ProjectEulerStatements.P55.naive limit maxIters = solve limit maxIters := sorry
-
 end ProjectEulerSolutions.P55

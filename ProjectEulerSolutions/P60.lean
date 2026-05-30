@@ -198,8 +198,4 @@ def solve (k : Nat) :=
     solveLimit 10000
   else
     0
-
-theorem equiv (k : Nat) :
-    ProjectEulerStatements.P60.naive k = solve k := sorry
-
 end ProjectEulerSolutions.P60

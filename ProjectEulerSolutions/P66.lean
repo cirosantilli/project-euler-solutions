@@ -54,6 +54,4 @@ example : minimalPellX 13 = some 649 := by
 
 def solve (limit : Nat) :=
   solveCore limit
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P66.naive n = solve n := sorry
 end ProjectEulerSolutions.P66

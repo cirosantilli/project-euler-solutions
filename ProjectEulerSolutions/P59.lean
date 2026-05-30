@@ -85,8 +85,4 @@ example : Nat.xor 107 42 = 65 := by
 
 def solve (cipher : List Nat) : Nat :=
   bestKeyAndSum cipher
-
-theorem equiv (cipher : List Nat) :
-    ProjectEulerStatements.P59.naive cipher = solve cipher := sorry
-
 end ProjectEulerSolutions.P59

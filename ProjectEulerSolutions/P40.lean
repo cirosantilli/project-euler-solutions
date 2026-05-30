@@ -61,7 +61,4 @@ example : digitAt 100000 = 2 := by
 
 example : digitAt 1000000 = 1 := by
   native_decide
-
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P40.naive n = solve n := sorry
 end ProjectEulerSolutions.P40

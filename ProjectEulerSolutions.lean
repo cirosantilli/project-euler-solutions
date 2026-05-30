@@ -1,104 +1,104 @@
 import Lean
-import ProjectEulerSolutions.P1
-import ProjectEulerSolutions.P2
-import ProjectEulerSolutions.P3
-import ProjectEulerSolutions.P4
-import ProjectEulerSolutions.P5
-import ProjectEulerSolutions.P6
-import ProjectEulerSolutions.P7
-import ProjectEulerSolutions.P8
-import ProjectEulerSolutions.P9
-import ProjectEulerSolutions.P10
-import ProjectEulerSolutions.P11
-import ProjectEulerSolutions.P12
-import ProjectEulerSolutions.P13
-import ProjectEulerSolutions.P14
-import ProjectEulerSolutions.P15
-import ProjectEulerSolutions.P16
-import ProjectEulerSolutions.P17
-import ProjectEulerSolutions.P18
-import ProjectEulerSolutions.P19
-import ProjectEulerSolutions.P20
-import ProjectEulerSolutions.P21
-import ProjectEulerSolutions.P22
-import ProjectEulerSolutions.P23
-import ProjectEulerSolutions.P24
-import ProjectEulerSolutions.P25
-import ProjectEulerSolutions.P26
-import ProjectEulerSolutions.P27
-import ProjectEulerSolutions.P28
-import ProjectEulerSolutions.P29
-import ProjectEulerSolutions.P30
-import ProjectEulerSolutions.P31
-import ProjectEulerSolutions.P32
-import ProjectEulerSolutions.P33
-import ProjectEulerSolutions.P34
-import ProjectEulerSolutions.P35
-import ProjectEulerSolutions.P36
-import ProjectEulerSolutions.P37
-import ProjectEulerSolutions.P38
-import ProjectEulerSolutions.P39
-import ProjectEulerSolutions.P40
-import ProjectEulerSolutions.P41
-import ProjectEulerSolutions.P42
-import ProjectEulerSolutions.P43
-import ProjectEulerSolutions.P44
-import ProjectEulerSolutions.P45
-import ProjectEulerSolutions.P46
-import ProjectEulerSolutions.P47
-import ProjectEulerSolutions.P48
-import ProjectEulerSolutions.P49
-import ProjectEulerSolutions.P50
-import ProjectEulerSolutions.P51
-import ProjectEulerSolutions.P52
-import ProjectEulerSolutions.P53
-import ProjectEulerSolutions.P54
-import ProjectEulerSolutions.P55
-import ProjectEulerSolutions.P56
-import ProjectEulerSolutions.P57
-import ProjectEulerSolutions.P58
-import ProjectEulerSolutions.P59
-import ProjectEulerSolutions.P60
-import ProjectEulerSolutions.P61
-import ProjectEulerSolutions.P62
-import ProjectEulerSolutions.P63
-import ProjectEulerSolutions.P64
-import ProjectEulerSolutions.P65
-import ProjectEulerSolutions.P66
-import ProjectEulerSolutions.P67
-import ProjectEulerSolutions.P68
-import ProjectEulerSolutions.P69
-import ProjectEulerSolutions.P70
-import ProjectEulerSolutions.P71
-import ProjectEulerSolutions.P72
-import ProjectEulerSolutions.P73
-import ProjectEulerSolutions.P74
-import ProjectEulerSolutions.P75
-import ProjectEulerSolutions.P76
-import ProjectEulerSolutions.P77
-import ProjectEulerSolutions.P78
-import ProjectEulerSolutions.P79
-import ProjectEulerSolutions.P80
-import ProjectEulerSolutions.P81
-import ProjectEulerSolutions.P82
-import ProjectEulerSolutions.P83
-import ProjectEulerSolutions.P84
-import ProjectEulerSolutions.P85
-import ProjectEulerSolutions.P86
-import ProjectEulerSolutions.P87
-import ProjectEulerSolutions.P88
-import ProjectEulerSolutions.P89
-import ProjectEulerSolutions.P90
-import ProjectEulerSolutions.P91
-import ProjectEulerSolutions.P92
-import ProjectEulerSolutions.P93
-import ProjectEulerSolutions.P94
-import ProjectEulerSolutions.P95
-import ProjectEulerSolutions.P96
-import ProjectEulerSolutions.P97
-import ProjectEulerSolutions.P98
-import ProjectEulerSolutions.P99
-import ProjectEulerSolutions.P100
+import ProjectEulerSolutions.Equiv.P1
+import ProjectEulerSolutions.Equiv.P2
+import ProjectEulerSolutions.Equiv.P3
+import ProjectEulerSolutions.Equiv.P4
+import ProjectEulerSolutions.Equiv.P5
+import ProjectEulerSolutions.Equiv.P6
+import ProjectEulerSolutions.Equiv.P7
+import ProjectEulerSolutions.Equiv.P8
+import ProjectEulerSolutions.Equiv.P9
+import ProjectEulerSolutions.Equiv.P10
+import ProjectEulerSolutions.Equiv.P11
+import ProjectEulerSolutions.Equiv.P12
+import ProjectEulerSolutions.Equiv.P13
+import ProjectEulerSolutions.Equiv.P14
+import ProjectEulerSolutions.Equiv.P15
+import ProjectEulerSolutions.Equiv.P16
+import ProjectEulerSolutions.Equiv.P17
+import ProjectEulerSolutions.Equiv.P18
+import ProjectEulerSolutions.Equiv.P19
+import ProjectEulerSolutions.Equiv.P20
+import ProjectEulerSolutions.Equiv.P21
+import ProjectEulerSolutions.Equiv.P22
+import ProjectEulerSolutions.Equiv.P23
+import ProjectEulerSolutions.Equiv.P24
+import ProjectEulerSolutions.Equiv.P25
+import ProjectEulerSolutions.Equiv.P26
+import ProjectEulerSolutions.Equiv.P27
+import ProjectEulerSolutions.Equiv.P28
+import ProjectEulerSolutions.Equiv.P29
+import ProjectEulerSolutions.Equiv.P30
+import ProjectEulerSolutions.Equiv.P31
+import ProjectEulerSolutions.Equiv.P32
+import ProjectEulerSolutions.Equiv.P33
+import ProjectEulerSolutions.Equiv.P34
+import ProjectEulerSolutions.Equiv.P35
+import ProjectEulerSolutions.Equiv.P36
+import ProjectEulerSolutions.Equiv.P37
+import ProjectEulerSolutions.Equiv.P38
+import ProjectEulerSolutions.Equiv.P39
+import ProjectEulerSolutions.Equiv.P40
+import ProjectEulerSolutions.Equiv.P41
+import ProjectEulerSolutions.Equiv.P42
+import ProjectEulerSolutions.Equiv.P43
+import ProjectEulerSolutions.Equiv.P44
+import ProjectEulerSolutions.Equiv.P45
+import ProjectEulerSolutions.Equiv.P46
+import ProjectEulerSolutions.Equiv.P47
+import ProjectEulerSolutions.Equiv.P48
+import ProjectEulerSolutions.Equiv.P49
+import ProjectEulerSolutions.Equiv.P50
+import ProjectEulerSolutions.Equiv.P51
+import ProjectEulerSolutions.Equiv.P52
+import ProjectEulerSolutions.Equiv.P53
+import ProjectEulerSolutions.Equiv.P54
+import ProjectEulerSolutions.Equiv.P55
+import ProjectEulerSolutions.Equiv.P56
+import ProjectEulerSolutions.Equiv.P57
+import ProjectEulerSolutions.Equiv.P58
+import ProjectEulerSolutions.Equiv.P59
+import ProjectEulerSolutions.Equiv.P60
+import ProjectEulerSolutions.Equiv.P61
+import ProjectEulerSolutions.Equiv.P62
+import ProjectEulerSolutions.Equiv.P63
+import ProjectEulerSolutions.Equiv.P64
+import ProjectEulerSolutions.Equiv.P65
+import ProjectEulerSolutions.Equiv.P66
+import ProjectEulerSolutions.Equiv.P67
+import ProjectEulerSolutions.Equiv.P68
+import ProjectEulerSolutions.Equiv.P69
+import ProjectEulerSolutions.Equiv.P70
+import ProjectEulerSolutions.Equiv.P71
+import ProjectEulerSolutions.Equiv.P72
+import ProjectEulerSolutions.Equiv.P73
+import ProjectEulerSolutions.Equiv.P74
+import ProjectEulerSolutions.Equiv.P75
+import ProjectEulerSolutions.Equiv.P76
+import ProjectEulerSolutions.Equiv.P77
+import ProjectEulerSolutions.Equiv.P78
+import ProjectEulerSolutions.Equiv.P79
+import ProjectEulerSolutions.Equiv.P80
+import ProjectEulerSolutions.Equiv.P81
+import ProjectEulerSolutions.Equiv.P82
+import ProjectEulerSolutions.Equiv.P83
+import ProjectEulerSolutions.Equiv.P84
+import ProjectEulerSolutions.Equiv.P85
+import ProjectEulerSolutions.Equiv.P86
+import ProjectEulerSolutions.Equiv.P87
+import ProjectEulerSolutions.Equiv.P88
+import ProjectEulerSolutions.Equiv.P89
+import ProjectEulerSolutions.Equiv.P90
+import ProjectEulerSolutions.Equiv.P91
+import ProjectEulerSolutions.Equiv.P92
+import ProjectEulerSolutions.Equiv.P93
+import ProjectEulerSolutions.Equiv.P94
+import ProjectEulerSolutions.Equiv.P95
+import ProjectEulerSolutions.Equiv.P96
+import ProjectEulerSolutions.Equiv.P97
+import ProjectEulerSolutions.Equiv.P98
+import ProjectEulerSolutions.Equiv.P99
+import ProjectEulerSolutions.Equiv.P100
 
 open Lean Elab Command Meta
 
@@ -357,8 +357,7 @@ def p32equiv : ProjectEulerStatements.P32.naive = p32solve := by
 def p33solve := ProjectEulerSolutions.P33.solve
 
 def p33equiv : ProjectEulerStatements.P33.naive = p33solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P33.equiv
+  exact ProjectEulerSolutions.P33.equiv
 
 def p34solve := ProjectEulerSolutions.P34.solve
 
@@ -417,8 +416,7 @@ def p42equiv : ProjectEulerStatements.P42.naive = p42solve := by
 def p43solve := ProjectEulerSolutions.P43.solve
 
 def p43equiv : ProjectEulerStatements.P43.naive = p43solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P43.equiv
+  exact ProjectEulerSolutions.P43.equiv
 
 def p44solve := ProjectEulerSolutions.P44.solve
 
@@ -477,8 +475,7 @@ def p52equiv : ProjectEulerStatements.P52.naive = p52solve := by
 def p53solve := ProjectEulerSolutions.P53.solve
 
 def p53equiv : ProjectEulerStatements.P53.naive = p53solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P53.equiv
+  exact ProjectEulerSolutions.P53.equiv
 
 def p54solve := ProjectEulerSolutions.P54.solve
 
@@ -567,8 +564,7 @@ def p67equiv : ProjectEulerStatements.P67.naive = p67solve := by
 def p68solve := ProjectEulerSolutions.P68.solve
 
 def p68equiv : ProjectEulerStatements.P68.naive = p68solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P68.equiv
+  exact ProjectEulerSolutions.P68.equiv
 
 def p69solve := ProjectEulerSolutions.P69.solve
 
@@ -699,8 +695,7 @@ def p89equiv : ProjectEulerStatements.P89.naive = p89solve := by
 def p90solve := ProjectEulerSolutions.P90.solve
 
 def p90equiv : ProjectEulerStatements.P90.naive = p90solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P90.equiv
+  exact ProjectEulerSolutions.P90.equiv
 
 def p91solve := ProjectEulerSolutions.P91.solve
 
@@ -717,8 +712,7 @@ def p92equiv : ProjectEulerStatements.P92.naive = p92solve := by
 def p93solve := ProjectEulerSolutions.P93.solve
 
 def p93equiv : ProjectEulerStatements.P93.naive = p93solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P93.equiv
+  exact ProjectEulerSolutions.P93.equiv
 
 def p94solve := ProjectEulerSolutions.P94.solve
 
@@ -741,8 +735,7 @@ def p96equiv : ProjectEulerStatements.P96.naive = p96solve := by
 def p97solve := ProjectEulerSolutions.P97.solve
 
 def p97equiv : ProjectEulerStatements.P97.naive = p97solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P97.equiv
+  exact ProjectEulerSolutions.P97.equiv
 
 def p98solve := ProjectEulerSolutions.P98.solve
 

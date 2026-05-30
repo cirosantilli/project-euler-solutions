@@ -93,8 +93,4 @@ example : countDiagPrimes 7 = (8, 13) := by
 
 example : countDiagPrimes 5 = (5, 9) := by
   native_decide
-
-theorem equiv (ratioNum ratioDen : Nat) :
-    ProjectEulerStatements.P58.naive ratioNum ratioDen = solve ratioNum ratioDen := sorry
-
 end ProjectEulerSolutions.P58

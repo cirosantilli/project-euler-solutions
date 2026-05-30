@@ -26,8 +26,4 @@ def solveCore (limitN threshold : Nat) :=
 
 def solve : Nat :=
   solveCore 100 1000000
-
-theorem equiv :
-    ProjectEulerStatements.P53.naive = solve := sorry
-
 end ProjectEulerSolutions.P53

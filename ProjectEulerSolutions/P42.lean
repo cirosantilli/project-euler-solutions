@@ -47,6 +47,4 @@ example : isTriangle 55 = true := by
 
 def solve (words : List String) : Nat :=
   countTriangleWords words
-
-theorem equiv (words : List String) : ProjectEulerStatements.P42.naive words = solve words := sorry
 end ProjectEulerSolutions.P42

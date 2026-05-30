@@ -40,6 +40,4 @@ example : totientMaxN 10 = 6 := by
 
 def solve (_n : Nat) :=
   totientMaxN 1000000
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P69.naive n = solve n := sorry
 end ProjectEulerSolutions.P69

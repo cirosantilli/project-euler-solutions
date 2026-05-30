@@ -83,6 +83,4 @@ example : longestConsecutivePrimeSum 1000 = (953, 21) := by
 
 def solve (n : Nat) :=
   (longestConsecutivePrimeSum n).1
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P50.naive n = solve n := sorry
 end ProjectEulerSolutions.P50

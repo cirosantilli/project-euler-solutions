@@ -25,6 +25,4 @@ example : countSummations 5 = 6 := by
 
 def solve (_n : Nat) :=
   countSummations 100
-
-theorem equiv (n : Nat) : ProjectEulerStatements.P76.naive n = solve n := sorry
 end ProjectEulerSolutions.P76
