@@ -9,6 +9,12 @@ def parseTriangle (text : String) : List (List Nat) :=
   let lines := text.splitOn "\n" |>.filter (fun ln => ln != "")
   lines.map (fun ln => ln.splitOn " " |>.filter (fun t => t != "") |>.map parseNat)
 
+def toTriangle? (rows : List (List Nat)) : Option ProjectEulerStatements.P18.Triangle :=
+  if h : ∀ i (hi : i < rows.length), (rows.get ⟨i, hi⟩).length = i + 1 then
+    some ⟨rows, h⟩
+  else
+    none
+
 partial def getAt (xs : List Nat) (i : Nat) : Nat :=
   match xs, i with
   | [], _ => 0
@@ -40,6 +46,6 @@ example :
   native_decide
 
 
-def solve (triangle : List (List Nat)) : Nat :=
-  maxPathSum triangle
+def solve (triangle : ProjectEulerStatements.P18.Triangle) : Nat :=
+  maxPathSum triangle.1
 end ProjectEulerSolutions.P67
