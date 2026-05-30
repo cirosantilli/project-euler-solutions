@@ -1563,242 +1563,242 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/1.c[]: 0.011
 ** link:solvers/1.cpp[]: 0.003
 ** link:solvers/eulersolve/1.cpp[]: 0.004
-** link:solvers/1.lean[]: 0.387
+** link:solvers/1.lean[]: 0.203
 * 2
 ** link:solvers/2.py[]: 0.104
 ** link:solvers/eulersolve/2.py[]: 0.086
 ** link:solvers/eulersolve/2.cpp[]: 0.003
-** link:solvers/2.lean[]: 0.556
+** link:solvers/2.lean[]: 0.164
 * 3
 ** link:solvers/3.py[]: 0.120
 ** link:solvers/eulersolve/3.py[]: 0.075
 ** link:solvers/eulersolve/3.cpp[]: 0.003
-** link:solvers/3.lean[]: 0.394
+** link:solvers/3.lean[]: 0.067
 * 4
 ** link:solvers/4.py[]: 0.126
 ** link:solvers/eulersolve/4.py[]: 0.083
 ** link:solvers/eulersolve/4.cpp[]: 0.003
-** link:solvers/4.lean[]: 0.421
+** link:solvers/4.lean[]: 0.071
 * 5
 ** link:solvers/5.py[]: 0.111
 ** link:solvers/eulersolve/5.py[]: 0.065
 ** link:solvers/eulersolve/5.cpp[]: 0.003
-** link:solvers/5.lean[]: 0.391
+** link:solvers/5.lean[]: 0.211
 * 6
 ** link:solvers/6.py[]: 0.106
 ** link:solvers/eulersolve/6.py[]: 0.062
 ** link:solvers/eulersolve/6.cpp[]: 0.003
-** link:solvers/6.lean[]: 0.408
+** link:solvers/6.lean[]: 0.095
 * 7
 ** link:solvers/7.py[]: 0.114
 ** link:solvers/eulersolve/7.py[]: 0.065
 ** link:solvers/eulersolve/7.cpp[]: 0.003
-** link:solvers/7.lean[]: 0.410
+** link:solvers/7.lean[]: 0.143
 * 8
 ** link:solvers/8.py[]: 0.113
 ** link:solvers/eulersolve/8.py[]: 0.061
 ** link:solvers/eulersolve/8.cpp[]: 0.003
-** link:solvers/8.lean[]: 0.050
+** link:solvers/8.lean[]: 0.008
 * 9
 ** link:solvers/9.py[]: 0.103
 ** link:solvers/eulersolve/9.py[]: 0.061
 ** link:solvers/eulersolve/9.cpp[]: 0.003
-** link:solvers/9.lean[]: 0.378
+** link:solvers/9.lean[]: 0.093
 * 10
 ** link:solvers/10.py[]: 0.116
 ** link:solvers/eulersolve/10.py[]: 0.112
 ** link:solvers/eulersolve/10.cpp[]: 0.009
-** link:solvers/10.lean[]: 0.626
+** link:solvers/10.lean[]: 0.269
 * 11
 ** link:solvers/11.py[]: 0.101
 ** link:solvers/eulersolve/11.py[]: 0.066
 ** link:solvers/eulersolve/11.cpp[]: 0.003
-** link:solvers/11.lean[]: 0.367
+** link:solvers/11.lean[]: 0.218
 * 12
 ** link:solvers/12.py[]: 0.185
 ** link:solvers/eulersolve/12.py[]: 0.083
 ** link:solvers/eulersolve/12.cpp[]: 0.006
-** link:solvers/12.lean[]: 0.478
+** link:solvers/12.lean[]: 0.213
 * 13
 ** link:solvers/13.py[]: 0.094
 ** link:solvers/eulersolve/13.py[]: 0.061
 ** link:solvers/eulersolve/13.cpp[]: 0.003
-** link:solvers/13.lean[]: 0.372
+** link:solvers/13.lean[]: 0.092
 * 14
 ** link:solvers/14.py[]: 0.647
 ** link:solvers/eulersolve/14.py[]: 0.863
 ** link:solvers/eulersolve/14.cpp[]: 0.700
-** link:solvers/14.lean[]: 0.531
+** link:solvers/14.lean[]: 0.351
 * 15
 ** link:solvers/15.py[]: 0.096
 ** link:solvers/eulersolve/15.py[]: 0.058
 ** link:solvers/eulersolve/15.cpp[]: 0.003
-** link:solvers/15.lean[]: 0.352
+** link:solvers/15.lean[]: 0.075
 * 16
 ** link:solvers/16.py[]: 0.118
 ** link:solvers/eulersolve/16.py[]: 0.058
 ** link:solvers/eulersolve/16.cpp[]: 0.003
-** link:solvers/16.lean[]: 0.418
+** link:solvers/16.lean[]: 0.071
 * 17
 ** link:solvers/17.py[]: 0.121
 ** link:solvers/eulersolve/17.py[]: 0.059
 ** link:solvers/eulersolve/17.cpp[]: 0.002
-** link:solvers/17.lean[]: 0.412
+** link:solvers/17.lean[]: 0.065
 * 18
 ** link:solvers/18.py[]: 0.106
 ** link:solvers/eulersolve/18.py[]: 0.057
 ** link:solvers/eulersolve/18.cpp[]: 0.002
-** link:solvers/18.lean[]: 0.532
+** link:solvers/18.lean[]: 0.076
 * 19
 ** link:solvers/19.py[]: 0.122
 ** link:solvers/eulersolve/19.py[]: 0.073
 ** link:solvers/eulersolve/19.cpp[]: 0.002
-** link:solvers/19.lean[]: 0.501
+** link:solvers/19.lean[]: 0.069
 * 20
 ** link:solvers/20.py[]: 0.119
 ** link:solvers/eulersolve/20.py[]: 0.060
 ** link:solvers/eulersolve/20.cpp[]: 0.002
-** link:solvers/20.lean[]: 0.395
+** link:solvers/20.lean[]: 0.169
 * 21
 ** link:solvers/21.py[]: 0.122
 ** link:solvers/eulersolve/21.py[]: 0.069
 ** link:solvers/eulersolve/21.cpp[]: 0.002
-** link:solvers/21.lean[]: 0.407
+** link:solvers/21.lean[]: 0.126
 * 22
 ** link:solvers/22.py[]: 0.141
 ** link:solvers/eulersolve/22.py[]: 0.087
 ** link:solvers/eulersolve/22.cpp[]: 0.004
-** link:solvers/22.lean[]: 0.405
+** link:solvers/22.lean[]: 0.098
 * 23
 ** link:solvers/23.py[]: 0.217
 ** link:solvers/eulersolve/23.py[]: 0.140
 ** link:solvers/eulersolve/23.cpp[]: 0.023
-** link:solvers/23.lean[]: 0.438
+** link:solvers/23.lean[]: 0.116
 * 24
 ** link:solvers/24.py[]: 0.116
 ** link:solvers/eulersolve/24.py[]: 0.063
 ** link:solvers/eulersolve/24.cpp[]: 0.002
-** link:solvers/24.lean[]: 0.368
+** link:solvers/24.lean[]: 0.194
 * 25
 ** link:solvers/25.py[]: 0.155
 ** link:solvers/eulersolve/25.py[]: 0.065
 ** link:solvers/eulersolve/25.cpp[]: 0.003
-** link:solvers/25.lean[]: 0.433
+** link:solvers/25.lean[]: 0.168
 * 26
 ** link:solvers/26.py[]: 0.111
 ** link:solvers/eulersolve/26.py[]: 0.065
 ** link:solvers/eulersolve/26.cpp[]: 0.002
-** link:solvers/26.lean[]: 0.486
+** link:solvers/26.lean[]: 0.095
 * 27
 ** link:solvers/27.py[]: 0.149
 ** link:solvers/eulersolve/27.py[]: 0.156
 ** link:solvers/eulersolve/27.cpp[]: 0.040
-** link:solvers/27.lean[]: 0.545
+** link:solvers/27.lean[]: 0.151
 * 28
 ** link:solvers/28.py[]: 0.095
 ** link:solvers/eulersolve/28.py[]: 0.058
 ** link:solvers/eulersolve/28.cpp[]: 0.002
-** link:solvers/28.lean[]: 0.334
+** link:solvers/28.lean[]: 0.068
 * 29
 ** link:solvers/29.py[]: 0.136
 ** link:solvers/eulersolve/29.py[]: 0.064
 ** link:solvers/eulersolve/29.cpp[]: 0.006
-** link:solvers/29.lean[]: 0.629
+** link:solvers/29.lean[]: 0.492
 * 30
 ** link:solvers/30.py[]: 0.103
 ** link:solvers/eulersolve/30.py[]: 0.067
 ** link:solvers/eulersolve/30.cpp[]: 0.004
-** link:solvers/30.lean[]: 0.498
+** link:solvers/30.lean[]: 0.083
 * 31
 ** link:solvers/31.py[]: 0.117
 ** link:solvers/eulersolve/31.py[]: 0.060
 ** link:solvers/eulersolve/31.cpp[]: 0.003
-** link:solvers/31.lean[]: 0.449
+** link:solvers/31.lean[]: 0.135
 * 32
 ** link:solvers/32.py[]: 0.153
 ** link:solvers/eulersolve/32.py[]: 0.105
 ** link:solvers/eulersolve/32.cpp[]: 0.005
-** link:solvers/32.lean[]: 0.413
+** link:solvers/32.lean[]: 0.093
 * 33
 ** link:solvers/33.py[]: 0.124
 ** link:solvers/eulersolve/33.py[]: 0.069
 ** link:solvers/eulersolve/33.cpp[]: 0.002
-** link:solvers/33.lean[]: 0.400
+** link:solvers/33.lean[]: 0.142
 * 34
 ** link:solvers/34.py[]: 0.284
 ** link:solvers/eulersolve/34.py[]: 0.150
 ** link:solvers/eulersolve/34.cpp[]: 0.018
-** link:solvers/34.lean[]: 0.487
+** link:solvers/34.lean[]: 0.132
 * 35
 ** link:solvers/35.py[]: 0.161
 ** link:solvers/eulersolve/35.py[]: 0.097
 ** link:solvers/eulersolve/35.cpp[]: 0.008
-** link:solvers/35.lean[]: 0.394
+** link:solvers/35.lean[]: 0.079
 * 36
 ** link:solvers/36.py[]: 0.127
 ** link:solvers/eulersolve/36.py[]: 0.088
 ** link:solvers/eulersolve/36.cpp[]: 0.012
-** link:solvers/36.lean[]: 0.404
+** link:solvers/36.lean[]: 0.065
 * 37
 ** link:solvers/37.py[]: 0.140
 ** link:solvers/eulersolve/37.py[]: 0.146
 ** link:solvers/eulersolve/37.cpp[]: 0.098
-** link:solvers/37.lean[]: 0.394
+** link:solvers/37.lean[]: 0.180
 * 38
 ** link:solvers/38.py[]: 0.141
 ** link:solvers/eulersolve/38.py[]: 0.067
 ** link:solvers/eulersolve/38.cpp[]: 0.002
-** link:solvers/38.lean[]: 0.373
+** link:solvers/38.lean[]: 0.096
 * 39
 ** link:solvers/39.py[]: 0.118
 ** link:solvers/eulersolve/39.py[]: 0.076
 ** link:solvers/eulersolve/39.cpp[]: 0.003
-** link:solvers/39.lean[]: 0.310
+** link:solvers/39.lean[]: 0.079
 * 40
 ** link:solvers/40.py[]: 0.118
 ** link:solvers/eulersolve/40.py[]: 0.067
 ** link:solvers/eulersolve/40.cpp[]: 0.004
-** link:solvers/40.lean[]: 0.336
+** link:solvers/40.lean[]: 0.139
 * 41
 ** link:solvers/41.py[]: 0.143
 ** link:solvers/eulersolve/41.py[]: 0.059
 ** link:solvers/eulersolve/41.cpp[]: 0.002
-** link:solvers/41.lean[]: 0.397
+** link:solvers/41.lean[]: 0.078
 * 42
 ** link:solvers/42.py[]: 0.178
 ** link:solvers/eulersolve/42.py[]: 0.078
 ** link:solvers/eulersolve/42.cpp[]: 0.003
-** link:solvers/42.lean[]: 0.293
+** link:solvers/42.lean[]: 0.069
 * 43
 ** link:solvers/43.py[]: 0.121
 ** link:solvers/eulersolve/43.py[]: 0.595
 ** link:solvers/eulersolve/43.cpp[]: 0.017
-** link:solvers/43.lean[]: 5.361
+** link:solvers/43.lean[]: 5.458
 * 44
 ** link:solvers/44.py[]: 0.473
 ** link:solvers/eulersolve/44.py[]: 0.393
 ** link:solvers/eulersolve/44.cpp[]: 0.057
-** link:solvers/44.lean[]: 22.681
+** link:solvers/44.lean[]: 22.470
 * 45
 ** link:solvers/45.py[]: 0.075
 ** link:solvers/eulersolve/45.py[]: 0.064
 ** link:solvers/eulersolve/45.cpp[]: 0.002
-** link:solvers/45.lean[]: 0.425
+** link:solvers/45.lean[]: 0.082
 * 46
 ** link:solvers/46.py[]: 0.163
 ** link:solvers/eulersolve/46.py[]: 0.070
 ** link:solvers/eulersolve/46.cpp[]: 0.002
-** link:solvers/46.lean[]: 0.492
+** link:solvers/46.lean[]: 0.102
 * 47
 ** link:solvers/47.py[]: 0.116
 ** link:solvers/eulersolve/47.py[]: 0.095
 ** link:solvers/eulersolve/47.cpp[]: 0.024
-** link:solvers/47.lean[]: 0.392
+** link:solvers/47.lean[]: 0.056
 * 48
 ** link:solvers/48.py[]: 0.114
 ** link:solvers/eulersolve/48.py[]: 0.064
 ** link:solvers/eulersolve/48.cpp[]: 0.002
-** link:solvers/48.lean[]: 0.406
+** link:solvers/48.lean[]: 0.068
 * 49
 ** link:solvers/49.py[]: 0.129
 ** link:solvers/eulersolve/49.py[]: 0.067
@@ -1808,257 +1808,257 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/50.py[]: 0.150
 ** link:solvers/eulersolve/50.py[]: 0.087
 ** link:solvers/eulersolve/50.cpp[]: 0.006
-** link:solvers/50.lean[]: 0.571
+** link:solvers/50.lean[]: 0.172
 * 51
 ** link:solvers/51.py[]: 0.149
 ** link:solvers/eulersolve/51.py[]: 0.231
 ** link:solvers/eulersolve/51.cpp[]: 0.025
-** link:solvers/51.lean[]: 0.492
+** link:solvers/51.lean[]: 0.116
 * 52
 ** link:solvers/52.py[]: 0.123
 ** link:solvers/eulersolve/52.py[]: 0.108
 ** link:solvers/eulersolve/52.cpp[]: 0.011
-** link:solvers/52.lean[]: 0.416
+** link:solvers/52.lean[]: 0.099
 * 53
 ** link:solvers/53.py[]: 0.106
 ** link:solvers/eulersolve/53.py[]: 0.058
 ** link:solvers/eulersolve/53.cpp[]: 0.002
-** link:solvers/53.lean[]: 0.439
+** link:solvers/53.lean[]: 0.134
 * 54
 ** link:solvers/54.py[]: 0.198
 ** link:solvers/eulersolve/54.py[]: 0.124
 ** link:solvers/eulersolve/54.cpp[]: 0.002
-** link:solvers/54.lean[]: 0.416
+** link:solvers/54.lean[]: 0.173
 * 55
 ** link:solvers/55.py[]: 0.166
 ** link:solvers/eulersolve/55.py[]: 0.102
 ** link:solvers/eulersolve/55.cpp[]: 0.005
-** link:solvers/55.lean[]: 0.433
+** link:solvers/55.lean[]: 0.199
 * 56
 ** link:solvers/56.py[]: 0.088
 ** link:solvers/eulersolve/56.py[]: 0.072
 ** link:solvers/eulersolve/56.cpp[]: 0.004
-** link:solvers/56.lean[]: 0.801
+** link:solvers/56.lean[]: 0.512
 * 57
 ** link:solvers/57.py[]: 0.076
 ** link:solvers/eulersolve/57.py[]: 0.061
 ** link:solvers/eulersolve/57.cpp[]: 0.005
-** link:solvers/57.lean[]: 0.599
+** link:solvers/57.lean[]: 0.348
 * 58
 ** link:solvers/58.py[]: 0.190
 ** link:solvers/eulersolve/58.py[]: 0.168
 ** link:solvers/eulersolve/58.cpp[]: 0.169
-** link:solvers/58.lean[]: 0.400
+** link:solvers/58.lean[]: 0.152
 * 59
 ** link:solvers/59.py[]: 0.169
 ** link:solvers/eulersolve/59.py[]: 0.535
 ** link:solvers/eulersolve/59.cpp[]: 0.062
-** link:solvers/59.lean[]: 0.391
+** link:solvers/59.lean[]: 0.171
 * 60
 ** link:solvers/60.py[]: 0.511
 ** link:solvers/eulersolve/60.py[]: 0.448
 ** link:solvers/eulersolve/60.cpp[]: 0.141
-** link:solvers/60.lean[]: 0.616
+** link:solvers/60.lean[]: 0.429
 * 61
 ** link:solvers/61.py[]: 0.084
 ** link:solvers/eulersolve/61.py[]: 0.072
 ** link:solvers/eulersolve/61.cpp[]: 0.002
-** link:solvers/61.lean[]: 0.368
+** link:solvers/61.lean[]: 0.131
 * 62
 ** link:solvers/62.py[]: 0.145
 ** link:solvers/eulersolve/62.py[]: 0.073
 ** link:solvers/eulersolve/62.cpp[]: 0.007
-** link:solvers/62.lean[]: 0.804
+** link:solvers/62.lean[]: 0.681
 * 63
 ** link:solvers/63.py[]: 0.070
 ** link:solvers/eulersolve/63.py[]: 0.058
 ** link:solvers/eulersolve/63.cpp[]: 0.003
-** link:solvers/63.lean[]: 0.413
+** link:solvers/63.lean[]: 0.125
 * 64
 ** link:solvers/64.py[]: 0.132
 ** link:solvers/eulersolve/64.py[]: 0.072
 ** link:solvers/eulersolve/64.cpp[]: 0.005
-** link:solvers/64.lean[]: 0.382
+** link:solvers/64.lean[]: 0.086
 * 65
 ** link:solvers/65.py[]: 0.113
 ** link:solvers/eulersolve/65.py[]: 0.058
 ** link:solvers/eulersolve/65.cpp[]: 0.002
-** link:solvers/65.lean[]: 0.402
+** link:solvers/65.lean[]: 0.075
 * 66
 ** link:solvers/66.py[]: 0.135
 ** link:solvers/eulersolve/66.py[]: 0.070
 ** link:solvers/eulersolve/66.cpp[]: 0.003
-** link:solvers/66.lean[]: 0.378
+** link:solvers/66.lean[]: 0.082
 * 67
 ** link:solvers/67.py[]: 0.155
 ** link:solvers/eulersolve/67.py[]: 0.075
 ** link:solvers/eulersolve/67.cpp[]: 0.002
-** link:solvers/67.lean[]: 0.481
+** link:solvers/67.lean[]: 0.124
 * 68
 ** link:solvers/68.py[]: 0.124
 ** link:solvers/eulersolve/68.py[]: 0.093
 ** link:solvers/eulersolve/68.cpp[]: 0.036
-** link:solvers/68.lean[]: 2.561
+** link:solvers/68.lean[]: 2.219
 * 69
 ** link:solvers/69.py[]: 0.069
 ** link:solvers/eulersolve/69.py[]: 0.069
 ** link:solvers/eulersolve/69.cpp[]: 0.002
-** link:solvers/69.lean[]: 0.326
+** link:solvers/69.lean[]: 0.092
 * 70
 ** link:solvers/70.py[]: 0.590
 ** link:solvers/eulersolve/70.py[]: 3.760
 ** link:solvers/eulersolve/70.cpp[]: 0.491
-** link:solvers/70.lean[]: 17.788
+** link:solvers/70.lean[]: 17.572
 * 71
 ** link:solvers/71.py[]: 0.168
 ** link:solvers/eulersolve/71.py[]: 0.162
 ** link:solvers/eulersolve/71.cpp[]: 0.055
-** link:solvers/71.lean[]: 0.427
+** link:solvers/71.lean[]: 0.146
 * 72
 ** link:solvers/72.py[]: 0.174
 ** link:solvers/eulersolve/72.py[]: 0.086
 ** link:solvers/eulersolve/72.cpp[]: 0.011
-** link:solvers/72.lean[]: 0.402
+** link:solvers/72.lean[]: 0.127
 * 73
 ** link:solvers/73.py[]: 0.880
 ** link:solvers/eulersolve/73.py[]: 0.225
 ** link:solvers/eulersolve/73.cpp[]: 0.013
-** link:solvers/73.lean[]: 1.042
+** link:solvers/73.lean[]: 0.586
 * 74
 ** link:solvers/74.py[]: 0.151
 ** link:solvers/eulersolve/74.py[]: 0.421
 ** link:solvers/eulersolve/74.cpp[]: 0.127
-** link:solvers/74.lean[]: 0.690
+** link:solvers/74.lean[]: 0.270
 * 75
 ** link:solvers/75.py[]: 0.162
 ** link:solvers/eulersolve/75.py[]: 0.098
 ** link:solvers/eulersolve/75.cpp[]: 0.013
-** link:solvers/75.lean[]: 0.395
+** link:solvers/75.lean[]: 0.131
 * 76
 ** link:solvers/76.py[]: 0.116
 ** link:solvers/eulersolve/76.py[]: 0.058
 ** link:solvers/eulersolve/76.cpp[]: 0.002
-** link:solvers/76.lean[]: 0.495
+** link:solvers/76.lean[]: 0.126
 * 77
 ** link:solvers/77.py[]: 0.123
 ** link:solvers/eulersolve/77.py[]: 0.061
 ** link:solvers/eulersolve/77.cpp[]: 0.002
-** link:solvers/77.lean[]: 0.476
+** link:solvers/77.lean[]: 0.089
 * 78
 ** link:solvers/78.py[]: 0.241
 ** link:solvers/eulersolve/78.py[]: 0.133
 ** link:solvers/eulersolve/78.cpp[]: 0.016
-** link:solvers/78.lean[]: 0.680
+** link:solvers/78.lean[]: 0.364
 * 79
 ** link:solvers/79.py[]: 0.095
 ** link:solvers/eulersolve/79.py[]: 0.069
 ** link:solvers/eulersolve/79.cpp[]: 0.002
-** link:solvers/79.lean[]: 0.339
+** link:solvers/79.lean[]: 0.078
 * 80
 ** link:solvers/80.py[]: 0.123
 ** link:solvers/eulersolve/80.py[]: 0.084
 ** link:solvers/eulersolve/80.cpp[]: 0.004
-** link:solvers/80.lean[]: 0.470
+** link:solvers/80.lean[]: 0.296
 * 81
 ** link:solvers/81.py[]: 0.116
 ** link:solvers/eulersolve/81.py[]: 0.064
 ** link:solvers/eulersolve/81.cpp[]: 0.002
-** link:solvers/81.lean[]: 0.450
+** link:solvers/81.lean[]: 0.109
 * 82
 ** link:solvers/82.py[]: 0.111
 ** link:solvers/eulersolve/82.py[]: 0.069
 ** link:solvers/eulersolve/82.cpp[]: 0.002
-** link:solvers/82.lean[]: 0.684
+** link:solvers/82.lean[]: 0.129
 * 83
 ** link:solvers/83.py[]: 0.240
 ** link:solvers/eulersolve/83.py[]: 0.090
 ** link:solvers/eulersolve/83.cpp[]: 0.003
-** link:solvers/83.lean[]: 0.832
+** link:solvers/83.lean[]: 0.196
 * 84
 ** link:solvers/84.py[]: 0.134
 ** link:solvers/eulersolve/84.py[]: 0.543
 ** link:solvers/eulersolve/84.cpp[]: 0.005
-** link:solvers/84.lean[]: 0.050
+** link:solvers/84.lean[]: 0.015
 * 85
 ** link:solvers/85.py[]: 0.119
 ** link:solvers/eulersolve/85.py[]: 0.064
 ** link:solvers/eulersolve/85.cpp[]: 0.003
-** link:solvers/85.lean[]: 0.896
+** link:solvers/85.lean[]: 0.090
 * 86
 ** link:solvers/86.py[]: 0.455
 ** link:solvers/eulersolve/86.py[]: 0.279
 ** link:solvers/eulersolve/86.cpp[]: 0.013
-** link:solvers/86.lean[]: 1.129
+** link:solvers/86.lean[]: 0.576
 * 87
 ** link:solvers/87.py[]: 0.295
 ** link:solvers/eulersolve/87.py[]: 0.312
 ** link:solvers/eulersolve/87.cpp[]: 0.215
-** link:solvers/87.lean[]: 0.885
+** link:solvers/87.lean[]: 0.189
 * 88
 ** link:solvers/88.py[]: 0.129
 ** link:solvers/eulersolve/88.py[]: 0.090
 ** link:solvers/eulersolve/88.cpp[]: 0.004
-** link:solvers/88.lean[]: 0.773
+** link:solvers/88.lean[]: 0.082
 * 89
 ** link:solvers/89.py[]: 0.138
 ** link:solvers/eulersolve/89.py[]: 0.081
 ** link:solvers/eulersolve/89.cpp[]: 0.002
-** link:solvers/89.lean[]: 0.897
+** link:solvers/89.lean[]: 0.218
 * 90
 ** link:solvers/90.py[]: 0.155
 ** link:solvers/eulersolve/90.py[]: 0.119
 ** link:solvers/eulersolve/90.cpp[]: 0.003
-** link:solvers/90.lean[]: 0.747
+** link:solvers/90.lean[]: 0.161
 * 91
 ** link:solvers/91.py[]: 0.113
 ** link:solvers/eulersolve/91.py[]: 0.100
 ** link:solvers/eulersolve/91.cpp[]: 0.015
-** link:solvers/91.lean[]: 0.756
+** link:solvers/91.lean[]: 0.099
 * 92
 ** link:solvers/92.py[]: 0.231
 ** link:solvers/eulersolve/92.py[]: 4.179
 ** link:solvers/eulersolve/92.cpp[]: 0.070
-** link:solvers/92.lean[]: 0.773
+** link:solvers/92.lean[]: 0.157
 * 93
 ** link:solvers/93.py[]: 1.740
 ** link:solvers/eulersolve/93.py[]: 1.308
 ** link:solvers/eulersolve/93.cpp[]: 0.047
-** link:solvers/93.lean[]: 2.491
+** link:solvers/93.lean[]: 1.754
 * 94
 ** link:solvers/94.py[]: 0.060
 ** link:solvers/eulersolve/94.py[]: 0.059
 ** link:solvers/eulersolve/94.cpp[]: 0.003
-** link:solvers/94.lean[]: 0.804
+** link:solvers/94.lean[]: 0.065
 * 95
 ** link:solvers/95.py[]: 0.370
 ** link:solvers/eulersolve/95.py[]: 0.239
 ** link:solvers/eulersolve/95.cpp[]: 0.067
-** link:solvers/95.lean[]: 0.933
+** link:solvers/95.lean[]: 0.247
 * 96
 ** link:solvers/96.py[]: 0.175
 ** link:solvers/eulersolve/96.py[]: 0.882
 ** link:solvers/eulersolve/96.cpp[]: 0.004
-** link:solvers/96.lean[]: 0.414
+** link:solvers/96.lean[]: 0.075
 * 97
 ** link:solvers/97.py[]: 0.117
 ** link:solvers/eulersolve/97.py[]: 0.057
 ** link:solvers/eulersolve/97.cpp[]: 0.002
-** link:solvers/97.lean[]: 0.477
+** link:solvers/97.lean[]: 0.110
 * 98
 ** link:solvers/98.py[]: 0.226
 ** link:solvers/eulersolve/98.py[]: 0.107
 ** link:solvers/eulersolve/98.cpp[]: 0.024
-** link:solvers/98.lean[]: 1.873
+** link:solvers/98.lean[]: 1.409
 * 99
 ** link:solvers/99.py[]: 0.064
 ** link:solvers/eulersolve/99.py[]: 0.062
 ** link:solvers/eulersolve/99.cpp[]: 0.003
-** link:solvers/99.lean[]: 0.456
+** link:solvers/99.lean[]: 0.182
 * 100
 ** link:solvers/100.py[]: 0.116
 ** link:solvers/eulersolve/100.py[]: 0.057
 ** link:solvers/eulersolve/100.cpp[]: 0.002
-** link:solvers/100.lean[]: 0.391
+** link:solvers/100.lean[]: 0.048
 * 101
 ** link:solvers/101.py[]: 0.134
 ** link:solvers/eulersolve/101.py[]: 0.058

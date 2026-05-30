@@ -103,7 +103,7 @@ def firstNonTrivial (xs : List (List Nat)) : List Nat :=
 
 def serialize (xs : List (List Nat)) : Nat :=
   match firstNonTrivial xs with
-  | [a, b, c] => a * 1000000 + b * 1000 + c
+  | [a, b, c] => a * 100000000 + b * 10000 + c
   | _ => 0
 
 theorem equiv (n seqlen : Nat) : ProjectEulerStatements.P49.naive n seqlen = solve n seqlen := sorry
