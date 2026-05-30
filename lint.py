@@ -283,7 +283,7 @@ def lint_paths(
                             "lean",
                             pid,
                             path,
-                            "last line must start with 'IO.println (solve ' and include an argument",
+                            "last line must start with 'IO.println (solve '",
                             context,
                         )
                     )
