@@ -323,7 +323,7 @@ Results for non-Python solvers can be seen at: <<other-solvers>>.
 
 One massive stretch goal of this project is to have formal lean proofs of the Lean solutions.
 
-Lean is an automated theorem checker that doubles as a programming language, so as long as we get the formalization of the problem statement right, Lean will ensure that the final algorithm is correct. Notably this ensures that the LLM didn't cheat and found a flawed algorithm which happens to work by chance or malice only on certain cases. 
+Lean is an automated theorem checker that doubles as a programming language, so as long as we get the formalization of the problem statement right, Lean will ensure that the final algorithm is correct. Notably this ensures that the LLM didn't cheat and found a flawed algorithm which happens to work by chance or malice only on certain cases.
 
 Probably the proofs will come down to proofs that the bruteforce solution function is equivalent to the insight-optimized one that you need to have reasonable runtime, but we will see how it goes.
 
@@ -368,6 +368,17 @@ lake build p1
 
 TODO we wanted `lake build 1` but Codex doesn't know how, it gives some errors.
 
+Linting with link:lint.py[] is especially important for Lean:
+
+[source,shell]
+----
+./lean.py -l lean
+----
+
+because it rules out many things which were very awkward to check in lean self-introspection alone, e.g.:
+
+* `partial`: nothing can be partial, all our functions must terminate, partial is only allowed on the problem statements as a helper
+
 The way things are organize is that link:data/project-euler-statements[] will contain a Lean formalization of each problem statement, for example:
 
 * link:data/project-euler-statements/data/lean/ProjectEulerStatements/P1.lean[]: defines a `ProjectEulerStatements.P1.naive` function, possibly non-computable, which we believe matches the problem definition
@@ -387,18 +398,18 @@ Lean perf notes from Codex:
 * link:solvers/25.lean[]
 +
 ....
-Result on my run:                                                                                                                                                                                                                           
-                                                                                                                                                                                                                                            
-- ./test.py 25 → Lean ~2.03s vs Python ~0.21s (still ~10× slower)                                                                                                                                                                           
-                                                         
-Why it’s still slower:                                                                                               
-                                                                                                                                                                                                                                            
-- Lean’s Nat big‑int multiplication is relatively heavy compared to Python’s highly optimized bignum, and fast‑doubling uses multiplications of 1000‑digit numbers.                                                                         
-                                                         
-If you want to go faster, the next step is to avoid big‑ints entirely and use a floating‑point closed‑form estimate for the index (Binet/log10), optionally with a tiny adjustment. I can implement that (it would be effectively           
-constant‑time and should be much faster), but it would move away from “pure integer” logic.                          
-                                                         
-Let me know if you want that change.   
+Result on my run:
+
+- ./test.py 25 → Lean ~2.03s vs Python ~0.21s (still ~10× slower)
+
+Why it’s still slower:
+
+- Lean’s Nat big‑int multiplication is relatively heavy compared to Python’s highly optimized bignum, and fast‑doubling uses multiplications of 1000‑digit numbers.
+
+If you want to go faster, the next step is to avoid big‑ints entirely and use a floating‑point closed‑form estimate for the index (Binet/log10), optionally with a tiny adjustment. I can implement that (it would be effectively
+constant‑time and should be much faster), but it would move away from “pure integer” logic.
+
+Let me know if you want that change.
 ....
 * link:solvers/44.lean[]: TODO
 
