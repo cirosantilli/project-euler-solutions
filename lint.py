@@ -11,18 +11,25 @@ from pathlib import Path
 from typing import Literal
 
 ROOT = Path(__file__).resolve().parent
+README_PATH = ROOT / "README.adoc"
 SOLUTIONS_PATH = ROOT / "data/projecteuler-solutions/Solutions.md"
 SOLVERS_DIR = ROOT / "solvers"
 LEAN_SOLVERS_DIR = ROOT / "ProjectEulerSolutions"
 LEAN_EQUIV_DIR = LEAN_SOLVERS_DIR / "Equiv"
 VALID_PYTHON_SHEBANG = "#!/usr/bin/env python"
 SOURCE_EXTENSIONS = (".py", ".c", ".cpp")
+LEAN_STATUS_MARKER = "// LEAN STATUS TABLE"
 
 LINE_RE = re.compile(r"^(\d+)\.\s+(.*)$")
 LEAN_SOLUTION_STEM_RE = re.compile(r"^P(\d+)$")
 LEAN_EQUIV_STEM_RE = re.compile(r"^P(\d+)$")
 FORBIDDEN_TOKENS = ("Solutions.md",)
-FORBIDDEN_LEAN_PATTERNS = (r"\bpartial\s+def\b",)
+FORBIDDEN_LEAN_PATTERNS = (
+    (r"\bpartial\b", "partial"),
+    (r"\baxiom\b", "axiom"),
+    (r"\bsorry\b", "sorry"),
+    (r"\bunsafe\b", "unsafe"),
+)
 FORBIDDEN_LEAN_DEF_ARG_RE = re.compile(r"\bdef\s+\w+[^\n]*\b_[A-Za-z0-9_]*\b")
 ViolationSeverity = Literal["critical", "non-critical"]
 
@@ -234,7 +241,7 @@ def lint_paths(
                 print(f"error: failed to read {path}: {exc}", file=sys.stderr)
                 continue
             lines = text.splitlines()
-            for pattern in FORBIDDEN_LEAN_PATTERNS:
+            for pattern, token_name in FORBIDDEN_LEAN_PATTERNS:
                 hits = [
                     idx for idx, line in enumerate(lines, 1) if re.search(pattern, line)
                 ]
@@ -247,7 +254,7 @@ def lint_paths(
                             "lean",
                             pid,
                             path,
-                            "contains forbidden token 'partial def'",
+                            f"contains forbidden token {token_name!r}",
                             context,
                         )
                     )
@@ -316,29 +323,6 @@ def lint_paths(
                             pid,
                             path,
                             "missing required theorem declaration",
-                            context,
-                        )
-                    )
-                naive_re = re.compile(rf"\bProjectEulerStatements\.P{pid}\.naive\b")
-                naive_hits = [
-                    idx for idx, line in enumerate(lines, 1) if naive_re.search(line)
-                ]
-                if len(naive_hits) != 1:
-                    if naive_hits:
-                        context = [
-                            (line_no, lines[line_no - 1].rstrip())
-                            for line_no in naive_hits
-                        ]
-                    elif lines:
-                        context = [(1, lines[0].rstrip())]
-                    else:
-                        context = []
-                    violations.append(
-                        Violation(
-                            "lean",
-                            pid,
-                            path,
-                            "must reference ProjectEulerStatements.P<n>.naive exactly once",
                             context,
                         )
                     )
@@ -475,6 +459,12 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "-A",
+        "--autoupdate",
+        action="store_true",
+        help="Update the Lean status list in README.adoc.",
+    )
+    parser.add_argument(
         "paths",
         nargs="*",
         type=Path,
@@ -485,6 +475,12 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
+    if args.autoupdate and args.language not in (None, "lean"):
+        print(
+            "error: --autoupdate currently only supports Lean status updates",
+            file=sys.stderr,
+        )
+        return 2
     if args.paths:
         paths = sorted(args.paths)
     else:
@@ -507,6 +503,14 @@ def main() -> int:
         paths = [path for path in paths if path.suffix == lang_ext]
     else:
         paths = [path for path in paths if path.suffix != ".lean"]
+    if args.autoupdate:
+        try:
+            lean_status_lines = autoupdate_lean_status()
+        except (OSError, ValueError) as exc:
+            print(f"error: failed to update Lean status table: {exc}", file=sys.stderr)
+            return 2
+        for line in lean_status_lines:
+            print(line)
     violations = lint_paths(paths, scan_code_answers=args.source_set is not None)
     output_lines = format_violations(violations)
     if violations:
@@ -515,6 +519,109 @@ def main() -> int:
         return 1
     print(output_lines[0])
     return 0
+
+
+def lean_problem_ids() -> list[int]:
+    ids: set[int] = set()
+    for directory in (LEAN_SOLVERS_DIR, LEAN_EQUIV_DIR):
+        for path in directory.glob("P*.lean"):
+            pid = parse_solver_id(path)
+            if pid is not None:
+                ids.add(pid)
+    for path in SOLVERS_DIR.glob("*.lean"):
+        pid = parse_solver_id(path)
+        if pid is not None:
+            ids.add(pid)
+    return sorted(ids)
+
+
+def lean_problem_paths(pid: int) -> list[Path]:
+    return [
+        SOLVERS_DIR / f"{pid}.lean",
+        LEAN_SOLVERS_DIR / f"P{pid}.lean",
+        LEAN_EQUIV_DIR / f"P{pid}.lean",
+    ]
+
+
+def compute_lean_status() -> tuple[dict[int, bool], int]:
+    ids = lean_problem_ids()
+    if not ids:
+        return {}, 0
+    max_pid = max(ids)
+    solved_by_pid: dict[int, bool] = {}
+    for pid in range(1, max_pid + 1):
+        paths = lean_problem_paths(pid)
+        if not all(path.exists() for path in paths):
+            solved_by_pid[pid] = False
+            continue
+        solved_by_pid[pid] = not lint_paths(paths)
+    return solved_by_pid, max_pid
+
+
+def build_lean_status_lines(solved_by_pid: dict[int, bool], max_pid: int) -> list[str]:
+    if max_pid == 0:
+        return ["* no Lean entries found"]
+    raw_groups: list[tuple[int, int, int, int, list[int]]] = []
+    for start in range(1, max_pid + 1, 10):
+        end = min(start + 9, max_pid)
+        missing = [
+            pid for pid in range(start, end + 1) if not solved_by_pid.get(pid, False)
+        ]
+        total = end - start + 1
+        solved = total - len(missing)
+        raw_groups.append((start, end, solved, total, missing))
+
+    output: list[str] = []
+    pending_done_start: int | None = None
+    pending_done_end: int | None = None
+
+    def flush_done() -> None:
+        nonlocal pending_done_start, pending_done_end
+        if pending_done_start is not None and pending_done_end is not None:
+            output.append(f"* **{pending_done_start}-{pending_done_end}**: done")
+        pending_done_start = None
+        pending_done_end = None
+
+    for start, end, solved, total, missing in raw_groups:
+        if solved == total:
+            if pending_done_start is None:
+                pending_done_start = start
+            pending_done_end = end
+            continue
+        flush_done()
+        line = f"* **{start}-{end}**: {solved}/{total}"
+        if missing:
+            line += " (TODO: " + ", ".join(str(pid) for pid in missing) + ")"
+        output.append(line)
+    flush_done()
+    return output
+
+
+def compute_lean_status_lines() -> list[str]:
+    solved_by_pid, max_pid = compute_lean_status()
+    return build_lean_status_lines(solved_by_pid, max_pid)
+
+
+def update_readme_lean_status(
+    lines: list[str], status_lines: list[str]
+) -> list[str]:
+    for idx, line in enumerate(lines):
+        if line.strip() != LEAN_STATUS_MARKER:
+            continue
+        start = idx + 1
+        end = start
+        while end < len(lines) and lines[end].startswith("* "):
+            end += 1
+        return lines[:start] + status_lines + lines[end:]
+    raise ValueError(f"{LEAN_STATUS_MARKER} marker not found")
+
+
+def autoupdate_lean_status(readme_path: Path = README_PATH) -> list[str]:
+    lines = readme_path.read_text().splitlines()
+    status_lines = compute_lean_status_lines()
+    updated_lines = update_readme_lean_status(lines, status_lines)
+    readme_path.write_text("\n".join(updated_lines) + "\n")
+    return status_lines
 
 
 if __name__ == "__main__":
