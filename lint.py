@@ -16,6 +16,7 @@ SOLUTIONS_PATH = ROOT / "data/projecteuler-solutions/Solutions.md"
 SOLVERS_DIR = ROOT / "solvers"
 LEAN_SOLVERS_DIR = ROOT / "ProjectEulerSolutions"
 LEAN_EQUIV_DIR = LEAN_SOLVERS_DIR / "Equiv"
+LEAN_TERMINATION_DIR = LEAN_SOLVERS_DIR / "Termination"
 VALID_PYTHON_SHEBANG = "#!/usr/bin/env python"
 SOURCE_EXTENSIONS = (".py", ".c", ".cpp")
 LEAN_STATUS_MARKER = "// LEAN STATUS TABLE"
@@ -495,6 +496,7 @@ def main() -> int:
         elif args.source_set is None:
             paths = sorted(LEAN_SOLVERS_DIR.glob("*.lean"))
             paths.extend(sorted(LEAN_EQUIV_DIR.glob("*.lean")))
+            paths.extend(sorted(LEAN_TERMINATION_DIR.glob("*.lean")))
             paths.extend(sorted(SOLVERS_DIR.glob("*.lean")))
         else:
             paths = [path for path in paths if path.suffix == ".lean"]
@@ -523,7 +525,7 @@ def main() -> int:
 
 def lean_problem_ids() -> list[int]:
     ids: set[int] = set()
-    for directory in (LEAN_SOLVERS_DIR, LEAN_EQUIV_DIR):
+    for directory in (LEAN_SOLVERS_DIR, LEAN_EQUIV_DIR, LEAN_TERMINATION_DIR):
         for path in directory.glob("P*.lean"):
             pid = parse_solver_id(path)
             if pid is not None:
@@ -536,11 +538,15 @@ def lean_problem_ids() -> list[int]:
 
 
 def lean_problem_paths(pid: int) -> list[Path]:
-    return [
+    paths = [
         SOLVERS_DIR / f"{pid}.lean",
         LEAN_SOLVERS_DIR / f"P{pid}.lean",
         LEAN_EQUIV_DIR / f"P{pid}.lean",
     ]
+    termination_path = LEAN_TERMINATION_DIR / f"P{pid}.lean"
+    if termination_path.exists():
+        paths.append(termination_path)
+    return paths
 
 
 def compute_lean_status() -> tuple[dict[int, bool], int]:

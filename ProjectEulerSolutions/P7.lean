@@ -1,4 +1,5 @@
 import ProjectEulerStatements.P7
+import ProjectEulerSolutions.Termination.P7
 namespace ProjectEulerSolutions.P7
 
 def isPrimeWithLoop (n : Nat) (primes : Array Nat) (i : Nat) : Bool :=
@@ -19,7 +20,7 @@ decreasing_by
 def isPrimeWith (n : Nat) (primes : Array Nat) : Bool :=
   isPrimeWithLoop n primes 0
 
-partial def solve (n : Nat) : Nat :=
+def solve (n : Nat) : Nat :=
   if n == 1 then
     2
   else
@@ -32,6 +33,10 @@ partial def solve (n : Nat) : Nat :=
           go (candidate + 2) (count + 1) primes'
         else
           go (candidate + 2) count primes
+    termination_by Termination.goMeasure n candidate count
+    decreasing_by
+      · exact Termination.go_decreases n candidate count (count + 1)
+      · exact Termination.go_decreases n candidate count count
     go 3 1 #[2]
 
 example : solve 1 = 2 := by
