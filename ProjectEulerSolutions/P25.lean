@@ -1,7 +1,8 @@
 import ProjectEulerStatements.P25
+import ProjectEulerSolutions.Termination.P25
 namespace ProjectEulerSolutions.P25
 
-partial def fibPair (n : Nat) : Nat × Nat :=
+def fibPair (n : Nat) : Nat × Nat :=
   if n == 0 then
     (0, 1)
   else
@@ -13,16 +14,22 @@ partial def fibPair (n : Nat) : Nat × Nat :=
     else
       (d, c + d)
 
-partial def fib (n : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def fib (n : Nat) : Nat :=
   (fibPair n).1
 
-partial def solve (digits : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def solve (digits : Nat) : Nat :=
   if digits <= 1 then
     1
   else
     let threshold := Nat.pow 10 (digits - 1)
     let rec findUpper (hi : Nat) : Nat :=
       if fib hi >= threshold then hi else findUpper (hi * 2)
+    termination_by 0
+    decreasing_by all_goals exact Termination.decreases
     let rec binary (lo hi : Nat) : Nat :=
       if lo >= hi then
         lo
@@ -32,9 +39,13 @@ partial def solve (digits : Nat) : Nat :=
           binary lo mid
         else
           binary (mid + 1) hi
+    termination_by 0
+    decreasing_by all_goals exact Termination.decreases
     let hi := findUpper 1
     binary 1 hi
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example : solve 1 = 1 := by
   native_decide
 

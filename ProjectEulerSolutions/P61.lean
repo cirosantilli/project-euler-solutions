@@ -1,7 +1,8 @@
 import ProjectEulerStatements.P61
+import ProjectEulerSolutions.Termination.P61
 namespace ProjectEulerSolutions.P61
 
-partial def polygonal (s n : Nat) : Nat :=
+def polygonal (s n : Nat) : Nat :=
   match s with
   | 3 => n * (n + 1) / 2
   | 4 => n * n
@@ -11,7 +12,9 @@ partial def polygonal (s n : Nat) : Nat :=
   | 8 => n * (3 * n - 2)
   | _ => 0
 
-partial def generate4DigitPolygonals (s limit : Nat) : List Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def generate4DigitPolygonals (s limit : Nat) : List Nat :=
   let rec loop (n : Nat) (acc : List Nat) : List Nat :=
     if n > limit then
       acc.reverse
@@ -23,33 +26,45 @@ partial def generate4DigitPolygonals (s limit : Nat) : List Nat :=
         else
           acc
       loop (n + 1) acc
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 1 []
 
-partial def buildPrefixMap (nums : List Nat) : Array (List Nat) :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def buildPrefixMap (nums : List Nat) : Array (List Nat) :=
   nums.foldl (fun arr x =>
     let pref := x / 100
     let lst := arr[pref]!
     arr.set! pref (x :: lst)
   ) (Array.replicate 100 [])
 
-partial def getAt (xs : List Nat) (i : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def getAt (xs : List Nat) (i : Nat) : Nat :=
   match xs, i with
   | [], _ => 0
   | x :: _, 0 => x
   | _ :: xs, i + 1 => getAt xs i
 
-partial def getAtPair (xs : List (Nat × Nat)) (i : Nat) : Nat × Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def getAtPair (xs : List (Nat × Nat)) (i : Nat) : Nat × Nat :=
   match xs, i with
   | [], _ => (0, 0)
   | x :: _, 0 => x
   | _ :: xs, i + 1 => getAtPair xs i
 
-partial def lastOr (xs : List (Nat × Nat)) (default : Nat × Nat) : Nat × Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def lastOr (xs : List (Nat × Nat)) (default : Nat × Nat) : Nat × Nat :=
   match xs.reverse with
   | [] => default
   | x :: _ => x
 
-partial def solve (limit : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def solve (limit : Nat) : Nat :=
   let types : List Nat := [3,4,5,6,7,8]
   let numsByType :=
     types.foldl (fun arr t => arr.set! t (generate4DigitPolygonals t limit)) (Array.replicate 9 [])
@@ -82,9 +97,15 @@ partial def solve (limit : Nat) : Nat :=
                       match dfs (path ++ [(nxt, t)]) (t :: usedTypes) (nxt :: usedNums) with
                       | some res => some res
                       | none => loopCand cs
+              termination_by 0
+              decreasing_by all_goals exact Termination.decreases
               loopCand candidates
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       loopTypes types
 
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   let starts := numsByType[8]!
   let rec loopStart (xs : List Nat) : Nat :=
     match xs with
@@ -93,9 +114,13 @@ partial def solve (limit : Nat) : Nat :=
         match dfs [(s, 8)] [8] [s] with
         | some res => res.foldl (fun acc p => acc + p.1) 0
         | none => loopStart xs
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loopStart starts
 
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example : polygonal 3 127 = 8128 := by
   native_decide
 

@@ -1,15 +1,20 @@
 import ProjectEulerStatements.P85
+import ProjectEulerSolutions.Termination.P85
 namespace ProjectEulerSolutions.P85
 
 abbrev TARGET : Nat := 2000000
 
-partial def rectangleCount (m n : Nat) : Nat :=
+def rectangleCount (m n : Nat) : Nat :=
   (m * (m + 1) * n * (n + 1)) / 4
 
-partial def absDiff (a b : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def absDiff (a b : Nat) : Nat :=
   if a >= b then a - b else b - a
 
-partial def bestGridAreaNear (target : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def bestGridAreaNear (target : Nat) : Nat :=
   let rec loopM (m : Nat) (bestDiff bestArea : Nat) : Nat :=
     if m >= 3000 then
       bestArea
@@ -25,11 +30,17 @@ partial def bestGridAreaNear (target : Nat) : Nat :=
           let (bestDiff, bestArea) :=
             if diff < bestDiff then (diff, m * n) else (bestDiff, bestArea)
           loopN (n + 1) bestDiff bestArea
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       let (bestDiff, bestArea) := loopN m bestDiff bestArea
       loopM (m + 1) bestDiff bestArea
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loopM 1 (Nat.pow 10 30) 0
 
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example : rectangleCount 3 2 = 18 := by
   native_decide
 

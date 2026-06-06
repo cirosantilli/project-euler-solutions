@@ -1,7 +1,8 @@
 import ProjectEulerStatements.P53
+import ProjectEulerSolutions.Termination.P53
 namespace ProjectEulerSolutions.P53
 
-partial def countCombinatoricSelections (limitN threshold : Nat) : Nat :=
+def countCombinatoricSelections (limitN threshold : Nat) : Nat :=
   let rec loopN (n : Nat) (total : Nat) : Nat :=
     if n > limitN then
       total
@@ -16,11 +17,17 @@ partial def countCombinatoricSelections (limitN threshold : Nat) : Nat :=
             loopN (n + 1) total
           else
             loopR (r + 1) c total
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       loopR 1 1 total
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loopN 1 0
 
 
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 def solveCore (limitN threshold : Nat) :=
   countCombinatoricSelections limitN threshold
 

@@ -1,5 +1,6 @@
 import Std
 import ProjectEulerStatements.P54
+import ProjectEulerSolutions.Termination.P54
 open ProjectEulerStatements.P54
 namespace ProjectEulerSolutions.P54
 
@@ -26,6 +27,8 @@ def parseCard (token : String) : Nat × Char :=
     | [], _ => ' '
     | x :: _, 0 => x
     | _ :: xs, i + 1 => getAtChar xs i
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   let cs := token.data
   let v := valueOf (getAtChar cs 0)
   let s := getAtChar cs 1
@@ -59,15 +62,19 @@ def parseStmtCard (token : String) : Card :=
   let (v, s) := parseCard token
   (parseRank v, parseSuit s)
 
-partial def insertDesc (x : Nat) (xs : List Nat) : List Nat :=
+def insertDesc (x : Nat) (xs : List Nat) : List Nat :=
   match xs with
   | [] => [x]
   | y :: ys => if x >= y then x :: y :: ys else y :: insertDesc x ys
 
-partial def sortDesc (xs : List Nat) : List Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def sortDesc (xs : List Nat) : List Nat :=
   xs.foldl (fun acc x => insertDesc x acc) []
 
-partial def insertGroup (x : Nat × Nat) (xs : List (Nat × Nat)) : List (Nat × Nat) :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def insertGroup (x : Nat × Nat) (xs : List (Nat × Nat)) : List (Nat × Nat) :=
   match xs with
   | [] => [x]
   | y :: ys =>
@@ -75,27 +82,37 @@ partial def insertGroup (x : Nat × Nat) (xs : List (Nat × Nat)) : List (Nat ×
       let (c2,v2) := y
       if c1 > c2 || (c1 == c2 && v1 >= v2) then x :: y :: ys else y :: insertGroup x ys
 
-partial def sortGroups (xs : List (Nat × Nat)) : List (Nat × Nat) :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def sortGroups (xs : List (Nat × Nat)) : List (Nat × Nat) :=
   xs.foldl (fun acc x => insertGroup x acc) []
 
-partial def allEq (xs : List Char) : Bool :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def allEq (xs : List Char) : Bool :=
   match xs with
   | [] => true
   | x :: xs => xs.all (fun y => y == x)
 
-partial def getAt (xs : List Nat) (i : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def getAt (xs : List Nat) (i : Nat) : Nat :=
   match xs, i with
   | [], _ => 0
   | x :: _, 0 => x
   | _ :: xs, i + 1 => getAt xs i
 
-partial def getAtPair (xs : List (Nat × Nat)) (i : Nat) : Nat × Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def getAtPair (xs : List (Nat × Nat)) (i : Nat) : Nat × Nat :=
   match xs, i with
   | [], _ => (0, 0)
   | x :: _, 0 => x
   | _ :: xs, i + 1 => getAtPair xs i
 
-partial def dedupSortedAsc (xs : List Nat) : List Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def dedupSortedAsc (xs : List Nat) : List Nat :=
   match xs with
   | [] => []
   | x :: xs =>
@@ -103,9 +120,13 @@ partial def dedupSortedAsc (xs : List Nat) : List Nat :=
         match rest with
         | [] => (prev :: acc).reverse
         | y :: ys => if y == prev then loop prev ys acc else loop y ys (prev :: acc)
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       loop x xs []
 
-partial def handRank (cards : List String) : List Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def handRank (cards : List String) : List Nat :=
   let valsSuits := cards.map parseCard
   let values := sortDesc (valsSuits.map Prod.fst)
   let suits := valsSuits.map Prod.snd
@@ -152,13 +173,17 @@ partial def handRank (cards : List String) : List Nat :=
     else
       0 :: values
 
-partial def lexGreater (a b : List Nat) : Bool :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def lexGreater (a b : List Nat) : Bool :=
   match a, b with
   | [], [] => false
   | [], _ => false
   | _, [] => true
   | x :: xs, y :: ys => if x == y then lexGreater xs ys else x > y
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 def player1Wins (line : String) : Bool :=
   let parts := line.splitOn " " |>.filter (fun s => s != "")
   if parts.length != 10 then

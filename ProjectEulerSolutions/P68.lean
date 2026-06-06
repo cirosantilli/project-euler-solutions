@@ -1,24 +1,33 @@
 import ProjectEulerStatements.P68
+import ProjectEulerSolutions.Termination.P68
 namespace ProjectEulerSolutions.P68
 
-partial def insertAsc (x : Nat) (xs : List Nat) : List Nat :=
+def insertAsc (x : Nat) (xs : List Nat) : List Nat :=
   match xs with
   | [] => [x]
   | y :: ys => if x <= y then x :: y :: ys else y :: insertAsc x ys
 
-partial def sortAsc (xs : List Nat) : List Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def sortAsc (xs : List Nat) : List Nat :=
   xs.foldl (fun acc x => insertAsc x acc) []
 
-partial def allDistinctSorted (xs : List Nat) : Bool :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def allDistinctSorted (xs : List Nat) : Bool :=
   match xs with
   | [] => true
   | [_] => true
   | x :: y :: ys => if x == y then false else allDistinctSorted (y :: ys)
 
-partial def listContains (xs : List Nat) (v : Nat) : Bool :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def listContains (xs : List Nat) (v : Nat) : Bool :=
   xs.any (fun x => x == v)
 
-partial def combinations (k : Nat) (xs : List Nat) : List (List Nat) :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def combinations (k : Nat) (xs : List Nat) : List (List Nat) :=
   if k == 0 then
     [[]]
   else
@@ -29,7 +38,9 @@ partial def combinations (k : Nat) (xs : List Nat) : List (List Nat) :=
         let withoutX := combinations k xs
         withX ++ withoutX
 
-partial def permutations (xs : List Nat) : List (List Nat) :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def permutations (xs : List Nat) : List (List Nat) :=
   match xs with
   | [] => [[]]
   | _ =>
@@ -37,6 +48,8 @@ partial def permutations (xs : List Nat) : List (List Nat) :=
         match ls with
         | [] => []
         | x :: xs => f x ++ concatMap f xs
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       let rec insertAll (x : Nat) (ys : List Nat) : List (List Nat) :=
         match ys with
         | [] => [[x]]
@@ -44,20 +57,28 @@ partial def permutations (xs : List Nat) : List (List Nat) :=
             let head := (x :: y :: ys)
             let rest := insertAll x ys
             head :: rest.map (fun tail => y :: tail)
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       let rec loop (xs : List Nat) : List (List Nat) :=
         match xs with
         | [] => [[]]
         | x :: xs =>
             concatMap (insertAll x) (loop xs)
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       loop xs
 
-partial def getAt (xs : List Nat) (i : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def getAt (xs : List Nat) (i : Nat) : Nat :=
   match xs, i with
   | [], _ => 0
   | x :: _, 0 => x
   | _ :: xs, i + 1 => getAt xs i
 
-partial def minIndex (xs : List Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def minIndex (xs : List Nat) : Nat :=
   let rec loop (xs : List Nat) (idx bestIdx bestVal : Nat) : Nat :=
     match xs with
     | [] => bestIdx
@@ -66,14 +87,20 @@ partial def minIndex (xs : List Nat) : Nat :=
           loop xs (idx + 1) idx x
         else
           loop xs (idx + 1) bestIdx bestVal
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   match xs with
   | [] => 0
   | x :: xs => loop xs 1 0 x
 
-partial def concatStrings (xs : List String) : String :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def concatStrings (xs : List String) : String :=
   xs.foldl (fun acc s => acc ++ s) ""
 
-partial def magic5GonMax16Digit : String :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def magic5GonMax16Digit : String :=
   let nums := (List.range 10).map (fun k => k + 1)
   let innerCandidates := combinations 5 ((List.range 9).map (fun k => k + 1))
   let rec loopInner (inners : List (List Nat)) (best : String) : String :=
@@ -108,6 +135,8 @@ partial def magic5GonMax16Digit : String :=
                           none
                         else
                           loopK (k + 1) (o :: outer)
+                  termination_by 0
+                  decreasing_by all_goals exact Termination.decreases
                   match loopK 0 [] with
                   | none => loopPerm ps best
                   | some outer =>
@@ -128,11 +157,17 @@ partial def magic5GonMax16Digit : String :=
                           loopPerm ps str
                         else
                           loopPerm ps best
+            termination_by 0
+            decreasing_by all_goals exact Termination.decreases
             loopPerm perms best
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loopInner innerCandidates ""
 
 
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 def solve : Nat :=
   magic5GonMax16Digit.toNat!
 end ProjectEulerSolutions.P68

@@ -1,7 +1,8 @@
 import ProjectEulerStatements.P15
+import ProjectEulerSolutions.Termination.P15
 namespace ProjectEulerSolutions.P15
 
-partial def binom (n k : Nat) : Nat :=
+def binom (n k : Nat) : Nat :=
   if k > n then
     0
   else
@@ -12,12 +13,18 @@ partial def binom (n k : Nat) : Nat :=
         res
       else
         loop (i + 1) (res * (n - k' + i) / i)
+    termination_by 0
+    decreasing_by all_goals exact Termination.decreases
     loop 1 1
 
-partial def latticePaths (gridN gridM : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def latticePaths (gridN gridM : Nat) : Nat :=
   binom (gridN + gridM) gridN
 
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example : latticePaths 2 2 = 6 := by
   native_decide
 

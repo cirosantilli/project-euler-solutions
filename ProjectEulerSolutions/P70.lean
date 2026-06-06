@@ -1,9 +1,10 @@
 import ProjectEulerStatements.P70
+import ProjectEulerSolutions.Termination.P70
 namespace ProjectEulerSolutions.P70
 
 abbrev MAX_N : Nat := 9999999
 
-partial def computePhiLinear (limit : Nat) : Array Nat :=
+def computePhiLinear (limit : Nat) : Array Nat :=
   let phi0 := Array.replicate (limit + 1) 0
   let comp0 := Array.replicate (limit + 1) false
   let phi0 := phi0.set! 1 1
@@ -34,14 +35,20 @@ partial def computePhiLinear (limit : Nat) : Array Nat :=
             else
               let phi := phi.set! ip (phi[i]! * (p - 1))
               loopP (j + 1) phi isComp
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       let (phi, isComp) := loopP 0 phi isComp
       loop (i + 1) phi isComp primes
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 2 phi0 comp0 #[]
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 abbrev SHIFT : Array Nat :=
   (List.range 10).foldl (fun acc d => acc.push (Nat.pow 2 (3 * d))) #[]
 
-partial def digitSignature (x : Nat) : Nat :=
+def digitSignature (x : Nat) : Nat :=
   if x == 0 then
     SHIFT[0]!
   else
@@ -51,9 +58,13 @@ partial def digitSignature (x : Nat) : Nat :=
       else
         let d := n % 10
         loop (n / 10) (acc + SHIFT[d]!)
+    termination_by 0
+    decreasing_by all_goals exact Termination.decreases
     loop x 0
 
-partial def solveCore (limit : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def solveCore (limit : Nat) : Nat :=
   let phi := computePhiLinear limit
   let rec loop (n : Nat) (bestN bestPhi low high : Nat) : Nat :=
     if n > limit then
@@ -72,9 +83,13 @@ partial def solveCore (limit : Nat) : Nat :=
           loop (n + 1) n pn low high
         else
           loop (n + 1) bestN bestPhi low high
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 2 0 1 1 10
 
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example :
     let phi := computePhiLinear 100000
     phi[1]! = 1 := by

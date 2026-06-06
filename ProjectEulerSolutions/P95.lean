@@ -1,7 +1,8 @@
 import ProjectEulerStatements.P95
+import ProjectEulerSolutions.Termination.P95
 namespace ProjectEulerSolutions.P95
 
-partial def computeSumProperDivisors (limit : Nat) : Array Nat :=
+def computeSumProperDivisors (limit : Nat) : Array Nat :=
   let s0 := Array.replicate (limit + 1) 0
   let half := limit / 2
   let rec loopI (i : Nat) (s : Array Nat) : Array Nat :=
@@ -13,10 +14,16 @@ partial def computeSumProperDivisors (limit : Nat) : Array Nat :=
           s
         else
           loopJ (j + i) (s.set! j (s[j]! + i))
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       loopI (i + 1) (loopJ (i + i) s)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loopI 1 s0
 
-partial def amicableChainBest (limit : Nat) : Nat × Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def amicableChainBest (limit : Nat) : Nat × Nat :=
   let s := computeSumProperDivisors limit
   let processed := Array.replicate (limit + 1) false
   let seenStamp := Array.replicate (limit + 1) 0
@@ -54,11 +61,17 @@ partial def amicableChainBest (limit : Nat) : Nat × Nat :=
           let seenStamp := seenStamp.set! n stamp
           let seenPos := seenPos.set! n path.length
           loop (s[n]!) (path ++ [n]) processed seenStamp seenPos
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       let (bestLen, bestMin, processed, seenStamp, seenPos) := loop start [] processed seenStamp seenPos
       loopStart (start + 1) bestLen bestMin processed seenStamp seenPos stamp
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loopStart 2 0 0 processed seenStamp seenPos 0
 
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example :
     let s := computeSumProperDivisors 300
     (s[28]! = 28) && (s[220]! = 284) && (s[284]! = 220) = true := by

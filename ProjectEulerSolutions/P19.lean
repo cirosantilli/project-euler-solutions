@@ -1,7 +1,8 @@
 import ProjectEulerStatements.P19
+import ProjectEulerSolutions.Termination.P19
 namespace ProjectEulerSolutions.P19
 
-partial def isLeapYear (year : Nat) : Bool :=
+def isLeapYear (year : Nat) : Bool :=
   if year % 400 == 0 then
     true
   else if year % 100 == 0 then
@@ -9,7 +10,9 @@ partial def isLeapYear (year : Nat) : Bool :=
   else
     year % 4 == 0
 
-partial def daysInMonth (year month : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def daysInMonth (year month : Nat) : Nat :=
   if month == 2 then
     if isLeapYear year then 29 else 28
   else if month == 4 || month == 6 || month == 9 || month == 11 then
@@ -17,7 +20,9 @@ partial def daysInMonth (year month : Nat) : Nat :=
   else
     31
 
-partial def countSundaysOnFirst (startYear endYear : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def countSundaysOnFirst (startYear endYear : Nat) : Nat :=
   let rec loopYear (year dow count : Nat) : Nat :=
     if year > endYear then
       count
@@ -33,9 +38,15 @@ partial def countSundaysOnFirst (startYear endYear : Nat) : Nat :=
               count
           let dow' := (dow + daysInMonth year month) % 7
           loopMonth (month + 1) dow' count'
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       loopMonth 1 dow count
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loopYear 1900 0 0
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 def solve (startDate endDate : ProjectEulerStatements.P19.Date) : Nat :=
   countSundaysOnFirst startDate.year endDate.year
 

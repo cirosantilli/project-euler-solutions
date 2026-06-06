@@ -1,9 +1,10 @@
 import ProjectEulerStatements.P32
+import ProjectEulerSolutions.Termination.P32
 namespace ProjectEulerSolutions.P32
 
 abbrev fullMask : Nat := (1 <<< 9) - 1
 
-partial def digitMask (n : Nat) : Bool × Nat × Nat :=
+def digitMask (n : Nat) : Bool × Nat × Nat :=
   let rec loop (m mask len : Nat) : Bool × Nat × Nat :=
     if m == 0 then
       (true, mask, len)
@@ -17,9 +18,13 @@ partial def digitMask (n : Nat) : Bool × Nat × Nat :=
           (false, 0, 0)
         else
           loop (m / 10) (mask ||| bit) (len + 1)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop n 0 0
 
-partial def case1 (maxA maxB : Nat) (products : Array Bool) : Array Bool :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def case1 (maxA maxB : Nat) (products : Array Bool) : Array Bool :=
   let maxA := Nat.min maxA 9
   let maxB := Nat.min maxB 9999
   let rec loopA1 (a : Nat) (products : Array Bool) : Array Bool :=
@@ -58,10 +63,16 @@ partial def case1 (maxA maxB : Nat) (products : Array Bool) : Array Bool :=
                   loopB1 (b + 1) (products.set! p true)
                 else
                   loopB1 (b + 1) products
+        termination_by 0
+        decreasing_by all_goals exact Termination.decreases
         loopA1 (a + 1) (loopB1 bMin products)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loopA1 1 products
 
-partial def case2 (maxA maxB : Nat) (products : Array Bool) : Array Bool :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def case2 (maxA maxB : Nat) (products : Array Bool) : Array Bool :=
   let maxA := Nat.min maxA 99
   let maxB := Nat.min maxB 999
   let rec loopA2 (a : Nat) (products : Array Bool) : Array Bool :=
@@ -100,10 +111,16 @@ partial def case2 (maxA maxB : Nat) (products : Array Bool) : Array Bool :=
                   loopB2 (b + 1) (products.set! p true)
                 else
                   loopB2 (b + 1) products
+        termination_by 0
+        decreasing_by all_goals exact Termination.decreases
         loopA2 (a + 1) (loopB2 bMin products)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loopA2 10 products
 
-partial def solve (maxA maxB : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def solve (maxA maxB : Nat) : Nat :=
   let products := Array.replicate 10000 false
   let products := case1 maxA maxB products
   let products := case2 maxA maxB products
@@ -114,4 +131,6 @@ partial def solve (maxA maxB : Nat) : Nat :=
       let acc' := if products[i]! then acc + i else acc
       sum (i + 1) acc'
   sum 0 0
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 end ProjectEulerSolutions.P32

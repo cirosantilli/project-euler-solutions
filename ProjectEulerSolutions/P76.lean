@@ -1,7 +1,8 @@
 import ProjectEulerStatements.P76
+import ProjectEulerSolutions.Termination.P76
 namespace ProjectEulerSolutions.P76
 
-partial def countSummations (n : Nat) : Nat :=
+def countSummations (n : Nat) : Nat :=
   let dp0 := Array.replicate (n + 1) 0
   let dp0 := dp0.set! 0 1
   let rec loopPart (part : Nat) (dp : Array Nat) : Array Nat :=
@@ -14,11 +15,17 @@ partial def countSummations (n : Nat) : Nat :=
         else
           let dp := dp.set! s (dp[s]! + dp[s - part]!)
           loopS (s + 1) dp
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       loopPart (part + 1) (loopS part dp)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   let dp := loopPart 1 dp0
   dp[n]!
 
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example : countSummations 5 = 6 := by
   native_decide
 

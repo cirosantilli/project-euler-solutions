@@ -1,7 +1,8 @@
 import ProjectEulerStatements.P80
+import ProjectEulerSolutions.Termination.P80
 namespace ProjectEulerSolutions.P80
 
-partial def sqrtFloor (n : Nat) : Nat :=
+def sqrtFloor (n : Nat) : Nat :=
   let rec loop (lo hi : Nat) : Nat :=
     if lo > hi then
       hi
@@ -14,13 +15,19 @@ partial def sqrtFloor (n : Nat) : Nat :=
         loop (mid + 1) hi
       else
         loop lo (mid - 1)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 1 n
 
-partial def isPerfectSquare (n : Nat) : Bool :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def isPerfectSquare (n : Nat) : Bool :=
   let r := sqrtFloor n
   r * r == n
 
-partial def digitSumDigitsOfSqrt (n digits : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def digitSumDigitsOfSqrt (n digits : Nat) : Nat :=
   if digits == 0 then
     0
   else
@@ -30,7 +37,9 @@ partial def digitSumDigitsOfSqrt (n digits : Nat) : Nat :=
     let s := toString rootScaled
     s.data.foldl (fun acc c => acc + (c.toNat - '0'.toNat)) 0
 
-partial def solve (limit digits : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def solve (limit digits : Nat) : Nat :=
   let rec loop (n : Nat) (total : Nat) : Nat :=
     if n > limit then
       total
@@ -39,9 +48,13 @@ partial def solve (limit digits : Nat) : Nat :=
         loop (n + 1) total
       else
         loop (n + 1) (total + digitSumDigitsOfSqrt n digits)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 1 0
 
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example : digitSumDigitsOfSqrt 2 100 = 475 := by
   native_decide
 end ProjectEulerSolutions.P80

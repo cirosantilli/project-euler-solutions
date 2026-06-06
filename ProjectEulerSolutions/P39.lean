@@ -1,10 +1,13 @@
 import ProjectEulerStatements.P39
+import ProjectEulerSolutions.Termination.P39
 namespace ProjectEulerSolutions.P39
 
-partial def gcd (a b : Nat) : Nat :=
+def gcd (a b : Nat) : Nat :=
   if b == 0 then a else gcd b (a % b)
 
-partial def maxSolutionsPerimeter (limit : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def maxSolutionsPerimeter (limit : Nat) : Nat :=
   let counts := Array.replicate (limit + 1) 0
   let rec loopM (m : Nat) (counts : Array Nat) : Array Nat :=
     if 2 * m * (m + 1) > limit then
@@ -26,8 +29,14 @@ partial def maxSolutionsPerimeter (limit : Nat) : Nat :=
                   counts
                 else
                   loopK (k + 1) (counts.set! (k * p0) (counts[k * p0]! + 1))
+              termination_by 0
+              decreasing_by all_goals exact Termination.decreases
               loopN (n + 1) (loopK 1 counts)
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       loopM (m + 1) (loopN 1 counts)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   let counts := loopM 2 counts
   let rec loopP (p bestP bestCount : Nat) : Nat :=
     if p > limit then
@@ -38,9 +47,13 @@ partial def maxSolutionsPerimeter (limit : Nat) : Nat :=
         loopP (p + 1) p c
       else
         loopP (p + 1) bestP bestCount
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loopP 1 0 0
 
-partial def countFor (limit pTarget : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def countFor (limit pTarget : Nat) : Nat :=
   let counts := Array.replicate (limit + 1) 0
   let rec loopM (m : Nat) (counts : Array Nat) : Array Nat :=
     if 2 * m * (m + 1) > limit then
@@ -62,12 +75,20 @@ partial def countFor (limit pTarget : Nat) : Nat :=
                   counts
                 else
                   loopK (k + 1) (counts.set! (k * p0) (counts[k * p0]! + 1))
+              termination_by 0
+              decreasing_by all_goals exact Termination.decreases
               loopN (n + 1) (loopK 1 counts)
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       loopM (m + 1) (loopN 1 counts)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   let counts := loopM 2 counts
   counts[pTarget]!
 
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example : countFor 1000 120 = 3 := by
   native_decide
 

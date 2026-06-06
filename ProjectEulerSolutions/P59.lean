@@ -1,5 +1,6 @@
 import Std
 import ProjectEulerStatements.P59
+import ProjectEulerSolutions.Termination.P59
 namespace ProjectEulerSolutions.P59
 
 def parseNat (s : String) : Nat :=
@@ -8,13 +9,17 @@ def parseNat (s : String) : Nat :=
 def parseCipher (s : String) : List Nat :=
   s.splitOn "," |>.filter (fun t => t != "") |>.map parseNat
 
-partial def setChars (arr : Array Int) (chars : List Char) (val : Int) : Array Int :=
+def setChars (arr : Array Int) (chars : List Char) (val : Int) : Array Int :=
   chars.foldl (fun a ch => a.set! ch.toNat val) arr
 
-partial def buildScoringTables : Array Bool × Array Int :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def buildScoringTables : Array Bool × Array Int :=
   let printable := Array.replicate 256 false
   let rec loopPrintable (v : Nat) (arr : Array Bool) : Array Bool :=
     if v > 126 then arr else loopPrintable (v + 1) (arr.set! v true)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   let printable := loopPrintable 32 printable
   let printable := printable.set! 10 true |>.set! 13 true
   let weights := Array.replicate 256 (0 : Int)
@@ -30,11 +35,15 @@ partial def buildScoringTables : Array Bool × Array Int :=
   let weights := setChars weights ['.',',',';',':','"','!','?','(',')','-'] 1
   let rec loopDigits (v : Nat) (a : Array Int) : Array Int :=
     if v > ('9'.toNat) then a else loopDigits (v + 1) (a.set! v 0)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   let weights := loopDigits ('0'.toNat) weights
   let weights := setChars weights ['{','}','[',']','|','^','~','`'] (-3)
   (printable, weights)
 
-partial def scoreKey (cipher : List Nat) (k0 k1 k2 : Nat)
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def scoreKey (cipher : List Nat) (k0 k1 k2 : Nat)
     (printable : Array Bool) (weights : Array Int) : Option (Int × Nat) :=
   let rec loop (i : Nat) (xs : List Nat) (score : Int) (sum : Nat) : Option (Int × Nat) :=
     match xs with
@@ -47,9 +56,13 @@ partial def scoreKey (cipher : List Nat) (k0 k1 k2 : Nat)
           loop (i + 1) cs score (sum + p)
         else
           none
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 0 cipher 0 0
 
-partial def bestKeyAndSum (cipher : List Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def bestKeyAndSum (cipher : List Nat) : Nat :=
   let (printable, weights) := buildScoringTables
   let rec loopK0 (k0 : Nat) (bestScore : Int) (bestSum : Nat) : Nat :=
     if k0 > ('z'.toNat) then
@@ -70,12 +83,20 @@ partial def bestKeyAndSum (cipher : List Nat) : Nat :=
                     loopK2 (k2 + 1) score s
                   else
                     loopK2 (k2 + 1) bestScore bestSum
+          termination_by 0
+          decreasing_by all_goals exact Termination.decreases
           let (bestScore, bestSum) := loopK2 ('a'.toNat) bestScore bestSum
           loopK1 (k1 + 1) bestScore bestSum
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       let (bestScore, bestSum) := loopK1 ('a'.toNat) bestScore bestSum
       loopK0 (k0 + 1) bestScore bestSum
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loopK0 ('a'.toNat) (-1000000000000000000) 0
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example : Nat.xor 65 42 = 107 := by
   native_decide
 

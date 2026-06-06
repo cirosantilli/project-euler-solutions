@@ -1,24 +1,33 @@
 import ProjectEulerStatements.P58
+import ProjectEulerSolutions.Termination.P58
 namespace ProjectEulerSolutions.P58
 
-partial def powMod (a d n : Nat) : Nat :=
+def powMod (a d n : Nat) : Nat :=
   let rec loop (base exp acc : Nat) : Nat :=
     if exp == 0 then
       acc
     else
       let acc := if exp % 2 == 1 then (acc * base) % n else acc
       loop ((base * base) % n) (exp / 2) acc
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   if n == 1 then 0 else loop (a % n) d 1
 
-partial def decompose (n : Nat) : Nat × Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def decompose (n : Nat) : Nat × Nat :=
   let rec loop (d s : Nat) : Nat × Nat :=
     if d % 2 == 1 then
       (d, s)
     else
       loop (d / 2) (s + 1)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop n 0
 
-partial def millerCheck (a n d s : Nat) : Bool :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def millerCheck (a n d s : Nat) : Bool :=
   if a % n == 0 then
     true
   else
@@ -32,9 +41,13 @@ partial def millerCheck (a n d s : Nat) : Bool :=
         else
           let x := (x * x) % n
           if x == n - 1 then true else loop (r - 1) x
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       loop (s - 1) x
 
-partial def isPrime (n : Nat) : Bool :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def isPrime (n : Nat) : Bool :=
   if n < 2 then
     false
   else
@@ -43,6 +56,8 @@ partial def isPrime (n : Nat) : Bool :=
       match ps with
       | [] => true
       | p :: ps => if n == p then true else if n % p == 0 then false else checkSmall ps
+    termination_by 0
+    decreasing_by all_goals exact Termination.decreases
     if checkSmall smallPrimes == false then
       false
     else
@@ -52,9 +67,13 @@ partial def isPrime (n : Nat) : Bool :=
         match bs with
         | [] => true
         | a :: bs => if millerCheck a n d s then loop bs else false
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       loop bases
 
-partial def solve (ratioNum ratioDen : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def solve (ratioNum ratioDen : Nat) : Nat :=
   if ratioDen == 0 then
     0
   else
@@ -69,9 +88,13 @@ partial def solve (ratioNum ratioDen : Nat) : Nat :=
         side
       else
         loop (k + 1) primeCount totalDiag
+    termination_by 0
+    decreasing_by all_goals exact Termination.decreases
     loop 1 0 1
 
-partial def countDiagPrimes (side : Nat) : Nat × Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def countDiagPrimes (side : Nat) : Nat × Nat :=
   let rec loop (k : Nat) (primeCount totalDiag : Nat) : Nat × Nat :=
     if k > (side - 1) / 2 then
       (primeCount, totalDiag)
@@ -83,11 +106,15 @@ partial def countDiagPrimes (side : Nat) : Nat × Nat :=
       let primeCount := primeCount + corners.foldl (fun acc x => if isPrime x then acc + 1 else acc) 0
       let totalDiag := totalDiag + 4
       loop (k + 1) primeCount totalDiag
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   if side % 2 == 0 || side == 0 then
     (0, 0)
   else
     loop 1 0 1
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example : countDiagPrimes 7 = (8, 13) := by
   native_decide
 

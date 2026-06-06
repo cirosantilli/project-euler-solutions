@@ -1,5 +1,6 @@
 import Std
 import ProjectEulerStatements.P89
+import ProjectEulerSolutions.Termination.P89
 namespace ProjectEulerSolutions.P89
 
 def valueOf (c : Char) : Nat :=
@@ -13,7 +14,7 @@ def valueOf (c : Char) : Nat :=
   | 'M' => 1000
   | _ => 0
 
-partial def romanToInt (s : String) : Nat :=
+def romanToInt (s : String) : Nat :=
   let rec loop (xs : List Char) (total : Nat) : Nat :=
     match xs with
     | [] => total
@@ -25,14 +26,18 @@ partial def romanToInt (s : String) : Nat :=
           loop ys (total + (v2 - v))
         else
           loop (y :: ys) (total + v)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop s.data 0
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 abbrev minimalTable : List (Nat × String) := [
   (1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"), (90, "XC"),
   (50, "L"), (40, "XL"), (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I")
 ]
 
-partial def intToMinRoman (x : Nat) : String :=
+def intToMinRoman (x : Nat) : String :=
   let rec loop (x : Nat) (tbl : List (Nat × String)) (acc : String) : String :=
     match tbl with
     | [] => acc
@@ -43,16 +48,24 @@ partial def intToMinRoman (x : Nat) : String :=
           let x := x % val
           let rec rep (n : Nat) (acc : String) : String :=
             if n == 0 then acc else rep (n - 1) (acc ++ sym)
+          termination_by 0
+          decreasing_by all_goals exact Termination.decreases
           loop x ts (rep k acc)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop x minimalTable ""
 
-partial def totalCharactersSaved (lines : List String) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def totalCharactersSaved (lines : List String) : Nat :=
   lines.foldl (fun acc s =>
     let val := romanToInt s
     let minimal := intToMinRoman val
     acc + (s.length - minimal.length)
   ) 0
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example : romanToInt "XVI" = 16 := by
   native_decide
 

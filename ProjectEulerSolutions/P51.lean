@@ -1,7 +1,8 @@
 import ProjectEulerStatements.P51
+import ProjectEulerSolutions.Termination.P51
 namespace ProjectEulerSolutions.P51
 
-partial def sieveIsPrime (limit : Nat) : Array Bool :=
+def sieveIsPrime (limit : Nat) : Array Bool :=
   if limit == 0 then
     #[]
   else
@@ -18,32 +19,48 @@ partial def sieveIsPrime (limit : Nat) : Array Bool :=
               arr
             else
               loop (m + p) (arr.set! m false)
+          termination_by 0
+          decreasing_by all_goals exact Termination.decreases
           loopP (p + 1) (loop (p * p) arr)
         else
           loopP (p + 1) arr
+    termination_by 0
+    decreasing_by all_goals exact Termination.decreases
     loopP 2 arr0
 
-partial def primesUpTo (limit : Nat) : List Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def primesUpTo (limit : Nat) : List Nat :=
   let isPrime := sieveIsPrime limit
   (List.range (limit + 1)).filter (fun n => isPrime[n]!)
 
-partial def digits (n : Nat) : List Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def digits (n : Nat) : List Nat :=
   let s := toString n
   s.data.map (fun c => c.toNat - '0'.toNat)
 
-partial def getAt (xs : List Nat) (i : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def getAt (xs : List Nat) (i : Nat) : Nat :=
   match xs, i with
   | [], _ => 0
   | x :: _, 0 => x
   | _ :: xs, i + 1 => getAt xs i
 
-partial def pow10At (n i : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def pow10At (n i : Nat) : Nat :=
   Nat.pow 10 (n - 1 - i)
 
-partial def bitCount (n : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def bitCount (n : Nat) : Nat :=
   if n == 0 then 0 else (n % 2) + bitCount (n / 2)
 
-partial def countPrimeFamilyForPositions (p : Nat) (idxs : List Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def countPrimeFamilyForPositions (p : Nat) (idxs : List Nat) : Nat :=
   match idxs with
   | [] => 0
   | i0 :: _ =>
@@ -74,9 +91,13 @@ partial def countPrimeFamilyForPositions (p : Nat) (idxs : List Nat) : Nat :=
                   loopR (r + 1) (cnt + 1)
                 else
                   loopR (r + 1) cnt
+        termination_by 0
+        decreasing_by all_goals exact Termination.decreases
         loopR 0 0
 
-partial def solveCore (target limit : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def solveCore (target limit : Nat) : Nat :=
   let rec loopDigits (ndigits : Nat) : Nat :=
     if ndigits >= 10 then
       0
@@ -131,6 +152,8 @@ partial def solveCore (target limit : Nat) : Nat :=
                                 loopJ (j + 1) (shift + getAt pow10 idx) (lead || idx == 0)
                               else
                                 loopJ (j + 1) shift lead
+                          termination_by 0
+                          decreasing_by all_goals exact Termination.decreases
                           let (shift, lead) := loopJ 0 0 false
                           let rec loopR (r cnt : Nat) : Nat :=
                             if r > 9 then
@@ -148,17 +171,29 @@ partial def solveCore (target limit : Nat) : Nat :=
                                     loopR (r + 1) (cnt + 1)
                                   else
                                     loopR (r + 1) cnt
+                          termination_by 0
+                          decreasing_by all_goals exact Termination.decreases
                           let cnt := loopR 0 0
                           if cnt >= target then
                             p
                           else
                             loopMask (mask + 1)
+                    termination_by 0
+                    decreasing_by all_goals exact Termination.decreases
                     loopMask 1
+              termination_by 0
+              decreasing_by all_goals exact Termination.decreases
               loopDigit 0
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       loopP primes
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loopDigits 2
 
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example : countPrimeFamilyForPositions 13 [0] = 6 := by
   native_decide
 

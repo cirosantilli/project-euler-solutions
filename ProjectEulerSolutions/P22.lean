@@ -1,5 +1,6 @@
 import Std
 import ProjectEulerStatements.P22
+import ProjectEulerSolutions.Termination.P22
 namespace ProjectEulerSolutions.P22
 
 def stripQuotes (s : String) : String :=
@@ -28,9 +29,11 @@ def split (xs : List String) : List String × List String :=
     | [] => (a.reverse, b.reverse)
     | [x] => ((x :: a).reverse, b.reverse)
     | x :: y :: rest => loop rest (x :: a) (y :: b)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop xs [] []
 
-partial def mergeSort (cmp : String -> String -> Bool) (xs : List String) : List String :=
+def mergeSort (cmp : String -> String -> Bool) (xs : List String) : List String :=
   match xs with
   | [] => []
   | [x] => [x]
@@ -38,12 +41,16 @@ partial def mergeSort (cmp : String -> String -> Bool) (xs : List String) : List
       let (a, b) := split xs
       merge cmp (mergeSort cmp a) (mergeSort cmp b)
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 def solve (names : List String) : Nat :=
   let namesSorted := mergeSort (fun a b => a < b) names
   let rec loop (lst : List String) (idx acc : Nat) : Nat :=
     match lst with
     | [] => acc
     | n :: ns => loop ns (idx + 1) (acc + idx * nameValue n)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop namesSorted 1 0
 
 def colinPosScore (names : List String) : Nat × Nat :=
@@ -52,6 +59,8 @@ def colinPosScore (names : List String) : Nat × Nat :=
     match lst with
     | [] => 0
     | n :: ns => if n == "COLIN" then idx else find ns (idx + 1)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   let pos := find namesSorted 1
   (pos, pos * nameValue "COLIN")
 

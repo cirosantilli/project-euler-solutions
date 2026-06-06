@@ -1,6 +1,17 @@
 import ProjectEulerStatements.P88
+import ProjectEulerSolutions.Termination.P88
 namespace ProjectEulerSolutions.P88
 
+/-
+Termination split blocker: unlike the other 1-100 partial definitions, `dfs`
+recurses through a call nested inside the local recursive `loopF`. A blanket
+external decreasing theorem is not enough here because Lean elaborates the
+outer `dfs` recursion and the local loop together and falls back to a malformed
+structural relation involving the `best : Array Nat` parameter. Making this
+total likely requires either a real measure over the search tree
+(`limit + 1 - prod`, plus local loop fuel) or refactoring the local loop into a
+separate helper with its own termination theorem.
+-/
 partial def dfs (start prod summ terms kMax limit : Nat) (best : Array Nat) : Array Nat :=
   let maxF := limit / prod
   let rec loopF (f : Nat) (best : Array Nat) : Array Nat :=
@@ -17,7 +28,7 @@ partial def dfs (start prod summ terms kMax limit : Nat) (best : Array Nat) : Ar
       loopF (f + 1) best
   loopF start best
 
-partial def minProductSumNumbersSum (kMax : Nat) : Nat :=
+def minProductSumNumbersSum (kMax : Nat) : Nat :=
   let limit := 2 * kMax
   let inf := Nat.pow 10 18
   let best0 := Array.replicate (kMax + 1) inf
@@ -32,8 +43,12 @@ partial def minProductSumNumbersSum (kMax : Nat) : Nat :=
         loopK (k + 1) (seen.set! v true) (sum + v)
       else
         loopK (k + 1) seen sum
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loopK 2 seen 0
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 
 example : minProductSumNumbersSum 6 = 30 := by
   native_decide

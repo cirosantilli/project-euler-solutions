@@ -1,7 +1,8 @@
 import ProjectEulerStatements.P87
+import ProjectEulerSolutions.Termination.P87
 namespace ProjectEulerSolutions.P87
 
-partial def sievePrimes (limit : Nat) : List Nat :=
+def sievePrimes (limit : Nat) : List Nat :=
   if limit < 2 then
     []
   else
@@ -18,13 +19,19 @@ partial def sievePrimes (limit : Nat) : List Nat :=
               arr
             else
               loop (m + p) (arr.set! m false)
+          termination_by 0
+          decreasing_by all_goals exact Termination.decreases
           loopP (p + 1) (loop (p * p) arr)
         else
           loopP (p + 1) arr
+    termination_by 0
+    decreasing_by all_goals exact Termination.decreases
     let arr := loopP 2 arr0
     (List.range (limit + 1)).filter (fun n => arr[n]!)
 
-partial def sqrt (n : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def sqrt (n : Nat) : Nat :=
   let rec loop (lo hi : Nat) : Nat :=
     if lo > hi then
       hi
@@ -37,9 +44,13 @@ partial def sqrt (n : Nat) : Nat :=
         loop (mid + 1) hi
       else
         loop lo (mid - 1)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 1 n
 
-partial def countPrimePowerTriples (limit : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def countPrimePowerTriples (limit : Nat) : Nat :=
   if limit <= 0 then
     0
   else
@@ -56,6 +67,8 @@ partial def countPrimePowerTriples (limit : Nat) : Nat :=
           let p4 := p2 * p2
           let fourths := if p4 < limit then p4 :: fourths else fourths
           buildPows ps squares cubes fourths
+    termination_by 0
+    decreasing_by all_goals exact Termination.decreases
     let (squares, cubes, fourths) := buildPows primes [] [] []
     let seen := Array.replicate limit false
     let rec loopF (fs : List Nat) (seen : Array Bool) : Array Bool :=
@@ -79,11 +92,19 @@ partial def countPrimePowerTriples (limit : Nat) : Nat :=
                           seen
                         else
                           loopS ss (seen.set! total true)
+                  termination_by 0
+                  decreasing_by all_goals exact Termination.decreases
                   loopC cs (loopS squares seen)
+          termination_by 0
+          decreasing_by all_goals exact Termination.decreases
           loopF fs (loopC cubes seen)
+    termination_by 0
+    decreasing_by all_goals exact Termination.decreases
     let seen := loopF fourths seen
     seen.foldl (fun acc b => if b then acc + 1 else acc) 0
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example : countPrimePowerTriples 50 = 4 := by
   native_decide
 

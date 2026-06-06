@@ -1,9 +1,10 @@
 import ProjectEulerStatements.P94
+import ProjectEulerSolutions.Termination.P94
 namespace ProjectEulerSolutions.P94
 
 abbrev LIMIT : Nat := 1000000000
 
-partial def sqrtFloor (n : Nat) : Nat :=
+def sqrtFloor (n : Nat) : Nat :=
   let rec loop (lo hi : Nat) : Nat :=
     if lo > hi then
       hi
@@ -16,14 +17,20 @@ partial def sqrtFloor (n : Nat) : Nat :=
         loop (mid + 1) hi
       else
         loop lo (mid - 1)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 1 n
 
-partial def triangleAreaIsosceles (a b : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def triangleAreaIsosceles (a b : Nat) : Nat :=
   let d := 4 * a * a - b * b
   let k := sqrtFloor d
   if k * k != d then 0 else (b * k) / 4
 
-partial def generatePerimeters (limit : Nat) : List Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def generatePerimeters (limit : Nat) : List Nat :=
   let rec loop (x y : Nat) (acc : List Nat) : List Nat :=
     let p :=
       if x % 3 == 2 then
@@ -39,12 +46,18 @@ partial def generatePerimeters (limit : Nat) : List Nat :=
       let x' := 2 * x + 3 * y
       let y' := x + 2 * y
       loop x' y' acc
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 14 8 []
 
-partial def sumPerimeters (limit : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def sumPerimeters (limit : Nat) : Nat :=
   (generatePerimeters limit).foldl (fun acc p => acc + p) 0
 
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example : triangleAreaIsosceles 5 6 = 12 := by
   native_decide
 

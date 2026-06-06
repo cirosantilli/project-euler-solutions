@@ -1,4 +1,5 @@
 import ProjectEulerStatements.P11
+import ProjectEulerSolutions.Termination.P11
 namespace ProjectEulerSolutions.P11
 
 abbrev grid : Array (Array Nat) := #[
@@ -36,39 +37,55 @@ def gridToArray (grid : List (List Nat)) : Array (Array Nat) :=
 def gridList : List (List Nat) :=
   arrayToList (grid.map arrayToList)
 
-partial def prodRight (g : Array (Array Nat)) (i j k : Nat) : Nat :=
+def prodRight (g : Array (Array Nat)) (i j k : Nat) : Nat :=
   let rec loop (t acc : Nat) : Nat :=
     if t == k then
       acc
     else
       loop (t + 1) (acc * g[i]![j + t]!)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 0 1
 
-partial def prodDown (g : Array (Array Nat)) (i j k : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def prodDown (g : Array (Array Nat)) (i j k : Nat) : Nat :=
   let rec loop (t acc : Nat) : Nat :=
     if t == k then
       acc
     else
       loop (t + 1) (acc * g[i + t]![j]!)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 0 1
 
-partial def prodDownRight (g : Array (Array Nat)) (i j k : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def prodDownRight (g : Array (Array Nat)) (i j k : Nat) : Nat :=
   let rec loop (t acc : Nat) : Nat :=
     if t == k then
       acc
     else
       loop (t + 1) (acc * g[i + t]![j + t]!)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 0 1
 
-partial def prodDownLeft (g : Array (Array Nat)) (i j k : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def prodDownLeft (g : Array (Array Nat)) (i j k : Nat) : Nat :=
   let rec loop (t acc : Nat) : Nat :=
     if t == k then
       acc
     else
       loop (t + 1) (acc * g[i + t]![j - t]!)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 0 1
 
-partial def maxAdjacentProduct (g : Array (Array Nat)) (k : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def maxAdjacentProduct (g : Array (Array Nat)) (k : Nat) : Nat :=
   let n := g.size
   let m := if n == 0 then 0 else g[0]!.size
   let rec loopI (i best : Nat) : Nat :=
@@ -104,10 +121,16 @@ partial def maxAdjacentProduct (g : Array (Array Nat)) (k : Nat) : Nat :=
             else
               best3
           loopJ (j + 1) best4
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       loopI (i + 1) (loopJ 0 best)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loopI 0 0
 
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 def solve (grid : List (List Nat)) (k : Nat) : Nat :=
   maxAdjacentProduct (gridToArray grid) k
 

@@ -1,7 +1,8 @@
 import ProjectEulerStatements.P37
+import ProjectEulerSolutions.Termination.P37
 namespace ProjectEulerSolutions.P37
 
-partial def sieve (limit : Nat) : Array Bool :=
+def sieve (limit : Nat) : Array Bool :=
   if limit == 0 then
     #[]
   else
@@ -10,6 +11,8 @@ partial def sieve (limit : Nat) : Array Bool :=
       |>.set! 1 false
     let rec markEven (i : Nat) (arr : Array Bool) : Array Bool :=
       if i > limit then arr else markEven (i + 2) (arr.set! i false)
+    termination_by 0
+    decreasing_by all_goals exact Termination.decreases
     let arr := if limit >= 4 then markEven 4 arr0 else arr0
     let rec loopP (p : Nat) (arr : Array Bool) : Array Bool :=
       if p * p > limit then
@@ -21,20 +24,32 @@ partial def sieve (limit : Nat) : Array Bool :=
               arr
             else
               loop (x + 2 * p) (arr.set! x false)
+          termination_by 0
+          decreasing_by all_goals exact Termination.decreases
           loopP (p + 2) (loop (p * p) arr)
         else
           loopP (p + 2) arr
+    termination_by 0
+    decreasing_by all_goals exact Termination.decreases
     loopP 3 arr
 
-partial def digitsCount (n : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def digitsCount (n : Nat) : Nat :=
   let rec loop (m c : Nat) : Nat :=
     if m < 10 then c + 1 else loop (m / 10) (c + 1)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   if n == 0 then 1 else loop n 0
 
-partial def pow10 (k : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def pow10 (k : Nat) : Nat :=
   Nat.pow 10 k
 
-partial def isTruncatablePrime (n : Nat) (isPrime : Array Bool) : Bool :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def isTruncatablePrime (n : Nat) (isPrime : Array Bool) : Bool :=
   if n < 10 then
     false
   else
@@ -42,14 +57,20 @@ partial def isTruncatablePrime (n : Nat) (isPrime : Array Bool) : Bool :=
     let rec loopR (m : Nat) : Bool :=
       if m == 0 then true
       else if !isPrime[m]! then false else loopR (m / 10)
+    termination_by 0
+    decreasing_by all_goals exact Termination.decreases
     let rec loopL (k : Nat) : Bool :=
       if k == 0 then true
       else
         let m := n % pow10 k
         if !isPrime[m]! then false else loopL (k - 1)
+    termination_by 0
+    decreasing_by all_goals exact Termination.decreases
     loopR n && loopL (len - 1)
 
-partial def solve (limit : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def solve (limit : Nat) : Nat :=
   let isPrime := sieve limit
   let rec loop (n found total : Nat) : Nat :=
     if n > limit then
@@ -61,9 +82,13 @@ partial def solve (limit : Nat) : Nat :=
         loop (n + 2) (found + 1) (total + n)
       else
         loop (n + 2) found total
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 11 0 0
 
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example :
     let isPrime := sieve 1000000
     isPrime[3797]! = true := by

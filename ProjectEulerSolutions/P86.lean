@@ -1,7 +1,8 @@
 import ProjectEulerStatements.P86
+import ProjectEulerSolutions.Termination.P86
 namespace ProjectEulerSolutions.P86
 
-partial def sqrtFloor (n : Nat) : Nat :=
+def sqrtFloor (n : Nat) : Nat :=
   let rec loop (lo hi : Nat) : Nat :=
     if lo > hi then
       hi
@@ -14,9 +15,13 @@ partial def sqrtFloor (n : Nat) : Nat :=
         loop (mid + 1) hi
       else
         loop lo (mid - 1)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 1 n
 
-partial def countSolutionsUpTo (m : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def countSolutionsUpTo (m : Nat) : Nat :=
   let rec loopC (c : Nat) (total : Nat) : Nat :=
     if c > m then
       total
@@ -36,10 +41,16 @@ partial def countSolutionsUpTo (m : Nat) : Nat :=
             else
               total
           loopS (s + 1) total
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       loopC (c + 1) (loopS 2 total)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loopC 1 0
 
-partial def leastMExceeding (target : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def leastMExceeding (target : Nat) : Nat :=
   let rec loop (c : Nat) (total : Nat) : Nat :=
     if total > target then
       c
@@ -60,10 +71,16 @@ partial def leastMExceeding (target : Nat) : Nat :=
             else
               total
           loopS (s + 1) total
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       loop c (loopS 2 total)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 0 0
 
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example : countSolutionsUpTo 99 = 1975 := by
   native_decide
 

@@ -1,15 +1,20 @@
 import Std
 import ProjectEulerStatements.P81
+import ProjectEulerSolutions.Termination.P81
 namespace ProjectEulerSolutions.P81
 
-partial def parseNat (s : String) : Nat :=
+def parseNat (s : String) : Nat :=
   s.data.foldl (fun acc c => acc * 10 + (c.toNat - '0'.toNat)) 0
 
-partial def parseMatrix (text : String) : List (List Nat) :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def parseMatrix (text : String) : List (List Nat) :=
   let lines := text.splitOn "\n" |>.filter (fun ln => ln != "")
   lines.map (fun ln => ln.splitOn "," |>.filter (fun t => t != "") |>.map parseNat)
 
-partial def minPathSum (matrix : List (List Nat)) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def minPathSum (matrix : List (List Nat)) : Nat :=
   match matrix with
   | [] => 0
   | row0 :: rows =>
@@ -21,6 +26,8 @@ partial def minPathSum (matrix : List (List Nat)) : Nat :=
         else
           let val := dp[j - 1]! + (row0.getD j 0)
           initRow (j + 1) (dp.set! j val)
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       let dp0 := if m > 1 then initRow 1 dp0 else dp0
       let rec loopRows (rows : List (List Nat)) (dp : Array Nat) : Array Nat :=
         match rows with
@@ -33,10 +40,16 @@ partial def minPathSum (matrix : List (List Nat)) : Nat :=
                 let v := r.getD j 0
                 let best := Nat.min dp[j]! dp[j - 1]!
                 loopCols (j + 1) (dp.set! j (v + best))
+            termination_by 0
+            decreasing_by all_goals exact Termination.decreases
             loopRows rs (loopCols 1 dp)
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       let dp := loopRows rows dp0
       dp[m - 1]!
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example :
     let sample := [
       [131, 673, 234, 103, 18],

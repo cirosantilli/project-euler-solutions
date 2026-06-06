@@ -1,4 +1,5 @@
 import ProjectEulerStatements.P84
+import ProjectEulerSolutions.Termination.P84
 namespace ProjectEulerSolutions.P84
 
 abbrev CC_SQUARES : List Nat := [2, 17, 33]
@@ -10,24 +11,34 @@ abbrev JAIL : Nat := 10
 abbrev RAILWAYS : List Nat := [5, 15, 25, 35]
 abbrev UTILITIES : List Nat := [12, 28]
 
-partial def contains (xs : List Nat) (v : Nat) : Bool :=
+def contains (xs : List Nat) (v : Nat) : Bool :=
   xs.any (fun x => x == v)
 
-partial def nextRailway (pos : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def nextRailway (pos : Nat) : Nat :=
   let rec loop (rs : List Nat) : Nat :=
     match rs with
     | [] => (RAILWAYS.headD 0)
     | r :: rs => if r > pos then r else loop rs
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop RAILWAYS
 
-partial def nextUtility (pos : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def nextUtility (pos : Nat) : Nat :=
   let rec loop (rs : List Nat) : Nat :=
     match rs with
     | [] => (UTILITIES.headD 0)
     | r :: rs => if r > pos then r else loop rs
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop UTILITIES
 
-partial def diceOutcomes (sides : Nat) : List (Nat × Bool × Float) :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def diceOutcomes (sides : Nat) : List (Nat × Bool × Float) :=
   let p := 1.0 / (Float.ofNat (sides * sides))
   let rec loopD1 (d1 : Nat) (acc : List (Nat × Bool × Float)) : List (Nat × Bool × Float) :=
     if d1 > sides then
@@ -38,26 +49,40 @@ partial def diceOutcomes (sides : Nat) : List (Nat × Bool × Float) :=
           acc
         else
           loopD2 (d2 + 1) ((d1 + d2, d1 == d2, p) :: acc)
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       loopD1 (d1 + 1) (loopD2 1 acc)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loopD1 1 []
 
-partial def idxDist (sq : Nat) (sent : Bool) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def idxDist (sq : Nat) (sent : Bool) : Nat :=
   sq * 2 + (if sent then 1 else 0)
 
-partial def addProb (arr : Array Float) (sq : Nat) (sent : Bool) (p : Float) : Array Float :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def addProb (arr : Array Float) (sq : Nat) (sent : Bool) (p : Float) : Array Float :=
   let i := idxDist sq sent
   arr.set! i (arr[i]! + p)
 
-partial def mergeScaled (arr : Array Float) (other : Array Float) (scale : Float) : Array Float :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def mergeScaled (arr : Array Float) (other : Array Float) (scale : Float) : Array Float :=
   let rec loop (i : Nat) (arr : Array Float) : Array Float :=
     if i >= other.size then
       arr
     else
       let arr := arr.set! i (arr[i]! + other[i]! * scale)
       loop (i + 1) arr
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 0 arr
 
-partial def resolveLanding (square : Nat) : Array Float :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def resolveLanding (square : Nat) : Array Float :=
   if square == G2J then
     addProb (Array.replicate 80 0.0) JAIL true 1.0
   else if contains CC_SQUARES square then
@@ -76,6 +101,8 @@ partial def resolveLanding (square : Nat) : Array Float :=
         mergeScaled dist sub p
       else
         addProb dist dest false p
+    termination_by 0
+    decreasing_by all_goals exact Termination.decreases
     let dist := addMove 0 dist
     let dist := addProb dist JAIL true p
     let dist := addMove 11 dist
@@ -90,7 +117,9 @@ partial def resolveLanding (square : Nat) : Array Float :=
   else
     addProb (Array.replicate 80 0.0) square false 1.0
 
-partial def buildTransition (sides : Nat) : List (List (Nat × Float)) :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def buildTransition (sides : Nat) : List (List (Nat × Float)) :=
   let outcomes := diceOutcomes sides
   let nStates := 40 * 3
   let rec loopPos (pos : Nat) (acc : List (List (Nat × Float))) : List (List (Nat × Float)) :=
@@ -127,7 +156,11 @@ partial def buildTransition (sides : Nat) : List (List (Nat × Float)) :=
                         let toState := if sent then JAIL * 3 else sq * 3 + newDc
                         let row := row.set! toState (row[toState]! + pr * prob2)
                         loopDist (i + 1) row
+                  termination_by 0
+                  decreasing_by all_goals exact Termination.decreases
                   loopOut outs (loopDist 0 row)
+          termination_by 0
+          decreasing_by all_goals exact Termination.decreases
           let row := loopOut outcomes row0
           let rec toList (i : Nat) (acc2 : List (Nat × Float)) : List (Nat × Float) :=
             if i >= nStates then
@@ -138,11 +171,19 @@ partial def buildTransition (sides : Nat) : List (List (Nat × Float)) :=
                 toList (i + 1) acc2
               else
                 toList (i + 1) ((i, v) :: acc2)
+          termination_by 0
+          decreasing_by all_goals exact Termination.decreases
           loopD (dc + 1) (toList 0 [] :: acc)
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       loopPos (pos + 1) (loopD 0 acc)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loopPos 0 []
 
-partial def stationaryDistribution (P : List (List (Nat × Float))) : Array Float :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def stationaryDistribution (P : List (List (Nat × Float))) : Array Float :=
   let n := P.length
   let v0 := Array.replicate n (1.0 / Float.ofNat n)
   let maxFloat (a b : Float) : Float := if a > b then a else b
@@ -160,20 +201,30 @@ partial def stationaryDistribution (P : List (List (Nat × Float))) : Array Floa
               match r with
               | [] => v2
               | (j, p) :: rs => loopRow rs (v2.set! j (v2[j]! + vi * p))
+            termination_by 0
+            decreasing_by all_goals exact Termination.decreases
             loopRows (i + 1) rows (loopRow row v2)
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       let v2 := loopRows 0 P v2
       let rec maxDiff (i : Nat) (diff : Float) : Float :=
         if i >= n then diff else maxDiff (i + 1) (maxFloat diff (Float.abs (v2[i]! - v[i]!)))
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       let diff := maxDiff 0 0.0
       if iter > 50 && diff < 1e-15 then
         v2
       else
         loop (iter + 1) v2
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   let v := loop 1 v0
   let sum := v.foldl (fun acc x => acc + x) 0.0
   if sum == 0.0 then v else v.map (fun x => x / sum)
 
-partial def sortByProb (xs : List (Nat × Float)) : List (Nat × Float) :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def sortByProb (xs : List (Nat × Float)) : List (Nat × Float) :=
   let rec insert (x : Nat × Float) (ys : List (Nat × Float)) : List (Nat × Float) :=
     match ys with
     | [] => [x]
@@ -184,12 +235,18 @@ partial def sortByProb (xs : List (Nat × Float)) : List (Nat × Float) :=
           x :: y :: ys
         else
           y :: insert x ys
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   xs.foldl (fun acc x => insert x acc) []
 
-partial def pad2 (n : Nat) : String :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def pad2 (n : Nat) : String :=
   if n < 10 then "0" ++ toString n else toString n
 
-partial def modalString (sides : Nat) : String :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def modalString (sides : Nat) : String :=
   let P := buildTransition sides
   let v := stationaryDistribution P
   let sqProb := (List.range 40).map (fun pos =>
@@ -201,6 +258,8 @@ partial def modalString (sides : Nat) : String :=
   top3.foldl (fun acc p => acc ++ pad2 p.1) ""
 
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example : modalString 6 = "102400" := by
   native_decide
 

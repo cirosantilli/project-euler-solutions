@@ -1,7 +1,8 @@
 import ProjectEulerStatements.P66
+import ProjectEulerSolutions.Termination.P66
 namespace ProjectEulerSolutions.P66
 
-partial def sqrtFloor (n : Nat) : Nat :=
+def sqrtFloor (n : Nat) : Nat :=
   let rec loop (lo hi : Nat) : Nat :=
     if lo > hi then
       hi
@@ -14,9 +15,13 @@ partial def sqrtFloor (n : Nat) : Nat :=
         loop (mid + 1) hi
       else
         loop lo (mid - 1)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 1 n
 
-partial def minimalPellX (d : Nat) : Option Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def minimalPellX (d : Nat) : Option Nat :=
   let a0 := sqrtFloor d
   if a0 * a0 == d then
     none
@@ -31,9 +36,13 @@ partial def minimalPellX (d : Nat) : Option Nat :=
         let d1 := (d - m * m) / d0
         let a := (a0 + m) / d1
         loop m d1 a h_m1 h k_m1 k
+    termination_by 0
+    decreasing_by all_goals exact Termination.decreases
     some (loop 0 1 a0 0 1 1 0)
 
-partial def solveCore (limit : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def solveCore (limit : Nat) : Nat :=
   let rec loop (d : Nat) (bestD bestX : Nat) : Nat :=
     if d > limit then
       bestD
@@ -45,9 +54,13 @@ partial def solveCore (limit : Nat) : Nat :=
             loop (d + 1) d x
           else
             loop (d + 1) bestD bestX
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 2 0 0
 
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example : minimalPellX 13 = some 649 := by
   native_decide
 

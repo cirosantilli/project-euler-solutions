@@ -1,9 +1,10 @@
 import ProjectEulerStatements.P38
+import ProjectEulerSolutions.Termination.P38
 namespace ProjectEulerSolutions.P38
 
 abbrev targetMask : Nat := 1022
 
-partial def concatenatedProduct (x : Nat) : String × Nat :=
+def concatenatedProduct (x : Nat) : String × Nat :=
   let rec loop (n totalLen : Nat) (acc : String) : String × Nat :=
     if totalLen >= 9 then
       (acc, n)
@@ -11,9 +12,13 @@ partial def concatenatedProduct (x : Nat) : String × Nat :=
       let n' := n + 1
       let s := toString (x * n')
       loop n' (totalLen + s.length) (acc ++ s)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 0 0 ""
 
-partial def isPandigital (s : String) : Bool :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def isPandigital (s : String) : Bool :=
   if s.length != 9 then
     false
   else
@@ -25,9 +30,13 @@ partial def isPandigital (s : String) : Bool :=
           if d == 0 then false else
           let bit := 1 <<< d
           if (mask &&& bit) != 0 then false else loop cs (mask ||| bit)
+    termination_by 0
+    decreasing_by all_goals exact Termination.decreases
     loop s.data 0
 
-partial def solve (limit : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def solve (limit : Nat) : Nat :=
   let rec loop (x best : Nat) : Nat :=
     if x > limit then
       best
@@ -38,13 +47,21 @@ partial def solve (limit : Nat) : Nat :=
         loop (x + 1) (if val > best then val else best)
       else
         loop (x + 1) best
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 1 0
 
-partial def concatUpTo (x n : Nat) : String :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def concatUpTo (x n : Nat) : String :=
   let rec loop (k : Nat) (acc : String) : String :=
     if k > n then acc else loop (k + 1) (acc ++ toString (x * k))
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 1 ""
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example : concatUpTo 192 3 = "192384576" := by
   native_decide
 

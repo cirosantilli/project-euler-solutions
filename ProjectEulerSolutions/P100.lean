@@ -1,10 +1,13 @@
 import ProjectEulerStatements.P100
+import ProjectEulerSolutions.Termination.P100
 namespace ProjectEulerSolutions.P100
 
-partial def nextSolution (u v : Nat) : Nat × Nat :=
+def nextSolution (u v : Nat) : Nat × Nat :=
   (3 * u + 4 * v, 2 * u + 3 * v)
 
-partial def blueRedForTotalLimit (limitN : Nat) : Nat × Nat × Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def blueRedForTotalLimit (limitN : Nat) : Nat × Nat × Nat :=
   let rec loop (u v : Nat) : Nat × Nat × Nat :=
     let n := (u + 1) / 2
     let b := (v + 1) / 2
@@ -13,9 +16,13 @@ partial def blueRedForTotalLimit (limitN : Nat) : Nat × Nat × Nat :=
     else
       let (u, v) := nextSolution u v
       loop u v
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 1 1
 
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example :
     let (u1, v1) := (1, 1)
     let (u2, v2) := nextSolution u1 v1

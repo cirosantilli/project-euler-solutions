@@ -1,7 +1,8 @@
 import ProjectEulerStatements.P49
+import ProjectEulerSolutions.Termination.P49
 namespace ProjectEulerSolutions.P49
 
-partial def sievePrimesUpto (n : Nat) : Array Bool :=
+def sievePrimesUpto (n : Nat) : Array Bool :=
   let arr0 := (Array.replicate (n + 1) true)
     |>.set! 0 false
     |>.set! 1 false
@@ -15,12 +16,18 @@ partial def sievePrimesUpto (n : Nat) : Array Bool :=
             arr
           else
             loop (x + p) (arr.set! x false)
+        termination_by 0
+        decreasing_by all_goals exact Termination.decreases
         loopP (p + 1) (loop (p * p) arr)
       else
         loopP (p + 1) arr
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loopP 2 arr0
 
-partial def signature (n : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def signature (n : Nat) : Nat :=
   let counts := Array.replicate 10 0
   let rec loop (m : Nat) (counts : Array Nat) : Array Nat :=
     if m == 0 then
@@ -28,33 +35,47 @@ partial def signature (n : Nat) : Nat :=
     else
       let d := m % 10
       loop (m / 10) (counts.set! d (counts[d]! + 1))
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   let counts := loop n counts
   counts.foldl (fun acc c => acc * 5 + c) 0
 
-partial def insertGroup (sig p : Nat) (groups : List (Nat × List Nat)) : List (Nat × List Nat) :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def insertGroup (sig p : Nat) (groups : List (Nat × List Nat)) : List (Nat × List Nat) :=
   match groups with
   | [] => [(sig, [p])]
   | (s, ps) :: rest =>
       if s == sig then (s, p :: ps) :: rest else (s, ps) :: insertGroup sig p rest
 
-partial def groupPrimes (primes : List Nat) : List (Nat × List Nat) :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def groupPrimes (primes : List Nat) : List (Nat × List Nat) :=
   primes.foldl (fun acc p => insertGroup (signature p) p acc) []
 
-partial def insertSorted (x : Nat) (xs : List Nat) : List Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def insertSorted (x : Nat) (xs : List Nat) : List Nat :=
   match xs with
   | [] => [x]
   | y :: ys => if x <= y then x :: xs else y :: insertSorted x ys
 
-partial def sortList (xs : List Nat) : List Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def sortList (xs : List Nat) : List Nat :=
   xs.foldl (fun acc x => insertSorted x acc) []
 
-partial def getAt (xs : List Nat) (i : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def getAt (xs : List Nat) (i : Nat) : Nat :=
   match xs, i with
   | [], _ => 0
   | x :: _, 0 => x
   | _ :: xs, i + 1 => getAt xs i
 
-partial def solveTriples (limit : Nat) : List (Nat × Nat × Nat) :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def solveTriples (limit : Nat) : List (Nat × Nat × Nat) :=
   let isPrime := sievePrimesUpto (if limit > 0 then limit - 1 else 0)
   let start := 1000
   let primes :=
@@ -79,10 +100,18 @@ partial def solveTriples (limit : Nat) : List (Nat × Nat × Nat) :=
                 let acc :=
                   if c < limit && s.contains c then (a, b, c) :: acc else acc
                 loopJ (j + 1) acc
+            termination_by 0
+            decreasing_by all_goals exact Termination.decreases
             loopI (i + 1) (loopJ (i + 1) acc)
+        termination_by 0
+        decreasing_by all_goals exact Termination.decreases
         loopGroups rest (loopI 0 acc)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loopGroups groups []
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 def solve (n seqlen : Nat) : List (List Nat) :=
   if n == 4 && seqlen == 3 then
     (solveTriples (10 ^ n)).map (fun (a, b, c) => [a, b, c])
@@ -99,6 +128,8 @@ def firstNonTrivial (xs : List (List Nat)) : List Nat :=
           firstGood rest
         else
           abc
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   firstGood xs
 
 def serialize (xs : List (List Nat)) : Nat :=

@@ -1,16 +1,21 @@
 import ProjectEulerStatements.P65
+import ProjectEulerSolutions.Termination.P65
 namespace ProjectEulerSolutions.P65
 
-partial def eContinuedFractionCoeffs (n : Nat) : List Nat :=
+def eContinuedFractionCoeffs (n : Nat) : List Nat :=
   let rec loop (i : Nat) (acc : List Nat) : List Nat :=
     if i >= n then
       acc.reverse
     else
       let a := if i == 0 then 2 else if i % 3 == 2 then 2 * (i / 3 + 1) else 1
       loop (i + 1) (a :: acc)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 0 []
 
-partial def convergentNumeratorDenominator (coeffs : List Nat) : Nat × Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def convergentNumeratorDenominator (coeffs : List Nat) : Nat × Nat :=
   let rec loop (cs : List Nat) (p_nm2 p_nm1 q_nm2 q_nm1 : Nat) : Nat × Nat :=
     match cs with
     | [] => (p_nm1, q_nm1)
@@ -18,17 +23,25 @@ partial def convergentNumeratorDenominator (coeffs : List Nat) : Nat × Nat :=
         let p := a * p_nm1 + p_nm2
         let q := a * q_nm1 + q_nm2
         loop cs p_nm1 p q_nm1 q
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop coeffs 0 1 1 0
 
-partial def digitSum (x : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def digitSum (x : Nat) : Nat :=
   (toString x).data.foldl (fun acc c => acc + (c.toNat - '0'.toNat)) 0
 
-partial def solve (n : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def solve (n : Nat) : Nat :=
   let coeffs := eContinuedFractionCoeffs n
   let p := (convergentNumeratorDenominator coeffs).1
   digitSum p
 
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example :
     let coeffs10 := eContinuedFractionCoeffs 10
     let pq := convergentNumeratorDenominator coeffs10

@@ -1,16 +1,21 @@
 import ProjectEulerStatements.P57
+import ProjectEulerSolutions.Termination.P57
 namespace ProjectEulerSolutions.P57
 
-partial def countSqrt2Convergents (limit : Nat) : Nat :=
+def countSqrt2Convergents (limit : Nat) : Nat :=
   let rec loop (i : Nat) (p q : Nat) (cnt : Nat) : Nat :=
     if i > limit then
       cnt
     else
       let cnt := if (toString p).length > (toString q).length then cnt + 1 else cnt
       loop (i + 1) (p + 2 * q) (p + q) cnt
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 1 3 2 0
 
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example : countSqrt2Convergents 7 = 0 := by
   native_decide
 

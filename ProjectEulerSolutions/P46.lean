@@ -1,7 +1,8 @@
 import ProjectEulerStatements.P46
+import ProjectEulerSolutions.Termination.P46
 namespace ProjectEulerSolutions.P46
 
-partial def isPrimeWithList (n : Nat) (primes : List Nat) : Bool :=
+def isPrimeWithList (n : Nat) (primes : List Nat) : Bool :=
   if n < 2 then
     false
   else
@@ -15,28 +16,42 @@ partial def isPrimeWithList (n : Nat) (primes : List Nat) : Bool :=
             false
           else
             loop ps
+    termination_by 0
+    decreasing_by all_goals exact Termination.decreases
     loop primes
 
-partial def lastOr (xs : List Nat) (default : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def lastOr (xs : List Nat) (default : Nat) : Nat :=
   match xs.reverse with
   | [] => default
   | x :: _ => x
 
-partial def ensurePrimesUpTo (n : Nat) (primes : List Nat) : List Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def ensurePrimesUpTo (n : Nat) (primes : List Nat) : List Nat :=
   let rec loop (candidate : Nat) (primes : List Nat) : List Nat :=
     if lastOr primes 0 >= n then
       primes
     else
       let primes := if isPrimeWithList candidate primes then primes ++ [candidate] else primes
       loop (candidate + 2) primes
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   if lastOr primes 0 >= n then primes else loop (lastOr primes 0 + 2) primes
 
-partial def sqrtIfSquare (n : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def sqrtIfSquare (n : Nat) : Nat :=
   let rec loop (i : Nat) : Nat :=
     if i * i > n then 0 else if i * i == n then i else loop (i + 1)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 1
 
-partial def canBeWritten (n : Nat) (primes : List Nat) : Bool :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def canBeWritten (n : Nat) (primes : List Nat) : Bool :=
   let primes := ensurePrimesUpTo n primes
   let rec loop (ps : List Nat) : Bool :=
     match ps with
@@ -55,9 +70,13 @@ partial def canBeWritten (n : Nat) (primes : List Nat) : Bool :=
               true
             else
               loop ps
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop primes
 
-partial def solve (limit : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def solve (limit : Nat) : Nat :=
   let rec loop (n : Nat) (primes : List Nat) : Nat :=
     if n >= limit then
       0
@@ -67,8 +86,12 @@ partial def solve (limit : Nat) : Nat :=
       n
     else
       loop (n + 2) primes
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 9 [2, 3]
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example :
     let primes := [2, 3]
     [9, 15, 21, 25, 27, 33].all (fun x => canBeWritten x primes) = true := by

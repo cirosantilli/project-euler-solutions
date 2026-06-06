@@ -1,7 +1,8 @@
 import ProjectEulerStatements.P63
+import ProjectEulerSolutions.Termination.P63
 namespace ProjectEulerSolutions.P63
 
-partial def solve (limit : Nat) : Nat :=
+def solve (limit : Nat) : Nat :=
   let rec loopN (n : Nat) (total : Nat) : Nat :=
     if n > limit then
       total
@@ -17,10 +18,16 @@ partial def solve (limit : Nat) : Nat :=
             let len := (toString (Nat.pow a n)).length
             let acc := if len == n then acc + 1 else acc
             loopA (a + 1) acc
+        termination_by 0
+        decreasing_by all_goals exact Termination.decreases
         loopN (n + 1) (loopA 1 total)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loopN 1 0
 
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example : (toString (Nat.pow 7 5)).length = 5 := by
   native_decide
 

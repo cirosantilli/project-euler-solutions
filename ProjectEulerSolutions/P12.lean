@@ -1,13 +1,16 @@
 import ProjectEulerStatements.P12
+import ProjectEulerSolutions.Termination.P12
 namespace ProjectEulerSolutions.P12
 
-partial def stripFactor (x p exp : Nat) : Nat × Nat :=
+def stripFactor (x p exp : Nat) : Nat × Nat :=
   if x % p == 0 then
     stripFactor (x / p) p (exp + 1)
   else
     (x, exp)
 
-partial def divisorCount (n : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def divisorCount (n : Nat) : Nat :=
   if n <= 1 then
     1
   else
@@ -19,9 +22,13 @@ partial def divisorCount (n : Nat) : Nat :=
         loop x' (i + 1) (total * (exp + 1))
       else
         loop x (i + 1) total
+    termination_by 0
+    decreasing_by all_goals exact Termination.decreases
     loop n 2 1
 
-partial def solve (k : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def solve (k : Nat) : Nat :=
   let rec loop (n : Nat) : Nat :=
     let (a, b) :=
       if n % 2 == 0 then
@@ -33,8 +40,12 @@ partial def solve (k : Nat) : Nat :=
       n * (n + 1) / 2
     else
       loop (n + 1)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 1
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example : solve 5 = 28 := by
   native_decide
 end ProjectEulerSolutions.P12

@@ -1,7 +1,8 @@
 import ProjectEulerStatements.P50
+import ProjectEulerSolutions.Termination.P50
 namespace ProjectEulerSolutions.P50
 
-partial def sieveIsPrime (limit : Nat) : Array Bool :=
+def sieveIsPrime (limit : Nat) : Array Bool :=
   if limit == 0 then
     #[]
   else
@@ -18,30 +19,46 @@ partial def sieveIsPrime (limit : Nat) : Array Bool :=
               arr
             else
               loop (m + p) (arr.set! m false)
+          termination_by 0
+          decreasing_by all_goals exact Termination.decreases
           loopP (p + 1) (loop (p * p) arr)
         else
           loopP (p + 1) arr
+    termination_by 0
+    decreasing_by all_goals exact Termination.decreases
     loopP 2 arr0
 
-partial def prefixSums (xs : List Nat) : List Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def prefixSums (xs : List Nat) : List Nat :=
   let rec loop (ps : List Nat) (acc : Nat) (pref : List Nat) : List Nat :=
     match ps with
     | [] => pref.reverse
     | p :: ps => loop ps (acc + p) ((acc + p) :: pref)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   0 :: loop xs 0 []
 
-partial def getAt (xs : List Nat) (i : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def getAt (xs : List Nat) (i : Nat) : Nat :=
   match xs, i with
   | [], _ => 0
   | x :: _, 0 => x
   | _ :: xs, i + 1 => getAt xs i
 
-partial def maxLenPrefix (pref : List Nat) (limit : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def maxLenPrefix (pref : List Nat) (limit : Nat) : Nat :=
   let rec loop (len : Nat) : Nat :=
     if len + 1 < pref.length && getAt pref (len + 1) < limit then loop (len + 1) else len
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 0
 
-partial def searchLen (pref : List Nat) (isPrime : Array Bool) (limit n len : Nat) : Nat × Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def searchLen (pref : List Nat) (isPrime : Array Bool) (limit n len : Nat) : Nat × Nat :=
   let rec loopI (i : Nat) : Nat × Nat :=
     if i + len > n then
       (0, 0)
@@ -53,16 +70,22 @@ partial def searchLen (pref : List Nat) (isPrime : Array Bool) (limit n len : Na
         (val, len)
       else
         loopI (i + 1)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loopI 0
 
-partial def searchBest (pref : List Nat) (isPrime : Array Bool) (limit n len : Nat) : Nat × Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def searchBest (pref : List Nat) (isPrime : Array Bool) (limit n len : Nat) : Nat × Nat :=
   if len == 0 then
     (0, 0)
   else
     let res := searchLen pref isPrime limit n len
     if res.1 != 0 then res else searchBest pref isPrime limit n (len - 1)
 
-partial def longestConsecutivePrimeSum (limit : Nat) : Nat × Nat := by
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def longestConsecutivePrimeSum (limit : Nat) : Nat × Nat := by
   if h : limit <= 2 then
     exact (0, 0)
   else
@@ -74,6 +97,8 @@ partial def longestConsecutivePrimeSum (limit : Nat) : Nat × Nat := by
     exact searchBest pref isPrime limit n maxLen
 
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example : longestConsecutivePrimeSum 100 = (41, 6) := by
   native_decide
 

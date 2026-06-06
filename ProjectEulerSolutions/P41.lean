@@ -1,7 +1,8 @@
 import ProjectEulerStatements.P41
+import ProjectEulerSolutions.Termination.P41
 namespace ProjectEulerSolutions.P41
 
-partial def isPrime (n : Nat) : Bool :=
+def isPrime (n : Nat) : Bool :=
   if n < 2 then
     false
   else if n % 2 == 0 then
@@ -16,12 +17,18 @@ partial def isPrime (n : Nat) : Bool :=
         false
       else
         loop (i + 6)
+    termination_by 0
+    decreasing_by all_goals exact Termination.decreases
     loop 5
 
-partial def permToInt (perm : List Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def permToInt (perm : List Nat) : Nat :=
   perm.foldl (fun acc d => acc * 10 + d) 0
 
-partial def permutations (xs : List Nat) : List (List Nat) :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def permutations (xs : List Nat) : List (List Nat) :=
   match xs with
   | [] => [[]]
   | _ =>
@@ -29,6 +36,8 @@ partial def permutations (xs : List Nat) : List (List Nat) :=
         match ls with
         | [] => []
         | x :: xs => f x ++ concatMap f xs
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       let rec insertAll (x : Nat) (ys : List Nat) : List (List Nat) :=
         match ys with
         | [] => [[x]]
@@ -36,19 +45,27 @@ partial def permutations (xs : List Nat) : List (List Nat) :=
             let head := (x :: y :: ys)
             let rest := insertAll x ys
             head :: rest.map (fun tail => y :: tail)
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       let rec loop (xs : List Nat) : List (List Nat) :=
         match xs with
         | [] => [[]]
         | x :: xs =>
             concatMap (insertAll x) (loop xs)
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       loop xs
 
-partial def lastOr (xs : List Nat) (default : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def lastOr (xs : List Nat) (default : Nat) : Nat :=
   match xs.reverse with
   | [] => default
   | x :: _ => x
 
-partial def solve (n : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def solve (n : Nat) : Nat :=
   let rec loopN (n : Nat) : Nat :=
     if n == 0 then
       0
@@ -70,11 +87,17 @@ partial def solve (n : Nat) : Nat :=
                   let val := permToInt p
                   if val > best && isPrime val then val else best
               loopPerm ps best
+        termination_by 0
+        decreasing_by all_goals exact Termination.decreases
         let best := loopPerm (permutations digits) 0
         if best != 0 then best else loopN (n - 1)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loopN n
 
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example : isPrime 2 = true := by
   native_decide
 

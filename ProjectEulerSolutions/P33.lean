@@ -1,7 +1,8 @@
 import ProjectEulerStatements.P33
+import ProjectEulerSolutions.Termination.P33
 namespace ProjectEulerSolutions.P33
 
-partial def findCuriousFractions : List (Nat × Nat) :=
+def findCuriousFractions : List (Nat × Nat) :=
   let rec loopN (n : Nat) (acc : List (Nat × Nat)) : List (Nat × Nat) :=
     if n > 99 then
       acc.reverse
@@ -24,13 +25,21 @@ partial def findCuriousFractions : List (Nat × Nat) :=
               (n10 == d10 && n10 != 0 && d1 != 0 && n * d1 == d * n1)
             let acc := if ok then (n, d) :: acc else acc
             loopD (d + 1) acc
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       loopN (n + 1) (loopD (n + 1) acc)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loopN 10 []
 
-partial def gcd (a b : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def gcd (a b : Nat) : Nat :=
   if b == 0 then a else gcd b (a % b)
 
-partial def reducedProductDenominator (fracs : List (Nat × Nat)) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def reducedProductDenominator (fracs : List (Nat × Nat)) : Nat :=
   let rec loop (fs : List (Nat × Nat)) (num den : Nat) : Nat :=
     match fs with
     | [] =>
@@ -38,14 +47,20 @@ partial def reducedProductDenominator (fracs : List (Nat × Nat)) : Nat :=
         den / g
     | (n, d) :: rest =>
         loop rest (num * n) (den * d)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop fracs 1 1
 
-partial def listAll (xs : List (Nat × Nat)) (pred : (Nat × Nat) -> Bool) : Bool :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def listAll (xs : List (Nat × Nat)) (pred : (Nat × Nat) -> Bool) : Bool :=
   match xs with
   | [] => true
   | x :: rest => if pred x then listAll rest pred else false
 
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example :
     let fracs := findCuriousFractions
     fracs.length == 4 := by

@@ -1,12 +1,15 @@
 import ProjectEulerStatements.P43
+import ProjectEulerSolutions.Termination.P43
 namespace ProjectEulerSolutions.P43
 
 abbrev primes : List Nat := [2, 3, 5, 7, 11, 13, 17]
 
-partial def distinct3 (a b c : Nat) : Bool :=
+def distinct3 (a b c : Nat) : Bool :=
   a != b && a != c && b != c
 
-partial def buildMap (p : Nat) : Array (List Nat) :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def buildMap (p : Nat) : Array (List Nat) :=
   let arr0 := Array.replicate 100 ([] : List Nat)
   let rec loop (x : Nat) (arr : Array (List Nat)) : Array (List Nat) :=
     if x >= 1000 then
@@ -20,15 +23,21 @@ partial def buildMap (p : Nat) : Array (List Nat) :=
         loop (x + p) (arr.set! idx (a :: arr[idx]!))
       else
         loop (x + p) arr
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 0 arr0
 
-partial def getAt (xs : List Nat) (i : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def getAt (xs : List Nat) (i : Nat) : Nat :=
   match xs, i with
   | [], _ => 0
   | x :: _, 0 => x
   | _ :: xs, i + 1 => getAt xs i
 
-partial def isPandigitalSubstringProperty (n : Nat) : Bool :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def isPandigitalSubstringProperty (n : Nat) : Bool :=
   let s := toString n
   if s.length != 10 then
     false
@@ -46,9 +55,13 @@ partial def isPandigitalSubstringProperty (n : Nat) : Bool :=
             let c := getAt digits (i + 3)
             let v := 100 * a + 10 * b + c
             if v % p == 0 then loop (i + 1) rest else false
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       loop 0 primes
 
-partial def solveCore : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def solveCore : Nat :=
   let rec initStates (x : Nat) (states : List (List Nat × Nat)) : List (List Nat × Nat) :=
     if x >= 1000 then
       states
@@ -61,6 +74,8 @@ partial def solveCore : Nat :=
         initStates (x + 17) ((([a, b, c], used)) :: states)
       else
         initStates (x + 17) states
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   let states := initStates 0 []
   let rec extend (ps : List Nat) (states : List (List Nat × Nat)) : List (List Nat × Nat) :=
     match ps with
@@ -83,10 +98,16 @@ partial def solveCore : Nat :=
                           loopCand cs acc
                         else
                           loopCand cs ((a :: digits, used ||| (1 <<< a)) :: acc)
+                  termination_by 0
+                  decreasing_by all_goals exact Termination.decreases
                   loopStates ss (loopCand candidates acc)
               | _ =>
                   loopStates ss acc
+        termination_by 0
+        decreasing_by all_goals exact Termination.decreases
         extend rest (loopStates states [])
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   let states := extend [13, 11, 7, 5, 3, 2] states
   let allDigits := List.range 10
   let rec sumStates (ss : List (List Nat × Nat)) (total : Nat) : Nat :=
@@ -105,8 +126,12 @@ partial def solveCore : Nat :=
           else
             total
         sumStates ss total
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   sumStates states 0
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 def solve : Nat :=
   solveCore
 

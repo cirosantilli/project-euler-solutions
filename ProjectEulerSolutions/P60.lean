@@ -1,7 +1,8 @@
 import ProjectEulerStatements.P60
+import ProjectEulerSolutions.Termination.P60
 namespace ProjectEulerSolutions.P60
 
-partial def sieveIsPrime (limit : Nat) : Array Bool :=
+def sieveIsPrime (limit : Nat) : Array Bool :=
   if limit == 0 then
     #[]
   else
@@ -18,39 +19,57 @@ partial def sieveIsPrime (limit : Nat) : Array Bool :=
               arr
             else
               loop (m + p) (arr.set! m false)
+          termination_by 0
+          decreasing_by all_goals exact Termination.decreases
           loopP (p + 1) (loop (p * p) arr)
         else
           loopP (p + 1) arr
+    termination_by 0
+    decreasing_by all_goals exact Termination.decreases
     loopP 2 arr0
 
-partial def primesUpTo (limit : Nat) : List Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def primesUpTo (limit : Nat) : List Nat :=
   let isPrime := sieveIsPrime limit
   (List.range (limit + 1)).filter (fun n => isPrime[n]!)
 
-partial def getAt (xs : List Nat) (i : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def getAt (xs : List Nat) (i : Nat) : Nat :=
   match xs, i with
   | [], _ => 0
   | x :: _, 0 => x
   | _ :: xs, i + 1 => getAt xs i
 
-partial def powMod (a d n : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def powMod (a d n : Nat) : Nat :=
   let rec loop (base exp acc : Nat) : Nat :=
     if exp == 0 then
       acc
     else
       let acc := if exp % 2 == 1 then (acc * base) % n else acc
       loop ((base * base) % n) (exp / 2) acc
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   if n == 1 then 0 else loop (a % n) d 1
 
-partial def decompose (n : Nat) : Nat × Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def decompose (n : Nat) : Nat × Nat :=
   let rec loop (d s : Nat) : Nat × Nat :=
     if d % 2 == 1 then
       (d, s)
     else
       loop (d / 2) (s + 1)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop n 0
 
-partial def millerCheck (a n d s : Nat) : Bool :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def millerCheck (a n d s : Nat) : Bool :=
   if a % n == 0 then
     true
   else
@@ -64,9 +83,13 @@ partial def millerCheck (a n d s : Nat) : Bool :=
         else
           let x := (x * x) % n
           if x == n - 1 then true else loop (r - 1) x
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       loop (s - 1) x
 
-partial def isPrime (n : Nat) : Bool :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def isPrime (n : Nat) : Bool :=
   if n < 2 then
     false
   else
@@ -75,6 +98,8 @@ partial def isPrime (n : Nat) : Bool :=
       match ps with
       | [] => true
       | p :: ps => if n == p then true else if n % p == 0 then false else checkSmall ps
+    termination_by 0
+    decreasing_by all_goals exact Termination.decreases
     if checkSmall smallPrimes == false then
       false
     else
@@ -84,14 +109,22 @@ partial def isPrime (n : Nat) : Bool :=
         match bs with
         | [] => true
         | a :: bs => if millerCheck a n d s then loop bs else false
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       loop bases
 
-partial def pow10For (n : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def pow10For (n : Nat) : Nat :=
   let rec loop (p : Nat) : Nat :=
     if p > n then p else loop (p * 10)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 1
 
-partial def pairOk (p q : Nat) : Bool :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def pairOk (p q : Nat) : Bool :=
   if (p + q) % 3 == 0 then
     false
   else
@@ -102,15 +135,21 @@ partial def pairOk (p q : Nat) : Bool :=
       let c2 := q * pow10For p + p
       isPrime c2
 
-partial def insertAsc (x : Nat) (xs : List Nat) : List Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def insertAsc (x : Nat) (xs : List Nat) : List Nat :=
   match xs with
   | [] => [x]
   | y :: ys => if x <= y then x :: y :: ys else y :: insertAsc x ys
 
-partial def sortAsc (xs : List Nat) : List Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def sortAsc (xs : List Nat) : List Nat :=
   xs.foldl (fun acc x => insertAsc x acc) []
 
-partial def solveCore (limit : Nat) : Nat × List Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def solveCore (limit : Nat) : Nat × List Nat :=
   let primes := (primesUpTo limit).filter (fun p => p != 2 && p != 5)
   let rec dfs (clique candidates : List Nat) (currSum bestSum : Nat) (bestSet : List Nat) : Nat × List Nat :=
     let k := clique.length
@@ -139,6 +178,8 @@ partial def solveCore (limit : Nat) : Nat × List Nat :=
                           build rs (r :: acc)
                         else
                           build rs acc
+                termination_by 0
+                decreasing_by all_goals exact Termination.decreases
                 let newCandidates := build qs []
                 let (bestSum, bestSet) :=
                   if newCandidates.length >= (need - 1) then
@@ -146,7 +187,11 @@ partial def solveCore (limit : Nat) : Nat × List Nat :=
                   else
                     (bestSum, bestSet)
                 loopIdx qs bestSum bestSet
+        termination_by 0
+        decreasing_by all_goals exact Termination.decreases
         loopIdx candidates bestSum bestSet
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   let rec loopP (ps : List Nat) (bestSum : Nat) (bestSet : List Nat) : Nat × List Nat :=
     match ps with
     | [] => (bestSum, bestSet)
@@ -165,6 +210,8 @@ partial def solveCore (limit : Nat) : Nat × List Nat :=
                     build qs (q :: acc)
                   else
                     build qs acc
+          termination_by 0
+          decreasing_by all_goals exact Termination.decreases
           let candidates := build ps []
           let (bestSum, bestSet) :=
             if candidates.length >= 4 then
@@ -172,9 +219,13 @@ partial def solveCore (limit : Nat) : Nat × List Nat :=
             else
               (bestSum, bestSet)
           loopP ps bestSum bestSet
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loopP primes (Nat.pow 10 30) []
 
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example :
     let ex := [3, 7, 109, 673]
     let ok := (List.range ex.length).all (fun i =>

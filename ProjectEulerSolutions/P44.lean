@@ -1,10 +1,11 @@
 import ProjectEulerStatements.P44
+import ProjectEulerSolutions.Termination.P44
 namespace ProjectEulerSolutions.P44
 
 def pentagonal (n : Nat) : Nat :=
   n * (3 * n - 1) / 2
 
-partial def sqrtFloor (n : Nat) : Nat :=
+def sqrtFloor (n : Nat) : Nat :=
   let rec loop (lo hi : Nat) : Nat :=
     if lo > hi then
       hi
@@ -17,8 +18,12 @@ partial def sqrtFloor (n : Nat) : Nat :=
         loop (mid + 1) hi
       else
         loop lo (mid - 1)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 1 n
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 def isPentagonal (x : Nat) : Bool :=
   if x == 0 then
     false
@@ -33,7 +38,7 @@ def getAt (xs : List Nat) (i : Nat) : Nat :=
   | x :: _, 0 => x
   | _ :: xs, i + 1 => getAt xs i
 
-partial def findMinDifference (limit : Nat) : Nat :=
+def findMinDifference (limit : Nat) : Nat :=
   let pent := (List.range (limit + 1)).map pentagonal
   let rec loopK (k : Nat) (best : Nat) : Nat :=
     if k > limit then
@@ -52,10 +57,16 @@ partial def findMinDifference (limit : Nat) : Nat :=
             diff
           else
             loopJ (j - 1) best
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       loopK (k + 1) (loopJ (k - 1) best)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loopK 2 (Nat.pow 10 30)
 
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example :
     let first10 := [1,5,12,22,35,51,70,92,117,145]
     let ok := (List.range 10).all (fun i =>

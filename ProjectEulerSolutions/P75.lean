@@ -1,10 +1,13 @@
 import ProjectEulerStatements.P75
+import ProjectEulerSolutions.Termination.P75
 namespace ProjectEulerSolutions.P75
 
-partial def gcd (a b : Nat) : Nat :=
+def gcd (a b : Nat) : Nat :=
   if b == 0 then a else gcd b (a % b)
 
-partial def sqrtFloor (n : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def sqrtFloor (n : Nat) : Nat :=
   let rec loop (lo hi : Nat) : Nat :=
     if lo > hi then
       hi
@@ -17,9 +20,13 @@ partial def sqrtFloor (n : Nat) : Nat :=
         loop (mid + 1) hi
       else
         loop lo (mid - 1)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 1 n
 
-partial def solveCore (limit : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def solveCore (limit : Nat) : Nat :=
   let counts := Array.replicate (limit + 1) 0
   let mMax := sqrtFloor (limit / 2) + 1
   let rec loopM (m : Nat) (counts : Array Nat) : Array Nat :=
@@ -44,8 +51,14 @@ partial def solveCore (limit : Nat) : Nat :=
                   counts
                 else
                   loopP (p + p0) (counts.set! p (counts[p]! + 1))
+              termination_by 0
+              decreasing_by all_goals exact Termination.decreases
               loopN (n + 1) (loopP p0 counts)
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       loopM (m + 1) (loopN 1 counts)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   let counts := loopM 2 counts
   let rec countOnes (i : Nat) (acc : Nat) : Nat :=
     if i > limit then
@@ -53,9 +66,13 @@ partial def solveCore (limit : Nat) : Nat :=
     else
       let acc := if counts[i]! == 1 then acc + 1 else acc
       countOnes (i + 1) acc
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   countOnes 0 0
 
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example : solveCore 50 = 6 := by
   native_decide
 

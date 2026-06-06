@@ -1,35 +1,50 @@
 import Std
 import ProjectEulerStatements.P96
+import ProjectEulerSolutions.Termination.P96
 namespace ProjectEulerSolutions.P96
 
-partial def bit (d : Nat) : Nat :=
+def bit (d : Nat) : Nat :=
   Nat.pow 2 d
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 abbrev ALL : Nat := Nat.pow 2 9 - 1
 
-partial def bitCount (n : Nat) : Nat :=
+def bitCount (n : Nat) : Nat :=
   if n == 0 then 0 else (n % 2) + bitCount (n / 2)
 
-partial def bitToDigit (mask : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def bitToDigit (mask : Nat) : Nat :=
   let rec loop (d : Nat) : Nat :=
     if d >= 9 then 0
     else if mask == bit d then d + 1 else loop (d + 1)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 0
 
-partial def iterBits (mask : Nat) : List Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def iterBits (mask : Nat) : List Nat :=
   let rec loop (d : Nat) (acc : List Nat) : List Nat :=
     if d >= 9 then acc.reverse
     else
       let acc := if (mask &&& bit d) != 0 then (bit d) :: acc else acc
       loop (d + 1) acc
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 0 []
 
-partial def concatMap {α β : Type} (f : α -> List β) (xs : List α) : List β :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def concatMap {α β : Type} (f : α -> List β) (xs : List α) : List β :=
   match xs with
   | [] => []
   | x :: xs => f x ++ concatMap f xs
 
-partial def buildUnits : List (List Nat) :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def buildUnits : List (List Nat) :=
   let rows := (List.range 9).map (fun r => (List.range 9).map (fun c => r * 9 + c))
   let cols := (List.range 9).map (fun c => (List.range 9).map (fun r => r * 9 + c))
   let boxes :=
@@ -39,7 +54,9 @@ partial def buildUnits : List (List Nat) :=
           (List.range 3).map (fun c => (br * 3 + r) * 9 + (bc * 3 + c))) (List.range 3))) (List.range 3)
   rows ++ cols ++ boxes
 
-partial def buildPeers : Array (List Nat) :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def buildPeers : Array (List Nat) :=
   let units := buildUnits
   let rec loopCell (i : Nat) (acc : Array (List Nat)) : Array (List Nat) :=
     if i >= 81 then
@@ -53,9 +70,13 @@ partial def buildPeers : Array (List Nat) :=
           m) mask0
       let peers := (List.range 81).filter (fun j => mask[j]!)
       loopCell (i + 1) (acc.set! i peers)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loopCell 0 (Array.replicate 81 [])
 
-partial def reduceCands (cands : Array Nat) (peers : Array (List Nat)) (units : List (List Nat))
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def reduceCands (cands : Array Nat) (peers : Array (List Nat)) (units : List (List Nat))
     : Option (Array Nat) :=
   let rec loopChanged (cands : Array Nat) : Option (Array Nat) :=
     let rec propagateSingles (queue : List Nat) (cands : Array Nat) : Option (Array Nat) :=
@@ -77,10 +98,14 @@ partial def reduceCands (cands : Array Nat) (peers : Array (List Nat)) (units : 
                     loopPeers ps (cands.set! p newMask) queue
                 else
                   loopPeers ps cands queue
+          termination_by 0
+          decreasing_by all_goals exact Termination.decreases
           match loopPeers (peers[i]!) cands qs with
           | none => none
           | some (cands, queue) => propagateSingles queue cands
 
+    termination_by 0
+    decreasing_by all_goals exact Termination.decreases
     let singles := (List.range 81).filter (fun i => bitCount (cands[i]!) == 1)
     match propagateSingles singles cands with
     | none => none
@@ -107,14 +132,22 @@ partial def reduceCands (cands : Array Nat) (peers : Array (List Nat)) (units : 
                       loopBit (d + 1) cands changed
                   else
                     loopBit (d + 1) cands changed
+              termination_by 0
+              decreasing_by all_goals exact Termination.decreases
               loopBit 0 cands changed
+        termination_by 0
+        decreasing_by all_goals exact Termination.decreases
         match loopUnits units cands false with
         | none => none
         | some (cands, changed2) =>
             if changed2 then loopChanged cands else some cands
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loopChanged cands
 
-partial def solveCands (cands : Array Nat) (peers : Array (List Nat)) (units : List (List Nat))
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def solveCands (cands : Array Nat) (peers : Array (List Nat)) (units : List (List Nat))
     : Option (Array Nat) :=
   match reduceCands cands peers units with
   | none => none
@@ -130,6 +163,8 @@ partial def solveCands (cands : Array Nat) (peers : Array (List Nat)) (units : L
               findBest (i + 1) i bc
             else
               findBest (i + 1) bestI bestC
+        termination_by 0
+        decreasing_by all_goals exact Termination.decreases
         let (idx, _) := findBest 0 0 10
         let bits := iterBits (cands[idx]!)
         let rec tryBits (bs : List Nat) : Option (Array Nat) :=
@@ -140,15 +175,21 @@ partial def solveCands (cands : Array Nat) (peers : Array (List Nat)) (units : L
               match solveCands next peers units with
               | some res => some res
               | none => tryBits bs
+        termination_by 0
+        decreasing_by all_goals exact Termination.decreases
         tryBits bits
 
-partial def getAtNat (xs : List Nat) (i : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def getAtNat (xs : List Nat) (i : Nat) : Nat :=
   match xs, i with
   | [], _ => 0
   | x :: _, 0 => x
   | _ :: xs, i + 1 => getAtNat xs i
 
-partial def gridToCands (grid : List (List Nat)) : Array Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def gridToCands (grid : List (List Nat)) : Array Nat :=
   let rec loopR (r : Nat) (acc : Array Nat) : Array Nat :=
     if r >= 9 then
       acc
@@ -164,22 +205,34 @@ partial def gridToCands (grid : List (List Nat)) : Array Nat :=
             if val == 0 then acc.set! idx ALL
             else acc.set! idx (bit (val - 1))
           loopC (c + 1) acc
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       loopR (r + 1) (loopC 0 acc)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loopR 0 (Array.replicate 81 ALL)
 
-partial def topLeftNumber (solve : Array Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def topLeftNumber (solve : Array Nat) : Nat :=
   let a := bitToDigit (solve[0]!)
   let b := bitToDigit (solve[1]!)
   let c := bitToDigit (solve[2]!)
   100 * a + 10 * b + c
 
-partial def parseDigit (c : Char) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def parseDigit (c : Char) : Nat :=
   if c >= '0' && c <= '9' then c.toNat - '0'.toNat else 0
 
-partial def parseRow (row : String) : List Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def parseRow (row : String) : List Nat :=
   row.data.map parseDigit
 
-partial def parsePuzzles (text : String) : List (List (List Nat)) :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def parsePuzzles (text : String) : List (List (List Nat)) :=
   let lines := text.splitOn "\n" |>.filter (fun ln => ln != "")
   let rec loop (ls : List String) (acc : List (List (List Nat))) : List (List (List Nat)) :=
     match ls with
@@ -191,9 +244,13 @@ partial def parsePuzzles (text : String) : List (List (List Nat)) :=
           loop (ls.drop 9) (grid :: acc)
         else
           loop ls acc
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop lines []
 
-partial def solve (puzzles : List (List (List Nat))) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def solve (puzzles : List (List (List Nat))) : Nat :=
   let peers := buildPeers
   let units := buildUnits
   let rec loop (ps : List (List (List Nat))) (acc : Nat) : Nat :=
@@ -205,4 +262,6 @@ partial def solve (puzzles : List (List (List Nat))) : Nat :=
         | some solve => loop gs (acc + topLeftNumber solve)
         | none => loop gs acc
   loop puzzles 0
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 end ProjectEulerSolutions.P96

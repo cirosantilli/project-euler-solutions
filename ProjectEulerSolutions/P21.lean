@@ -1,7 +1,8 @@
 import ProjectEulerStatements.P21
+import ProjectEulerSolutions.Termination.P21
 namespace ProjectEulerSolutions.P21
 
-partial def properDivisorSumsSieve (nMax : Nat) : Array Nat :=
+def properDivisorSumsSieve (nMax : Nat) : Array Nat :=
   let rec loopI (i : Nat) (arr : Array Nat) : Array Nat :=
     if i > nMax / 2 then
       arr
@@ -11,16 +12,24 @@ partial def properDivisorSumsSieve (nMax : Nat) : Array Nat :=
           arr
         else
           loopJ (j + i) (arr.set! j (arr[j]! + i))
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       loopI (i + 1) (loopJ (i * 2) arr)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loopI 1 (Array.replicate (nMax + 1) 0)
 
-partial def stripFactor (x p exp : Nat) : Nat × Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def stripFactor (x p exp : Nat) : Nat × Nat :=
   if x % p == 0 then
     stripFactor (x / p) p (exp + 1)
   else
     (x, exp)
 
-partial def properDivisorSumFactorization (n : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def properDivisorSumFactorization (n : Nat) : Nat :=
   if n <= 1 then
     0
   else
@@ -34,12 +43,16 @@ partial def properDivisorSumFactorization (n : Nat) : Nat :=
         loop x' (p + 2) (sigma * term)
       else
         loop x (p + 2) sigma
+    termination_by 0
+    decreasing_by all_goals exact Termination.decreases
     let (x2, exp2) := stripFactor n 2 0
     let sigma2 :=
       if exp2 == 0 then 1 else (List.range (exp2 + 1)).foldl (fun acc k => acc + 2 ^ k) 0
     loop x2 3 sigma2
 
-partial def solve (limit : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def solve (limit : Nat) : Nat :=
   let divsum := properDivisorSumsSieve (limit - 1)
   let d := fun x => if x < divsum.size then divsum[x]! else properDivisorSumFactorization x
   let rec loop (a total : Nat) : Nat :=
@@ -49,8 +62,12 @@ partial def solve (limit : Nat) : Nat :=
       let b := d a
       let total' := if b != a && d b == a then total + a else total
       loop (a + 1) total'
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 2 0
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example : properDivisorSumFactorization 220 = 284 := by
   native_decide
 

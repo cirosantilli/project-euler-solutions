@@ -1,32 +1,43 @@
 import ProjectEulerStatements.P93
+import ProjectEulerSolutions.Termination.P93
 namespace ProjectEulerSolutions.P93
 
-partial def insertRat (x : Rat) (xs : List Rat) : List Rat :=
+def insertRat (x : Rat) (xs : List Rat) : List Rat :=
   match xs with
   | [] => [x]
   | y :: ys => if x < y then x :: y :: ys else y :: insertRat x ys
 
-partial def sortRat (xs : List Rat) : List Rat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def sortRat (xs : List Rat) : List Rat :=
   xs.foldl (fun acc x => insertRat x acc) []
 
-partial def removeAt (xs : List Rat) (i : Nat) : List Rat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def removeAt (xs : List Rat) (i : Nat) : List Rat :=
   match xs, i with
   | [], _ => []
   | _ :: ys, 0 => ys
   | x :: ys, i + 1 => x :: removeAt ys i
 
-partial def getAt (xs : List Rat) (i : Nat) : Rat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def getAt (xs : List Rat) (i : Nat) : Rat :=
   match xs, i with
   | [], _ => 0
   | x :: _, 0 => x
   | _ :: xs, i + 1 => getAt xs i
 
-partial def findMemo (key : List Rat) (memo : List (List Rat × List Rat)) : Option (List Rat) :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def findMemo (key : List Rat) (memo : List (List Rat × List Rat)) : Option (List Rat) :=
   match memo with
   | [] => none
   | (k, v) :: rest => if k == key then some v else findMemo key rest
 
-partial def allResults (digits : List Nat) : List Rat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def allResults (digits : List Nat) : List Rat :=
   let start := sortRat (digits.map (fun d => Rat.ofInt (Int.ofNat d)))
   let rec recEval (state : List Rat) (memo : List (List Rat × List Rat)) : List Rat × List (List Rat × List Rat) :=
     match findMemo state memo with
@@ -60,19 +71,31 @@ partial def allResults (digits : List Nat) : List Rat :=
                         let newState := sortRat (c :: rest)
                         let (vals2, memo) := recEval newState memo
                         loopC cs (vals ++ vals2) memo
+                  termination_by 0
+                  decreasing_by all_goals exact Termination.decreases
                   let (vals, memo) := loopC candidates vals memo
                   loopJ (j + 1) vals memo
+              termination_by 0
+              decreasing_by all_goals exact Termination.decreases
               loopJ (i + 1) vals memo
+          termination_by 0
+          decreasing_by all_goals exact Termination.decreases
           loopI 0 [] memo
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   (recEval start []).1
 
-partial def ratToNat? (r : Rat) : Option Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def ratToNat? (r : Rat) : Option Nat :=
   if r.den == 1 && r.num >= 0 then
     some (Int.toNat r.num)
   else
     none
 
-partial def consecutiveLength (digits : List Nat) : Nat × List Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def consecutiveLength (digits : List Nat) : Nat × List Nat :=
   let vals := allResults digits
   let ints :=
     (vals.foldl (fun acc r =>
@@ -81,14 +104,20 @@ partial def consecutiveLength (digits : List Nat) : Nat × List Nat :=
       | none => acc) []).eraseDups
   let rec loop (n : Nat) : Nat :=
     if ints.any (fun x => x == n) then loop (n + 1) else n - 1
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   (loop 1, ints)
 
-partial def listMax (xs : List Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def listMax (xs : List Nat) : Nat :=
   match xs with
   | [] => 0
   | x :: xs => xs.foldl (fun acc v => if v > acc then v else acc) x
 
-partial def combinations (k : Nat) (xs : List Nat) : List (List Nat) :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def combinations (k : Nat) (xs : List Nat) : List (List Nat) :=
   if k == 0 then
     [[]]
   else
@@ -99,7 +128,9 @@ partial def combinations (k : Nat) (xs : List Nat) : List (List Nat) :=
         let withoutX := combinations k xs
         withX ++ withoutX
 
-partial def solveCore : String × Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def solveCore : String × Nat :=
   let rec loop (combs : List (List Nat)) (bestLen : Nat) (bestDigits : List Nat) : String × Nat :=
     match combs with
     | [] => ((bestDigits.map toString).foldl (fun acc s => acc ++ s) "", bestLen)
@@ -109,9 +140,13 @@ partial def solveCore : String × Nat :=
           loop cs len c
         else
           loop cs bestLen bestDigits
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop (combinations 4 (List.range 10)) 0 []
 
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example :
     let (len, ints) := consecutiveLength [1,2,3,4]
     (len = 28) && (listMax ints = 36) = true := by

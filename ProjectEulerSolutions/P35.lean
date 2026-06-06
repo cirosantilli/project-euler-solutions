@@ -1,7 +1,8 @@
 import ProjectEulerStatements.P35
+import ProjectEulerSolutions.Termination.P35
 namespace ProjectEulerSolutions.P35
 
-partial def primeSieve (n : Nat) : Array Bool :=
+def primeSieve (n : Nat) : Array Bool :=
   if n == 0 then
     #[]
   else
@@ -18,20 +19,32 @@ partial def primeSieve (n : Nat) : Array Bool :=
               arr
             else
               loop (j + p) (arr.set! j false)
+          termination_by 0
+          decreasing_by all_goals exact Termination.decreases
           loopP (p + 1) (loop (p * p) arr)
         else
           loopP (p + 1) arr
+    termination_by 0
+    decreasing_by all_goals exact Termination.decreases
     loopP 2 arr0
 
-partial def digitsCount (n : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def digitsCount (n : Nat) : Nat :=
   let rec loop (m c : Nat) : Nat :=
     if m < 10 then c + 1 else loop (m / 10) (c + 1)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   if n == 0 then 1 else loop n 0
 
-partial def pow10 (k : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def pow10 (k : Nat) : Nat :=
   Nat.pow 10 k
 
-partial def rotationsOf (n : Nat) : List Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def rotationsOf (n : Nat) : List Nat :=
   let k := digitsCount n
   if k == 1 then
     [n]
@@ -44,9 +57,13 @@ partial def rotationsOf (n : Nat) : List Nat :=
         let acc' := x :: acc
         let x' := (x % p) * 10 + (x / p)
     loop (i + 1) x' acc'
+    termination_by 0
+    decreasing_by all_goals exact Termination.decreases
     loop 0 n []
 
-partial def allowedDigits (n : Nat) : Bool :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def allowedDigits (n : Nat) : Bool :=
   let rec loop (m : Nat) : Bool :=
     if m == 0 then
       true
@@ -56,13 +73,19 @@ partial def allowedDigits (n : Nat) : Bool :=
         false
       else
         loop (m / 10)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop n
 
-partial def isCircularPrime (n : Nat) (isPrime : Array Bool) : Bool :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def isCircularPrime (n : Nat) (isPrime : Array Bool) : Bool :=
   let rots := rotationsOf n
   rots.all (fun r => isPrime[r]!)
 
-partial def countDistinctUnder (rots : List Nat) (limit : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def countDistinctUnder (rots : List Nat) (limit : Nat) : Nat :=
   let rec loop (lst : List Nat) (seen : List Nat) (acc : Nat) : Nat :=
     match lst with
     | [] => acc
@@ -71,9 +94,13 @@ partial def countDistinctUnder (rots : List Nat) (limit : Nat) : Nat :=
           loop rs (r :: seen) (acc + 1)
         else
           loop rs seen acc
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop rots [] 0
 
-partial def circularPrimeCount (limit : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def circularPrimeCount (limit : Nat) : Nat :=
   if limit <= 2 then
     0
   else
@@ -102,9 +129,13 @@ partial def circularPrimeCount (limit : Nat) : Nat :=
               loop (p + 1) (count + add) processed
             else
               loop (p + 1) count processed
+    termination_by 0
+    decreasing_by all_goals exact Termination.decreases
     loop 2 0 processed
 
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example : circularPrimeCount 100 = 13 := by
   native_decide
 

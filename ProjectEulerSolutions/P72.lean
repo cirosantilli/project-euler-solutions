@@ -1,7 +1,8 @@
 import ProjectEulerStatements.P72
+import ProjectEulerSolutions.Termination.P72
 namespace ProjectEulerSolutions.P72
 
-partial def computePhiLinear (limit : Nat) : Array Nat :=
+def computePhiLinear (limit : Nat) : Array Nat :=
   let phi0 := Array.replicate (limit + 1) 0
   let comp0 := Array.replicate (limit + 1) false
   let phi0 := if limit >= 1 then phi0.set! 1 1 else phi0
@@ -32,11 +33,17 @@ partial def computePhiLinear (limit : Nat) : Array Nat :=
             else
               let phi := phi.set! ip (phi[i]! * (p - 1))
               loopP (j + 1) phi isComp
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       let (phi, isComp) := loopP 0 phi isComp
       loop (i + 1) phi isComp primes
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 2 phi0 comp0 #[]
 
-partial def countReducedProperFractions (maxD : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def countReducedProperFractions (maxD : Nat) : Nat :=
   if maxD < 2 then
     0
   else
@@ -46,9 +53,13 @@ partial def countReducedProperFractions (maxD : Nat) : Nat :=
         acc
       else
         loop (d + 1) (acc + phi[d]!)
+    termination_by 0
+    decreasing_by all_goals exact Termination.decreases
     loop 2 0
 
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example : countReducedProperFractions 8 = 21 := by
   native_decide
 

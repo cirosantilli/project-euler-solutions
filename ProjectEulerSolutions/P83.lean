@@ -1,15 +1,20 @@
 import Std
 import ProjectEulerStatements.P83
+import ProjectEulerSolutions.Termination.P83
 namespace ProjectEulerSolutions.P83
 
-partial def parseNat (s : String) : Nat :=
+def parseNat (s : String) : Nat :=
   s.data.foldl (fun acc c => acc * 10 + (c.toNat - '0'.toNat)) 0
 
-partial def parseMatrix (text : String) : List (List Nat) :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def parseMatrix (text : String) : List (List Nat) :=
   let lines := text.splitOn "\n" |>.filter (fun ln => ln != "")
   lines.map (fun ln => ln.splitOn "," |>.filter (fun t => t != "") |>.map parseNat)
 
-partial def dijkstraMinPathSum (mat : List (List Nat)) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def dijkstraMinPathSum (mat : List (List Nat)) : Nat :=
   let n := mat.length
   if n == 0 then
     0
@@ -31,6 +36,8 @@ partial def dijkstraMinPathSum (mat : List (List Nat)) : Nat :=
           else
             let d := dist[i]!
             if d < bestD then findMin (i + 1) i d else findMin (i + 1) bestI bestD
+        termination_by 0
+        decreasing_by all_goals exact Termination.decreases
         let (u, du) := findMin 0 0 inf
         if du == inf then
           dist[total - 1]!
@@ -50,13 +57,19 @@ partial def dijkstraMinPathSum (mat : List (List Nat)) : Nat :=
               else
                 let nd := du + (mat.getD rr []).getD cc 0
                 if nd < dist[v]! then dist.set! v nd else dist
+          termination_by 0
+          decreasing_by all_goals exact Termination.decreases
           let dist := relax (Int.ofNat r - 1) (Int.ofNat c) dist
           let dist := relax (Int.ofNat r + 1) (Int.ofNat c) dist
           let dist := relax (Int.ofNat r) (Int.ofNat c - 1) dist
           let dist := relax (Int.ofNat r) (Int.ofNat c + 1) dist
           loop visited dist (count + 1)
+    termination_by 0
+    decreasing_by all_goals exact Termination.decreases
     loop visited0 dist0 0
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example :
     let sample := [
       [131, 673, 234, 103, 18],

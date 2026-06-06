@@ -1,19 +1,24 @@
 import ProjectEulerStatements.P74
+import ProjectEulerSolutions.Termination.P74
 namespace ProjectEulerSolutions.P74
 
 abbrev FACT9 : Nat := 362880
 abbrev LIMIT : Nat := 7 * FACT9
 
-partial def buildFact : Array Nat :=
+def buildFact : Array Nat :=
   let arr0 := Array.replicate 10 1
   let rec loop (i : Nat) (arr : Array Nat) : Array Nat :=
     if i >= 10 then
       arr
     else
       loop (i + 1) (arr.set! i (arr[i - 1]! * i))
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 2 arr0
 
-partial def buildNext (limit : Nat) (fact : Array Nat) : Array Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def buildNext (limit : Nat) (fact : Array Nat) : Array Nat :=
   let arr0 := Array.replicate (limit + 1) 0
   let rec loop (i : Nat) (arr : Array Nat) : Array Nat :=
     if i > limit then
@@ -21,9 +26,13 @@ partial def buildNext (limit : Nat) (fact : Array Nat) : Array Nat :=
     else
       let val := arr[i / 10]! + fact[i % 10]!
       loop (i + 1) (arr.set! i val)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 1 arr0
 
-partial def chainLen (start : Nat)
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def chainLen (start : Nat)
     (nxt lens seenStamp seenPos : Array Nat) (stamp : Nat)
     : Nat × Array Nat × Array Nat × Array Nat × Nat :=
   if lens[start]! != 0 then
@@ -41,7 +50,11 @@ partial def chainLen (start : Nat)
                 let known := known + 1
                 let lens := lens.set! v known
                 loop vs known lens
+          termination_by 0
+          decreasing_by all_goals exact Termination.decreases
           loop xs known lens
+    termination_by 0
+    decreasing_by all_goals exact Termination.decreases
     let rec setLensLoop (seq : List Nat) (loopStart loopLen len : Nat) (lens : Array Nat) : Array Nat :=
       let rec loop (xs : List Nat) (i : Nat) (lens : Array Nat) : Array Nat :=
         match xs with
@@ -53,7 +66,11 @@ partial def chainLen (start : Nat)
               else
                 lens.set! v (len - i)
             loop vs (i + 1) lens
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       loop seq 0 lens
+    termination_by 0
+    decreasing_by all_goals exact Termination.decreases
     let rec loop (cur : Nat) (seq : List Nat) (len : Nat)
         (lens seenStamp seenPos : Array Nat) : Nat × Array Nat × Array Nat × Array Nat :=
       if lens[cur]! != 0 then
@@ -69,10 +86,14 @@ partial def chainLen (start : Nat)
         let seenStamp := seenStamp.set! cur stamp
         let seenPos := seenPos.set! cur len
         loop (nxt[cur]!) (seq ++ [cur]) (len + 1) lens seenStamp seenPos
+    termination_by 0
+    decreasing_by all_goals exact Termination.decreases
     let (len, lens, seenStamp, seenPos) := loop start [] 0 lens seenStamp seenPos
     (len, lens, seenStamp, seenPos, stamp)
 
-partial def solve (limit target : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def solve (limit target : Nat) : Nat :=
   let fact := buildFact
   let nxt := buildNext LIMIT fact
   let lens := Array.replicate (LIMIT + 1) 0
@@ -90,22 +111,34 @@ partial def solve (limit target : Nat) : Nat :=
           chainLen n nxt lens seenStamp seenPos stamp
       let count := if len == target then count + 1 else count
       loopN (n + 1) count lens seenStamp seenPos stamp
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loopN 1 0 lens seenStamp seenPos 0
 
-partial def nextDigitFact (n : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def nextDigitFact (n : Nat) : Nat :=
   let fact := buildFact
   let rec loop (n : Nat) (acc : Nat) : Nat :=
     if n == 0 then acc else loop (n / 10) (acc + fact[n % 10]!)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   if n == 0 then fact[0]! else loop n 0
 
-partial def chainLenSimple (start : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def chainLenSimple (start : Nat) : Nat :=
   let rec loop (cur : Nat) (seq : List Nat) : Nat :=
     if seq.any (fun x => x == cur) then
       seq.length
     else
       loop (nextDigitFact cur) (seq ++ [cur])
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop start []
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example : chainLenSimple 69 = 5 := by
   native_decide
 

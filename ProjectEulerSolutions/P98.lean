@@ -1,19 +1,26 @@
 import Std
 import ProjectEulerStatements.P98
+import ProjectEulerSolutions.Termination.P98
 namespace ProjectEulerSolutions.P98
 
-partial def insertChar (x : Char) (xs : List Char) : List Char :=
+def insertChar (x : Char) (xs : List Char) : List Char :=
   match xs with
   | [] => [x]
   | y :: ys => if x <= y then x :: y :: ys else y :: insertChar x ys
 
-partial def sortChars (xs : List Char) : List Char :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def sortChars (xs : List Char) : List Char :=
   xs.foldl (fun acc x => insertChar x acc) []
 
-partial def sortedKey (s : String) : String :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def sortedKey (s : String) : String :=
   String.mk (sortChars s.data)
 
-partial def stripQuotes (s : String) : String :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def stripQuotes (s : String) : String :=
   match s.data with
   | '"' :: xs =>
       match xs.reverse with
@@ -21,11 +28,15 @@ partial def stripQuotes (s : String) : String :=
       | _ => s
   | _ => s
 
-partial def parseWords (text : String) : List String :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def parseWords (text : String) : List String :=
   let parts := text.splitOn "," |>.filter (fun t => t != "")
   parts.map (fun w => stripQuotes w.trim)
 
-partial def patternSignature (s : String) : List Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def patternSignature (s : String) : List Nat :=
   let rec loop (xs : List Char) (mp : List (Char × Nat)) (next : Nat) (acc : List Nat)
       : List Nat :=
     match xs with
@@ -35,27 +46,39 @@ partial def patternSignature (s : String) : List Nat :=
           match mp with
           | [] => none
           | (c, v) :: ms => if c == x then some v else find ms
+        termination_by 0
+        decreasing_by all_goals exact Termination.decreases
         match find mp with
         | some v => loop xs mp next (v :: acc)
         | none => loop xs ((x, next) :: mp) (next + 1) (next :: acc)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop s.data [] 0 []
 
-partial def insertGroup (key : String) (val : String) (groups : List (String × List String))
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def insertGroup (key : String) (val : String) (groups : List (String × List String))
     : List (String × List String) :=
   match groups with
   | [] => [(key, [val])]
   | (k, vs) :: gs => if k == key then (k, val :: vs) :: gs else (k, vs) :: insertGroup key val gs
 
-partial def groupAnagrams (words : List String) : List (List String) :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def groupAnagrams (words : List String) : List (List String) :=
   let groups := words.foldl (fun acc w => insertGroup (sortedKey w) w acc) []
   groups.foldl (fun acc kv => if kv.2.length >= 2 then kv.2 :: acc else acc) []
 
-partial def concatMap {α β : Type} (f : α -> List β) (xs : List α) : List β :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def concatMap {α β : Type} (f : α -> List β) (xs : List α) : List β :=
   match xs with
   | [] => []
   | x :: xs => f x ++ concatMap f xs
 
-partial def sqrtFloor (n : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def sqrtFloor (n : Nat) : Nat :=
   let rec loop (lo hi : Nat) : Nat :=
     if lo > hi then
       hi
@@ -63,20 +86,30 @@ partial def sqrtFloor (n : Nat) : Nat :=
       let mid := (lo + hi) / 2
       let sq := mid * mid
       if sq == n then mid else if sq < n then loop (mid + 1) hi else loop lo (mid - 1)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 1 n
 
-partial def pow10 (n : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def pow10 (n : Nat) : Nat :=
   let rec loop (k acc : Nat) : Nat :=
     if k == 0 then acc else loop (k - 1) (acc * 10)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop n 1
 
-partial def insertPattern (pat : List Nat) (s : String)
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def insertPattern (pat : List Nat) (s : String)
     (groups : List (List Nat × List String)) : List (List Nat × List String) :=
   match groups with
   | [] => [(pat, [s])]
   | (p, vs) :: gs => if p == pat then (p, s :: vs) :: gs else (p, vs) :: insertPattern pat s gs
 
-partial def squaresWithLength (L : Nat) : List (List Nat × List String) × List String :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def squaresWithLength (L : Nat) : List (List Nat × List String) × List String :=
   let lo := pow10 (L - 1)
   let hi := pow10 L - 1
   let n0 := sqrtFloor lo
@@ -91,19 +124,27 @@ partial def squaresWithLength (L : Nat) : List (List Nat × List String) × List
       let s := toString sq
       let pat := patternSignature s
       loop (n + 1) (insertPattern pat s groups) (s :: all)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop n0 [] []
 
-partial def findPattern (pat : List Nat) (groups : List (List Nat × List String)) : List String :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def findPattern (pat : List Nat) (groups : List (List Nat × List String)) : List String :=
   match groups with
   | [] => []
   | (p, vs) :: gs => if p == pat then vs else findPattern pat gs
 
-partial def lookupChar (c : Char) (mp : List (Char × Char)) : Option Char :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def lookupChar (c : Char) (mp : List (Char × Char)) : Option Char :=
   match mp with
   | [] => none
   | (k, v) :: ms => if k == c then some v else lookupChar c ms
 
-partial def solve (words : List String) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def solve (words : List String) : Nat :=
   let groups := groupAnagrams words
   let lengths := (concatMap (fun g => g.map (fun w => w.length)) groups).eraseDups
   let squaresCache := List.foldl (fun acc L =>
@@ -114,6 +155,8 @@ partial def solve (words : List String) : Nat :=
     match cache with
     | [] => ([], [])
     | (k, v) :: cs => if k == L then v else getSquares L cs
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   let rec loopGroups (gs : List (List String)) (best : Nat) : Nat :=
     match gs with
     | [] => best
@@ -142,6 +185,8 @@ partial def solve (words : List String) : Nat :=
                           | none, some c1 => if c1 == c then buildMap ws ds ((c, d) :: mp) mp2 else none
                           | none, none => buildMap ws ds ((c, d) :: mp) ((d, c) :: mp2)
                       | _, _ => none
+                    termination_by 0
+                    decreasing_by all_goals exact Termination.decreases
                     match buildMap w1.data sqStr.data [] [] with
                     | none => loopSq cs best
                     | some mp =>
@@ -164,8 +209,16 @@ partial def solve (words : List String) : Nat :=
                                   loopOther os best
                                 else
                                   loopOther os best
+                        termination_by 0
+                        decreasing_by all_goals exact Termination.decreases
                         loopSq cs (loopOther others best)
+              termination_by 0
+              decreasing_by all_goals exact Termination.decreases
               loopW ws (loopSq candidates best)
+        termination_by 0
+        decreasing_by all_goals exact Termination.decreases
         loopGroups gs (loopW g best)
   loopGroups groups 0
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 end ProjectEulerSolutions.P98

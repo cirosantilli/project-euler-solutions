@@ -1,11 +1,14 @@
 import ProjectEulerStatements.P56
+import ProjectEulerSolutions.Termination.P56
 namespace ProjectEulerSolutions.P56
 
-partial def digitSum (n : Nat) : Nat :=
+def digitSum (n : Nat) : Nat :=
   let s := toString n
   s.data.foldl (fun acc c => acc + (c.toNat - '0'.toNat)) 0
 
-partial def maxDigitalSum (limit : Nat) : Nat × Nat × Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def maxDigitalSum (limit : Nat) : Nat × Nat × Nat :=
   let rec loopA (a : Nat) (best bestA bestB : Nat) : Nat × Nat × Nat :=
     if a >= limit then
       (best, bestA, bestB)
@@ -19,10 +22,16 @@ partial def maxDigitalSum (limit : Nat) : Nat × Nat × Nat :=
             loopB (b + 1) s a b
           else
             loopB (b + 1) best bestA bestB
+      termination_by 0
+      decreasing_by all_goals exact Termination.decreases
       loopB 1 best bestA bestB
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loopA 1 0 0 0
 
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example : digitSum (Nat.pow 10 100) = 1 := by
   native_decide
 

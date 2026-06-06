@@ -1,7 +1,8 @@
 import ProjectEulerStatements.P47
+import ProjectEulerSolutions.Termination.P47
 namespace ProjectEulerSolutions.P47
 
-partial def distinctPrimeFactorCounts (limit : Nat) : Array Nat :=
+def distinctPrimeFactorCounts (limit : Nat) : Array Nat :=
   let counts := Array.replicate (limit + 1) 0
   let rec loopP (p : Nat) (counts : Array Nat) : Array Nat :=
     if p > limit then
@@ -13,12 +14,18 @@ partial def distinctPrimeFactorCounts (limit : Nat) : Array Nat :=
             counts
           else
             loopM (m + p) (counts.set! m (counts[m]! + 1))
+        termination_by 0
+        decreasing_by all_goals exact Termination.decreases
         loopP (p + 1) (loopM p counts)
       else
         loopP (p + 1) counts
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loopP 2 counts
 
-partial def firstConsecutiveWithKFactors (k runLen startLimit : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def firstConsecutiveWithKFactors (k runLen startLimit : Nat) : Nat :=
   let rec loopLimit (limit : Nat) : Nat :=
     let counts := distinctPrimeFactorCounts limit
     let rec loopN (n streak : Nat) : Nat :=
@@ -31,11 +38,17 @@ partial def firstConsecutiveWithKFactors (k runLen startLimit : Nat) : Nat :=
           loopN (n + 1) (streak + 1)
       else
         loopN (n + 1) 0
+    termination_by 0
+    decreasing_by all_goals exact Termination.decreases
     let found := loopN 2 0
     if found != 0 then found else loopLimit (limit * 2)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loopLimit startLimit
 
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example : firstConsecutiveWithKFactors 2 2 100 = 14 := by
   native_decide
 

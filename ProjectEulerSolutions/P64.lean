@@ -1,7 +1,8 @@
 import ProjectEulerStatements.P64
+import ProjectEulerSolutions.Termination.P64
 namespace ProjectEulerSolutions.P64
 
-partial def sqrtFloor (n : Nat) : Nat :=
+def sqrtFloor (n : Nat) : Nat :=
   let rec loop (lo hi : Nat) : Nat :=
     if lo > hi then
       hi
@@ -14,9 +15,13 @@ partial def sqrtFloor (n : Nat) : Nat :=
         loop (mid + 1) hi
       else
         loop lo (mid - 1)
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 1 n
 
-partial def periodLengthSqrt (n : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def periodLengthSqrt (n : Nat) : Nat :=
   let a0 := sqrtFloor n
   if a0 * a0 == n then
     0
@@ -27,9 +32,13 @@ partial def periodLengthSqrt (n : Nat) : Nat :=
       let a := (a0 + m) / d
       let period := period + 1
       if a == 2 * a0 then period else loop m d a period
+    termination_by 0
+    decreasing_by all_goals exact Termination.decreases
     loop 0 1 a0 0
 
-partial def countOddPeriods (limit : Nat) : Nat :=
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
+def countOddPeriods (limit : Nat) : Nat :=
   let rec loop (n : Nat) (cnt : Nat) : Nat :=
     if n > limit then
       cnt
@@ -40,9 +49,13 @@ partial def countOddPeriods (limit : Nat) : Nat :=
       else
         let cnt := if periodLengthSqrt n % 2 == 1 then cnt + 1 else cnt
         loop (n + 1) cnt
+  termination_by 0
+  decreasing_by all_goals exact Termination.decreases
   loop 2 0
 
 
+termination_by 0
+decreasing_by all_goals exact Termination.decreases
 example : countOddPeriods 13 = 4 := by
   native_decide
 
