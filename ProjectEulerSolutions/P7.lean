@@ -1,19 +1,23 @@
 import ProjectEulerStatements.P7
 namespace ProjectEulerSolutions.P7
 
-partial def isPrimeWith (n : Nat) (primes : Array Nat) : Bool :=
-  let rec loop (i : Nat) : Bool :=
-    if i >= primes.size then
+def isPrimeWithLoop (n : Nat) (primes : Array Nat) (i : Nat) : Bool :=
+  if i >= primes.size then
+    true
+  else
+    let p := primes[i]!
+    if p * p > n then
       true
+    else if n % p == 0 then
+      false
     else
-      let p := primes[i]!
-      if p * p > n then
-        true
-      else if n % p == 0 then
-        false
-      else
-        loop (i + 1)
-  loop 0
+      isPrimeWithLoop n primes (i + 1)
+termination_by primes.size - i
+decreasing_by
+  omega
+
+def isPrimeWith (n : Nat) (primes : Array Nat) : Bool :=
+  isPrimeWithLoop n primes 0
 
 partial def solve (n : Nat) : Nat :=
   if n == 1 then

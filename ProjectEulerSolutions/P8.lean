@@ -27,48 +27,74 @@ abbrev numberStr : String :=
 def digitsArray (s : String) : Array Nat :=
   s.data.foldl (fun acc c => acc.push (c.toNat - '0'.toNat)) #[]
 
-partial def prodRange (digits : Array Nat) (i len : Nat) : Nat :=
+def prodRange (digits : Array Nat) (i len : Nat) : Nat :=
   if len == 0 then
     1
   else
     digits[i]! * prodRange digits (i + 1) (len - 1)
+termination_by len
+decreasing_by
+  simp at *
+  omega
 
-partial def maxAdjacentProduct (num : String) (k : Nat) : Nat :=
-  let digits := digitsArray num
-  let n := digits.size
-  let rec findNextNonZero (i : Nat) : Nat :=
-    if i < n && digits[i]! == 0 then
-      findNextNonZero (i + 1)
-    else
-      i
-  let rec findNextZero (i : Nat) : Nat :=
-    if i < n && digits[i]! != 0 then
-      findNextZero (i + 1)
-    else
-      i
-  let rec slide (t j k : Nat) (prod best : Nat) : Nat :=
-    if t >= j then
-      best
-    else
-      let prod' := (prod / digits[t - k]!) * digits[t]!
-      let best' := if prod' > best then prod' else best
-      slide (t + 1) j k prod' best'
-  let rec loop (i best : Nat) : Nat :=
-    let i' := findNextNonZero i
+def findNextNonZero (digits : Array Nat) (n i : Nat) : Nat :=
+  if i < n && digits[i]! == 0 then
+    findNextNonZero digits n (i + 1)
+  else
+    i
+termination_by n + 1 - i
+decreasing_by
+  simp at *
+  omega
+
+def findNextZero (digits : Array Nat) (n i : Nat) : Nat :=
+  if i < n && digits[i]! != 0 then
+    findNextZero digits n (i + 1)
+  else
+    i
+termination_by n + 1 - i
+decreasing_by
+  simp at *
+  omega
+
+def slide (digits : Array Nat) (t j k prod best : Nat) : Nat :=
+  if t >= j then
+    best
+  else
+    let prod' := (prod / digits[t - k]!) * digits[t]!
+    let best' := if prod' > best then prod' else best
+    slide digits (t + 1) j k prod' best'
+termination_by j - t
+decreasing_by
+  omega
+
+def loop (digits : Array Nat) (n k i best : Nat) : Nat :=
+  if _hi : i >= n then
+    best
+  else
+    let i' := findNextNonZero digits n i
     if i' >= n then
       best
     else
-      let j := findNextZero i'
+      let j := findNextZero digits n i'
       let segLen := j - i'
       let best' :=
         if segLen >= k then
           let prod := prodRange digits i' k
           let best1 := if prod > best then prod else best
-          slide (i' + k) j k prod best1
+          slide digits (i' + k) j k prod best1
         else
           best
-      loop j best'
-  loop 0 0
+      if _hjn : j > n then best' else if _hji : j <= i then best' else loop digits n k j best'
+termination_by n + 1 - i
+decreasing_by
+  have hij : i < j := Nat.lt_of_not_ge _hji
+  exact Nat.sub_lt_sub_left (by omega : i < n + 1) hij
+
+def maxAdjacentProduct (num : String) (k : Nat) : Nat :=
+  let digits := digitsArray num
+  let n := digits.size
+  loop digits n k 0 0
 
 
 def solve (k : Nat) : Nat :=

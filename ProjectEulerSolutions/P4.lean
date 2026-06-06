@@ -5,19 +5,24 @@ def isPalindrome (n : Nat) : Bool :=
   let s := toString n
   s = String.mk s.data.reverse
 
-partial def loopB (a b lo best bestA bestB : Nat) : Nat × Nat × Nat :=
-  if b < lo then
+def loopB (a b lo best bestA bestB : Nat) : Nat × Nat × Nat :=
+  if _hblo : b < lo then
+    (best, bestA, bestB)
+  else if _hb0 : b = 0 then
     (best, bestA, bestB)
   else
     let prod := a * b
-    if prod <= best then
+    if hbest : prod <= best then
       (best, bestA, bestB)
     else if isPalindrome prod then
       (prod, a, b)
     else
       loopB a (b - 1) lo best bestA bestB
+termination_by b
+decreasing_by
+  omega
 
-partial def loopA (a lo hi best bestA bestB : Nat) : Nat × Nat × Nat :=
+def loopA (a lo hi best bestA bestB : Nat) : Nat × Nat × Nat :=
   if a < lo then
     (best, bestA, bestB)
   else if a * hi < best then
@@ -28,6 +33,9 @@ partial def loopA (a lo hi best bestA bestB : Nat) : Nat × Nat × Nat :=
       (best', bestA', bestB')
     else
       loopA (a - 1) lo hi best' bestA' bestB'
+termination_by a
+decreasing_by
+  omega
 
 def largestPalindromeProduct (lo hi : Nat) : Nat × Nat × Nat :=
   loopA hi lo hi 0 0 0
