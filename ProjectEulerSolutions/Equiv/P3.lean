@@ -148,7 +148,7 @@ lemma oddLoop_correct {N n f largest : Nat}
       have hnotdvd : ¬ f ∣ n := by
         intro hd
         have hm : n % f = 0 := Nat.mod_eq_zero_of_dvd hd
-        exact hmod (by simpa [hm])
+        exact hmod (by simp [hm])
       have hlow' : Low n (f + 2) := lower_step hfge hfodd hlow hnotdvd
       have hfodd' : Odd (f + 2) := by
         obtain ⟨a, ha⟩ := hfodd
@@ -219,7 +219,7 @@ lemma stripTwos_correct {N n largest : Nat}
         by_cases hp2 : p = 2
         · subst p
           have hm : n % 2 = 0 := Nat.mod_eq_zero_of_dvd hpdvd
-          exact (hnotmod (by simpa [hm])).elim
+          exact (hnotmod (by simp [hm])).elim
         · have hp2le : 2 ≤ p := hp.two_le
           omega
       exact ⟨hnN, hnpos, hlargest, hcover, hlow, le_trans hlargest_le_two (by norm_num),
