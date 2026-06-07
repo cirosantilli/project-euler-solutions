@@ -26,8 +26,10 @@ LEAN_SOLUTION_STEM_RE = re.compile(r"^P(\d+)$")
 LEAN_EQUIV_STEM_RE = re.compile(r"^P(\d+)$")
 FORBIDDEN_TOKENS = ("Solutions.md",)
 FORBIDDEN_LEAN_PATTERNS = (
-    (r"\bpartial\b", "partial"),
     (r"\baxiom\b", "axiom"),
+    (r"\badmit\b", "admit"),
+    (r"\bnoncomputable\b", "noncomputable"),
+    (r"\bpartial\b", "partial"),
     (r"\bsorry\b", "sorry"),
     (r"\bunsafe\b", "unsafe"),
 )
