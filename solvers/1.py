@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
 
-def sum_of_multiples(m, n):
+def sum_of_multiples(m: int, n: int) -> int:
     max_range = n // m
     return m * max_range * (max_range + 1) // 2
 
 
-def sum_of_multiples_of_either_3_or_5(n):
+def sum_of_multiples_of_either_3_or_5(n: int) -> int:
     n -= 1
     return sum_of_multiples(3, n) + sum_of_multiples(5, n) - sum_of_multiples(15, n)
 
