@@ -1,43 +1,100 @@
 import ProjectEulerStatements.P7
-import ProjectEulerSolutions.Termination.P7
 namespace ProjectEulerSolutions.P7
 
-def isPrimeWithLoop (n : Nat) (primes : Array Nat) (i : Nat) : Bool :=
-  if i >= primes.size then
-    true
+def initialLimit (n : Nat) : Nat :=
+  if n < 6 then
+    15
   else
-    let p := primes[i]!
-    if p * p > n then
-      true
-    else if n % p == 0 then
-      false
-    else
-      isPrimeWithLoop n primes (i + 1)
-termination_by primes.size - i
-decreasing_by
-  omega
+    n * (Nat.log2 n + Nat.log2 (Nat.log2 n + 1) + 1) + 10
 
-def isPrimeWith (n : Nat) (primes : Array Nat) : Bool :=
-  isPrimeWithLoop n primes 0
+def sieveSize (limit : Nat) : Nat :=
+  limit / 2 + 1
+
+def oddAt (i : Nat) : Nat :=
+  2 * i + 1
+
+def initialSieve (limit : Nat) : Array Bool :=
+  Array.ofFn (fun i : Fin (sieveSize limit) => decide (i.val != 0))
+
+def markedByIndex (i idx : Nat) : Prop :=
+  1 ≤ i ∧ oddAt i * oddAt i ≤ oddAt idx ∧ (oddAt i ∣ oddAt idx)
+
+instance (i idx : Nat) : Decidable (markedByIndex i idx) := by
+  unfold markedByIndex
+  infer_instance
+
+def hasMarkedFactorBefore (i idx : Nat) : Prop :=
+  ∃ j ∈ Finset.range i, markedByIndex j idx
+
+instance (i idx : Nat) : Decidable (hasMarkedFactorBefore i idx) := by
+  unfold hasMarkedFactorBefore
+  infer_instance
+
+def sieveState (limit processed : Nat) : Array Bool :=
+  Array.ofFn (fun idx : Fin (sieveSize limit) =>
+    decide (idx.val != 0 ∧ ¬ hasMarkedFactorBefore processed idx.val))
+
+def markMultiples (p : Nat) (arr : Array Bool) : Array Bool :=
+  Array.ofFn (fun i : Fin arr.size =>
+    if p * p ≤ oddAt i.val ∧ oddAt i.val % p = 0 then false else arr[i.val]!)
+
+def sieveLoop (limit maxI i : Nat) (isPrime : Array Bool) : Array Bool :=
+  if i > maxI then
+    isPrime
+  else if isPrime[i]! then
+    let p := oddAt i
+    sieveLoop limit maxI (i + 1) (markMultiples p isPrime)
+  else
+    sieveLoop limit maxI (i + 1) isPrime
+termination_by maxI + 1 - i
+decreasing_by
+  all_goals omega
+
+def oddsOnlySieveImpl (limit : Nat) : Array Bool :=
+  let isPrime := initialSieve limit
+  let root := Nat.sqrt limit
+  let maxI := root / 2
+  sieveLoop limit maxI 1 isPrime
+
+def oddsOnlySieve (limit : Nat) : Array Bool :=
+  oddsOnlySieveImpl limit
+
+def scanNthPrimeIndex (k i count : Nat) (isPrime : Array Bool) : Option Nat :=
+  if h : i >= isPrime.size then
+    none
+  else
+    let p := oddAt i
+    if isPrime[i]! then
+      if count = k then
+        some p
+      else
+        scanNthPrimeIndex k (i + 1) (count + 1) isPrime
+    else
+      scanNthPrimeIndex k (i + 1) count isPrime
+termination_by isPrime.size - i
+decreasing_by
+  all_goals omega
+
+def nthPrimeWithLimit (k limit : Nat) : Option Nat :=
+  match k with
+  | 0 => some 2
+  | _ + 1 =>
+      let isPrime := oddsOnlySieve limit
+      scanNthPrimeIndex k 1 1 isPrime
+
+def nthPrimeWithRetry (k limit fuel : Nat) : Nat :=
+  match nthPrimeWithLimit k limit with
+  | some p => p
+  | none =>
+      match fuel with
+      | 0 => 0
+      | fuel + 1 => nthPrimeWithRetry k (limit * 2) fuel
+termination_by fuel
 
 def solve (n : Nat) : Nat :=
-  if n == 1 then
-    2
-  else
-    let rec go (candidate count : Nat) (primes : Array Nat) : Nat :=
-      if count == n then
-        primes[primes.size - 1]!
-      else
-        if isPrimeWith candidate primes then
-          let primes' := primes.push candidate
-          go (candidate + 2) (count + 1) primes'
-        else
-          go (candidate + 2) count primes
-    termination_by Termination.goMeasure n candidate count
-    decreasing_by
-      · exact Termination.go_decreases n candidate count (count + 1)
-      · exact Termination.go_decreases n candidate count count
-    go 3 1 #[2]
+  match n with
+  | 0 => 0
+  | k + 1 => nthPrimeWithRetry k (initialLimit (k + 1)) (k + 1)
 
 example : solve 1 = 2 := by
   native_decide
