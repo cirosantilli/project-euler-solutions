@@ -391,6 +391,13 @@ because it rules out many things which were very awkward to check in lean self-i
 
 * `partial`: nothing can be partial, all our functions must terminate, partial is only allowed on the problem statements as a helper
 
+The Lean status table in this README can be automatically updated with:
+
+[source,shell]
+----
+./lean.py -A -l lean
+----
+
 The way things are organize is that link:data/project-euler-statements[] will contain a Lean formalization of each problem statement, for example:
 
 * link:data/project-euler-statements/data/lean/ProjectEulerStatements/P1.lean[]: defines a `ProjectEulerStatements.P1.naive` function, possibly non-computable, which we believe matches the problem definition
