@@ -35,20 +35,20 @@ def candidate (total m n : Nat) : Nat :=
   else
     0
 
-def loopN (total m n best : Nat) : Nat :=
+def loopN (total m n : Nat) : Nat :=
   if n >= m then
-    best
+    0
   else
-    loopN total m (n + 1) (Nat.max best (candidate total m n))
+    Nat.max (candidate total m n) (loopN total m (n + 1))
 termination_by m - n
 decreasing_by
   all_goals omega
 
-def loopM (total m best : Nat) : Nat :=
+def loopM (total m : Nat) : Nat :=
   if hstop : 2 * m * (m + 1) > total then
-    best
+    0
   else
-    loopM total (m + 1) (Nat.max best (loopN total m 1 0))
+    Nat.max (loopN total m 1) (loopM total (m + 1))
 termination_by total + 1 - m
 decreasing_by
   have hm_le : m ≤ total := by
@@ -56,27 +56,12 @@ decreasing_by
     exact le_trans hmul (le_of_not_gt hstop)
   omega
 
-def directTripletProducts (total : Nat) : Finset Nat :=
-  (((Finset.Icc 1 total).product (Finset.Icc 1 total)).filter (fun p =>
-    let a := p.1
-    let b := p.2
-    let c := total - a - b
-    a < b ∧ b < c ∧ a ^ 2 + b ^ 2 = c ^ 2
-  )).image (fun p =>
-    let a := p.1
-    let b := p.2
-    let c := total - a - b
-    a * b * c)
-
-def directSolve (total : Nat) : Nat :=
-  if h : (directTripletProducts total).Nonempty then
-    (directTripletProducts total).max' h
-  else
-    0
-
 def solve (total : Nat) : Nat :=
-  Nat.max (loopM total 2 0) (directSolve total)
+  loopM total 2
 
 example : solve 12 = 60 := by
+  native_decide
+
+example : solve 210 = 328860 := by
   native_decide
 end ProjectEulerSolutions.P9
