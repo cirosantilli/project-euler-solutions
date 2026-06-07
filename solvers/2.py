@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 
-def sum_even_fibonacci(limit: int) -> int:
+def solve(limit: int) -> int:
     """
     Returns the sum of even Fibonacci numbers not exceeding `limit`,
     with Fibonacci starting at 1, 2, ...
@@ -16,4 +16,4 @@ def sum_even_fibonacci(limit: int) -> int:
 
 
 if __name__ == "__main__":
-    print(sum_even_fibonacci(4_000_000))
+    print(solve(4_000_000))

@@ -2,10 +2,9 @@
 from __future__ import annotations
 
 import math
-from typing import Optional
 
 
-def nth_prime(n: int) -> int:
+def solve(n: int) -> int:
     assert n >= 1
     if n == 1:
         return 2
@@ -46,15 +45,7 @@ def nth_prime(n: int) -> int:
         limit *= 2
 
 
-def main() -> None:
-    # Tests from statement / basic sanity checks
-    assert nth_prime(1) == 2
-    assert nth_prime(6) == 13
-
-    ans = nth_prime(10001)
-
-    print(ans)
-
-
 if __name__ == "__main__":
-    main()
+    assert solve(1) == 2
+    assert solve(6) == 13
+    print(solve(10001))
