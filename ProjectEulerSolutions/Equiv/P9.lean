@@ -3,20 +3,54 @@ import Mathlib.NumberTheory.PythagoreanTriples
 import Mathlib.Tactic
 namespace ProjectEulerSolutions.P9
 
+def euclidS (m n : Nat) : Nat :=
+  2 * m * (m + n)
+
+def euclidK (total m n : Nat) : Nat :=
+  total / euclidS m n
+
+def euclidA (total m n : Nat) : Nat :=
+  euclidK total m n * (m * m - n * n)
+
+def euclidB (total m n : Nat) : Nat :=
+  euclidK total m n * (2 * m * n)
+
+def euclidC (total m n : Nat) : Nat :=
+  euclidK total m n * (m * m + n * n)
+
+def candidateValid (total m n : Nat) : Prop :=
+  let a := euclidA total m n
+  let b := euclidB total m n
+  let c := euclidC total m n
+  total % euclidS m n = 0 ∧
+    a > 0 ∧ ((a < b ∧ b < c) ∨ (b < a ∧ a < c)) ∧
+      a * a + b * b = c * c ∧ a + b + c = total
+
+instance candidateValidDecidable (total m n : Nat) : Decidable (candidateValid total m n) := by
+  unfold candidateValid
+  infer_instance
+
+def candidate (total m n : Nat) : Nat :=
+  if candidateValid total m n then
+    euclidA total m n * euclidB total m n * euclidC total m n
+  else
+    0
+
 lemma loopN_eq_foldr (total m n : Nat) :
     loopN total m n =
       (List.range' n (m - n)).foldr (fun x acc => Nat.max (candidate total m x) acc) 0 := by
-  induction n using loopN.induct m with
+  induction n using loopN.induct total m with
   | case1 n h =>
       rw [loopN.eq_def]
-      simp [h]
+      have hsub : m - n = 0 := Nat.sub_eq_zero_of_le h
+      simp [h, hsub]
   | case2 n h ih =>
       rw [loopN.eq_def]
       simp [h]
       rw [ih]
       have hmn : m - n = (m - (n + 1)) + 1 := by omega
       rw [hmn, List.range'_succ]
-      simp
+      simp [candidate, candidateValid, euclidA, euclidB, euclidC, euclidK, euclidS]
 
 lemma loopM_stop_mono {total m x : Nat} (hstop : 2 * m * (m + 1) > total) (hmx : m ≤ x) :
     2 * x * (x + 1) > total := by

@@ -2,44 +2,23 @@ import ProjectEulerStatements.P9
 import Mathlib.Tactic
 namespace ProjectEulerSolutions.P9
 
-def euclidS (m n : Nat) : Nat :=
-  2 * m * (m + n)
-
-def euclidK (total m n : Nat) : Nat :=
-  total / euclidS m n
-
-def euclidA (total m n : Nat) : Nat :=
-  euclidK total m n * (m * m - n * n)
-
-def euclidB (total m n : Nat) : Nat :=
-  euclidK total m n * (2 * m * n)
-
-def euclidC (total m n : Nat) : Nat :=
-  euclidK total m n * (m * m + n * n)
-
-def candidateValid (total m n : Nat) : Prop :=
-  let a := euclidA total m n
-  let b := euclidB total m n
-  let c := euclidC total m n
-  total % euclidS m n = 0 ∧
-    a > 0 ∧ ((a < b ∧ b < c) ∨ (b < a ∧ a < c)) ∧
-      a * a + b * b = c * c ∧ a + b + c = total
-
-instance candidateValidDecidable (total m n : Nat) : Decidable (candidateValid total m n) := by
-  unfold candidateValid
-  infer_instance
-
-def candidate (total m n : Nat) : Nat :=
-  if candidateValid total m n then
-    euclidA total m n * euclidB total m n * euclidC total m n
-  else
-    0
-
 def loopN (total m n : Nat) : Nat :=
   if n >= m then
     0
   else
-    Nat.max (candidate total m n) (loopN total m (n + 1))
+    let s := 2 * m * (m + n)
+    let k := total / s
+    let a := k * (m * m - n * n)
+    let b := k * (2 * m * n)
+    let c := k * (m * m + n * n)
+    let product :=
+      if total % s = 0 ∧
+          a > 0 ∧ ((a < b ∧ b < c) ∨ (b < a ∧ a < c)) ∧
+            a * a + b * b = c * c ∧ a + b + c = total then
+        a * b * c
+      else
+        0
+    Nat.max product (loopN total m (n + 1))
 termination_by m - n
 decreasing_by
   all_goals omega
