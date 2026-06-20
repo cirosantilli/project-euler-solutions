@@ -354,6 +354,12 @@ To run first setup Lean with:
 ----
 curl https://elan.lean-lang.org/elan-init.sh -sSf | sh
 source $HOME/.elan/env
+----
+
+Then build all executables and check all proofs with:
+
+[source,shell]
+----
 lake -R build
 ----
 
@@ -398,13 +404,27 @@ The Lean status table in this README can be automatically updated with:
 ./lean.py -A -l lean
 ----
 
-The way things are organize is that link:data/project-euler-statements[] will contain a Lean formalization of each problem statement, for example:
+This is how things are organized:
 
-* link:data/project-euler-statements/data/lean/ProjectEulerStatements/P1.lean[]: defines a `ProjectEulerStatements.P1.naive` function, possibly non-computable, which we believe matches the problem definition
-** sometimes an alternative `ProjectEulerStatements.P1.naive2` is also defined as an alternative statement and it is also proven to be equivalent to `naive``
-* link:solvers/1.lean[]:
-** defines a computable function `ProjectEulerSolvers.P1.solve` which is an efficient algorithm to solve the problem
-** proves that this efficient function is equivalent to `ProjectEulerStatements.P1.naive`
+* link:data/project-euler-statements/data/lean/ProjectEulerStatements/P1.lean[]: defines a `ProjectEulerStatements.P1.naive` function, possibly non-computable, which we believe matches the informal English-language problem definition, therefore formally defining it
+** sometimes an alternative `ProjectEulerStatements.P1.naive2` is also defined as an alternative statement and it is also proven to be equivalent to `naive`
+* link:ProjectEulerSolutions/P1.lean[]: defines a computable function `ProjectEulerSolvers.P1.solve` which is an efficient algorithm to solve the problem
+* link:solvers/1.lean[]: defines a function `main` which trivially uses `solve` and serves as the entry point of the `solvers/1_lean.out` executable. We need this in a separate file from link:ProjectEulerSolutions/P1.lean[] because otherwise lean would complain about having multiple functions called `main` functions on the same project
++
+----
+def main : IO Unit := do
+  IO.println (solve 1000)
+----
+* link:ProjectEulerSolutions/P1.lean[]: proves a theorem called `equiv` which states that `solve` and `naive` both have the same output for every input
+* link:ProjectEulerStatements.lean[]: imports all the `solve` functions and theorems and checks that they are trivially equivalent to the `naive` statement functions by using `equiv`. This ensures that all `solve` and `equiv` are defined, and that `solve` and `naive` both have take the same argument types
++
+....
+example : ProjectEulerStatements.P1.naive = ProjectEulerSolutions.P1.solve := by
+  apply (funext_iff).2
+  simpa [funext_iff] using ProjectEulerSolutions.P1.equiv
+....
+
+One core technique is splitting things strategically across files, to make it easy to ensure that LLM's haven't touched things they shouldn't have at each step. For example, we don't want the LLMs to freely modify function definitions when we are asking them to prove things about said functions.
 
 We have tried to also build Lean more simply with make but we failed so far, related threads:
 
