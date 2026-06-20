@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 from __future__ import annotations
 
-from typing import Final
-
 
 def solve(n: int) -> int:
     """Return the largest prime factor of n (n >= 2)."""
