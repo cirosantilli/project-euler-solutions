@@ -24,12 +24,13 @@ def partitions(max_part: int, max_len: int):
 
 
 def shape_weight(shape: tuple[int, ...], factorials: list[int]) -> int:
-    """Return f^shape * s_shape(1^10) modulo MODULUS."""
+    """Return f^shape * s_shape(1^10)."""
     column_heights = [
         sum(1 for row_length in shape if row_length >= col)
         for col in range(1, shape[0] + 1)
     ]
-    result = factorials[sum(shape)]
+    numerator = factorials[sum(shape)]
+    denominator = 1
     for row_index, row_length in enumerate(shape, start=1):
         for col_index in range(1, row_length + 1):
             hook = (
@@ -40,15 +41,16 @@ def shape_weight(shape: tuple[int, ...], factorials: list[int]) -> int:
                 + 1
             )
             content_factor = ALPHABET_SIZE + col_index - row_index
-            result = result * content_factor % MODULUS
-            result = result * pow(hook, MODULUS - 3, MODULUS) % MODULUS
-    return result
+            numerator *= content_factor
+            denominator *= hook * hook
+    assert numerator % denominator == 0
+    return numerator // denominator
 
 
 def count_balanced_positive(max_digits: int = MAX_DIGITS) -> int:
     factorials = [1] * (MAX_DIGITS + 1)
     for value in range(1, MAX_DIGITS + 1):
-        factorials[value] = factorials[value - 1] * value % MODULUS
+        factorials[value] = factorials[value - 1] * value
 
     balanced_all = 0
     balanced_ending_nine = 1 if max_digits >= 1 else 0
