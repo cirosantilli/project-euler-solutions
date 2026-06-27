@@ -1525,7 +1525,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/1001.py[1001.py] | link:solvers/1001.md[1001.md] | 4.100 | 256899492 | error: missing reference answer
 | link:solvers/1002.py[1002.py] | link:solvers/1002.md[1002.md] | 0.512 | 55047 | error: missing reference answer
 | link:solvers/1003.py[1003.py] | link:solvers/1003.md[1003.md] | 15.010 | 16561580535729 |
-| link:solvers/1004.py[1004.py] | link:solvers/1004.md[1004.md] | 3.776 | 452448508 |
+| link:solvers/1004.py[1004.py] | link:solvers/1004.md[1004.md] | 1.275 | 452448508 | error: missing reference answer
 |===
 
 === Slowest solvers
@@ -5696,7 +5696,8 @@ Some of the Python implementations are missing for eulersolve, often for the har
 * 1003
 ** link:solvers/1003.py[]: 15.010
 * 1004
-** link:solvers/1004.py[]: 3.776
+** link:solvers/1004.py[]: 1.275
+** link:solvers/mr1004/1004.py[]: 2.542
 
 ==== Failed ports
 
