@@ -1,5 +1,4 @@
 import ProjectEulerStatements.P17
-import ProjectEulerSolutions.Termination.P17
 namespace ProjectEulerSolutions.P17
 
 abbrev ones : Array Nat := #[0, 3, 3, 5, 4, 4, 3, 5, 5, 4]
@@ -16,8 +15,6 @@ def letters1To99 (n : Nat) : Nat :=
     let u := n % 10
     tens[t - 2]! + ones[u]!
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
 def lettersInNumber (n : Nat) : Nat :=
   if n == 1000 then
     3 + 8
@@ -29,9 +26,6 @@ def lettersInNumber (n : Nat) : Nat :=
     let base := ones[h]! + 7
     if r == 0 then base else base + 3 + letters1To99 r
 
-
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
 example : (List.range 5).foldl (fun acc i => acc + lettersInNumber (i + 1)) 0 = 19 := by
   native_decide
 

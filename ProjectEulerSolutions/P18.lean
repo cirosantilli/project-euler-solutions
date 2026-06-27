@@ -1,5 +1,4 @@
 import ProjectEulerStatements.P18
-import ProjectEulerSolutions.Termination.P18
 namespace ProjectEulerSolutions.P18
 
 def combineRow (row dp : List Nat) : List Nat :=
@@ -9,8 +8,6 @@ def combineRow (row dp : List Nat) : List Nat :=
       (r + (if d1 > d2 then d1 else d2)) :: combineRow rs (d2 :: ds)
   | _, _ => []
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
 def maxPathSum (triangle : List (List Nat)) : Nat :=
   match triangle.reverse with
   | [] => 0
@@ -20,8 +17,6 @@ def maxPathSum (triangle : List (List Nat)) : Nat :=
       | [x] => x
       | _ => 0
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
 abbrev triangle : List (List Nat) := [
   [75],
   [95, 64],
