@@ -390,7 +390,7 @@ Linting with link:lint.py[] is especially important for Lean:
 
 [source,shell]
 ----
-./lean.py -l lean
+./lint.py -l lean
 ----
 
 because it rules out many things which were very awkward to check in lean self-introspection alone, e.g.:
