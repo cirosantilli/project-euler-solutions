@@ -39,42 +39,50 @@ def gridList : List (List Nat) :=
 
 def prodRight (g : Array (Array Nat)) (i j k : Nat) : Nat :=
   let rec loop (t acc : Nat) : Nat :=
-    if t == k then
+    if t >= k then
       acc
     else
       loop (t + 1) (acc * g[i]![j + t]!)
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
+  termination_by k - t
+  decreasing_by
+    simp_wf
+    exact Termination.sub_succ_lt_sub (by assumption)
   loop 0 1
 
 def prodDown (g : Array (Array Nat)) (i j k : Nat) : Nat :=
   let rec loop (t acc : Nat) : Nat :=
-    if t == k then
+    if t >= k then
       acc
     else
       loop (t + 1) (acc * g[i + t]![j]!)
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
+  termination_by k - t
+  decreasing_by
+    simp_wf
+    exact Termination.sub_succ_lt_sub (by assumption)
   loop 0 1
 
 def prodDownRight (g : Array (Array Nat)) (i j k : Nat) : Nat :=
   let rec loop (t acc : Nat) : Nat :=
-    if t == k then
+    if t >= k then
       acc
     else
       loop (t + 1) (acc * g[i + t]![j + t]!)
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
+  termination_by k - t
+  decreasing_by
+    simp_wf
+    exact Termination.sub_succ_lt_sub (by assumption)
   loop 0 1
 
 def prodDownLeft (g : Array (Array Nat)) (i j k : Nat) : Nat :=
   let rec loop (t acc : Nat) : Nat :=
-    if t == k then
+    if t >= k then
       acc
     else
       loop (t + 1) (acc * g[i + t]![j - t]!)
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
+  termination_by k - t
+  decreasing_by
+    simp_wf
+    exact Termination.sub_succ_lt_sub (by assumption)
   loop 0 1
 
 def maxAdjacentProduct (g : Array (Array Nat)) (k : Nat) : Nat :=

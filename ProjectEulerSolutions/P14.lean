@@ -3,19 +3,28 @@ import ProjectEulerSolutions.Termination.P14
 namespace ProjectEulerSolutions.P14
 
 def collatzNext (n : Nat) : Nat :=
-  if n % 2 == 1 then 3 * n + 1 else n / 2
+  ProjectEulerStatements.P14.collatzStep n
 
 def collatzLength (n : Nat) : Nat :=
-  if n == 1 then
+  if n = 0 then
+    0
+  else if n = 1 then
     1
   else
     1 + collatzLength (collatzNext n)
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
+termination_by ProjectEulerStatements.P14.collatzMeasure n
+decreasing_by
+  unfold collatzNext
+  exact ProjectEulerStatements.P14.collatzMeasure_decreases
+    (Nat.pos_of_ne_zero (by assumption)) (by assumption)
 
 def collatzLengthMemo (n limit : Nat) (cache : Array Nat) : Nat × Array Nat :=
   let rec loop (m : Nat) (path : List Nat) (cache : Array Nat) : Nat × Array Nat × List Nat :=
-    if m <= limit then
+    if m = 0 then
+      (0, cache, path)
+    else if m = 1 then
+      (1, cache, path)
+    else if m <= limit then
       let cm := cache[m]!
       if cm != 0 then
         (cm, cache, path)
@@ -23,8 +32,12 @@ def collatzLengthMemo (n limit : Nat) (cache : Array Nat) : Nat × Array Nat :=
         loop (collatzNext m) (m :: path) cache
     else
       loop (collatzNext m) (m :: path) cache
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
+  termination_by ProjectEulerStatements.P14.collatzMeasure m
+  decreasing_by
+    all_goals
+      unfold collatzNext
+      exact ProjectEulerStatements.P14.collatzMeasure_decreases
+        (Nat.pos_of_ne_zero (by assumption)) (by assumption)
   let (len, cache1, path) := loop n [] cache
   let rec propagate (path : List Nat) (len : Nat) (cache : Array Nat) : Nat × Array Nat :=
     match path with
