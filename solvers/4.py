@@ -2,12 +2,7 @@
 from typing import Tuple
 
 
-def is_palindrome(n: int) -> bool:
-    s = str(n)
-    return s == s[::-1]
-
-
-def largest_palindrome_product(lo: int, hi: int) -> Tuple[int, int, int]:
+def solve(lo: int, hi: int) -> Tuple[int, int, int]:
     """
     Returns (best_palindrome, factor1, factor2) for factors in [lo, hi].
     """
@@ -27,22 +22,17 @@ def largest_palindrome_product(lo: int, hi: int) -> Tuple[int, int, int]:
             if prod <= best:
                 break
 
-            if is_palindrome(prod):
+            s = str(prod)
+            if s == s[::-1]:
                 best = prod
                 best_a = a
                 best_b = b
                 # For fixed a, this is the largest palindrome since b is descending.
                 break
 
-    return best, best_a, best_b
-
-
-def main() -> None:
-    # Given example: largest palindrome from product of two 2-digit numbers.
-    assert largest_palindrome_product(10, 99)[0] == 9009
-    ans, a, b = largest_palindrome_product(100, 999)
-    print(ans)
+    return best
 
 
 if __name__ == "__main__":
-    main()
+    assert solve(10, 99) == 9009
+    print(solve(100, 999))

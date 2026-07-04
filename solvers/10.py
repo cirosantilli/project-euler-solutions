@@ -1,11 +1,9 @@
 #!/usr/bin/env python
-from __future__ import annotations
 
 import math
-from typing import Final
 
 
-def sum_primes_below(limit: int) -> int:
+def solve(limit: int) -> int:
     """
     Returns sum of all primes p with p < limit.
     Uses an odd-only sieve of Eratosthenes.
@@ -38,13 +36,6 @@ def sum_primes_below(limit: int) -> int:
     return total
 
 
-def main() -> None:
-    # Test case from statement
-    assert sum_primes_below(10) == 17
-
-    LIMIT: Final[int] = 2_000_000
-    print(sum_primes_below(LIMIT))
-
-
 if __name__ == "__main__":
-    main()
+    assert solve(10) == 17
+    print(solve(2_000_000))
