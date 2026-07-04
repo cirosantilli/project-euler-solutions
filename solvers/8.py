@@ -26,22 +26,24 @@ NUMBER_STR = (
 )
 
 
-def max_adjacent_product(num: str, k: int) -> int:
-    digits: List[int] = [ord(c) - 48 for c in num.strip()]
-    n = len(digits)
+def solve(n: int, k: int) -> int:
+    digits: List[int] = [ord(c) - 48 for c in str(n)]
+    digit_count = len(digits)
+    if k == 0:
+        return 0 if digit_count == 0 else 1
 
     best = 0
     i = 0
-    while i < n:
+    while i < digit_count:
         # Skip zeros (any window containing a 0 has product 0)
-        while i < n and digits[i] == 0:
+        while i < digit_count and digits[i] == 0:
             i += 1
-        if i >= n:
+        if i >= digit_count:
             break
 
         # Process maximal zero-free segment [i, j)
         j = i
-        while j < n and digits[j] != 0:
+        while j < digit_count and digits[j] != 0:
             j += 1
 
         seg_len = j - i
@@ -64,9 +66,9 @@ def max_adjacent_product(num: str, k: int) -> int:
 
 def main() -> None:
     # Test case from the statement (4 adjacent digits)
-    assert max_adjacent_product(NUMBER_STR, 4) == 5832
+    assert solve(int(NUMBER_STR), 4) == 5832
 
-    ans = max_adjacent_product(NUMBER_STR, 13)
+    ans = solve(int(NUMBER_STR), 13)
     print(ans)
 
 

@@ -27,79 +27,37 @@ abbrev numberStr : String :=
 def digitsArray (s : String) : Array Nat :=
   s.data.foldl (fun acc c => acc.push (c.toNat - '0'.toNat)) #[]
 
-def prodRange (digits : Array Nat) (i len : Nat) : Nat :=
-  if len == 0 then
-    1
-  else
-    digits[i]! * prodRange digits (i + 1) (len - 1)
-termination_by len
-decreasing_by
-  simp at *
-  omega
+def digitsList (s : String) : List Nat :=
+  s.data.map (fun c => c.toNat - '0'.toNat)
 
-def findNextNonZero (digits : Array Nat) (n i : Nat) : Nat :=
-  if i < n && digits[i]! == 0 then
-    findNextNonZero digits n (i + 1)
-  else
-    i
-termination_by n + 1 - i
-decreasing_by
-  simp at *
-  omega
+def hasZero : List Nat -> Bool
+  | [] => false
+  | x :: xs => x == 0 || hasZero xs
 
-def findNextZero (digits : Array Nat) (n i : Nat) : Nat :=
-  if i < n && digits[i]! != 0 then
-    findNextZero digits n (i + 1)
-  else
-    i
-termination_by n + 1 - i
-decreasing_by
-  simp at *
-  omega
-
-def slide (digits : Array Nat) (t j k prod best : Nat) : Nat :=
-  if t >= j then
-    best
-  else
-    let prod' := (prod / digits[t - k]!) * digits[t]!
-    let best' := if prod' > best then prod' else best
-    slide digits (t + 1) j k prod' best'
-termination_by j - t
-decreasing_by
-  omega
-
-def loop (digits : Array Nat) (n k i best : Nat) : Nat :=
-  if _hi : i >= n then
-    best
-  else
-    let i' := findNextNonZero digits n i
-    if i' >= n then
-      best
-    else
-      let j := findNextZero digits n i'
-      let segLen := j - i'
-      let best' :=
-        if segLen >= k then
-          let prod := prodRange digits i' k
-          let best1 := if prod > best then prod else best
-          slide digits (i' + k) j k prod best1
+def productLoop (k : Nat) : List Nat -> List Nat
+  | [] => []
+  | digits@(_ :: xs) =>
+      if digits.length < k then
+        []
+      else
+        let products := productLoop k xs
+        let window := digits.take k
+        if hasZero window then
+          products
         else
-          best
-      if _hjn : j > n then best' else if _hji : j <= i then best' else loop digits n k j best'
-termination_by n + 1 - i
-decreasing_by
-  have hij : i < j := Nat.lt_of_not_ge _hji
-  exact Nat.sub_lt_sub_left (by omega : i < n + 1) hij
+          ProjectEulerStatements.P8.listProduct window :: products
 
 def maxAdjacentProduct (num : String) (k : Nat) : Nat :=
-  let digits := digitsArray num
-  let n := digits.size
-  loop digits n k 0 0
+  let digits := digitsList num
+  if k == 0 then
+    if digits.isEmpty then 0 else 1
+  else
+    ProjectEulerStatements.P8.listMax (productLoop k digits)
 
 
-def solve (k : Nat) : Nat :=
-  maxAdjacentProduct numberStr k
+def solve (n k : Nat) : Nat :=
+  maxAdjacentProduct (toString n) k
 
-example : solve 4 = 5832 := by
+example : solve ProjectEulerStatements.P8.bigNumber 4 = 5832 := by
   native_decide
 end ProjectEulerSolutions.P8
