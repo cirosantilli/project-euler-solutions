@@ -5,16 +5,14 @@ namespace ProjectEulerSolutions.P14
 def collatzNext (n : Nat) : Nat :=
   if n % 2 == 1 then 3 * n + 1 else n / 2
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
 def collatzLength (n : Nat) : Nat :=
   if n == 1 then
     1
   else
     1 + collatzLength (collatzNext n)
-
 termination_by 0
 decreasing_by all_goals exact Termination.decreases
+
 def collatzLengthMemo (n limit : Nat) (cache : Array Nat) : Nat × Array Nat :=
   let rec loop (m : Nat) (path : List Nat) (cache : Array Nat) : Nat × Array Nat × List Nat :=
     if m <= limit then
@@ -35,12 +33,8 @@ def collatzLengthMemo (n limit : Nat) (cache : Array Nat) : Nat × Array Nat :=
         let len' := len + 1
         let cache' := if v <= limit then cache.set! v len' else cache
         propagate vs len' cache'
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
   propagate path len cache1
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
 def longestCollatzUnder (limit : Nat) : Nat × Nat :=
   let cache0 := (Array.replicate (limit + 1) 0).set! 1 1
   let rec loop (n bestN bestLen : Nat) (cache : Array Nat) : Nat × Nat :=
@@ -50,13 +44,13 @@ def longestCollatzUnder (limit : Nat) : Nat × Nat :=
       let (len, cache') := collatzLengthMemo n limit cache
       let (bestN', bestLen') := if len > bestLen then (n, len) else (bestN, bestLen)
       loop (n + 1) bestN' bestLen' cache'
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
+  termination_by limit - n
+  decreasing_by
+    simp_wf
+    exact Termination.sub_succ_lt_sub (by assumption)
   loop 1 1 1 cache0
 
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
 def solve (limit : Nat) : Nat :=
   (longestCollatzUnder limit).1
 

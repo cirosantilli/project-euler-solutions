@@ -47,8 +47,6 @@ def prodRight (g : Array (Array Nat)) (i j k : Nat) : Nat :=
   decreasing_by all_goals exact Termination.decreases
   loop 0 1
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
 def prodDown (g : Array (Array Nat)) (i j k : Nat) : Nat :=
   let rec loop (t acc : Nat) : Nat :=
     if t == k then
@@ -59,8 +57,6 @@ def prodDown (g : Array (Array Nat)) (i j k : Nat) : Nat :=
   decreasing_by all_goals exact Termination.decreases
   loop 0 1
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
 def prodDownRight (g : Array (Array Nat)) (i j k : Nat) : Nat :=
   let rec loop (t acc : Nat) : Nat :=
     if t == k then
@@ -71,8 +67,6 @@ def prodDownRight (g : Array (Array Nat)) (i j k : Nat) : Nat :=
   decreasing_by all_goals exact Termination.decreases
   loop 0 1
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
 def prodDownLeft (g : Array (Array Nat)) (i j k : Nat) : Nat :=
   let rec loop (t acc : Nat) : Nat :=
     if t == k then
@@ -83,8 +77,6 @@ def prodDownLeft (g : Array (Array Nat)) (i j k : Nat) : Nat :=
   decreasing_by all_goals exact Termination.decreases
   loop 0 1
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
 def maxAdjacentProduct (g : Array (Array Nat)) (k : Nat) : Nat :=
   let n := g.size
   let m := if n == 0 then 0 else g[0]!.size
@@ -121,16 +113,18 @@ def maxAdjacentProduct (g : Array (Array Nat)) (k : Nat) : Nat :=
             else
               best3
           loopJ (j + 1) best4
-      termination_by 0
-      decreasing_by all_goals exact Termination.decreases
+      termination_by m - j
+      decreasing_by
+        simp_wf
+        exact Termination.sub_succ_lt_sub (by assumption)
       loopI (i + 1) (loopJ 0 best)
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
+  termination_by n - i
+  decreasing_by
+    simp_wf
+    exact Termination.sub_succ_lt_sub (by assumption)
   loopI 0 0
 
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
 def solve (grid : List (List Nat)) (k : Nat) : Nat :=
   maxAdjacentProduct (gridToArray grid) k
 

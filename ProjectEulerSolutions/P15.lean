@@ -13,18 +13,16 @@ def binom (n k : Nat) : Nat :=
         res
       else
         loop (i + 1) (res * (n - k' + i) / i)
-    termination_by 0
-    decreasing_by all_goals exact Termination.decreases
+    termination_by k' + 1 - i
+    decreasing_by
+      simp_wf
+      exact Termination.sub_lt_succ_sub_of_not_gt (by assumption)
     loop 1 1
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
 def latticePaths (gridN gridM : Nat) : Nat :=
   binom (gridN + gridM) gridN
 
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
 example : latticePaths 2 2 = 6 := by
   native_decide
 
