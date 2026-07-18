@@ -71,6 +71,14 @@ We want to avoid any magic pre-computed constants used as intermediate results a
 
 There are currently no known solvers with ugly precomputed results which should be removed.
 
+Circa problem 1000 we tend to get by simply on Codex CLI with prompt:
+
+....
+/goal Fetch all latest unsolved problems from https://projecteuler.net/recent and solve them in Python. Test with pypy3 and be mindful not to blow our system memory again.. Run ./test.py -A on those problems and ensure it does not blow up. "error: missing reference answer" is fine, don't attempt to correct that.
+....
+
+and giving it Internet access to projecteuler.net to ensure it can get the latest problem and their resources: https://stackoverflow.com/questions/79970154/how-to-allow-codex-cli-to-execute-shell-commands-with-internet-access-from-withi
+
 == Status
 
 After trying more automated approaches which failed due to reliability/cost issues, we ended up painstakingly (but also meditatively) doing at least a single pass of "paste on chatgpt.com", which solves 90% of them. When that fails the algorithm is a mixture of:
