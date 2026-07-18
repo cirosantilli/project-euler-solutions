@@ -26,19 +26,17 @@ toc::[]
 
 == Goals
 
-There are a few solution collections out there such as:
+Before this repo was published, there were a few solution collections out there such as:
 
 * https://github.com/nayuki/Project-Euler-solutions
 * https://github.com/stbrumme/euler
 * https://github.com/igorvanloo/Project-Euler-Explained/tree/master/Finished%20Problems
 
-but we couldn't find any complete ones, and the reason is obvious: there's no single human who's had both the patience and the willingness to spoil problems and get banned from the leaderboards forever. The existing solution repos are also partially a showcase of users's skills rather than pure a mass collaborative effort to get it done. Contributors of this project however have attained Buddhahood and completely freed themselves of their own ego: we do stupid things and we are not proud. As such, we have come closer to the more fundamental reason for doing PE problems: autism.
+but we couldn't find any complete ones, and the reason is obvious: before https://matharena.ai/?comp=euler--euler&task=4&model=GPT-5+%28high%29&view=problem&run=1[LLMs were able to solve most of the problems], there was no single human who had both the patience and the willingness to spoil problems and get banned from the leaderboards forever: https://ourbigbook.com/cirosantilli/updates/getting-banned-from-project-euler[once you publish any solution online, they hunt you down and forever block any account they manage to match back to you, even though LLMs now solve all their recent problems]. The existing solution repos were also partially a showcase of users's skills rather than pure a mass collaborative effort to just get it done. Contributors of this project however have attained Buddhahood and completely freed themselves of their own ego: we do stupid things and we are not proud. As such, we have come closer to the more fundamental reason for doing PE problems: autism.
 
-After this repo was published, https://eulersolve.org/[] was published, which also contained all solutions to date. The license of that repo are an informal "you can use it but you can't", so it is better to treat it as fully copyrighted: https://x.com/cirosantilli/status/2028156201662402629[]. Its programs are very fast, terminating in 3s according to author. However they use threading heavily, which we have avoided. Quick scraper for it at link:scrape-eulersolve-org.sh[] but given it's license status, I'm not in the mood to touch it now. The good thing about that project is that it provides the solution summary which we can raid if needed rather than having to raid PE forums.
+Not long after this repo was published, https://eulersolve.org/[] was also published, which also contained all solutions to date. That repo has valuable content, but it's license is not fully open, see further comments at: xref:eulersolve-org[xrefstyle=full].
 
 We also have https://github.com/lucky-bai/projecteuler-solutions which contains the numerical solutions. And of course, once you have the numerical solution you can enter the private forum threads where people freely share their solutions. But they don't use open licenses, so we can't republish them openly.
-
-But with the advent of https://matharena.ai/?comp=euler--euler&task=4&model=GPT-5+%28high%29&view=problem&run=1[LLMs being able to solve a large number of them], this project has become a possibility.
 
 At least initially, we are not going to restrict ourselves only to LLM solutions, or attempt to carefully benchmark LLM capability with this repo. If one problem is hard and we manually find a solution, it is fine to add it manually. It is also fine to raid the private Project Euler forums to understand the key tricks and feed insights to LLMs (though we must never ever touch code from there), since mathematical ideas themselves cannot be copyrighted. The initial goal is just to have all solvers legally with as little effort and money as possible. Editing LLM output to make it work in any way is also OK.
 
@@ -5724,3 +5722,27 @@ No remaining entry from the previous above-5s failed-port batch is currently
 unresolved. Problems 211, 451, 505, 513, and 958 were revisited using the
 corresponding Python references to understand the missing performance detail,
 then reimplemented locally and benchmarked.
+
+==== eulersolve.org
+
+Not long after this repo was published, https://eulersolve.org/[] was also published, which also contained all solutions to date.
+
+The license of that repo is an informal "you can use it but you can't", so it is better to treat it as fully copyrighted. The license is not clear on the website, we've contacted them at https://x.com/cirosantilli/status/2028165958762737926[] and they failed to clarify to our standards, so that is our conclusion. That Tweet is not visible anymore account had been suspended as of July 2026, I'm an idiot for not having quoted and archived it, I noticed now that I was about to do it. But basically we asked:
+
+----
+Cool to see that that you released the code. Questions: 1) is code is copyrighted/have I missed a license somewhere? 2) do you have all solutions in a github repo somewhere? 3) do you have the runtime of each problem noted somewhere? Cheers!
+----
+
+and they replied something like:
+
+----
+You can do whatever you want, just cite the code. Not on GitHub because we don't want it all to be downloadable easily.
+----
+
+so you can't really do whatever you want with it, and so it is better treated as proprietary.
+
+The implementations at https://eulersolve.org/[] are very fast, terminating in 3s according to author which we have mostly verified. However they use threading heavily, which we have avoided, because thread counts vary significantly across processors.
+
+We've since made a scrapper for their solvers: link:scrape-eulersolve-org.sh[], downloaded, adapted their solvers our standards, notably making them single threaded and removing non stdlib dependencies, reuploaded to https://github.com/cirosantilli/eulersolve in a private repo given it's license status, <<benchmarking-other-solvers,benchmarked their solvers>>, and stole their greatest improvements techniques over ours.
+
+But still, even though their license is messy, that project is that it provides the solution summary which we can raid in dire times.
