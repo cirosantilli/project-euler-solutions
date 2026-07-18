@@ -4096,4 +4096,8 @@
   solvers/1004.py: 1.275
   solvers/mr1004/1004.py: 2.542
 1005:
-  solvers/1005.py: 0.056
+  solvers/1005.py: 0.055
+1006:
+  solvers/1006.py: 0.063
+1007:
+  solvers/1007.py: 7.997

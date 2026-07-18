@@ -13,7 +13,7 @@
 This repo aims to solve **ALL** https://projecteuler.net[Project Euler] problems in openly licensed Python code, mostly using LLMs to generate the bulk of the solutions. Status:
 
 // STATUS TABLE
-* **1-1005**: done
+* **1-1007**: done
 
 Tested on Python 3.13.7, PyPy 7.3.20, Ubuntu 25.10.
 
@@ -1512,7 +1512,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/988.py[988.py] | link:solvers/988.md[988.md] | 0.071 | 2727531976556215755 |
 | link:solvers/989.py[989.py] | link:solvers/989.md[989.md] | 16.388 | 697845151 | error: missing reference answer
 | link:solvers/990.py[990.py] | link:solvers/990.md[990.md] | 2.302 | 50322750 |
-| link:solvers/991.py[991.py] | link:solvers/991.md[991.md] | 0.134 | 23871972654940 |
+| link:solvers/991.py[991.py] | link:solvers/991.md[991.md] | 0.134 | 23871972654940 | error: missing reference answer
 | link:solvers/992.py[992.py] | link:solvers/992.md[992.md] | 0.088 | 568021234 | error: missing reference answer
 | link:solvers/993.py[993.py] | link:solvers/993.md[993.md] | 0.093 | 1661971830985915304 | error: missing reference answer
 | link:solvers/994.py[994.py] | link:solvers/994.md[994.md] | 18.615 | 350247268 | error: missing reference answer
@@ -1524,9 +1524,11 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/1000.py[1000.py] | link:solvers/1000.md[1000.md] | 0.454 | 891213201 | error: missing reference answer
 | link:solvers/1001.py[1001.py] | link:solvers/1001.md[1001.md] | 4.100 | 256899492 | error: missing reference answer
 | link:solvers/1002.py[1002.py] | link:solvers/1002.md[1002.md] | 0.512 | 55047 | error: missing reference answer
-| link:solvers/1003.py[1003.py] | link:solvers/1003.md[1003.md] | 15.010 | 16561580535729 |
+| link:solvers/1003.py[1003.py] | link:solvers/1003.md[1003.md] | 15.010 | 16561580535729 | error: missing reference answer
 | link:solvers/1004.py[1004.py] | link:solvers/1004.md[1004.md] | 1.275 | 452448508 | error: missing reference answer
-| link:solvers/1005.py[1005.py] | link:solvers/1005.md[1005.md] | 0.056 | 826079755 | error: missing reference answer
+| link:solvers/1005.py[1005.py] | link:solvers/1005.md[1005.md] | 0.055 | 826079755 | error: missing reference answer
+| link:solvers/1006.py[1006.py] | link:solvers/1006.md[1006.md] | 0.063 | 62418970 | error: missing reference answer
+| link:solvers/1007.py[1007.py] | link:solvers/1007.md[1007.md] | 7.997 | 420800483 | error: missing reference answer
 |===
 
 === Slowest solvers
@@ -5700,7 +5702,11 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/1004.py[]: 1.275
 ** link:solvers/mr1004/1004.py[]: 2.542
 * 1005
-** link:solvers/1005.py[]: 0.056
+** link:solvers/1005.py[]: 0.055
+* 1006
+** link:solvers/1006.py[]: 0.063
+* 1007
+** link:solvers/1007.py[]: 7.997
 
 ==== Failed ports
 

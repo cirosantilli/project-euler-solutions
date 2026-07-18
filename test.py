@@ -267,6 +267,8 @@ def extract_lang_hints(values: list[str]) -> tuple[list[str], set[str]]:
 
 def load_reference_answers() -> dict[int, str]:
     solutions: dict[int, str] = {}
+    if not SOLUTIONS_PATH.exists():
+        return solutions
     with SOLUTIONS_PATH.open() as fh:
         for line in fh:
             line = line.strip()
