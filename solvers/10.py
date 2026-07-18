@@ -5,13 +5,13 @@ import math
 
 def solve(limit: int) -> int:
     """
-    Returns sum of all primes p with p < limit.
-    Uses an odd-only sieve of Eratosthenes.
+    Odd-only sieve of Eratosthenes.
     """
     if limit <= 2:
         return 0
     if limit <= 3:
-        return 2  # only prime below 3 is 2
+        # The only prime below 3 is 2
+        return 2
 
     # Store only odd numbers >= 3:
     # index i represents number (2*i + 3)
@@ -19,12 +19,14 @@ def solve(limit: int) -> int:
     sieve = bytearray(b"\x01") * size
 
     r = math.isqrt(limit - 1)
-    max_i = (r - 3) // 2  # largest i such that (2*i+3) <= r
+    # largest i such that (2*i+3) <= r
+    max_i = (r - 3) // 2
 
     for i in range(max_i + 1):
         if sieve[i]:
             p = 2 * i + 3
-            start = (p * p - 3) // 2  # index of p*p
+            # index of p*p
+            start = (p * p - 3) // 2
             if start < size:
                 count = ((size - start - 1) // p) + 1
                 sieve[start::p] = b"\x00" * count

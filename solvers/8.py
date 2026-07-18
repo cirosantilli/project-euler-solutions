@@ -64,13 +64,6 @@ def solve(n: int, k: int) -> int:
     return best
 
 
-def main() -> None:
-    # Test case from the statement (4 adjacent digits)
-    assert solve(int(NUMBER_STR), 4) == 5832
-
-    ans = solve(int(NUMBER_STR), 13)
-    print(ans)
-
-
 if __name__ == "__main__":
-    main()
+    assert solve(int(NUMBER_STR), 4) == 5832
+    print(solve(int(NUMBER_STR), 13))
