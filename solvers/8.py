@@ -2,7 +2,7 @@
 from typing import List
 
 
-NUMBER_STR = (
+DIGITS: List[int] = [int(c) for c in (
     "73167176531330624919225119674426574742355349194934"
     "96983520312774506326239578318016984801869478851843"
     "85861560789112949495459501737958331952853208805511"
@@ -23,11 +23,10 @@ NUMBER_STR = (
     "84580156166097919133875499200524063689912560717606"
     "05886116467109405077541002256983155200055935729725"
     "71636269561882670428252483600823257530420752963450"
-)
+)]
 
 
-def solve(n: int, k: int) -> int:
-    digits: List[int] = [ord(c) - 48 for c in str(n)]
+def solve(digits: List[int], k: int) -> int:
     digit_count = len(digits)
     if k == 0:
         return 0 if digit_count == 0 else 1
@@ -65,5 +64,5 @@ def solve(n: int, k: int) -> int:
 
 
 if __name__ == "__main__":
-    assert solve(int(NUMBER_STR), 4) == 5832
-    print(solve(int(NUMBER_STR), 13))
+    assert solve(DIGITS, 4) == 5832
+    print(solve(DIGITS, 13))

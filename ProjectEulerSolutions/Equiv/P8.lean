@@ -50,8 +50,9 @@ lemma productLoop_correct_of_pos (k : Nat) (hk : 0 < k) :
             cases hhz : hasZero (List.take k (x :: xs)) <;> simp [hhz] at hz ⊢
           simp [hzfalse, productLoop_correct_of_pos k hk xs, listMax]
 
-theorem equiv (n k : Nat) : ProjectEulerStatements.P8.naive n k = solve n k := by
-  unfold ProjectEulerStatements.P8.naive solve maxAdjacentProduct digitsList
+theorem equiv (digits : List Nat) (k : Nat) :
+    ProjectEulerStatements.P8.naive digits k = solve digits k := by
+  unfold ProjectEulerStatements.P8.naive solve maxAdjacentProduct
   by_cases hk : k = 0
   · subst k
     simp [naive_zero]
