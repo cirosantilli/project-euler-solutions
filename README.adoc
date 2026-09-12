@@ -13,7 +13,7 @@
 This repo aims to solve **ALL** https://projecteuler.net[Project Euler] problems in openly licensed Python code, mostly using LLMs to generate the bulk of the solutions. Status:
 
 // STATUS TABLE
-* **1-1007**: done
+* **1-1009**: done
 
 Tested on Python 3.13.7, PyPy 7.3.20, Ubuntu 25.10.
 
@@ -76,6 +76,12 @@ Circa problem 1000 we tend to get by simply on Codex CLI with prompt:
 ....
 
 and giving it Internet access to projecteuler.net to ensure it can get the latest problem and their resources: https://stackoverflow.com/questions/79970154/how-to-allow-codex-cli-to-execute-shell-commands-with-internet-access-from-withi
+
+Or if you want to save some Codex credits, we've also managed directly on web with:
+
+....
+Solve all latest project euler problems missing from cirosantilli/project-euler-solutionsGive me the .py and .md file I can drop there.
+....
 
 == Status
 
@@ -1535,6 +1541,8 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/1005.py[1005.py] | link:solvers/1005.md[1005.md] | 0.055 | 826079755 | error: missing reference answer
 | link:solvers/1006.py[1006.py] | link:solvers/1006.md[1006.md] | 0.063 | 62418970 | error: missing reference answer
 | link:solvers/1007.py[1007.py] | link:solvers/1007.md[1007.md] | 7.997 | 420800483 | error: missing reference answer
+| link:solvers/1008.py[1008.py] | link:solvers/1008.md[1008.md] | 0.454 | 282031486 | error: missing reference answer
+| link:solvers/1009.py[1009.py] | link:solvers/1009.md[1009.md] | 0.057 | 1664711380364301731 | error: missing reference answer
 |===
 
 === Slowest solvers
@@ -5713,6 +5721,10 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/1006.py[]: 0.063
 * 1007
 ** link:solvers/1007.py[]: 7.997
+* 1008
+** link:solvers/1008.py[]: 0.454
+* 1009
+** link:solvers/1009.py[]: 0.057
 
 ==== Failed ports
 
