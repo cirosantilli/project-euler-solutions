@@ -13,7 +13,7 @@
 This repo aims to solve **ALL** https://projecteuler.net[Project Euler] problems in openly licensed Python code, mostly using LLMs to generate the bulk of the solutions. Status:
 
 // STATUS TABLE
-* **1-1013**: done
+* **1-1015**: done
 
 Tested on Python 3.13.7, PyPy 7.3.20, Ubuntu 25.10.
 
@@ -72,7 +72,7 @@ There are currently no known solvers with ugly precomputed results which should 
 Circa problem 1000 we tend to get by simply on Codex CLI with prompt:
 
 ....
-/goal Fetch all latest unsolved problems from https://projecteuler.net/recent and solve them in Python. Test with pypy3 and be mindful not to blow our system memory again.. Run ./test.py -A on those problems and ensure it does not blow up. "error: missing reference answer" is fine, don't attempt to correct that.
+/goal Fetch all latest unsolved problems from https://projecteuler.net/recent and solve them in Python. Test with pypy3 and be mindful not to blow our system memory again. Run ./test.py -A on those problems and ensure it does not blow up. "error: missing reference answer" is fine, don't attempt to correct that. Follow style of the first .py such as solvers/1.py[] with an explicit `solve(...)` function that gets called from `__main__`. Produce a .md summarizing your approach. Interlink heavily to `https://ourbigbook.com/codex/<topic-name>[Topic name]` for any generally reusable topic, follow style of other .md. Create a corresponding `data/project-euler-statements/data/py/naive/<n>.py` with a naive brute force implementation of the algorithm so we can later formally prove equivalence of the `solve()` functions. Select input arguments of `solve()` appropriately, it should normally take at least one argument so we can have a non-trivial proofs of equivalence. Document the solve() signature at `data/project-euler-statements/spec.yaml`.
 ....
 
 and giving it Internet access to projecteuler.net to ensure it can get the latest problem and their resources: https://stackoverflow.com/questions/79970154/how-to-allow-codex-cli-to-execute-shell-commands-with-internet-access-from-withi
@@ -1547,6 +1547,8 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/1011.py[1011.py] | link:solvers/1011.md[1011.md] | 1.823 | 6750031298491815420 | error: missing reference answer
 | link:solvers/1012.py[1012.py] | link:solvers/1012.md[1012.md] | 9.878 | 75.0073936754 | error: missing reference answer
 | link:solvers/1013.py[1013.py] | link:solvers/1013.md[1013.md] | 0.050 | 6991971159155793 | error: missing reference answer
+| link:solvers/1014.py[1014.py] | link:solvers/1014.md[1014.md] | 0.051 | CFGJLMVW | error: missing reference answer
+| link:solvers/1015.py[1015.py] | link:solvers/1015.md[1015.md] | 0.340 | 713895400 | error: missing reference answer
 |===
 
 === Slowest solvers
@@ -5737,6 +5739,10 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/1012.py[]: 9.878
 * 1013
 ** link:solvers/1013.py[]: 0.050
+* 1014
+** link:solvers/1014.py[]: 0.051
+* 1015
+** link:solvers/1015.py[]: 0.340
 
 ==== Failed ports
 
