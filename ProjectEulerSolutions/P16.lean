@@ -3,7 +3,7 @@ namespace ProjectEulerSolutions.P16
 
 def digitSum (n : Nat) : Nat :=
   let s := toString n
-  s.data.foldl (fun acc c => acc + (c.toNat - '0'.toNat)) 0
+  s.toList.foldl (fun acc c => acc + (c.toNat - '0'.toNat)) 0
 
 example : digitSum (Nat.pow 2 15) = 26 := by
   native_decide

@@ -3,7 +3,13 @@ from __future__ import annotations
 
 
 def solve(n: int) -> int:
-    """Return the largest prime factor of n (n >= 2)."""
+    """
+    @formalsw: Py from project_euler_statements.p3 import naive
+    @formalsw: Requires(n >= 2)
+    @formalsw: Equiv(naive)
+
+    Return the largest prime factor of n.
+    """
     largest = 1
 
     # Factor out 2s

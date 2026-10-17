@@ -484,6 +484,8 @@ def collect_uncommitted_solvers() -> list[int]:
 
 
 def parse_solver_id(path: Path) -> int | None:
+    if path.suffix == ".lean" and "." in path.stem:
+        return None
     stem = path.stem
     if stem.isdigit():
         return int(stem)
@@ -502,7 +504,7 @@ def detect_language(path: Path) -> str | None:
     if path.suffix == ".cpp":
         return "cpp"
     if path.suffix == ".lean":
-        return "lean"
+        return None if "." in path.stem else "lean"
     if path.suffix == ".out":
         if path.stem.endswith("_c"):
             return "c"

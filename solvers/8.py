@@ -1,8 +1,7 @@
 #!/usr/bin/env python
-from typing import List
 
 
-DIGITS: List[int] = [int(c) for c in (
+DIGITS: list[int] = [int(c) for c in (
     "73167176531330624919225119674426574742355349194934"
     "96983520312774506326239578318016984801869478851843"
     "85861560789112949495459501737958331952853208805511"
@@ -26,7 +25,12 @@ DIGITS: List[int] = [int(c) for c in (
 )]
 
 
-def solve(digits: List[int], k: int) -> int:
+def solve(digits: list[int], k: int) -> int:
+    """
+    @formalsw: Py from project_euler_statements.p8 import naive
+    @formalsw: Requires(k >= 0)
+    @formalsw: Equiv(naive)
+    """
     digit_count = len(digits)
     if k == 0:
         return 0 if digit_count == 0 else 1

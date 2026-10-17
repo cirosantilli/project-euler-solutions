@@ -106,7 +106,7 @@ abbrev numbers : List String := [
 
 
 def parseNat (s : String) : Nat :=
-  s.data.foldl (fun acc c => acc * 10 + (c.toNat - '0'.toNat)) 0
+  s.toList.foldl (fun acc c => acc * 10 + (c.toNat - '0'.toNat)) 0
 
 def numberNats : List Nat :=
   numbers.map parseNat
@@ -115,12 +115,12 @@ def numberNats : List Nat :=
 def firstTenDigits (nums : List String) : String :=
   let total := nums.foldl (fun acc s => acc + parseNat s) 0
   let s := toString total
-  String.mk (s.data.take 10)
+  String.ofList (s.toList.take 10)
 
 def firstDigitsOfSum (nums : List Nat) (k : Nat) : Nat :=
   let total := nums.foldl (fun acc n => acc + n) 0
   let s := toString total
-  (String.mk (s.data.take k)).toNat!
+  parseNat (String.ofList (s.toList.take k))
 
 
 def solve (nums : List Nat) (k : Nat) : Nat :=

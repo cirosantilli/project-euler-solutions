@@ -14,7 +14,6 @@ lemma lcm_eq_nat_lcm (a b : Nat) : lcm a b = Nat.lcm a b := by
 lemma Ioc_eq_Icc_succ (x n : Nat) : Finset.Ioc x n = Finset.Icc (x + 1) n := by
   ext y
   simp
-  omega
 
 lemma go_eq_lcm_Icc (n x acc : Nat) :
     go n x acc = Nat.lcm acc ((Finset.Icc x n).lcm (fun y => y)) := by

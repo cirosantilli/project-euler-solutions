@@ -1,5 +1,5 @@
 import ProjectEulerSolutions.P4
-import Batteries.Data.Nat.Digits
+import Init.Data.Nat.ToString
 import Batteries.Data.String.Lemmas
 import Mathlib.Tactic
 
@@ -66,7 +66,7 @@ lemma palindrome_bool_iff (n : Nat) :
     isPalindrome n = true ↔ ProjectEulerStatements.P4.isPalindrome n := by
   by_cases hn : n = 0
   · subst n
-    native_decide
+    decide
   · have hnpos : 0 < n := Nat.pos_of_ne_zero hn
     have hdigits : ∀ d ∈ Nat.digits 10 n, d < 10 := by
       intro d hd
@@ -74,14 +74,14 @@ lemma palindrome_bool_iff (n : Nat) :
     have hdigits_rev : ∀ d ∈ (Nat.digits 10 n).reverse, d < 10 := by
       intro d hd
       exact hdigits d (by simpa using hd)
-    have hdata : (toString n).data = (Nat.digits 10 n).reverse.map Nat.digitChar := by
-      rw [show (toString n).data = Nat.toDigits 10 n by rfl]
+    have hdata : (toString n).toList = (Nat.digits 10 n).reverse.map Nat.digitChar := by
+      rw [show (toString n).toList = Nat.toDigits 10 n by simp]
       exact toDigits_eq_digitChars n hnpos
     constructor
     · intro h
       unfold isPalindrome at h
       simp only [decide_eq_true_eq] at h
-      have hdata_pal := congrArg String.data h
+      have hdata_pal := congrArg String.toList h
       rw [hdata] at hdata_pal
       have hmap : (Nat.digits 10 n).reverse.map Nat.digitChar =
           (Nat.digits 10 n).map Nat.digitChar := by

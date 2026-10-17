@@ -7,6 +7,11 @@ def sum_of_multiples(m: int, n: int) -> int:
 
 
 def solve(n: int) -> int:
+    """
+    @formalsw: Py from project_euler_statements.p1 import naive
+    @formalsw: Requires(n > 1)
+    @formalsw: Equiv(naive)
+    """
     n -= 1
     return sum_of_multiples(3, n) + sum_of_multiples(5, n) - sum_of_multiples(15, n)
 

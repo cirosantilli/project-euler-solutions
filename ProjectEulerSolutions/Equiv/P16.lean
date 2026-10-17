@@ -1,5 +1,5 @@
 import ProjectEulerSolutions.P16
-import Batteries.Data.Nat.Digits
+import Init.Data.Nat.ToString
 import Batteries.Data.String.Lemmas
 import Mathlib.Data.Nat.Digits.Defs
 import Mathlib.Tactic
@@ -56,18 +56,18 @@ lemma digitSum_eq_digits_sum (n : Nat) : digitSum n = (Nat.digits 10 n).sum := b
   unfold digitSum
   by_cases hn : n = 0
   · subst n
-    change (toString 0).data.foldl (fun acc c => acc + (c.toNat - '0'.toNat)) 0 =
+    change (toString 0).toList.foldl (fun acc c => acc + (c.toNat - '0'.toNat)) 0 =
       (Nat.digits 10 0).sum
-    rw [show (toString 0).data = Nat.toDigits 10 0 by rfl, Nat.toDigits_zero]
+    rw [show (toString 0).toList = Nat.toDigits 10 0 by simp, Nat.toDigits_zero]
     native_decide
   · have hnpos : 0 < n := Nat.pos_of_ne_zero hn
     have hdigits : ∀ d ∈ (Nat.digits 10 n).reverse, d < 10 := by
       intro d hd
       simpa using (Nat.digits_lt_base (b := 10) (m := n) (d := d) (by norm_num)
         (by simpa using hd))
-    change (toString n).data.foldl (fun acc c => acc + (c.toNat - '0'.toNat)) 0 =
+    change (toString n).toList.foldl (fun acc c => acc + (c.toNat - '0'.toNat)) 0 =
       (Nat.digits 10 n).sum
-    rw [show (toString n).data = Nat.toDigits 10 n by rfl]
+    rw [show (toString n).toList = Nat.toDigits 10 n by simp]
     rw [toDigits_eq_digitChars n hnpos]
     rw [foldl_digitChars_sum (Nat.digits 10 n).reverse hdigits]
     exact List.sum_reverse (Nat.digits 10 n)

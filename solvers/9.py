@@ -2,6 +2,12 @@
 from __future__ import annotations
 
 def solve(total: int) -> int:
+    """
+    @formalsw: Py from project_euler_statements.p9 import naive
+    @formalsw: Requires(total >= 0)
+    @formalsw: Requires(naive(total) > 0)
+    @formalsw: Equiv(naive)
+    """
     best = 0
     m = 2
     while 2 * m * (m + 1) <= total:

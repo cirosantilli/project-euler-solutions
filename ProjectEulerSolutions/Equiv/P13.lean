@@ -1,48 +1,12 @@
 import ProjectEulerSolutions.P13
-import Batteries.Data.Nat.Digits
+import Init.Data.Nat.ToString
 import Batteries.Data.String.Lemmas
 import Mathlib.Data.Nat.Digits.Defs
 import Mathlib.Tactic
 namespace ProjectEulerSolutions.P13
 
-lemma digitChar_isDigit (d : Nat) (h : d < 10) : (Nat.digitChar d).isDigit = true := by
-  simp [Nat.isDigit_digitChar, h]
-
 lemma digitChar_val (d : Nat) (h : d < 10) : (Nat.digitChar d).toNat - '0'.toNat = d := by
   interval_cases d <;> native_decide
-
-lemma all_digitChars (xs : List Nat) (hxs : ∀ d ∈ xs, d < 10) :
-    ((xs.map Nat.digitChar).all (fun c => c.isDigit)) = true := by
-  induction xs with
-  | nil => simp
-  | cons x xs ih =>
-      have hx : x < 10 := hxs x (by simp)
-      have htail : ∀ d ∈ xs, d < 10 := by intro d hd; exact hxs d (by simp [hd])
-      simp [digitChar_isDigit x hx, ih htail]
-
-lemma string_mk_cons_isEmpty_false (c : Char) (cs : List Char) :
-    (String.mk (c :: cs)).isEmpty = false := by
-  have hnot : ¬ (String.mk (c :: cs)).isEmpty := by
-    rw [String.isEmpty_iff]
-    intro h
-    have hd := congrArg String.data h
-    simp at hd
-  exact Bool.eq_false_iff.mpr hnot
-
-lemma isNat_digitChars_cons (x : Nat) (xs : List Nat) (hx : x < 10)
-    (hxs : ∀ d ∈ xs, d < 10) :
-    (String.mk ((x :: xs).map Nat.digitChar)).isNat = true := by
-  have hall : (String.mk ((x :: xs).map Nat.digitChar)).all (·.isDigit) = true := by
-    simpa [String.all_eq] using all_digitChars (x :: xs) (by
-      intro d hd
-      simp at hd
-      rcases hd with rfl | hd
-      · exact hx
-      · exact hxs d hd)
-  rw [String.isNat]
-  simp [string_mk_cons_isEmpty_false (Nat.digitChar x) (xs.map Nat.digitChar)]
-  change (String.mk ((x :: xs).map Nat.digitChar)).all (fun x => x.isDigit) = true
-  exact hall
 
 lemma foldl_digitChars_aux (xs : List Nat) (acc : Nat) (hxs : ∀ d ∈ xs, d < 10) :
     (xs.map Nat.digitChar).foldl (fun n c => n * 10 + (c.toNat - '0'.toNat)) acc =
@@ -64,19 +28,9 @@ lemma foldl_digitChars (xs : List Nat) (hxs : ∀ d ∈ xs, d < 10) :
       Nat.ofDigits 10 xs.reverse := by
   simpa using foldl_digitChars_aux xs 0 hxs
 
-lemma toNat!_digitChars (xs : List Nat) (hxs : ∀ d ∈ xs, d < 10) :
-    (String.mk (xs.map Nat.digitChar)).toNat! = Nat.ofDigits 10 xs.reverse := by
-  cases xs with
-  | nil => rfl
-  | cons x xs =>
-      have hx : x < 10 := hxs x (by simp)
-      have htail : ∀ d ∈ xs, d < 10 := by intro d hd; exact hxs d (by simp [hd])
-      unfold String.toNat!
-      rw [isNat_digitChars_cons x xs hx htail]
-      rw [String.foldl_eq]
-      change ((x :: xs).map Nat.digitChar).foldl
-        (fun n c => n * 10 + (c.toNat - '0'.toNat)) 0 = Nat.ofDigits 10 (x :: xs).reverse
-      exact foldl_digitChars (x :: xs) hxs
+lemma parseNat_digitChars (xs : List Nat) (hxs : ∀ d ∈ xs, d < 10) :
+    parseNat (String.ofList (xs.map Nat.digitChar)) = Nat.ofDigits 10 xs.reverse := by
+  simpa [parseNat] using foldl_digitChars xs hxs
 
 lemma toDigits_eq_digitChars (n : Nat) (hn : 0 < n) :
     Nat.toDigits 10 n = (Nat.digits 10 n).reverse.map Nat.digitChar := by
@@ -105,13 +59,13 @@ lemma toDigits_eq_digitChars (n : Nat) (hn : 0 < n) :
             simp [List.map_append]
 
 lemma firstDigits_nat (n k : Nat) :
-    (String.mk ((toString n).data.take k)).toNat! =
+    parseNat (String.ofList ((toString n).toList.take k)) =
       Nat.ofDigits 10 (((Nat.digits 10 n).reverse.take k).reverse) := by
   by_cases hn : n = 0
   · subst n
-    rw [show (toString 0).data = Nat.toDigits 10 0 by rfl, Nat.toDigits_zero]
+    rw [show (toString 0).toList = Nat.toDigits 10 0 by simp, Nat.toDigits_zero]
     cases k with
-    | zero => rfl
+    | zero => simp [parseNat]
     | succ k =>
         rw [List.take_succ_cons]
         simp
@@ -122,10 +76,10 @@ lemma firstDigits_nat (n k : Nat) :
       have hdrev : d ∈ (Nat.digits 10 n).reverse := List.mem_of_mem_take hd
       simpa using (Nat.digits_lt_base (b := 10) (m := n) (d := d) (by norm_num)
         (by simpa using hdrev))
-    rw [show (toString n).data = Nat.toDigits 10 n by rfl]
+    rw [show (toString n).toList = Nat.toDigits 10 n by simp]
     rw [toDigits_eq_digitChars n hnpos]
     rw [← List.map_take]
-    exact toNat!_digitChars ((Nat.digits 10 n).reverse.take k) hdigits
+    exact parseNat_digitChars ((Nat.digits 10 n).reverse.take k) hdigits
 
 lemma foldl_add_eq_sum_aux (nums : List Nat) (acc : Nat) :
     nums.foldl (fun acc n => acc + n) acc = acc + nums.sum := by

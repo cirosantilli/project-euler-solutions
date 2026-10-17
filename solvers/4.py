@@ -1,10 +1,9 @@
 #!/usr/bin/env python
-from typing import Tuple
-
-
-def solve(lo: int, hi: int) -> int:
+def largest_palindrome_product(lo: int, hi: int) -> int:
     """
-    Returns (best_palindrome, factor1, factor2) for factors in [lo, hi].
+    Return the largest palindromic product of factors in [lo, hi].
+
+    @formalsw: Returns
     """
     best = 0
     for a in range(hi, lo - 1, -1):
@@ -24,6 +23,19 @@ def solve(lo: int, hi: int) -> int:
     return best
 
 
+def solve(n: int) -> int:
+    """
+    Return the largest palindrome made from two n-digit factors.
+
+    @formalsw: Py from project_euler_statements.p4 import naive
+    @formalsw: Requires(n >= 0)
+    @formalsw: Equiv(naive)
+    """
+    lo = 0 if n == 0 else 10 ** (n - 1)
+    hi = 10 ** n - 1
+    return largest_palindrome_product(lo, hi)
+
+
 if __name__ == "__main__":
-    assert solve(10, 99) == 9009
-    print(solve(100, 999))
+    assert solve(2) == 9009
+    print(solve(3))

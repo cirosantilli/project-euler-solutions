@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 
 def solve(n: int) -> int:
+    """
+    @formalsw: Py from project_euler_statements.p6 import naive
+    @formalsw: Requires(n >= 0)
+    @formalsw: Equiv(naive)
+    """
     s = n * (n + 1) // 2
     return (
         # Square of sum

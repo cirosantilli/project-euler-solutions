@@ -636,7 +636,7 @@ lemma nthPrimeWithLimit_eq_nth (k limit : Nat)
   | succ k =>
       unfold nthPrimeWithLimit
       exact scanNthPrimeIndex_eq_some limit (k + 1) 1 1 hbound
-        (by native_decide)
+        (by decide)
         (by norm_num)
         (by
           have hle := Nat.add_two_le_nth_prime (k + 1)
@@ -654,7 +654,7 @@ lemma nthPrimeWithLimit_sound {k limit p : Nat}
   | succ k =>
       unfold nthPrimeWithLimit at hres
       exact scanNthPrimeIndex_sound limit (k + 1) 1 1 p
-        (by native_decide) (by norm_num) hres
+        (by decide) (by norm_num) hres
 
 lemma nthPrimeWithRetry_eq_nth (k limit fuel : Nat)
     (hbound : Nat.nth Nat.Prime k ≤ limit * 2 ^ fuel) :

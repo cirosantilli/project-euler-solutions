@@ -3,7 +3,7 @@ namespace ProjectEulerSolutions.P4
 
 def isPalindrome (n : Nat) : Bool :=
   let s := toString n
-  s = String.mk s.data.reverse
+  s = String.ofList s.toList.reverse
 
 def loopB (a b lo best bestA bestB : Nat) : Nat × Nat × Nat :=
   if _hblo : b < lo then

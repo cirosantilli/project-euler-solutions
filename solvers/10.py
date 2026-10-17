@@ -6,6 +6,10 @@ import math
 def solve(limit: int) -> int:
     """
     Odd-only sieve of Eratosthenes.
+
+    @formalsw: Py from project_euler_statements.p10 import naive
+    @formalsw: Requires(limit >= 0)
+    @formalsw: Equiv(naive)
     """
     if limit <= 2:
         return 0

@@ -6,7 +6,8 @@ open Lean Elab Command Parser
 private def exeFiles (dir : FilePath) : IO (Array FilePath) :=
   dir.readDir >>= fun entries =>
     pure <| entries.foldl (init := #[]) fun acc entry =>
-      if entry.path.extension == some "lean" then
+      if entry.path.extension == some "lean" &&
+          !(entry.path.fileStem.getD "").contains '.' then
         acc.push entry.path
       else
         acc
@@ -24,9 +25,9 @@ elab "lean_exes_from " dir:str : command => do
     | some stem =>
       let exeName := Name.mkSimple stem
       let nameStx : Ident :=
-        ⟨Syntax.ident SourceInfo.none stem.toSubstring exeName []⟩
+        ⟨Syntax.ident SourceInfo.none stem.toRawSubstring exeName []⟩
       let rootId : Ident :=
-        ⟨Syntax.ident SourceInfo.none "root".toSubstring (Name.mkSimple "root") []⟩
+        ⟨Syntax.ident SourceInfo.none "root".toRawSubstring (Name.mkSimple "root") []⟩
       let stemLit : TSyntax `term := ⟨Syntax.mkStrLit stem⟩
       let cmd ← `(lean_exe $nameStx:ident where
         $rootId:ident := Name.mkSimple $stemLit)
@@ -57,10 +58,13 @@ package ProjectEulerSolutions where
   ]
 
 require mathlib from git
-  "https://github.com/leanprover-community/mathlib4" @ "v4.24.0"
+  "https://github.com/leanprover-community/mathlib4" @ "v4.30.0"
 
 require ProjectEulerStatements from
   "data/project-euler-statements/data/lean"
+
+require formalsw from
+  "data/project-euler-statements/formalsw"
 
 @[default_target]
 lean_lib ProjectEulerSolutions where
