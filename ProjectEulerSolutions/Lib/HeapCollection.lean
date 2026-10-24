@@ -27,6 +27,18 @@ theorem prefix_found (base extra : Mutable.Heap) (address : Nat) (object : Mutab
   rw [List.getElem?_append_left (List.getElem?_eq_some_iff.mp found).1]
   exact found
 
+/-- Changing a collector and appending temporaries preserves every other existing object. -/
+theorem other_found (base : Mutable.Heap) (old replacement : List Mutable.Value) (garbage extra : Mutable.Heap)
+    (address : Nat) (object : Mutable.Object) (different : base.length ≠ address)
+    (original : (working base old garbage)[address]? = some object) :
+    (working base replacement (garbage ++ extra))[address]? = some object := by
+  have kept := prefix_found (working base old garbage) extra address object original
+  rw [append] at kept
+  have written := List.getElem?_set_ne (l := working base old (garbage ++ extra))
+    (a := .list replacement) different
+  rw [store] at written
+  exact written.trans kept
+
 /-- Empty tuples can be interned; every tuple allocation preserves the original heap prefix. -/
 theorem allocate_tuple (items : List Mutable.Value) (heap : Mutable.Heap) :
     ∃ address extra, Mutable.allocateTuple items heap = some (.ok (.ref address), heap ++ extra) ∧

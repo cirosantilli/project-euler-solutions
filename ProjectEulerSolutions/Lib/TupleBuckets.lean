@@ -362,6 +362,61 @@ theorem updated_view (heap : Mutable.Heap) (dictionary : Nat) (buckets : List Bu
     · exact view.unique
     · simpa only [List.concat_eq_append] using List.Nodup.concat fresh view.unique
 
+/-- Read-only lookup retains both eagerly allocated arguments, even when the key already exists. -/
+theorem get (heap : Mutable.Heap) (dictionary : Nat) (buckets : List Bucket)
+    (found : heap[dictionary]? = some (object buckets)) (key : Key) :
+    Mutable.dictionaryGet dictionary (.ref heap.length) (.ref (heap.length+1)) (prepared heap key) =
+      some (.ok (.ref (chosen buckets key (heap.length+1))), prepared heap key) := by
+  have original : (prepared heap key)[dictionary]? = some (object buckets) :=
+    HeapCollection.prefix_found heap _ dictionary _ found
+  have hashed : Mutable.hashKey (.ref heap.length) (prepared heap key) = some (.ok (hash key), prepared heap key) :=
+    Mutable.hashKey_tuple_scalars (prepared heap key) heap.length [.int key.1, .int key.2]
+      (by simp [prepared, number])
+  cases buckets with
+  | nil => simp [Mutable.dictionaryGet, original, object, hashed, Mutable.promoteDictionary, chosen, find, Except.map]
+  | cons first rest =>
+      have operation := Mutable.dictionaryGet_keyed (prepared heap key) dictionary (entries (first :: rest))
+        original (.ref heap.length) (hash key) hashed (.ref (heap.length+1))
+      cases selected : find (first :: rest) key <;>
+        simpa only [lookup_entries, selected, Option.map_none, Option.map_some,
+          Option.getD_none, Option.getD_some, chosen] using operation
+
+/-- A missing key reads the freshly allocated empty default; existing lists keep their identity. -/
+theorem get_values (heap : Mutable.Heap) (dictionary : Nat) (buckets : List Bucket)
+    (view : View heap dictionary buckets) (key : Key) :
+    (prepared heap key)[chosen buckets key (heap.length+1)]? = some (.list (numbers (contents buckets key))) := by
+  cases selected : find buckets key with
+  | none => simp [chosen, contents, selected, prepared, numbers]
+  | some bucket =>
+      simpa only [chosen, contents, selected, Option.map_some, Option.getD_some] using
+        HeapCollection.prefix_found heap _ bucket.address _ (view.lists bucket (List.mem_of_find?_eq_some selected))
+
+def lookupExpression : Expr := .call (.attribute (.name "mp") "get") [.tuple [.name "b", .name "c"], .list []]
+
+/-- Execute the source lookup, preserving the shared bucket list and the complete original heap. -/
+theorem evaluate_get {globals : Mutable.Globals} (program : Module) (env : HeapCalls.Env)
+    (heap : Mutable.Heap) (dictionary : Nat) (buckets : List Bucket) (view : View heap dictionary buckets)
+    (key : Key) (getMap : env "mp" = some (.ref dictionary))
+    (getB : env "b" = some (number key.1)) (getC : env "c" = some (number key.2)) :
+    Evaluates (globals := globals) program env lookupExpression heap
+      (.ref (chosen buckets key (heap.length+1))) (prepared heap key) := by
+  have keyResult : Evaluates (globals := globals) program env (.tuple [.name "b", .name "c"])
+      heap (.ref heap.length) (heap ++ [.tuple [number key.1, number key.2]]) :=
+    Evaluates.tuple (.cons (Evaluates.lookup getB) (.cons (Evaluates.lookup getC) .nil)) (by simp)
+  have defaultResult : Evaluates (globals := globals) program env (.list [])
+      (heap ++ [.tuple [number key.1, number key.2]]) (.ref (heap.length+1)) (prepared heap key) := by
+    have allocated : Evaluates (globals := globals) program env (.list [])
+        (heap ++ [.tuple [number key.1, number key.2]])
+        (.ref ((heap ++ [Mutable.Object.tuple [number key.1, number key.2]]).length))
+        ((heap ++ [.tuple [number key.1, number key.2]]) ++ [.list []]) := Evaluates.list .nil
+    simpa only [prepared, List.length_append, List.length_singleton, List.append_assoc, List.singleton_append] using allocated
+  have bound : bindMethod program (.ref dictionary) "get" heap = some (.ok (.dictionaryGet dictionary), heap) := by
+    have found := view.found
+    cases buckets <;> simp_all [bindMethod, object]
+  apply Evaluates.dictionary_get_bound (by intro name same; cases same; simp [getMap])
+    (Evaluates.lookup getMap) bound (.cons keyResult (.cons defaultResult .nil))
+  exact get heap dictionary buckets view.found key
+
 def insertion : Expr := .call
   (.attribute (.call (.attribute (.name "mp") "setdefault")
     [.tuple [.name "b", .name "c"], .list []]) "append") [.name "a"]
