@@ -4,6 +4,9 @@ from __future__ import annotations
 
 def polygonal(s: int, n: int) -> int:
     """
+    @formalsw: Returns
+    @formalsw: Py from project_euler_statements.p61 import polygonal as reference_polygonal
+    @formalsw: Equiv(reference_polygonal)
     s-gonal number P_{s,n} = n((s-2)n - (s-4)) / 2, for s >= 3
     """
     return n * ((s - 2) * n - (s - 4)) // 2
