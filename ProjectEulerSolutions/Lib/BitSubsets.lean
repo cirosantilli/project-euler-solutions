@@ -1,4 +1,5 @@
 import ProjectEulerSolutions.Lib.DigitMask
+import Mathlib.Data.List.Nodup
 import lang.py.builtin.type.int
 
 /-! Finite subsets enumerated by the Python solver's integer bit masks. -/
@@ -86,5 +87,58 @@ theorem bitCount_mask (indices : List Nat) (width : Nat) (distinct : indices.Nod
     FormalSW.Py.Builtin.Int.bitCount (DigitMask.mask indices) = indices.length := by
   rw [bitCount_positions _ width (mask_bound indices width bounded)]
   exact (positions_mask_perm indices width distinct bounded).length_eq
+
+/-- Read the items at the set mask positions, in their original order. -/
+def select (items : List Nat) (bits : Nat) : List Nat :=
+  (positions bits items.length).map (fun index => items[index]!)
+
+theorem select_subset (items : List Nat) (bits : Nat) : select items bits ⊆ items := by
+  intro value member
+  obtain ⟨index, selected, rfl⟩ := List.mem_map.mp member
+  have inside := (mem_positions bits items.length index).mp selected |>.1
+  rw [List.getElem!_of_getElem? (List.getElem?_eq_getElem inside)]
+  exact List.getElem_mem inside
+
+theorem select_nodup (items : List Nat) (distinct : items.Nodup) (bits : Nat) :
+    (select items bits).Nodup := by
+  apply List.Nodup.map_on ?_ (positions_nodup _ _)
+  intro left leftMember right rightMember equal
+  exact (List.getElem!_inj (mem_positions _ _ _ |>.mp leftMember).1
+    (mem_positions _ _ _ |>.mp rightMember).1 distinct).mp equal
+
+theorem select_length (items : List Nat) (bits : Nat) (bounded : bits < 2 ^ items.length) :
+    (select items bits).length = FormalSW.Py.Builtin.Int.bitCount bits := by
+  simpa only [select, List.length_map] using (bitCount_positions bits items.length bounded).symm
+
+theorem select_nonempty (items : List Nat) (bits : Nat) (bounded : bits < 2 ^ items.length) :
+    select items bits ≠ [] ↔ bits ≠ 0 := by
+  simpa only [select, ne_eq, List.map_eq_nil_iff] using positions_nonempty bits items.length bounded
+
+/-- Every genuine subset of a digit-position group is reached by the solver's mask enumeration. -/
+theorem select_complete (items chosen : List Nat) (distinct : chosen.Nodup) (included : chosen ⊆ items) :
+    ∃ bits < 2 ^ items.length, (select items bits).Perm chosen ∧
+      FormalSW.Py.Builtin.Int.bitCount bits = chosen.length := by
+  let slots := chosen.map items.idxOf
+  have bounded : ∀ index ∈ slots, index < items.length := by
+    intro index member
+    obtain ⟨value, present, rfl⟩ := List.mem_map.mp member
+    exact List.idxOf_lt_length_iff.mpr (included present)
+  have unique : slots.Nodup := by
+    apply List.Nodup.map_on ?_ distinct
+    intro left leftMember right _ equal
+    exact (List.idxOf_inj (included leftMember)).mp equal
+  let bits := DigitMask.mask slots
+  refine ⟨bits, mask_bound slots items.length bounded, ?_, ?_⟩
+  · have mapped := (positions_mask_perm slots items.length unique bounded).map (fun index => items[index]!)
+    have recovered : slots.map (fun index => items[index]!) = chosen := by
+      simp only [slots, List.map_map]
+      calc
+        _ = chosen.map id := by
+          apply List.map_congr_left
+          intro value member
+          exact List.getElem!_of_getElem? (List.getElem?_idxOf (included member))
+        _ = chosen := List.map_id chosen
+    simpa only [select, recovered] using mapped
+  · simpa only [slots, List.length_map] using bitCount_mask slots items.length unique bounded
 
 end ProjectEulerSolutions.BitSubsets
