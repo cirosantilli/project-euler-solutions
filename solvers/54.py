@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 from __future__ import annotations
 
-from collections import Counter
 from typing import Iterable, List, Sequence, Tuple
 
 
@@ -32,6 +31,16 @@ def parse_card(token: str) -> tuple[int, str]:
     v = VALUE_MAP[token[0]]
     s = token[1]
     return v, s
+
+
+def count_values(values: list[int]) -> dict[int, int]:
+    """
+    @formalsw: Returns
+    """
+    counts: dict[int, int] = {}
+    for value in values:
+        counts[value] = counts.get(value, 0) + 1
+    return counts
 
 
 def hand_rank(cards: Sequence[str]) -> Tuple:
@@ -74,7 +83,7 @@ def hand_rank(cards: Sequence[str]) -> Tuple:
     if is_straight and is_flush:
         return (8, straight_high)
 
-    cnt = Counter(values)
+    cnt = count_values(values)
     # sort primarily by frequency desc, then value desc
     groups = sorted(((c, v) for v, c in cnt.items()), reverse=True)
 
