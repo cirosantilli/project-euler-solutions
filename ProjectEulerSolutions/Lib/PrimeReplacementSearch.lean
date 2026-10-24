@@ -243,4 +243,32 @@ theorem hasPrimeFamily_iff_query (target n : Nat) : hasPrimeFamily target n = tr
     by_contra nonzero
     exact conditions.1 ⟨threshold, nonzero⟩
 
+/-- Positions of one digit among the already processed decimal positions. -/
+def prefixGroup (digits : List Nat) (count original : Nat) : List Nat :=
+  (List.range count).filter (fun index => decide (digits[index]? = some original))
+
+@[simp] theorem prefixGroup_zero (digits : List Nat) (original : Nat) : prefixGroup digits 0 original = [] := rfl
+
+/-- Reading one more digit appends its position to exactly its own digit group. -/
+theorem prefixGroup_step (digits : List Nat) (count original current : Nat) (found : digits[count]? = some current) :
+    prefixGroup digits (count + 1) original = prefixGroup digits count original ++
+      (if current = original then [count] else []) := by
+  by_cases same : current = original <;> simp [prefixGroup, List.range_succ, List.filter_append, found, same]
+
+theorem prefixGroup_bounded (digits : List Nat) (count original : Nat) :
+    ∀ index ∈ prefixGroup digits count original, index < count :=
+  fun _ member => List.mem_range.mp (List.mem_filter.mp member).1
+
+theorem prefixGroup_same (digits : List Nat) (count original : Nat) :
+    SameDigit digits (prefixGroup digits count original) original := by
+  intro index value found member
+  have selected := of_decide_eq_true (List.mem_filter.mp member).2
+  simp only [Nat.zero_add] at selected
+  rw [found] at selected
+  exact Option.some.inj selected
+
+theorem group_eq_prefix (target n original : Nat) : group target n original =
+    prefixGroup (Nat.digits 10 n).reverse
+      (if 8 ≤ target then (Nat.digits 10 n).length - 1 else (Nat.digits 10 n).length) original := rfl
+
 end ProjectEulerSolutions.PrimeReplacementSearch

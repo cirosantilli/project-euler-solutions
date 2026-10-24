@@ -6,6 +6,7 @@ import ProjectEulerSolutions.Lib.PrimeReplacement
 import ProjectEulerSolutions.Lib.PrimeReplacementSearch
 import ProjectEulerSolutions.Lib.BitSubsets
 import ProjectEulerSolutions.Lib.HeapCollection
+import ProjectEulerSolutions.Lib.HeapRows
 import Mathlib.Data.Nat.Sqrt
 
 /-! Source proofs for problem 51's sieve, replacement counts, and bit-mask selection. -/
@@ -1388,6 +1389,50 @@ private theorem Inputs.preserved (inputs : Inputs p parentAddress powerAddress p
   ⟨(saved "p" (by decide)).trans inputs.getP, (saved "pos_lists" (by decide)).trans inputs.getGroups,
     (saved "pow10" (by decide)).trans inputs.getPowers, (saved "is_prime" (by decide)).trans inputs.getPrimes,
     (saved "target" (by decide)).trans inputs.getTarget⟩
+
+/-- The actual source comprehension creates ten independent empty rows and records their fresh addresses. -/
+theorem allocate_rows (env : HeapCalls.Env) (heap : Mutable.Heap) :
+    BlockContinues program env [primeBody[3]'(by decide)] heap
+      (setLocal env "pos_lists" (.ref heap.length)) (HeapRows.empty heap 10) := by
+  exact BlockContinues.annAssign (HeapRows.allocate program "_" heap 10 env)
+
+private def fillBody : List Stmt := match (primeBody[4]? : Option Stmt) with
+  | some (.forIn _ _ body _) => body | _ => []
+
+/-- Appending the current position updates exactly its digit's row, matching the mathematical prefix groups. -/
+theorem append_current (digits : List Nat) (base index digit : Nat) (digitBound : digit < 10)
+    (found : digits[index]? = some digit) (env : HeapCalls.Env) (heap : Mutable.Heap)
+    (getParent : env "pos_lists" = some (.ref base)) (getDigit : env "dig" = some (number digit))
+    (getIndex : env "i" = some (number index))
+    (parentFound : heap[base]? = some (.list ((HeapRows.addresses base 10).map Mutable.Value.ref)))
+    (rowsFound : ∀ original < 10, heap[base + 1 + original]? =
+      some (.list (numbers (PrimeReplacementSearch.prefixGroup digits index original)))) :
+    let finalHeap := heap.set (base + 1 + digit)
+      (.list (numbers (PrimeReplacementSearch.prefixGroup digits index digit ++ [index])))
+    BlockContinues program env fillBody heap env finalHeap ∧
+      finalHeap[base]? = heap[base]? ∧
+      (∀ original < 10, finalHeap[base + 1 + original]? =
+        some (.list (numbers (PrimeReplacementSearch.prefixGroup digits (index + 1) original)))) := by
+  dsimp only
+  have receiver : Evaluates program env (.subscript (.name "pos_lists") (.name "dig")) heap (.ref (base + 1 + digit)) heap := by
+    apply Evaluates.subscript (middle := heap) (afterIndex := heap)
+      (by intros; intro impossible; cases impossible) (Evaluates.lookup getParent) (Evaluates.lookup getDigit)
+    simpa only [HeapRows.addresses, List.getElem_map, List.getElem_range] using
+      Mutable.getItem_list heap base digit ((HeapRows.addresses base 10).map Mutable.Value.ref) parentFound
+        (by simpa only [HeapRows.addresses, List.length_map, List.length_range] using digitBound)
+  have row := rowsFound digit digitBound
+  refine ⟨?_, ?_, ?_⟩
+  · have appended := BlockContinues.discard (Evaluates.append receiver row (Evaluates.lookup getIndex) row)
+    simpa only [numbers, List.map_append, List.map_singleton] using appended
+  · exact List.getElem?_set_ne (by omega)
+  · intro original inside
+    have step := PrimeReplacementSearch.prefixGroup_step digits index original digit found
+    by_cases same : digit = original
+    · subst original
+      have live := (List.getElem?_eq_some_iff.mp row).1
+      simpa only [step, if_pos rfl] using List.getElem?_set_self live
+    · rw [List.getElem?_set_ne (by omega)]
+      simpa only [step, if_neg same, List.append_nil] using rowsFound original inside
 
 private def emptyTest : Expr := match (positionBody[1]? : Option Stmt) with
   | some (.ifThen condition _ _) => condition | _ => .constant .none
