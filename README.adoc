@@ -552,7 +552,7 @@ Problem 44’s source-level equivalence proof covers pentagonal-table allocation
 
 Problem 45’s source-level equivalence proof connects exhaustive triangular enumeration with the optimized unbounded hexagonal search. It covers both membership loops, the integer-square-root test, early returns, and termination. Small kernel certificates exclude earlier matches and prove that the reference window contains the least common value beyond the given example. The reference also terminates for every integer start and bound, including negative and empty ranges. The proofs use only standard Lean axioms.
 
-Problem 46’s mathematical foundations prove correctness of increasing prime prefixes and trial division, and equivalence of exhaustive and integer-square-root representation tests. Small kernel certificates establish the least counterexample and show that it lies inside the reference window. The reference source proof covers both lazy generators and termination for every integer limit. The optimized source equivalence proof is still in progress.
+Problem 46’s source-level equivalence proof covers the shared mutable prime list, trial division, list growth, remainder checks, integer square roots, and both early returns. Prime infinitude proves that list extension terminates; small kernel certificates establish the least counterexample and show that it lies inside the reference window. The reference’s two lazy generators and bounded search terminate for every integer input. The proofs use only standard Lean axioms.
 
 ====== Problem 14: Collatz termination
 
@@ -676,10 +676,10 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/40.py[40.py] | link:solvers/40.md[40.md] | link:solvers/40.py.lean[40.py.lean] | 0.118 | 210 |
 | link:solvers/41.py[41.py] | link:solvers/41.md[41.md] | link:solvers/41.py.lean[41.py.lean] | 0.143 | 7652413 |
 | link:solvers/42.py[42.py] | link:solvers/42.md[42.md] | link:solvers/42.py.lean[42.py.lean] | 0.178 | 162 |
-| link:solvers/43.py[43.py] | link:solvers/43.md[43.md] |  | 0.121 | 16695334890 |
-| link:solvers/44.py[44.py] | link:solvers/44.md[44.md] |  | 0.473 | 5482660 |
-| link:solvers/45.py[45.py] | link:solvers/45.md[45.md] |  | 0.075 | 1533776805 |
-| link:solvers/46.py[46.py] | link:solvers/46.md[46.md] |  | 0.163 | 5777 |
+| link:solvers/43.py[43.py] | link:solvers/43.md[43.md] | link:solvers/43.py.lean[43.py.lean] | 0.121 | 16695334890 |
+| link:solvers/44.py[44.py] | link:solvers/44.md[44.md] | link:solvers/44.py.lean[44.py.lean] | 0.473 | 5482660 |
+| link:solvers/45.py[45.py] | link:solvers/45.md[45.md] | link:solvers/45.py.lean[45.py.lean] | 0.075 | 1533776805 |
+| link:solvers/46.py[46.py] | link:solvers/46.md[46.md] | link:solvers/46.py.lean[46.py.lean] | 0.163 | 5777 |
 | link:solvers/47.py[47.py] | link:solvers/47.md[47.md] |  | 0.116 | 134043 |
 | link:solvers/48.py[48.py] | link:solvers/48.md[48.md] |  | 0.114 | 9110846700 |
 | link:solvers/49.py[49.py] | link:solvers/49.md[49.md] |  | 0.129 | 296962999629 |
