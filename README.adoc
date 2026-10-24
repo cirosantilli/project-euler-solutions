@@ -572,6 +572,8 @@ Problem 53’s source-level equivalence proof covers every integer bound and thr
 
 Problem 58’s source-level equivalence proof covers the Miller–Rabin implementation, its captured helper, lazy corner filtering, pooled tuple constants, and the cached recursive reference. Kernel-checked prime and composite certificates establish every layer count through layer 13,120 and the first crossing at side 26,241. Separate checks connect the source primality algorithm to those row counts. Both implementations terminate and return the same result; the proofs use only standard Lean axioms. Reproduce the finite certificate sources with `python3 generate_spiral_certificates.py`, or compare them without writing using `--check`; generation itself is not proof verification.
 
+Problem 59’s source-level equivalence proof covers every finite byte string. It connects the streaming solver to exhaustive materialized decryption, including the actual scoring tables, all three key loops, early rejection, first-key tie handling, and the zero fallback. Both implementations terminate and return the same plaintext sum; the proofs use only standard Lean axioms.
+
 ====== Problem 14: Collatz termination
 
 Research checked on 2026-10-25. The existing `ProjectEulerStatements.P14.collatzConjecture` assumes that each positive natural number eventually reaches 1. The reference source proofs are conditional on that exact assumption; they do not establish the conjecture. Zero is handled separately by the implementation. Negative starting values are outside the termination claim.
@@ -710,7 +712,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/56.py[56.py] | link:solvers/56.md[56.md] | link:solvers/56.py.lean[56.py.lean] | 0.088 | 972 |
 | link:solvers/57.py[57.py] | link:solvers/57.md[57.md] | link:solvers/57.py.lean[57.py.lean] | 0.076 | 153 |
 | link:solvers/58.py[58.py] | link:solvers/58.md[58.md] | link:solvers/58.py.lean[58.py.lean] | 0.097 | 26241 |
-| link:solvers/59.py[59.py] | link:solvers/59.md[59.md] |  | 0.075 | 129448 |
+| link:solvers/59.py[59.py] | link:solvers/59.md[59.md] | link:solvers/59.py.lean[59.py.lean] | 0.086 | 129448 |
 | link:solvers/60.py[60.py] | link:solvers/60.md[60.md] |  | 0.511 | 26033 |
 | link:solvers/61.py[61.py] | link:solvers/61.md[61.md] |  | 0.084 | 28684 |
 | link:solvers/62.py[62.py] | link:solvers/62.md[62.md] |  | 0.145 | 127035954683 |
@@ -2035,7 +2037,7 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/eulersolve/58.cpp[]: 0.169
 ** link:solvers/58.lean[]: 0.152
 * 59
-** link:solvers/59.py[]: 0.075
+** link:solvers/59.py[]: 0.086
 ** link:solvers/eulersolve/59.py[]: 0.535
 ** link:solvers/eulersolve/59.cpp[]: 0.062
 ** link:solvers/59.lean[]: 0.171

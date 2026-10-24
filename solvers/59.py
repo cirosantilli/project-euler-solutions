@@ -111,6 +111,11 @@ def best_key_and_sum(cipher: bytes) -> tuple[bytes, int]:
 
 
 def solve(cipher: bytes) -> int:
+    """
+    @formalsw: Returns
+    @formalsw: Py from project_euler_statements.p59 import naive
+    @formalsw: Equiv(naive)
+    """
     return best_key_and_sum(cipher)[1]
 
 

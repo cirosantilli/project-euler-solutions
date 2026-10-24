@@ -1,3 +1,5 @@
+import data.«project-euler-statements».data.py.project_euler_statements.«p59.py»
+import ProjectEulerSolutions.Lib.HeapRangeFold
 import «.formalsw».solvers.«59.py.ast»
 import ProjectEulerSolutions.Lib.HeapTables
 import ProjectEulerSolutions.Lib.XorDecryption
@@ -1568,3 +1570,835 @@ theorem result (cipher : List UInt8) (key : Key) (bounds : KeyBounds key)
   exact BlockContinues.for_range (.cons (Evaluates.lookup inputs.n) .nil) rfl loop
 
 end solvers.«59».best_key_and_sum.inner
+
+namespace solvers.«59».best_key_and_sum.candidate
+open FormalSW.PyAst FormalSW.PyAst.HeapCalls
+open ProjectEulerSolutions XorDecryption
+private abbrev program := Solvers.P59Ast.module
+open inner (number flag)
+
+def keyTuple (key : Key) : Mutable.Object := .tuple ((keyValues key).map number)
+def scoreValue (best : Option Selection) : Mutable.Value :=
+  (best.map (fun selected => number selected.score)).getD (.scalar .none)
+def KeyFound (heap : Mutable.Heap) (value : Mutable.Value) : Option Selection → Prop
+  | none => value = .scalar .none
+  | some selected => ∃ address, value = .ref address ∧ heap[address]? = some (keyTuple selected.key)
+
+structure Best (env : HeapCalls.Env) (heap : Mutable.Heap) (best : Option Selection) : Prop where
+  score : env "best_score" = some (scoreValue best)
+  total : env "best_sum" = some (number (selectedSum best))
+  key : ∃ value, env "best_key" = some value ∧ KeyFound heap value best
+
+theorem KeyFound.append {heap : Mutable.Heap} {value : Mutable.Value} {best : Option Selection}
+    (found : KeyFound heap value best) (garbage : Mutable.Heap) : KeyFound (heap ++ garbage) value best := by
+  cases best with
+  | none => exact found
+  | some selected =>
+      obtain ⟨address, same, stored⟩ := found
+      exact ⟨address, same, HeapCollection.prefix_found heap garbage address _ stored⟩
+
+theorem Best.append {env : HeapCalls.Env} {heap : Mutable.Heap} {best : Option Selection}
+    (bestState : Best env heap best) (garbage : Mutable.Heap) : Best env (heap ++ garbage) best := by
+  refine ⟨bestState.score, bestState.total, ?_⟩
+  obtain ⟨value, binding, found⟩ := bestState.key
+  exact ⟨value, binding, found.append garbage⟩
+
+theorem Best.locals {before after : HeapCalls.Env} {heap : Mutable.Heap} {best : Option Selection}
+    (bestState : Best before heap best)
+    (score : after "best_score" = before "best_score")
+    (total : after "best_sum" = before "best_sum")
+    (key : after "best_key" = before "best_key") : Best after heap best := by
+  refine ⟨score.trans bestState.score, total.trans bestState.total, ?_⟩
+  obtain ⟨value, binding, found⟩ := bestState.key
+  exact ⟨value, key.trans binding, found⟩
+
+theorem tables_append {heap : Mutable.Heap} {p w : Nat}
+    (tables : build_scoring_tables.Found heap p w) (garbage : Mutable.Heap) :
+    build_scoring_tables.Found (heap ++ garbage) p w :=
+  ⟨HeapCollection.prefix_found heap garbage p _ tables.printable,
+    HeapCollection.prefix_found heap garbage w _ tables.weights⟩
+
+def changed : List String := inner.changed ++ ["key0", "key1", "key2", "best_score", "best_key", "best_sum"]
+def Frame (before after : HeapCalls.Env) : Prop := ∀ name, name ∉ changed → after name = before name
+theorem Frame.refl (env : HeapCalls.Env) : Frame env env := fun _ _ => rfl
+theorem Frame.trans {first second third : HeapCalls.Env} (left : Frame first second)
+    (right : Frame second third) : Frame first third :=
+  fun name outside => (right name outside).trans (left name outside)
+theorem Frame.updated (env : HeapCalls.Env) (name : String) (value : Mutable.Value)
+    (written : name ∈ changed) : Frame env (HeapCalls.setLocal env name value) := by
+  intro other outside
+  have different : other ≠ name := by intro same; subst other; exact outside written
+  simp [HeapCalls.setLocal, different]
+theorem Frame.of_inner {before after : HeapCalls.Env} (frame : inner.Frame before after) : Frame before after := by
+  intro name outside
+  exact frame name (fun present => outside (List.mem_append_left _ present))
+
+structure Inputs (env : HeapCalls.Env) (cipher : List UInt8) (key : Key) (p w : Nat) : Prop where
+  cipher_value : env "cipher" = some (.scalar (.bytes cipher))
+  n : env "n" = some (number cipher.length)
+  printable_value : env "printable" = some (.ref p)
+  weights_value : env "weights" = some (.ref w)
+  k0 : env "k0" = some (number key.1)
+  k1 : env "k1" = some (number key.2.1)
+  k2 : env "k2" = some (number key.2.2)
+
+def initializeCode : List Stmt :=
+  [.assign [.tuple [.name "key0", .name "key1", .name "key2"]]
+      (.tuple [.name "k0", .name "k1", .name "k2"]),
+   .assign [.name "score"] (.constant (.int 0)),
+   .assign [.name "s"] (.constant (.int 0)),
+   .assign [.name "valid"] (.constant (.bool true))]
+
+def initializedEnv (env : HeapCalls.Env) (key : Key) : HeapCalls.Env :=
+  HeapCalls.setLocal (HeapCalls.setLocal (HeapCalls.setLocal
+    (HeapCalls.assignNames env ["key0", "key1", "key2"] ((keyValues key).map number))
+    "score" (number 0)) "s" (number 0)) "valid" (flag true)
+
+theorem initializedEnv_frame (env : HeapCalls.Env) (key : Key) : Frame env (initializedEnv env key) := by
+  intro name outside
+  simp only [changed, inner.changed, List.mem_append, List.mem_cons, not_or] at outside
+  simp_all [initializedEnv, HeapCalls.assignNames, keyValues, HeapCalls.setLocal]
+
+theorem initialize_candidate (env : HeapCalls.Env) (cipher : List UInt8) (key : Key) (p w : Nat)
+    (inputs : Inputs env cipher key p w) (heap : Mutable.Heap) (best : Option Selection)
+    (bestState : Best env heap best) (globals : Mutable.Globals := []) :
+    BlockContinues program env initializeCode heap (initializedEnv env key) (heap ++ [keyTuple key]) globals ∧
+      inner.Inputs (initializedEnv env key) cipher key p w ∧ inner.Running (initializedEnv env key) 0 0 ∧
+      Best (initializedEnv env key) (heap ++ [keyTuple key]) best := by
+  have tupleEval : Evaluates program env (.tuple [.name "k0", .name "k1", .name "k2"])
+      heap (.ref heap.length) (heap ++ [keyTuple key]) globals :=
+    Evaluates.tuple (.cons (Evaluates.lookup inputs.k0) (.cons (Evaluates.lookup inputs.k1)
+      (.cons (Evaluates.lookup inputs.k2) .nil))) (by simp [keyValues])
+  have pairFound : (heap ++ [keyTuple key])[heap.length]? = some (keyTuple key) := by simp
+  have unpackRun := BlockContinues.unpack (expressions := [.name "key0", .name "key1", .name "key2"])
+    (names := ["key0", "key1", "key2"]) (items := (keyValues key).map number)
+    (finalHeap := heap ++ [keyTuple key])
+    rfl tupleEval (by simp [Mutable.sequence, keyTuple]) (by simp [keyValues])
+  have sourceRun := unpackRun.append
+    ((BlockContinues.assign (name := "score") (Evaluates.constant (value := .int 0))).append
+      ((BlockContinues.assign (name := "s") (Evaluates.constant (value := .int 0))).append
+        (BlockContinues.assign (name := "valid") (Evaluates.constant (value := .bool true)))))
+  have innerInputs : inner.Inputs (initializedEnv env key) cipher key p w := by
+    constructor
+    · simpa [initializedEnv, HeapCalls.assignNames, keyValues, HeapCalls.setLocal] using inputs.cipher_value
+    · simp [initializedEnv, HeapCalls.assignNames, keyValues, HeapCalls.setLocal]
+    · simp [initializedEnv, HeapCalls.assignNames, keyValues, HeapCalls.setLocal]
+    · simp [initializedEnv, HeapCalls.assignNames, keyValues, HeapCalls.setLocal]
+    · simpa [initializedEnv, HeapCalls.assignNames, keyValues, HeapCalls.setLocal] using inputs.n
+    · simpa [initializedEnv, HeapCalls.assignNames, keyValues, HeapCalls.setLocal] using inputs.printable_value
+    · simpa [initializedEnv, HeapCalls.assignNames, keyValues, HeapCalls.setLocal] using inputs.weights_value
+  have running : inner.Running (initializedEnv env key) 0 0 := by
+    constructor <;> simp [initializedEnv, HeapCalls.setLocal]
+  have bestInit : Best (initializedEnv env key) (heap ++ [keyTuple key]) best :=
+    (bestState.append [keyTuple key]).locals
+      (by simp [initializedEnv, HeapCalls.assignNames, keyValues, HeapCalls.setLocal])
+      (by simp [initializedEnv, HeapCalls.assignNames, keyValues, HeapCalls.setLocal])
+      (by simp [initializedEnv, HeapCalls.assignNames, keyValues, HeapCalls.setLocal])
+  exact ⟨by simpa only [initializeCode, initializedEnv, List.cons_append, List.nil_append] using sourceRun, innerInputs, running, bestInit⟩
+
+def updateCondition : Expr := .boolOp .and [.name "valid", .boolOp .or
+  [.builtinCall .identity [.name "best_score", .constant .none],
+   .compare (.name "score") [(.gt, .name "best_score")]]]
+def updateBody : List Stmt :=
+  [.assign [.name "best_score"] (.name "score"),
+   .assign [.name "best_key"] (.tuple [.name "key0", .name "key1", .name "key2"]),
+   .assign [.name "best_sum"] (.name "s")]
+def body : List Stmt := initializeCode ++
+  [.forIn (.name "i") (.call (.name "range") [.name "n"]) inner.body [],
+   .ifThen updateCondition updateBody []]
+
+private def actualThirdBody : List Stmt :=
+  match ((executableBody ((findFunctionIn program.body "best_key_and_sum").getD ([], [])).2)[5]? : Option Stmt) with
+  | some (Stmt.forIn _ _ first _) => match first[0]? with
+    | some (Stmt.forIn _ _ second _) => match second[0]? with
+      | some (Stmt.forIn _ _ third _) => third
+      | _ => []
+    | _ => []
+  | _ => []
+
+theorem source : actualThirdBody = body := rfl
+
+def improves : Option Selection → Option (Int × Int) → Bool
+  | _, none => false
+  | none, some _ => true
+  | some best, some pair => decide (best.score < pair.1)
+
+def updateGarbage (key : Key) (best : Option Selection) (result : Option (Int × Int)) : Mutable.Heap :=
+  if improves best result then [keyTuple key] else []
+
+theorem condition_evaluates (env : HeapCalls.Env) (heap : Mutable.Heap)
+    (best : Option Selection) (result : Option (Int × Int)) (bestState : Best env heap best)
+    (finished : inner.Finished env result) (globals : Mutable.Globals := []) :
+    Evaluates program env updateCondition heap (flag (improves best result)) heap globals := by
+  cases result with
+  | none =>
+      exact Evaluates.boolean_stop (op := .and) (Evaluates.lookup finished) rfl rfl
+  | some pair =>
+      have validEval : Evaluates program env (.name "valid") heap (flag true) heap globals :=
+        Evaluates.lookup finished.valid
+      have alternatives : Evaluates program env (.boolOp .or
+          [.builtinCall .identity [.name "best_score", .constant .none],
+           .compare (.name "score") [(.gt, .name "best_score")]])
+          heap (flag (improves best (some pair))) heap globals := by
+        cases best with
+        | none =>
+            have noBest : env "best_score" = some (.scalar .none) := bestState.score
+            have identityEval : Evaluates program env
+                (.builtinCall .identity [.name "best_score", .constant .none])
+                heap (flag true) heap globals :=
+              Evaluates.builtin (.cons (Evaluates.lookup noBest) (.cons Evaluates.constant .nil)) rfl
+            exact Evaluates.boolean_stop (op := .or) identityEval rfl rfl
+        | some old =>
+            have oldScore : env "best_score" = some (number old.score) := bestState.score
+            have identityEval : Evaluates program env
+                (.builtinCall .identity [.name "best_score", .constant .none])
+                heap (flag false) heap globals :=
+              Evaluates.builtin (.cons (Evaluates.lookup oldScore) (.cons Evaluates.constant .nil)) rfl
+            have greater : Evaluates program env (.compare (.name "score") [(.gt, .name "best_score")])
+                heap (flag (decide (old.score < pair.1))) heap globals := by
+              apply Evaluates.compare (Evaluates.lookup finished.score_value) (Evaluates.lookup oldScore)
+              simp [HeapCalls.compare, number, flag, scalarCompare, evalCmpOp]
+            exact Evaluates.boolean_next (op := .or) identityEval rfl rfl
+              (Evaluates.boolean_last greater rfl)
+      exact Evaluates.boolean_next (op := .and) validEval rfl rfl
+        (Evaluates.boolean_last alternatives rfl)
+
+def winnerEnv (env : HeapCalls.Env) (address : Nat) (score total : Int) : HeapCalls.Env :=
+  HeapCalls.setLocal (HeapCalls.setLocal (HeapCalls.setLocal env "best_score" (number score))
+    "best_key" (.ref address)) "best_sum" (number total)
+
+theorem winnerEnv_frame (env : HeapCalls.Env) (address : Nat) (score total : Int) :
+    Frame env (winnerEnv env address score total) :=
+  ((Frame.updated env "best_score" _ (by decide)).trans
+    (Frame.updated _ "best_key" _ (by decide))).trans (Frame.updated _ "best_sum" _ (by decide))
+
+theorem write_winner (env : HeapCalls.Env) (cipher : List UInt8) (key : Key) (p w : Nat)
+    (inputs : inner.Inputs env cipher key p w) (score total : Int) (running : inner.Running env score total)
+    (heap : Mutable.Heap) (globals : Mutable.Globals := []) :
+    BlockContinues program env updateBody heap (winnerEnv env heap.length score total)
+      (heap ++ [keyTuple key]) globals ∧
+    Best (winnerEnv env heap.length score total) (heap ++ [keyTuple key]) (some ⟨key, score, total⟩) := by
+  let scored := HeapCalls.setLocal env "best_score" (number score)
+  let keyed := HeapCalls.setLocal scored "best_key" (.ref heap.length)
+  have setsScore : BlockContinues program env [.assign [.name "best_score"] (.name "score")]
+      heap scored heap globals :=
+    BlockContinues.assign (Evaluates.lookup running.score_value)
+  have get0 : scored "key0" = some (number key.1) := by simpa [scored, HeapCalls.setLocal] using inputs.key0
+  have get1 : scored "key1" = some (number key.2.1) := by simpa [scored, HeapCalls.setLocal] using inputs.key1
+  have get2 : scored "key2" = some (number key.2.2) := by simpa [scored, HeapCalls.setLocal] using inputs.key2
+  have tupleEval : Evaluates program scored (.tuple [.name "key0", .name "key1", .name "key2"])
+      heap (.ref heap.length) (heap ++ [keyTuple key]) globals :=
+    Evaluates.tuple (.cons (Evaluates.lookup get0) (.cons (Evaluates.lookup get1)
+      (.cons (Evaluates.lookup get2) .nil))) (by simp [keyValues])
+  have getSum : keyed "s" = some (number total) := by
+    simpa [keyed, scored, HeapCalls.setLocal] using running.total_value
+  have setsKey : BlockContinues program scored
+      [.assign [.name "best_key"] (.tuple [.name "key0", .name "key1", .name "key2"])]
+      heap keyed (heap ++ [keyTuple key]) globals := BlockContinues.assign tupleEval
+  have setsSum : BlockContinues program keyed [.assign [.name "best_sum"] (.name "s")]
+      (heap ++ [keyTuple key]) (winnerEnv env heap.length score total) (heap ++ [keyTuple key]) globals :=
+    BlockContinues.assign (Evaluates.lookup getSum)
+  refine ⟨?_, ?_⟩
+  · simpa only [updateBody, List.cons_append, List.nil_append] using
+      setsScore.append (setsKey.append setsSum)
+  · constructor
+    · simp [winnerEnv, HeapCalls.setLocal, scoreValue]
+    · simp [winnerEnv, HeapCalls.setLocal, selectedSum]
+    · refine ⟨.ref heap.length, ?_, heap.length, rfl, ?_⟩
+      · simp [winnerEnv, HeapCalls.setLocal]
+      · simp
+
+theorem advance_rejected (best : Option Selection) (key : Key) (result : Option (Int × Int))
+    (notImproved : improves best result = false) : advance best key result = best := by
+  cases best <;> cases result <;> simp_all [improves, advance, choose]
+
+theorem advance_improved (best : Option Selection) (key : Key) (pair : Int × Int)
+    (improved : improves best (some pair) = true) :
+    advance best key (some pair) = some ⟨key, pair.1, pair.2⟩ := by
+  cases best <;> simp_all [improves, advance, choose]
+
+theorem update (env : HeapCalls.Env) (cipher : List UInt8) (key : Key) (p w : Nat)
+    (inputs : inner.Inputs env cipher key p w) (heap : Mutable.Heap) (best : Option Selection)
+    (bestState : Best env heap best) (result : Option (Int × Int))
+    (finished : inner.Finished env result) (globals : Mutable.Globals := []) :
+    ∃ afterEnv,
+      BlockContinues program env [.ifThen updateCondition updateBody []] heap afterEnv
+        (heap ++ updateGarbage key best result) globals ∧
+      Best afterEnv (heap ++ updateGarbage key best result) (advance best key result) ∧ Frame env afterEnv := by
+  have condition := condition_evaluates env heap best result bestState finished globals
+  cases improved : improves best result with
+  | false =>
+      refine ⟨env, ?_, ?_, Frame.refl env⟩
+      · simpa [updateGarbage, improved] using
+          (BlockContinues.branch (condition := updateCondition) (yes := updateBody) (no := []) (flag := false)
+            (by simpa only [improved] using condition) rfl BlockContinues.nil)
+      · rw [advance_rejected best key result improved]
+        simpa [updateGarbage, improved] using bestState
+  | true =>
+      cases result with
+      | none => simp [improves] at improved
+      | some pair =>
+          obtain ⟨writes, stores⟩ := write_winner env cipher key p w inputs pair.1 pair.2 finished heap globals
+          refine ⟨winnerEnv env heap.length pair.1 pair.2, ?_, ?_, winnerEnv_frame _ _ _ _⟩
+          · simpa [updateGarbage, improved] using
+              (BlockContinues.branch (condition := updateCondition) (yes := updateBody) (no := []) (flag := true)
+                (by simpa only [improved] using condition) rfl writes)
+          · rw [advance_improved best key pair improved]
+            simpa [updateGarbage, improved] using stores
+
+def allocations (key : Key) (best : Option Selection) (result : Option (Int × Int)) : Mutable.Heap :=
+  [keyTuple key] ++ updateGarbage key best result
+
+/-- One actual k2 candidate retains its unpack tuple and, exactly when improved, its new best-key tuple. -/
+theorem result (cipher : List UInt8) (key : Key) (bounds : inner.KeyBounds key)
+    (p w : Nat) (heap : Mutable.Heap) (tables : build_scoring_tables.Found heap p w)
+    (env : HeapCalls.Env) (inputs : Inputs env cipher key p w) (initial : Option Selection)
+    (bestState : Best env heap initial) (globals : Mutable.Globals := []) :
+    ∃ afterEnv finalHeap,
+      BlockContinues program env body heap afterEnv finalHeap globals ∧
+      Best afterEnv finalHeap (advance initial key (scoreKeyStreaming (encodeBytes cipher) key)) ∧
+      build_scoring_tables.Found finalHeap p w ∧
+      (∃ garbage, finalHeap = heap ++ garbage) ∧ Frame env afterEnv := by
+  obtain ⟨initializes, innerInputs, running, bestInit⟩ := initialize_candidate env cipher key p w inputs heap initial bestState globals
+  let initializedHeap := heap ++ [keyTuple key]
+  have initialTables : build_scoring_tables.Found initializedHeap p w := tables_append tables [keyTuple key]
+  obtain ⟨scannedEnv, scans, finished, scanFrame⟩ := inner.result cipher key bounds p w
+    initializedHeap initialTables (initializedEnv env key) innerInputs running globals
+  have scannedInputs : inner.Inputs scannedEnv cipher key p w := innerInputs.frame scanFrame
+  have scannedBest : Best scannedEnv initializedHeap initial := bestInit.locals
+    (scanFrame "best_score" (by decide)) (scanFrame "best_sum" (by decide)) (scanFrame "best_key" (by decide))
+  obtain ⟨afterEnv, updates, bestAfter, updateFrame⟩ := update scannedEnv cipher key p w scannedInputs
+    initializedHeap initial scannedBest _ finished globals
+  let finalHeap := initializedHeap ++ updateGarbage key initial (scoreKeyStreaming (encodeBytes cipher) key)
+  refine ⟨afterEnv, finalHeap, ?_, bestAfter, ?_, ?_, ?_⟩
+  · simpa only [body, List.append_assoc, List.cons_append, List.nil_append] using
+      initializes.append (scans.append updates)
+  · exact tables_append initialTables _
+  · exact ⟨allocations key initial (scoreKeyStreaming (encodeBytes cipher) key),
+      by simp only [finalHeap, initializedHeap, allocations, List.append_assoc]⟩
+  · exact (initializedEnv_frame env key).trans ((Frame.of_inner scanFrame).trans updateFrame)
+
+end solvers.«59».best_key_and_sum.candidate
+
+-- Append after the compiled table/inner proofs and candidate.Best fragment.
+-- Draft only: no compiler has checked this file.
+namespace solvers.«59».best_key_and_sum
+open FormalSW.PyAst FormalSW.PyAst.HeapCalls
+open ProjectEulerSolutions
+open XorDecryption
+private abbrev resultProgram := Solvers.P59Ast.module
+
+/-- Locals needed across all three key loops; key-specific scratch is separate. -/
+structure TableInputs (caller : Mutable.Heap) (cipher : List UInt8) (env : HeapCalls.Env) : Prop where
+  cipher_value : env "cipher" = some (.scalar (.bytes cipher))
+  printable_value : env "printable" = some (.ref (caller.length + 1))
+  weights_value : env "weights" = some (.ref (caller.length + 3))
+  n : env "n" = some (inner.number cipher.length)
+
+/-- The caller and the actual generated tables remain exact heap prefixes.
+Every selected-key tuple remains live in the suffix, even after replacement. -/
+def TablesPreserved (caller heap : Mutable.Heap) : Prop :=
+  ∃ allocated, heap = build_scoring_tables.outputHeap caller ++ allocated
+
+theorem TablesPreserved.found {caller heap : Mutable.Heap} (preserved : TablesPreserved caller heap) :
+    build_scoring_tables.Found heap (caller.length + 1) (caller.length + 3) := by
+  obtain ⟨extra, rfl⟩ := preserved
+  have original := build_scoring_tables.outputHeap_found caller
+  exact ⟨HeapCollection.prefix_found _ extra _ _ original.printable,
+    HeapCollection.prefix_found _ extra _ _ original.weights⟩
+
+theorem TablesPreserved.append {caller heap : Mutable.Heap} (preserved : TablesPreserved caller heap)
+    (extra : Mutable.Heap) : TablesPreserved caller (heap ++ extra) := by
+  obtain ⟨previous, rfl⟩ := preserved
+  exact ⟨previous ++ extra, by rw [List.append_assoc]⟩
+
+private def scoreAnnotation : Expr := .binOp (.name "int") .bitOr (.constant .none)
+private def keyAnnotation : Expr :=
+  .binOp (.subscript (.name "tuple") (.tuple [.name "int", .name "int", .name "int"]))
+    .bitOr (.constant .none)
+
+def preludeCode : List Stmt :=
+  [.assign [.tuple [.name "printable", .name "weights"]] (.call (.name "build_scoring_tables") []),
+   .annAssign (.name "best_score") scoreAnnotation (some (.constant .none)),
+   .annAssign (.name "best_key") keyAnnotation (some (.constant .none)),
+   .annAssign (.name "best_sum") (.name "int") (some (.constant (.int 0))),
+   .assign [.name "n"] (.builtinCall .len [.name "cipher"])]
+
+def tableEnv (env : HeapCalls.Env) (heap : Mutable.Heap) : HeapCalls.Env :=
+  HeapCalls.assignNames env ["printable", "weights"] [.ref (heap.length + 1), .ref (heap.length + 3)]
+def preludeEnv (env : HeapCalls.Env) (heap : Mutable.Heap) (cipher : List UInt8) : HeapCalls.Env :=
+  HeapCalls.setLocal (HeapCalls.setLocal (HeapCalls.setLocal (HeapCalls.setLocal (tableEnv env heap)
+    "best_score" (.scalar .none)) "best_key" (.scalar .none)) "best_sum" (inner.number 0))
+    "n" (inner.number cipher.length)
+
+theorem prelude_source :
+    (executableBody ((findFunctionIn resultProgram.body "best_key_and_sum").getD ([], [])).2).take 5 = preludeCode := rfl
+
+/-- The real table call and unpack precede all candidate loops. The helper's 32
+objects are retained; annotations do not allocate or evaluate their expressions. -/
+theorem prelude (env : HeapCalls.Env) (cipher : List UInt8) (heap : Mutable.Heap)
+    (getCipher : env "cipher" = some (.scalar (.bytes cipher))) (globals : Mutable.Globals := []) :
+    BlockContinues resultProgram env preludeCode heap (preludeEnv env heap cipher)
+      (build_scoring_tables.outputHeap heap) globals ∧
+    TableInputs heap cipher (preludeEnv env heap cipher) ∧
+    candidate.Best (preludeEnv env heap cipher) (build_scoring_tables.outputHeap heap) none := by
+  let allocated := build_scoring_tables.outputHeap heap
+  let tables := tableEnv env heap
+  let scoreEnv := HeapCalls.setLocal tables "best_score" (.scalar .none)
+  let keyEnv := HeapCalls.setLocal scoreEnv "best_key" (.scalar .none)
+  let sumEnv := HeapCalls.setLocal keyEnv "best_sum" (inner.number 0)
+  have unpack : BlockContinues resultProgram env
+      [.assign [.tuple [.name "printable", .name "weights"]] (.call (.name "build_scoring_tables") [])]
+      heap tables allocated globals := by
+    apply BlockContinues.unpack (names := ["printable", "weights"])
+      (items := [.ref (heap.length + 1), .ref (heap.length + 3)]) rfl
+      (Evaluates.call .nil (build_scoring_tables.result heap globals))
+    · simp [allocated, Mutable.sequence, build_scoring_tables.outputHeap_tuple]
+    · rfl
+  have score : BlockContinues resultProgram tables
+      [.annAssign (.name "best_score") scoreAnnotation (some (.constant .none))]
+      allocated scoreEnv allocated globals := BlockContinues.annAssign Evaluates.constant
+  have key : BlockContinues resultProgram scoreEnv
+      [.annAssign (.name "best_key") keyAnnotation (some (.constant .none))]
+      allocated keyEnv allocated globals := BlockContinues.annAssign Evaluates.constant
+  have total : BlockContinues resultProgram keyEnv
+      [.annAssign (.name "best_sum") (.name "int") (some (.constant (.int 0)))]
+      allocated sumEnv allocated globals := BlockContinues.annAssign Evaluates.constant
+  have cipherInSum : sumEnv "cipher" = some (.scalar (.bytes cipher)) := by
+    simpa [sumEnv, keyEnv, scoreEnv, tables, tableEnv, HeapCalls.assignNames, HeapCalls.setLocal] using getCipher
+  have length : Evaluates resultProgram sumEnv (.builtinCall .len [.name "cipher"])
+      allocated (inner.number cipher.length) allocated globals :=
+    Evaluates.builtin (.cons (Evaluates.lookup cipherInSum) .nil) rfl
+  have counted : BlockContinues resultProgram sumEnv
+      [.assign [.name "n"] (.builtinCall .len [.name "cipher"])] allocated
+      (preludeEnv env heap cipher) allocated globals := BlockContinues.assign length
+  refine ⟨?_, ?_, ?_⟩
+  · simpa only [preludeCode, preludeEnv, sumEnv, keyEnv, scoreEnv, tables, allocated,
+      List.append_assoc, List.cons_append, List.nil_append] using
+      unpack.append (score.append (key.append (total.append counted)))
+  · constructor
+    · simpa [preludeEnv, tableEnv, HeapCalls.assignNames, HeapCalls.setLocal] using getCipher
+    · simp [preludeEnv, tableEnv, HeapCalls.assignNames, HeapCalls.setLocal]
+    · simp [preludeEnv, tableEnv, HeapCalls.assignNames, HeapCalls.setLocal]
+    · simp [preludeEnv, HeapCalls.setLocal]
+  · constructor
+    · simp [preludeEnv, candidate.scoreValue, HeapCalls.setLocal]
+    · simp [preludeEnv, selectedSum, HeapCalls.setLocal]
+    · refine ⟨.scalar .none, ?_, rfl⟩
+      simp [preludeEnv, HeapCalls.setLocal]
+
+/-- The outer scan must retain byte bounds for whichever key was selected.
+This follows from key enumeration, independent of source execution results. -/
+def SelectionBounds (best : Option Selection) : Prop :=
+  ∀ selected, best = some selected → inner.KeyBounds selected.key
+
+/-- Selecting a candidate either retains the prior key or takes this bounded key. -/
+theorem SelectionBounds.advance {best : Option Selection} (previous : SelectionBounds best)
+    (key : Key) (bounds : inner.KeyBounds key) (result : Option (Int × Int)) :
+    SelectionBounds (XorDecryption.advance best key result) := by
+  cases best with
+  | none =>
+      cases result with
+      | none => intro selected impossible; cases impossible
+      | some pair => intro selected same; cases same; exact bounds
+  | some chosen =>
+      cases result with
+      | none => exact previous
+      | some pair =>
+          change SelectionBounds (if chosen.score < pair.1 then some ⟨key, pair.1, pair.2⟩ else some chosen)
+          split
+          · intro selected same; cases same; exact bounds
+          · exact previous
+
+
+def selectedBytes (best : Option Selection) : List UInt8 :=
+  (selectedKey best).map (fun value => UInt8.ofNat value.toNat)
+def resultValues (best : Option Selection) : List Mutable.Value :=
+  [.scalar (.bytes (selectedBytes best)), inner.number (selectedSum best)]
+def resultHeap (heap : Mutable.Heap) (best : Option Selection) : Mutable.Heap :=
+  heap ++ [.tuple (resultValues best)]
+
+def returnCode : List Stmt :=
+  [.ifThen (.builtinCall .identity [.name "best_key", .constant .none])
+      [.return (.tuple [.constant (.bytes []), .constant (.int 0)])] [],
+   .return (.tuple [.builtinCall .bytes [.name "best_key"], .name "best_sum"])]
+
+theorem return_source :
+    (executableBody ((findFunctionIn resultProgram.body "best_key_and_sum").getD ([], [])).2).drop 6 = returnCode := rfl
+
+private theorem keyValues_bounds (key : Key) (bounds : inner.KeyBounds key) :
+    ∀ value ∈ keyValues key, 0 ≤ value ∧ value < 256 := by
+  intro value present
+  simp only [keyValues, List.mem_cons, List.not_mem_nil, or_false] at present
+  rcases present with rfl | rfl | rfl
+  · exact bounds.1
+  · exact bounds.2.1
+  · exact bounds.2.2
+
+/-- Each byte conversion is a real checked integer conversion and leaves heap intact. -/
+private theorem bytesElements (values : List Int) (heap : Mutable.Heap)
+    (bounded : ∀ value ∈ values, 0 ≤ value ∧ value < 256) :
+    ((values.map inner.number).mapM Mutable.bytesElement) heap =
+      some (.ok (values.map (fun value => UInt8.ofNat value.toNat)), heap) := by
+  induction values generalizing heap with
+  | nil => rfl
+  | cons value values ih =>
+      have bounds := bounded value (by simp)
+      have first : Mutable.bytesElement (inner.number value) =
+          (pure (UInt8.ofNat value.toNat) : Mutable.Eval UInt8) := by
+        funext current
+        exact Mutable.bytesElement_int value bounds.1 bounds.2 current
+      have rest : (values.map inner.number).mapM Mutable.bytesElement =
+          (pure (values.map (fun next => UInt8.ofNat next.toNat)) : Mutable.Eval (List UInt8)) := by
+        funext current
+        exact ih current (fun next present => bounded next (List.mem_cons_of_mem value present))
+      simp only [List.map_cons, List.mapM_cons, first, rest, pure_bind]
+      rfl
+
+/-- The exact actual suffix, including fallback tuple and successful bytes call.
+No key bytes or mutable buffers are allocated by bytes(best_key). Both source
+return paths append precisely one nonempty result tuple. -/
+theorem return_result (env : HeapCalls.Env) (heap : Mutable.Heap) (best : Option Selection)
+    (selected : candidate.Best env heap best) (bounded : SelectionBounds best)
+    (globals : Mutable.Globals := []) :
+    BlockReturns resultProgram env returnCode heap (.ref heap.length) (resultHeap heap best) globals := by
+  obtain ⟨keyValue, getKey, found⟩ := selected.key
+  cases best with
+  | none =>
+      change keyValue = .scalar .none at found
+      subst keyValue
+      have condition : Evaluates resultProgram env
+          (.builtinCall .identity [.name "best_key", .constant .none]) heap (.scalar (.bool true)) heap globals :=
+        Evaluates.builtin (.cons (Evaluates.lookup getKey) (.cons Evaluates.constant .nil)) rfl
+      apply BlockReturns.branch (flag := true) condition rfl
+      apply BlockReturns.return_value
+      simpa only [resultHeap, resultValues, selectedBytes, selectedKey, selectedSum,
+        Option.map_none, Option.getD_none, List.map_nil] using
+        (Evaluates.tuple (module := resultProgram) (env := env) (heap := heap) (globals := globals)
+          (.cons (Evaluates.constant (value := .bytes [])) (.cons (Evaluates.constant (value := .int 0)) .nil))
+          (by simp))
+  | some chosen =>
+      obtain ⟨address, same, tuple⟩ := found
+      subst keyValue
+      have condition : Evaluates resultProgram env
+          (.builtinCall .identity [.name "best_key", .constant .none]) heap (.scalar (.bool false)) heap globals :=
+        Evaluates.builtin (.cons (Evaluates.lookup getKey) (.cons Evaluates.constant .nil)) rfl
+      have converted : Evaluates resultProgram env (.builtinCall .bytes [.name "best_key"]) heap
+          (.scalar (.bytes (selectedBytes (some chosen)))) heap globals := by
+        apply Evaluates.builtin (.cons (Evaluates.lookup getKey) .nil)
+        change Mutable.bytes [.ref address] heap = _
+        apply Mutable.bytes_tuple (items := (keyValues chosen.key).map inner.number) (found := tuple)
+        exact bytesElements (keyValues chosen.key) heap (keyValues_bounds chosen.key (bounded chosen rfl))
+      apply BlockReturns.branch (flag := false) condition rfl
+      apply BlockReturns.return_value
+      simpa only [resultHeap, resultValues] using
+        (Evaluates.tuple (module := resultProgram) (env := env) (heap := heap) (globals := globals)
+          (.cons converted (.cons (Evaluates.lookup selected.total) .nil)) (by simp))
+
+/-- A completed caller-prefix proof can retain all table/key allocations, then
+append its one exact return tuple. -/
+theorem resultHeap_extends {caller heap : Mutable.Heap} (preserved : TablesPreserved caller heap)
+    (best : Option Selection) : ∃ extra, resultHeap heap best = caller ++ extra := by
+  obtain ⟨keyGarbage, rfl⟩ := preserved
+  obtain ⟨tableGarbage, tables⟩ := build_scoring_tables.outputHeap_extends caller
+  exact ⟨tableGarbage ++ keyGarbage ++ [.tuple (resultValues best)], by simp only [resultHeap, tables, List.append_assoc]⟩
+
+end solvers.«59».best_key_and_sum
+
+namespace solvers.«59».solve
+open FormalSW.PyAst FormalSW.PyAst.HeapCalls
+open ProjectEulerSolutions.XorDecryption
+open best_key_and_sum
+private abbrev solveProgram := Solvers.P59Ast.module
+
+/-- Compose the actual completed helper proof into the actual solve source.
+This is a compositional lemma; the eventual public theorem supplies the proved
+helper run after its three source loops, rather than assuming its behavior. -/
+theorem from_result {globals : Mutable.Globals} (cipher : List UInt8) (heap beforeReturn : Mutable.Heap) (best : Option Selection)
+    (callee : ReturnsValue solveProgram "best_key_and_sum" [.scalar (.bytes cipher)] heap
+      (.ref beforeReturn.length) (resultHeap beforeReturn best) globals) :
+    ReturnsValue solveProgram "solve" [.scalar (.bytes cipher)] heap
+      (inner.number (selectedSum best)) (resultHeap beforeReturn best) globals := by
+  apply BlockReturns.function rfl rfl
+  apply BlockReturns.return_value
+  apply Evaluates.subscript (ordinary := by intro a b c equality; cases equality)
+    (Evaluates.call (.cons (Evaluates.lookup (by cases globals <;> rfl)) .nil) callee)
+    Evaluates.constant
+  simp [Mutable.getItem, resultHeap, resultValues, Mutable.index, Except.map]
+
+end solvers.«59».solve
+
+namespace solvers.«59».best_key_and_sum.outer
+open FormalSW.PyAst FormalSW.PyAst.HeapCalls
+open ProjectEulerSolutions XorDecryption
+private abbrev program := Solvers.P59Ast.module
+open inner (number)
+
+def rangeArguments : List Expr :=
+  [.builtinCall .ord [.constant (.string "a")],
+    .binOp (.builtinCall .ord [.constant (.string "z")]) .add (.constant (.int 1))]
+def loop (name : String) (body : List Stmt) : Stmt :=
+  .forIn (.name name) (.call (.name "range") rangeArguments) body []
+def middleBody : List Stmt := [loop "k2" candidate.body]
+def outerBody : List Stmt := [loop "k1" middleBody]
+def code : List Stmt := [loop "k0" outerBody]
+
+theorem source : (executableBody ((findFunctionIn program.body "best_key_and_sum").getD ([], [])).2)[5]? =
+    code[0]? := rfl
+
+structure Common (caller : Mutable.Heap) (cipher : List UInt8)
+    (heap : Mutable.Heap) (env : HeapCalls.Env) (best : Option Selection) : Prop where
+  inputs : TableInputs caller cipher env
+  tables : TablesPreserved caller heap
+  selected : candidate.Best env heap best
+  bounded : SelectionBounds best
+
+private def fixedNames : List String :=
+  ["cipher", "n", "printable", "weights", "best_score", "best_key", "best_sum"]
+
+theorem Common.bind {caller heap : Mutable.Heap} {cipher : List UInt8} {env : HeapCalls.Env}
+    {best : Option Selection} (safe : Common caller cipher heap env best) (name : String)
+    (outside : name ∉ fixedNames) (value : Int) :
+    Common caller cipher heap (setLocal env name (number value)) best := by
+  have stable : ∀ other, other ∈ fixedNames → setLocal env name (number value) other = env other := by
+    intro other member
+    have different : other ≠ name := by intro same; subst other; exact outside member
+    simp [setLocal, different]
+  refine ⟨?_, safe.tables, ?_, safe.bounded⟩
+  · constructor
+    · exact (stable "cipher" (by decide)).trans safe.inputs.cipher_value
+    · exact (stable "printable" (by decide)).trans safe.inputs.printable_value
+    · exact (stable "weights" (by decide)).trans safe.inputs.weights_value
+    · exact (stable "n" (by decide)).trans safe.inputs.n
+  · exact safe.selected.locals (stable "best_score" (by decide)) (stable "best_sum" (by decide))
+      (stable "best_key" (by decide))
+
+private theorem common_after {caller heap finalHeap : Mutable.Heap} {cipher : List UInt8}
+    {env afterEnv : HeapCalls.Env} {best : Option Selection}
+    (safe : Common caller cipher heap env best) (key : Key) (bounds : inner.KeyBounds key)
+    (selected : candidate.Best afterEnv finalHeap (advance best key (scoreKeyStreaming (encodeBytes cipher) key)))
+    (extended : ∃ extra, finalHeap = heap ++ extra) (frame : candidate.Frame env afterEnv) :
+    Common caller cipher finalHeap afterEnv (advance best key (scoreKeyStreaming (encodeBytes cipher) key)) := by
+  obtain ⟨extra, equal⟩ := extended
+  refine ⟨?_, ?_, selected, safe.bounded.advance key bounds _⟩
+  · constructor
+    · exact (frame "cipher" (by decide)).trans safe.inputs.cipher_value
+    · exact (frame "printable" (by decide)).trans safe.inputs.printable_value
+    · exact (frame "weights" (by decide)).trans safe.inputs.weights_value
+    · exact (frame "n" (by decide)).trans safe.inputs.n
+  · rw [equal]
+    exact safe.tables.append extra
+
+private theorem arguments (env : HeapCalls.Env) (heap : Mutable.Heap) (globals : Mutable.Globals) :
+    Evaluates.Arguments program env rangeArguments heap [number 97, number 123] heap globals := by
+  exact .cons (Evaluates.builtin (.cons Evaluates.constant .nil) rfl)
+    (.cons (Evaluates.binary (Evaluates.builtin (.cons Evaluates.constant .nil) rfl) Evaluates.constant rfl) .nil)
+
+/-- Enumerate the source's lowercase range once using a structural fold. -/
+private theorem letters_for (name : String) (body : List Stmt) (noControl : Calls.loopControl body = false)
+    (changed : List String) (written : name ∈ changed)
+    (update : Option Selection → Int → Option Selection)
+    (Invariant : Mutable.Heap → HeapCalls.Env → Option Selection → Prop)
+    (bindInvariant : ∀ heap env best value, Invariant heap env best → 97 ≤ value → value < 123 →
+      Invariant heap (setLocal env name (number (value : Nat))) best)
+    (cell : ∀ heap env best value, Invariant heap env best → 97 ≤ value → value < 123 →
+      env name = some (number (value : Nat)) →
+      ∃ afterEnv finalHeap, BlockContinues program env body heap afterEnv finalHeap globals ∧
+        Invariant finalHeap afterEnv (update best value) ∧
+        (∃ extra, finalHeap = heap ++ extra) ∧ HeapRangeFold.Frame changed env afterEnv)
+    (heap : Mutable.Heap) (env : HeapCalls.Env) (best : Option Selection) (safe : Invariant heap env best) :
+    ∃ afterEnv finalHeap, BlockContinues program env [loop name body] heap afterEnv finalHeap globals ∧
+      Invariant finalHeap afterEnv (letters.foldl update best) ∧
+      (∃ extra, finalHeap = heap ++ extra) ∧ HeapRangeFold.Frame changed env afterEnv := by
+  obtain ⟨afterEnv, finalHeap, executed, finalSafe, extended, frame⟩ :=
+    HeapRangeFold.loop program name body noControl changed written (fun best value => update best value)
+      Invariant 97 123 bindInvariant cell 26 97 (by decide) (by decide) heap env best safe
+  exact ⟨afterEnv, finalHeap, BlockContinues.for_range (arguments env heap globals) rfl executed,
+    by simpa only [letters, List.foldl_map] using finalSafe, extended, frame⟩
+
+def changes2 : List String := candidate.changed ++ ["k2"]
+def changes1 : List String := candidate.changed ++ ["k1", "k2"]
+def changes0 : List String := candidate.changed ++ ["k0", "k1", "k2"]
+
+private theorem frame_weaken {first second : List String} (subset : ∀ name, name ∈ first → name ∈ second)
+    {before after : HeapCalls.Env} (frame : HeapRangeFold.Frame first before after) :
+    HeapRangeFold.Frame second before after :=
+  fun name outside => frame name (fun inside => outside (subset name inside))
+
+def update2 (cipher : List UInt8) (a b : Int) (best : Option Selection) (c : Int) : Option Selection :=
+  advance best (a, b, c) (scoreKeyStreaming (encodeBytes cipher) (a, b, c))
+def update1 (cipher : List UInt8) (a : Int) (best : Option Selection) (b : Int) : Option Selection :=
+  letters.foldl (update2 cipher a b) best
+def update0 (cipher : List UInt8) (best : Option Selection) (a : Int) : Option Selection :=
+  letters.foldl (update1 cipher a) best
+
+private def Invariant2 (caller : Mutable.Heap) (cipher : List UInt8) (a b : Int)
+    (heap : Mutable.Heap) (env : HeapCalls.Env) (best : Option Selection) : Prop :=
+  Common caller cipher heap env best ∧ env "k0" = some (number a) ∧ env "k1" = some (number b)
+private def Invariant1 (caller : Mutable.Heap) (cipher : List UInt8) (a : Int)
+    (heap : Mutable.Heap) (env : HeapCalls.Env) (best : Option Selection) : Prop :=
+  Common caller cipher heap env best ∧ env "k0" = some (number a)
+
+/-- The innermost source key loop calls the checked candidate theorem for each byte value. -/
+theorem third (caller : Mutable.Heap) (cipher : List UInt8) (a b : Int)
+    (aBounds : 97 ≤ a ∧ a < 123) (bBounds : 97 ≤ b ∧ b < 123)
+    (heap : Mutable.Heap) (env : HeapCalls.Env) (best : Option Selection)
+    (safe : Invariant2 caller cipher a b heap env best) (globals : Mutable.Globals := []) :
+    ∃ afterEnv finalHeap, BlockContinues program env middleBody heap afterEnv finalHeap globals ∧
+      Invariant2 caller cipher a b finalHeap afterEnv (letters.foldl (update2 cipher a b) best) ∧
+      (∃ extra, finalHeap = heap ++ extra) ∧ HeapRangeFold.Frame changes2 env afterEnv := by
+  apply letters_for "k2" candidate.body (by rfl) changes2 (by simp [changes2])
+    (update2 cipher a b) (Invariant2 caller cipher a b) ?_ ?_ heap env best safe
+  · intro heap env best value good lower upper
+    refine ⟨good.1.bind "k2" (by decide) value, ?_, ?_⟩
+    · simpa [setLocal] using good.2.1
+    · simpa [setLocal] using good.2.2
+  · intro heap env best value good lower upper getValue
+    let key : Key := (a, b, value)
+    have bounds : inner.KeyBounds key := by
+      dsimp [inner.KeyBounds, key]
+      constructor
+      · constructor <;> omega
+      · constructor <;> constructor <;> omega
+    have inputs : candidate.Inputs env cipher key (caller.length + 1) (caller.length + 3) :=
+      ⟨good.1.inputs.cipher_value, good.1.inputs.n, good.1.inputs.printable_value,
+        good.1.inputs.weights_value, good.2.1, good.2.2, getValue⟩
+    obtain ⟨afterEnv, finalHeap, executed, selected, tables, extended, frame⟩ :=
+      candidate.result cipher key bounds _ _ heap good.1.tables.found env inputs best good.1.selected globals
+    refine ⟨afterEnv, finalHeap, executed, ?_, extended, ?_⟩
+    · exact ⟨common_after good.1 key bounds selected extended frame,
+        (frame "k0" (by decide)).trans good.2.1, (frame "k1" (by decide)).trans good.2.2⟩
+    · exact fun name outside => frame name (fun member => outside (List.mem_append_left _ member))
+
+/-- The middle key loop preserves the outer key binding while folding every c candidate. -/
+theorem second (caller : Mutable.Heap) (cipher : List UInt8) (a : Int)
+    (aBounds : 97 ≤ a ∧ a < 123) (heap : Mutable.Heap) (env : HeapCalls.Env) (best : Option Selection)
+    (safe : Invariant1 caller cipher a heap env best) (globals : Mutable.Globals := []) :
+    ∃ afterEnv finalHeap, BlockContinues program env outerBody heap afterEnv finalHeap globals ∧
+      Invariant1 caller cipher a finalHeap afterEnv (letters.foldl (update1 cipher a) best) ∧
+      (∃ extra, finalHeap = heap ++ extra) ∧ HeapRangeFold.Frame changes1 env afterEnv := by
+  apply letters_for "k1" middleBody (by rfl) changes1 (by simp [changes1])
+    (update1 cipher a) (Invariant1 caller cipher a) ?_ ?_ heap env best safe
+  · intro heap env best value good lower upper
+    exact ⟨good.1.bind "k1" (by decide) value, by simpa [setLocal] using good.2⟩
+  · intro heap env best value good lower upper getValue
+    obtain ⟨afterEnv, finalHeap, executed, finished, extended, frame⟩ := third caller cipher a value aBounds
+      (by constructor <;> omega) heap env best ⟨good.1, good.2, getValue⟩ globals
+    refine ⟨afterEnv, finalHeap, executed, ⟨finished.1, finished.2.1⟩, extended, ?_⟩
+    exact frame_weaken (by intro name member; simp only [changes2, changes1, List.mem_append,
+      List.mem_cons] at member ⊢; exact Or.imp id Or.inr member) frame
+
+/-- All three actual loops, including each candidate's real allocations and first-on-tie update. -/
+theorem result (caller : Mutable.Heap) (cipher : List UInt8) (heap : Mutable.Heap)
+    (env : HeapCalls.Env) (best : Option Selection) (safe : Common caller cipher heap env best)
+    (globals : Mutable.Globals := []) :
+    ∃ afterEnv finalHeap, BlockContinues program env code heap afterEnv finalHeap globals ∧
+      Common caller cipher finalHeap afterEnv (scan (scoreKey (encodeBytes cipher)) keys best) ∧
+      (∃ extra, finalHeap = heap ++ extra) ∧ HeapRangeFold.Frame changes0 env afterEnv := by
+  have run : ∃ afterEnv finalHeap, BlockContinues program env code heap afterEnv finalHeap globals ∧
+      Common caller cipher finalHeap afterEnv (letters.foldl (update0 cipher) best) ∧
+      (∃ extra, finalHeap = heap ++ extra) ∧ HeapRangeFold.Frame changes0 env afterEnv := by
+    apply letters_for "k0" outerBody (by rfl) changes0 (by simp [changes0])
+      (update0 cipher) (Common caller cipher) ?_ ?_ heap env best safe
+    · intro heap env best value good lower upper
+      exact good.bind "k0" (by decide) value
+    · intro heap env best value good lower upper getValue
+      obtain ⟨afterEnv, finalHeap, executed, finished, extended, frame⟩ := second caller cipher value
+        (by constructor <;> omega) heap env best ⟨good, getValue⟩ globals
+      refine ⟨afterEnv, finalHeap, executed, finished.1, extended, ?_⟩
+      exact frame_weaken (by intro name member; simp only [changes1, changes0, List.mem_append,
+        List.mem_cons] at member ⊢; exact Or.imp id Or.inr member) frame
+  have folded : letters.foldl (update0 cipher) best = scan (scoreKey (encodeBytes cipher)) keys best := by
+    rw [← scan_streaming_eq]
+    exact (scan_keysFor_nested (scoreKeyStreaming (encodeBytes cipher)) letters best).symm
+  simpa only [folded] using run
+
+end solvers.«59».best_key_and_sum.outer
+
+namespace solvers.«59».best_key_and_sum
+open FormalSW.PyAst FormalSW.PyAst.HeapCalls
+open ProjectEulerSolutions XorDecryption
+private abbrev finalProgram := Solvers.P59Ast.module
+
+/-- All original source statements, with no key-space or ciphertext unrolling. -/
+theorem complete_source :
+    executableBody ((findFunctionIn finalProgram.body "best_key_and_sum").getD ([], [])).2 =
+      preludeCode ++ outer.code ++ returnCode := rfl
+
+/-- The actual exhaustive source search returns its first maximum for every byte string.
+All tables, unpack tuples, retained best-key tuples, and the result tuple remain in the heap. -/
+theorem result (cipher : List UInt8) (heap : Mutable.Heap) (globals : Mutable.Globals := []) :
+    ∃ beforeReturn,
+      ReturnsValue finalProgram "best_key_and_sum" [.scalar (.bytes cipher)] heap
+        (.ref beforeReturn.length) (resultHeap beforeReturn (best (encodeBytes cipher))) globals ∧
+      TablesPreserved heap beforeReturn := by
+  let params := ((findFunctionIn finalProgram.body "best_key_and_sum").getD ([], [])).1
+  let body := ((findFunctionIn finalProgram.body "best_key_and_sum").getD ([], [])).2
+  let initial := functionEnv params body [.scalar (.bytes cipher)] globals
+  obtain ⟨prepared, inputs, selected⟩ := prelude initial cipher heap (by cases globals <;> rfl) globals
+  have safe : outer.Common heap cipher (build_scoring_tables.outputHeap heap)
+      (preludeEnv initial heap cipher) none :=
+    ⟨inputs, ⟨[], by simp⟩, selected, (by intro chosen impossible; cases impossible)⟩
+  obtain ⟨afterEnv, beforeReturn, scanned, finished, extended, frame⟩ := outer.result heap cipher
+    (build_scoring_tables.outputHeap heap) (preludeEnv initial heap cipher) none safe globals
+  have selectedResult : candidate.Best afterEnv beforeReturn (best (encodeBytes cipher)) := by
+    simpa only [best] using finished.selected
+  have selectedBounds : SelectionBounds (best (encodeBytes cipher)) := by
+    simpa only [best] using finished.bounded
+  have suffix := return_result afterEnv beforeReturn (best (encodeBytes cipher))
+    selectedResult selectedBounds globals
+  refine ⟨beforeReturn, ?_, finished.tables⟩
+  apply BlockReturns.function rfl rfl
+  change BlockReturns finalProgram initial (preludeCode ++ outer.code ++ returnCode) heap
+    (.ref beforeReturn.length) (resultHeap beforeReturn (best (encodeBytes cipher))) globals
+  exact prepared.returns (scanned.returns suffix)
+
+end solvers.«59».best_key_and_sum
+
+namespace solvers.«59».solve
+open FormalSW.PyAst FormalSW.PyAst.HeapCalls
+open ProjectEulerSolutions XorDecryption
+open best_key_and_sum
+
+/-- The actual solve wrapper extracts the modeled plaintext sum and preserves the caller prefix. -/
+theorem result (cipher : List UInt8) (heap : Mutable.Heap) (globals : Mutable.Globals := []) :
+    ∃ beforeReturn,
+      ReturnsValue Solvers.P59Ast.module "solve" [.scalar (.bytes cipher)] heap
+        (inner.number (answer cipher)) (resultHeap beforeReturn (best (encodeBytes cipher))) globals ∧
+      (∃ extra, resultHeap beforeReturn (best (encodeBytes cipher)) = heap ++ extra) := by
+  obtain ⟨beforeReturn, returned, preserved⟩ := best_key_and_sum.result cipher heap globals
+  exact ⟨beforeReturn, from_result cipher heap beforeReturn (best (encodeBytes cipher)) returned,
+    resultHeap_extends preserved _⟩
+
+theorem «Returns» (cipher : List UInt8) :
+    (HeapCalls.scalarFunction Solvers.P59Ast.module "solve" [.bytes cipher]).Returns := by
+  obtain ⟨_, returned, _⟩ := result cipher []
+  exact returned.scalar_returns (values := [.bytes cipher])
+
+/-- Streamed rejection and materialized exhaustive scoring agree for every finite byte string. -/
+theorem «Equiv(naive)» (cipher : List UInt8) :
+    (HeapCalls.scalarFunction Solvers.P59Ast.module "solve" [.bytes cipher]).Equiv
+      (HeapCalls.scalarFunction P59Ast.module "naive" [.bytes cipher]) := by
+  obtain ⟨_, returned, _⟩ := result cipher []
+  have optimized := returned.scalar_finishes (values := [.bytes cipher])
+  have reference :=
+    (data.«project-euler-statements».data.py.project_euler_statements.p59.naive.result cipher []).scalar_finishes
+      (values := [.bytes cipher])
+  intro outcome
+  constructor
+  · intro finished
+    rw [finished.unique optimized]
+    exact reference
+  · intro finished
+    rw [finished.unique reference]
+    exact optimized
+
+theorem «Supported» :
+    (∀ cipher : List UInt8,
+      (HeapCalls.scalarFunction Solvers.P59Ast.module "solve" [.bytes cipher]).Supported) ∧
+    (∀ cipher : List UInt8,
+      (HeapCalls.scalarFunction P59Ast.module "naive" [.bytes cipher]).Supported) :=
+  ⟨fun cipher => («Returns» cipher).supported,
+    data.«project-euler-statements».data.py.project_euler_statements.p59.naive.«Supported»⟩
+
+end solvers.«59».solve
