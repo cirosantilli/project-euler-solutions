@@ -1,5 +1,6 @@
 import «.formalsw».solvers.«54.py.ast»
 import lang.py.FormalSW.DictionaryCalls
+import lang.py.FormalSW.TupleComparisons
 
 /-! Source proofs for poker-card parsing and hand evaluation. -/
 set_option Elab.async false
@@ -247,6 +248,20 @@ theorem ranked (line : String) (heap : Mutable.Heap) (globals : Mutable.Globals)
     exact Evaluates.compare (env := dealt)
       (Evaluates.call (.cons (Evaluates.lookup (by simp [dealt, setLocal])) .nil) first)
       (Evaluates.call (.cons (Evaluates.lookup rfl) .nil) second) order
+
+/-- Different hand categories decide the winner without inspecting the tie-breaking fields. -/
+theorem different_categories (line : String) (heap : Mutable.Heap) (globals : Mutable.Globals)
+    (nonempty : tokens line ≠ []) (a b : Nat) (firstCategory secondCategory : Int)
+    (leftKeys rightKeys : List Mutable.Value) (middle finalHeap : Mutable.Heap)
+    (first : ReturnsValue program "hand_rank" [.ref (heap.length+1)] (handsHeap heap line) (.ref a) middle globals)
+    (second : ReturnsValue program "hand_rank" [.ref (heap.length+2)] middle (.ref b) finalHeap globals)
+    (left : finalHeap[a]? = some (.tuple (number firstCategory :: leftKeys)))
+    (right : finalHeap[b]? = some (.tuple (number secondCategory :: rightKeys)))
+    (different : firstCategory ≠ secondCategory) :
+    ReturnsValue program "player1_wins" [.scalar (.string line)] heap
+      (flag (decide (secondCategory < firstCategory))) finalHeap globals := by
+  exact ranked line heap globals nonempty (.ref a) (.ref b) middle finalHeap _ first second
+    (compare_tuple_head_gt finalHeap a b firstCategory secondCategory leftKeys rightKeys left right different)
 
 end player1_wins
 end solvers.«54»
