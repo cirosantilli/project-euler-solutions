@@ -126,4 +126,127 @@ theorem requires_parse_card_1_supported (heap : Mutable.Heap) (token : String) (
   obtain ⟨entries, found, _⟩ := Mutable.Value.dictionary_of_hasType typed rfl
   exact Execution.supported_of_finishes (parse_card.membership_test heap token address rank suit rest digits entries found).finishes
 
+namespace player1_wins
+
+/-- Tokens are separated by Python's Unicode whitespace rules. -/
+def tokens (line : String) : List String := Strings.splitWhitespace (Strings.stripWhitespace line)
+
+private abbrev text (value : String) : Mutable.Value := .scalar (.string value)
+private abbrev values (line : String) : List Mutable.Value := (tokens line).map text
+private abbrev splitHeap (heap : Mutable.Heap) (line : String) : Mutable.Heap := heap ++ [.list (values line)]
+
+/-- Tokenization evaluates both string methods and allocates exactly one list. -/
+theorem tokenize (line : String) (heap : Mutable.Heap) (env : HeapCalls.Env) (globals : Mutable.Globals)
+    (getLine : env "line" = some (text line)) :
+    Evaluates program env (.call (.attribute (.call (.attribute (.name "line") "strip") []) "split") [])
+      heap (.ref heap.length) (splitHeap heap line) globals := by
+  apply Evaluates.split_whitespace
+  · exact Evaluates.strip (Evaluates.lookup getLine) (by intro name equal; cases equal; simp [getLine])
+  · intro name impossible
+    cases impossible
+
+private theorem empty_test (line : String) (heap : Mutable.Heap) (env : HeapCalls.Env) (globals : Mutable.Globals)
+    (getParts : env "parts" = some (.ref heap.length)) :
+    Evaluates program env (.unaryOp .not (.name "parts")) (splitHeap heap line)
+      (flag (tokens line).isEmpty) (splitHeap heap line) globals := by
+  apply Evaluates.unary (Evaluates.lookup getParts)
+  simp [HeapCalls.unary, Mutable.truth, splitHeap, values, flag]
+
+/-- Empty and whitespace-only lines return false without calling either hand evaluator. -/
+theorem blank (line : String) (heap : Mutable.Heap) (globals : Mutable.Globals) (empty : tokens line = []) :
+    ReturnsValue program "player1_wins" [text line] heap (flag false) (heap ++ [.list []]) globals := by
+  let entry := functionEnv ((findFunctionIn program.body "player1_wins").getD ([], [])).1
+    ((findFunctionIn program.body "player1_wins").getD ([], [])).2 [text line] globals
+  let ready := setLocal entry "parts" (.ref heap.length)
+  have getLine : entry "line" = some (text line) := by cases globals <;> rfl
+  have allocated : splitHeap heap line = heap ++ [.list []] := by simp [splitHeap, values, empty]
+  rw [← allocated]
+  apply BlockReturns.function rfl rfl
+  apply BlockReturns.assign (tokenize line heap entry globals getLine)
+  apply BlockReturns.branch (flag := true) (value := flag true) (middle := splitHeap heap line)
+  · simpa [empty] using empty_test line heap ready globals rfl
+  · rfl
+  · exact BlockReturns.return_value Evaluates.constant
+
+/-- Every all-whitespace Unicode line takes the empty-line branch. -/
+theorem whitespace (line : String) (heap : Mutable.Heap) (globals : Mutable.Globals)
+    (onlyWhitespace : line.toList.all Strings.isWhitespace = true) :
+    ReturnsValue program "player1_wins" [text line] heap (flag false) (heap ++ [.list []]) globals := by
+  have dropAll : ∀ characters : List Char, characters.all Strings.isWhitespace = true →
+      characters.dropWhile Strings.isWhitespace = [] := by
+    intro characters
+    induction characters with
+    | nil => intro _; rfl
+    | cons character rest ih =>
+        intro all
+        have both := Bool.and_eq_true_iff.mp all
+        rw [List.dropWhile_cons_of_pos both.1]
+        exact ih both.2
+  apply blank line heap globals
+  have stripped : Strings.stripWhitespace line = "" := by
+    simp [Strings.stripWhitespace, dropAll line.toList onlyWhitespace]
+  rw [tokens, stripped]
+  rfl
+
+/-- The two slices are separate fresh lists, even for lines containing fewer than ten tokens. -/
+def handsHeap (heap : Mutable.Heap) (line : String) : Mutable.Heap :=
+  splitHeap heap line ++ [.list ((values line).take 5), .list ((values line).drop 5)]
+
+private theorem first_hand (line : String) (heap : Mutable.Heap) (env : HeapCalls.Env) (globals : Mutable.Globals)
+    (getParts : env "parts" = some (.ref heap.length)) :
+    Evaluates program env (.subscript (.name "parts") (.slice none (some (.constant (.int 5))) none))
+      (splitHeap heap line) (.ref (heap.length+1)) (splitHeap heap line ++ [.list ((values line).take 5)]) globals := by
+  apply Evaluates.slice (.cons (Evaluates.lookup getParts) (.cons Evaluates.constant
+    (.cons Evaluates.constant (.cons Evaluates.constant .nil))))
+  have sliced := Mutable.getSlice_list_prefix (splitHeap heap line) heap.length (values line) 5 (by simp [splitHeap])
+  have prefixValues : (values line).take (FormalSW.Py.Builtin.Slice.prefixLength (values line).length 5) =
+      (values line).take 5 := by
+    rw [show (5 : Int) = ((5 : Nat) : Int) from rfl, FormalSW.Py.Builtin.Slice.prefixLength_nonnegative]
+    by_cases short : (values line).length ≤ 5
+    · rw [Nat.min_eq_right short, List.take_length, List.take_of_length_le short]
+    · rw [Nat.min_eq_left (by omega)]
+  simpa only [prefixValues, splitHeap, List.length_append, List.length_singleton] using sliced
+
+private theorem second_hand (line : String) (heap : Mutable.Heap) (env : HeapCalls.Env) (globals : Mutable.Globals)
+    (getParts : env "parts" = some (.ref heap.length)) :
+    Evaluates program env (.subscript (.name "parts") (.slice (some (.constant (.int 5))) none none))
+      (splitHeap heap line ++ [.list ((values line).take 5)]) (.ref (heap.length+2)) (handsHeap heap line) globals := by
+  apply Evaluates.slice (.cons (Evaluates.lookup getParts) (.cons Evaluates.constant
+    (.cons Evaluates.constant (.cons Evaluates.constant .nil))))
+  have retained : (splitHeap heap line ++ [.list ((values line).take 5)])[heap.length]? = some (.list (values line)) := by
+    simp [splitHeap, List.append_assoc]
+  have sliced := Mutable.getSlice_list_suffix (splitHeap heap line ++ [.list ((values line).take 5)]) heap.length (values line) 5 retained
+  have size : (splitHeap heap line ++ [Mutable.Object.list ((values line).take 5)]).length = heap.length+2 := by
+    simp only [splitHeap, List.length_append, List.length_singleton, Nat.add_assoc]
+  have merged : splitHeap heap line ++ [.list ((values line).take 5)] ++ [.list ((values line).drop 5)] = handsHeap heap line := by
+    rw [List.append_assoc]
+    rfl
+  rw [size, merged] at sliced
+  exact sliced
+
+/-- Once the rank calls and their comparison are proved, this composes the complete nonempty-line path. -/
+theorem ranked (line : String) (heap : Mutable.Heap) (globals : Mutable.Globals) (nonempty : tokens line ≠ [])
+    (left right : Mutable.Value) (middle finalHeap : Mutable.Heap) (wins : Bool)
+    (first : ReturnsValue program "hand_rank" [.ref (heap.length+1)] (handsHeap heap line) left middle globals)
+    (second : ReturnsValue program "hand_rank" [.ref (heap.length+2)] middle right finalHeap globals)
+    (order : HeapCalls.compare .gt left right finalHeap = some (.ok (flag wins), finalHeap)) :
+    ReturnsValue program "player1_wins" [text line] heap (flag wins) finalHeap globals := by
+  let entry := functionEnv ((findFunctionIn program.body "player1_wins").getD ([], [])).1
+    ((findFunctionIn program.body "player1_wins").getD ([], [])).2 [text line] globals
+  let parsed := setLocal entry "parts" (.ref heap.length)
+  let dealt := setLocal (setLocal parsed "h1" (.ref (heap.length+1))) "h2" (.ref (heap.length+2))
+  have getLine : entry "line" = some (text line) := by cases globals <;> rfl
+  apply BlockReturns.function rfl rfl
+  apply BlockReturns.assign (tokenize line heap entry globals getLine)
+  apply BlockReturns.branch (flag := false) (value := flag false) (middle := splitHeap heap line)
+  · simpa [List.isEmpty_eq_false_iff.mpr nonempty] using empty_test line heap parsed globals rfl
+  · rfl
+  · apply BlockReturns.assign (first_hand line heap parsed globals rfl)
+    apply BlockReturns.assign (second_hand line heap (setLocal parsed "h1" (.ref (heap.length+1))) globals (by simp [setLocal, parsed]))
+    apply BlockReturns.return_value
+    exact Evaluates.compare (env := dealt)
+      (Evaluates.call (.cons (Evaluates.lookup (by simp [dealt, setLocal])) .nil) first)
+      (Evaluates.call (.cons (Evaluates.lookup rfl) .nil) second) order
+
+end player1_wins
 end solvers.«54»
