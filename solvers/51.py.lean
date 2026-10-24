@@ -1,6 +1,7 @@
 import «.formalsw».solvers.«51.py.ast»
 import lang.py.FormalSW.HeapCalls
 import ProjectEulerSolutions.Lib.PrimeSieve
+import ProjectEulerSolutions.Lib.PrimeReplacement
 import ProjectEulerSolutions.Lib.HeapCollection
 import Mathlib.Data.Nat.Sqrt
 
@@ -451,4 +452,56 @@ theorem primes_pairwise (limit : Nat) : (primes limit).Pairwise (· < ·) :=
   (List.pairwise_lt_range' (s := 2) (n := limit-1)).filter _
 
 end sieve
+
+private def replacementExpression (originalName : String) : Expr :=
+  .binOp (.name "p") .add (.binOp (.binOp (.name "r") .sub (.name originalName)) .mult (.name "shift"))
+
+private theorem replacement_evaluates (originalName : String) (p : Nat) (indices : List Nat) (original digit : Nat)
+    (distinct : indices.Nodup) (bounded : ∀ index ∈ indices, index < (Nat.digits 10 p).length)
+    (same : ProjectEulerSolutions.PrimeReplacement.SameDigit (Nat.digits 10 p).reverse indices original)
+    (heap : Mutable.Heap) (env : HeapCalls.Env) (getP : env "p" = some (number p))
+    (getDigit : env "r" = some (number digit)) (getOriginal : env originalName = some (number original))
+    (getShift : env "shift" = some (number ((indices.map (fun index => 10 ^ ((Nat.digits 10 p).length - 1 - index))).sum : Nat))) :
+    Evaluates program env (replacementExpression originalName) heap
+      (number (Nat.ofDigits 10 (ProjectEulerStatements.P51.replaceAt (Nat.digits 10 p)
+        (ProjectEulerSolutions.PrimeReplacement.reflected (Nat.digits 10 p).length indices) digit) : Nat)) heap := by
+  have calculated : Evaluates program env (replacementExpression originalName) heap
+      (number ((p : Int) + ((digit : Int) - original) *
+        ((indices.map (fun index => 10 ^ ((Nat.digits 10 p).length - 1 - index))).sum : Nat))) heap := by
+    apply Evaluates.binary (av := number p) (bv := number (((digit : Int) - original) *
+      ((indices.map (fun index => 10 ^ ((Nat.digits 10 p).length - 1 - index))).sum : Nat)))
+      (middle := heap) (afterRight := heap)
+      (Evaluates.lookup getP)
+    · apply Evaluates.binary (av := number ((digit : Int) - original))
+        (bv := number ((indices.map (fun index => 10 ^ ((Nat.digits 10 p).length - 1 - index))).sum : Nat))
+        (middle := heap) (afterRight := heap)
+        (Evaluates.binary (av := number digit) (bv := number original) (Evaluates.lookup getDigit) (Evaluates.lookup getOriginal)
+          (by simp [Mutable.binary, scalarBinary]))
+        (Evaluates.lookup getShift)
+      simp [Mutable.binary, scalarBinary]
+    · simp [Mutable.binary, scalarBinary]
+  have equal := ProjectEulerSolutions.PrimeReplacement.replacement_value_reflected (Nat.digits 10 p) indices original digit distinct bounded same
+  rw [Nat.ofDigits_digits] at equal
+  rw [← equal] at calculated
+  exact calculated
+
+namespace count_prime_family_for_positions
+private def code : List Stmt := executableBody ((findFunctionIn program.body "count_prime_family_for_positions").getD ([], [])).2
+private def loopBody : List Stmt := match (code[11]? : Option Stmt) with
+  | some (.forIn _ _ body _) => body | _ => []
+
+/-- The actual source assignment computes the reference replacement at reflected digit positions. -/
+theorem replacement_assignment (p : Nat) (indices : List Nat) (original digit : Nat)
+    (distinct : indices.Nodup) (bounded : ∀ index ∈ indices, index < (Nat.digits 10 p).length)
+    (same : ProjectEulerSolutions.PrimeReplacement.SameDigit (Nat.digits 10 p).reverse indices original)
+    (heap : Mutable.Heap) (env : HeapCalls.Env) (getP : env "p" = some (number p))
+    (getDigit : env "r" = some (number digit)) (getOriginal : env "d0" = some (number original))
+    (getShift : env "shift" = some (number ((indices.map (fun index => 10 ^ ((Nat.digits 10 p).length - 1 - index))).sum : Nat))) :
+    BlockContinues program env [loopBody[1]'(by decide)] heap
+      (setLocal env "num" (number (Nat.ofDigits 10 (ProjectEulerStatements.P51.replaceAt (Nat.digits 10 p)
+        (ProjectEulerSolutions.PrimeReplacement.reflected (Nat.digits 10 p).length indices) digit) : Nat))) heap := by
+  apply BlockContinues.assign
+  exact replacement_evaluates "d0" p indices original digit distinct bounded same heap env getP getDigit getOriginal getShift
+end count_prime_family_for_positions
+
 end solvers.«51»
