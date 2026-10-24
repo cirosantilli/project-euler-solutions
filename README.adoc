@@ -530,7 +530,7 @@ Problem 30’s source-level equivalence proof covers digit extraction, the fifth
 
 Problem 31’s source-level equivalence proof connects recursive coin counting to the dynamic programming table for every nonnegative target and list of positive denominations. It covers empty, repeated, and unsorted denominations, with repeated entries treated as distinct coin types. The proofs use only standard Lean axioms.
 
-Problem 32 accepts the target width in both implementations and uses each decimal digit from one through that width once. A general digit-length theorem derives the product interval and square-root factor bound, without fixed factor-search limits. The mathematical proof equates the complete factor search with all permutation splits and their deduplicated sums. Source proofs cover the digit checker, positional conversion, and optimized candidate and inner loops; the complete source `Equiv` and termination proofs remain pending. The archived fixed-instance proofs are not counted as current proofs.
+Problem 32 has structural source equivalence and termination proofs for every integer target width. A digit-length theorem derives the complete product interval and square-root factor bound. Both the optimized factor traversal and all reference permutation splits collect exactly the multiplication identities using digits one through the requested width once. The proof covers decimal conversion, copied slices, set insertion, and summation in every set traversal order. Widths below three and above nine return zero because no identity is possible. The proofs use only standard Lean axioms and do not evaluate the complete programs.
 
 Problem 33’s source-level equivalence proof covers decimal string replacement, the nested fraction search, tuple allocations, and reduction of the product by its greatest common divisor.
 
@@ -703,7 +703,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/29.py[29.py] | link:solvers/29.md[29.md] | link:solvers/29.py.lean[29.py.lean] | 0.136 | 9183 |
 | link:solvers/30.py[30.py] | link:solvers/30.md[30.md] | link:solvers/30.py.lean[30.py.lean] | 0.103 | 443839 |
 | link:solvers/31.py[31.py] | link:solvers/31.md[31.md] | link:solvers/31.py.lean[31.py.lean] | 0.117 | 73682 |
-| link:solvers/32.py[32.py] | link:solvers/32.md[32.md] |  | 0.153 | 45228 |
+| link:solvers/32.py[32.py] | link:solvers/32.md[32.md] | link:solvers/32.py.lean[32.py.lean] | 0.153 | 45228 |
 | link:solvers/33.py[33.py] | link:solvers/33.md[33.md] | link:solvers/33.py.lean[33.py.lean] | 0.124 | 100 |
 | link:solvers/34.py[34.py] | link:solvers/34.md[34.md] | link:solvers/34.py.lean[34.py.lean] | 0.284 | 40730 |
 | link:solvers/35.py[35.py] | link:solvers/35.md[35.md] | link:solvers/35.py.lean[35.py.lean] | 0.161 | 55 |

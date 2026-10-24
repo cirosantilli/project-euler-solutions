@@ -20,7 +20,7 @@ theorem working_set (base : Mutable.Heap) (values replacement : List Constant) :
   simp [working, List.set_append_right]
 
 def inserted (before : List Constant) (items : List Nat) : List Constant :=
-  (items.map fun n => Constant.int n).foldl ScalarSet.insert before
+  (items.map fun (n : Nat) => Constant.int n).foldl ScalarSet.insert before
 
 theorem inserted_append (before : List Constant) (first second : List Nat) :
     inserted before (first ++ second) = inserted (inserted before first) second := by
