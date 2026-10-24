@@ -1,4 +1,10 @@
 #!/usr/bin/env python
+"""
+@formalsw: theorem solve_source_equivalence
+  (limit : Int) (caller : FormalSW.PyAst.Mutable.Heap) :
+  caller.Valid → solvers.«60».source_equivalence.Verified limit caller
+"""
+
 from __future__ import annotations
 
 from math import isqrt
