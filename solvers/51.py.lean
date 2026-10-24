@@ -3,6 +3,7 @@ import lang.py.FormalSW.HeapCalls
 import lang.py.FormalSW.LoopCalls
 import ProjectEulerSolutions.Lib.PrimeSieve
 import ProjectEulerSolutions.Lib.PrimeReplacement
+import ProjectEulerSolutions.Lib.PrimeReplacementSearch
 import ProjectEulerSolutions.Lib.BitSubsets
 import ProjectEulerSolutions.Lib.HeapCollection
 import Mathlib.Data.Nat.Sqrt
@@ -797,7 +798,7 @@ theorem family_counting_tail (p : Nat) (positive : 0 < p) (indices : List Nat) (
     (getBuffer : env "is_prime" = some (.ref address)) (getTarget : env "target" = some (number target))
     (found : heap[address]? = some (.bytearray bytes)) (size : bytes.length = 10^(Nat.digits 10 p).length)
     (correct : ∀ i byte, bytes[i]? = some byte → (byte.toNat ≠ 0 ↔ Nat.Prime i)) :
-    (target ≤ (familySize p indices : Int) → BlockReturns program env (maskBody.drop 5) heap (number p) heap) ∧
+    (target ≤ (familySize p indices : Int) → ∀ following, BlockReturns program env (maskBody.drop 5 ++ following) heap (number p) heap) ∧
     ((familySize p indices : Int) < target → ∃ finalEnv,
       BlockContinues program env (maskBody.drop 5) heap finalEnv heap ∧
       finalEnv "cnt" = some (number (familySize p indices)) ∧
@@ -821,8 +822,8 @@ theorem family_counting_tail (p : Nat) (positive : 0 < p) (indices : List Nat) (
       (middle := heap) (afterRight := heap) (Evaluates.lookup getTotal) (Evaluates.lookup finalTarget)
     simp [HeapCalls.compare, scalarCompare, evalCmpOp]
   constructor
-  · intro qualifies
-    have returned : BlockReturns program finalEnv [maskBody[7]'(by decide)] heap (number p) heap := by
+  · intro qualifies following
+    have returned : BlockReturns program finalEnv ([maskBody[7]'(by decide)] ++ following) heap (number p) heap := by
       apply BlockReturns.branch (value := flag true) (flag := true)
         (by simpa only [qualifies, decide_true] using test) (by simp [Mutable.truth, scalarTruth])
       exact BlockReturns.return_value (Evaluates.lookup finalP)
@@ -1029,6 +1030,335 @@ theorem result (width bits posAddress powerAddress : Nat) (items : List Nat)
   · exact stable_trans (stable_set env "shift" _ (by simp)) (stable_trans (stable_set cleared "lead" _ (by simp)) saved)
 
 end slotWeights
+
+/-- After pruning, one complete source mask iteration returns exactly for a qualifying replacement family. -/
+theorem mask_tail (p : Nat) (positive : 0 < p) (items : List Nat) (original bits posAddress powerAddress primeAddress : Nat)
+    (target : Int) (distinct : items.Nodup) (bounded : ∀ index ∈ items, index < (Nat.digits 10 p).length)
+    (same : ProjectEulerSolutions.PrimeReplacement.SameDigit (Nat.digits 10 p).reverse items original)
+    (env : HeapCalls.Env) (heap : Mutable.Heap) (bytes : List UInt8)
+    (getP : env "p" = some (number p)) (getOriginal : env "d" = some (number original))
+    (getMask : env "mask" = some (number bits)) (getPositions : env "pos" = some (.ref posAddress))
+    (getPowers : env "pow10" = some (.ref powerAddress)) (getLength : env "m" = some (number items.length))
+    (getPrimes : env "is_prime" = some (.ref primeAddress)) (getTarget : env "target" = some (number target))
+    (positionsFound : heap[posAddress]? = some (.list (numbers items)))
+    (powersFound : heap[powerAddress]? = some (.list (numbers (powers (Nat.digits 10 p).length))))
+    (primesFound : heap[primeAddress]? = some (.bytearray bytes)) (size : bytes.length = 10^(Nat.digits 10 p).length)
+    (correct : ∀ i byte, bytes[i]? = some byte → (byte.toNat ≠ 0 ↔ Nat.Prime i)) :
+    (target ≤ (familySize p (ProjectEulerSolutions.BitSubsets.select items bits) : Int) →
+      ∀ following, BlockReturns program env (maskBody.drop 2 ++ following) heap (number p) heap) ∧
+    ((familySize p (ProjectEulerSolutions.BitSubsets.select items bits) : Int) < target → ∃ finalEnv,
+      BlockContinues program env (maskBody.drop 2) heap finalEnv heap ∧
+      finalEnv "cnt" = some (number (familySize p (ProjectEulerSolutions.BitSubsets.select items bits))) ∧
+      (∀ name, name ∉ ["j", "idx", "shift", "lead", "r", "num", "cnt"] → finalEnv name = env name)) := by
+  let indices := ProjectEulerSolutions.BitSubsets.select items bits
+  have included := ProjectEulerSolutions.BitSubsets.select_subset items bits
+  have selectedDistinct := ProjectEulerSolutions.BitSubsets.select_nodup items distinct bits
+  have selectedBounded : ∀ index ∈ indices, index < (Nat.digits 10 p).length :=
+    fun index member => bounded index (included member)
+  have selectedSame : ProjectEulerSolutions.PrimeReplacement.SameDigit (Nat.digits 10 p).reverse indices original := by
+    intro index value found member
+    exact same index value found (by simpa only [Nat.zero_add] using included (by simpa only [Nat.zero_add] using member))
+  obtain ⟨preparedEnv, prepared, getShift, getLead, saved⟩ := slotWeights.result (Nat.digits 10 p).length bits posAddress powerAddress
+    items bounded env heap getMask getPositions getPowers getLength positionsFound powersFound
+  have preparedP := (saved "p" (by decide) (by decide) (by decide) (by decide)).trans getP
+  have preparedOriginal := (saved "d" (by decide) (by decide) (by decide) (by decide)).trans getOriginal
+  have preparedPrimes := (saved "is_prime" (by decide) (by decide) (by decide) (by decide)).trans getPrimes
+  have preparedTarget := (saved "target" (by decide) (by decide) (by decide) (by decide)).trans getTarget
+  have counted := family_counting_tail p positive indices original primeAddress target selectedDistinct selectedBounded selectedSame
+    preparedEnv heap bytes preparedP preparedOriginal getShift getLead preparedPrimes preparedTarget primesFound size correct
+  constructor
+  · intro qualifies following
+    exact prepared.returns (counted.1 qualifies following)
+  · intro tooSmall
+    obtain ⟨finalEnv, executed, total, preserved⟩ := counted.2 tooSmall
+    refine ⟨finalEnv, prepared.append executed, total, ?_⟩
+    intro name untouched
+    have hj : name ≠ "j" := fun equal => untouched (by simp [equal])
+    have hi : name ≠ "idx" := fun equal => untouched (by simp [equal])
+    have hs : name ≠ "shift" := fun equal => untouched (by simp [equal])
+    have hl : name ≠ "lead" := fun equal => untouched (by simp [equal])
+    have hr : name ≠ "r" := fun equal => untouched (by simp [equal])
+    have hn : name ≠ "num" := fun equal => untouched (by simp [equal])
+    have hc : name ≠ "cnt" := fun equal => untouched (by simp [equal])
+    exact (preserved name hr hn hc).trans (saved name hj hi hs hl)
+
+namespace masks
+private def guard : Expr := match (maskBody[1]? : Option Stmt) with
+  | some (.ifThen condition _ _) => condition | _ => .constant .none
+
+private theorem guard_evaluates (target : Int) (count : Nat) (env : HeapCalls.Env) (heap : Mutable.Heap)
+    (getTarget : env "target" = some (number target)) (getCount : env "k" = some (number count)) :
+    Evaluates program env guard heap (flag (decide (8 ≤ target ∧ count % 3 ≠ 0))) heap := by
+  have threshold : Evaluates program env (.compare (.name "target") [(.gtE, .constant (.int 8))]) heap
+      (flag (decide (8 ≤ target))) heap := by
+    apply Evaluates.compare (av := number target) (bv := number 8) (middle := heap) (afterRight := heap)
+      (Evaluates.lookup getTarget) Evaluates.constant
+    simp [HeapCalls.compare, scalarCompare, evalCmpOp]
+  by_cases large : 8 ≤ target
+  · apply Evaluates.boolean_next (value := flag true) (flag := true)
+      (by simpa only [large, decide_true] using threshold) (by simp [Mutable.truth, scalarTruth]) (by decide)
+    apply Evaluates.boolean_last (flag := decide (count % 3 ≠ 0))
+    · apply Evaluates.compare (av := number (count % 3 : Nat)) (bv := number 0) (middle := heap) (afterRight := heap)
+      · exact Evaluates.binary (av := number count) (bv := number 3) (middle := heap) (afterRight := heap)
+          (Evaluates.lookup getCount) Evaluates.constant (by simp [Mutable.binary, scalarBinary])
+      · exact Evaluates.constant
+      · simp [HeapCalls.compare, scalarCompare, evalCmpOp, large]
+        omega
+    · simp [Mutable.truth, scalarTruth, large]
+  · simpa [guard, large] using Evaluates.boolean_stop (op := BoolOp.and)
+      (rest := [.compare (.binOp (.name "k") .mod (.constant (.int 3))) [(.notEq, .constant (.int 0))]])
+      (value := flag false) (flag := false) (by simpa only [large, decide_false] using threshold)
+      (by simp [Mutable.truth, scalarTruth]) (by decide)
+
+private def Run (p : Nat) (invariant : HeapCalls.Env → Prop) (env : HeapCalls.Env)
+    (body : List Stmt) (heap : Mutable.Heap) (found : Bool) : Prop :=
+  if found then ∀ following, BlockReturns program env (body ++ following) heap (number p) heap
+  else ∃ finalEnv, BlockContinues program env body heap finalEnv heap ∧ invariant finalEnv
+
+private theorem run_weaken (implication : ∀ finalEnv, invariant finalEnv → weaker finalEnv)
+    (executed : Run p invariant env body heap found) : Run p weaker env body heap found := by
+  cases found with
+  | false =>
+      obtain ⟨finalEnv, continued, valid⟩ := executed
+      exact ⟨finalEnv, continued, implication finalEnv valid⟩
+  | true => exact executed
+
+private theorem run_prepend (continued : BlockContinues program env body heap middleEnv heap)
+    (rest : Run p invariant middleEnv following heap found) : Run p invariant env (body ++ following) heap found := by
+  cases found with
+  | false =>
+      obtain ⟨finalEnv, finished, valid⟩ := rest
+      exact ⟨finalEnv, continued.append finished, valid⟩
+  | true =>
+      intro after
+      simpa only [List.append_assoc] using continued.returns (rest after)
+
+private theorem run_branch {flag : Bool} (evaluated : Evaluates program env condition heap value heap)
+    (truth : Mutable.truth value heap = some (.ok flag, heap))
+    (executed : Run p invariant env ((if flag then yes else no) ++ rest) heap found) :
+    Run p invariant env (.ifThen condition yes no :: rest) heap found := by
+  cases found with
+  | false =>
+      obtain ⟨finalEnv, continued, valid⟩ := executed
+      exact ⟨finalEnv, BlockContinues.branch_next evaluated truth continued, valid⟩
+  | true =>
+      intro after
+      exact BlockReturns.branch evaluated truth (by simpa only [List.append_assoc] using executed after)
+
+private theorem run_resume (executed : Run p invariant env [next] heap found) :
+    Run p invariant env [.loopResume next] heap found := by
+  cases found with
+  | false =>
+      obtain ⟨finalEnv, continued, valid⟩ := executed
+      exact ⟨finalEnv, BlockContinues.loop_resume continued, valid⟩
+  | true =>
+      intro after
+      exact BlockReturns.loop_resume (executed after)
+
+private theorem run_continue (target : Calls.loopTarget body = some (next, rest))
+    (executed : Run p invariant env (next :: rest) heap found) :
+    Run p invariant env (.continueLoop :: body) heap found := by
+  cases found with
+  | false =>
+      obtain ⟨finalEnv, continued, valid⟩ := executed
+      exact ⟨finalEnv, BlockContinues.continue_loop target continued, valid⟩
+  | true =>
+      intro after
+      exact BlockReturns.continue_loop (Calls.loopTarget_append target after) (by simpa only [List.cons_append] using executed after)
+
+private theorem run_range_step (active : Calls.rangeContinues first stop stride = true)
+    (rest : Run p invariant (setLocal env name (number first))
+      (body ++ [Calls.loopContinuation body (.rangeStepLoop name (first+stride) stop stride body [])]) heap found) :
+    Run p invariant env [.rangeStepLoop name first stop stride body []] heap found := by
+  cases found with
+  | false =>
+      obtain ⟨finalEnv, continued, valid⟩ := rest
+      exact ⟨finalEnv, BlockContinues.range_step active continued, valid⟩
+  | true =>
+      intro after
+      apply BlockReturns.range_step active
+      simpa only [List.append_assoc] using rest after
+
+private def writes : List String := ["mask", "k"] ++ ["j", "idx", "shift", "lead", "r", "num", "cnt"]
+private def Stable (before after : HeapCalls.Env) : Prop := ∀ name, name ∉ writes → after name = before name
+private theorem stable_refl (env : HeapCalls.Env) : Stable env env := fun _ _ => rfl
+private theorem stable_trans (first : Stable before middle) (second : Stable middle after) : Stable before after :=
+  fun name untouched => (second name untouched).trans (first name untouched)
+private theorem stable_set (env : HeapCalls.Env) (name : String) (value : Mutable.Value) (written : name ∈ writes) :
+    Stable env (setLocal env name value) := by
+  intro key untouched
+  have different : key ≠ name := by intro same; subst key; exact untouched written
+  simp only [setLocal, different, if_false]
+
+private structure Inputs (p original posAddress powerAddress primeAddress : Nat) (target : Int) (items : List Nat)
+    (env : HeapCalls.Env) : Prop where
+  getP : env "p" = some (number p)
+  getOriginal : env "d" = some (number original)
+  getPositions : env "pos" = some (.ref posAddress)
+  getPowers : env "pow10" = some (.ref powerAddress)
+  getLength : env "m" = some (number items.length)
+  getPrimes : env "is_prime" = some (.ref primeAddress)
+  getTarget : env "target" = some (number target)
+
+private theorem Inputs.preserved (inputs : Inputs p original posAddress powerAddress primeAddress target items before)
+    (stable : Stable before after) : Inputs p original posAddress powerAddress primeAddress target items after := by
+  exact ⟨(stable "p" (by decide)).trans inputs.getP, (stable "d" (by decide)).trans inputs.getOriginal,
+    (stable "pos" (by decide)).trans inputs.getPositions, (stable "pow10" (by decide)).trans inputs.getPowers,
+    (stable "m" (by decide)).trans inputs.getLength, (stable "is_prime" (by decide)).trans inputs.getPrimes,
+    (stable "target" (by decide)).trans inputs.getTarget⟩
+
+private def accepted (target : Int) (p : Nat) (items : List Nat) (bits : Nat) : Bool :=
+  if 8 ≤ target ∧ FormalSW.Py.Builtin.Int.bitCount bits % 3 ≠ 0 then false
+  else decide (target ≤ (familySize p (ProjectEulerSolutions.BitSubsets.select items bits) : Int))
+
+private theorem loop (p original posAddress powerAddress primeAddress first remaining stop : Nat) (target : Int)
+    (items : List Nat) (positive : 0 < p) (distinct : items.Nodup)
+    (bounded : ∀ index ∈ items, index < (Nat.digits 10 p).length)
+    (same : ProjectEulerSolutions.PrimeReplacement.SameDigit (Nat.digits 10 p).reverse items original)
+    (endpoint : first + remaining = stop)
+    (env : HeapCalls.Env) (heap : Mutable.Heap) (bytes : List UInt8)
+    (inputs : Inputs p original posAddress powerAddress primeAddress target items env)
+    (positionsFound : heap[posAddress]? = some (.list (numbers items)))
+    (powersFound : heap[powerAddress]? = some (.list (numbers (powers (Nat.digits 10 p).length))))
+    (primesFound : heap[primeAddress]? = some (.bytearray bytes)) (size : bytes.length = 10^(Nat.digits 10 p).length)
+    (correct : ∀ i byte, bytes[i]? = some byte → (byte.toNat ≠ 0 ↔ Nat.Prime i)) :
+    Run p (fun finalEnv => Inputs p original posAddress powerAddress primeAddress target items finalEnv ∧ Stable env finalEnv)
+      env [.rangeStepLoop "mask" first stop 1 maskBody []] heap ((List.range' first remaining).any (accepted target p items)) := by
+  induction remaining generalizing first env with
+  | zero =>
+      refine ⟨env, BlockContinues.range_done (by simp [Calls.rangeContinues]; omega) .nil, inputs, stable_refl env⟩
+  | succ remaining ih =>
+      let bound := setLocal env "mask" (number first)
+      let keyed := setLocal bound "k" (number (FormalSW.Py.Builtin.Int.bitCount first))
+      let next := Stmt.rangeStepLoop "mask" (first+1) stop 1 maskBody []
+      have prefixStable : Stable env keyed := stable_trans (stable_set env "mask" _ (by decide)) (stable_set bound "k" _ (by decide))
+      have keyedInputs := inputs.preserved prefixStable
+      have assigned : BlockContinues program bound [maskBody[0]'(by decide)] heap keyed heap := by
+        apply BlockContinues.assign
+        apply Evaluates.builtin (.cons (Evaluates.lookup rfl) .nil)
+        rfl
+      have test := guard_evaluates target (FormalSW.Py.Builtin.Int.bitCount first) keyed heap keyedInputs.getTarget rfl
+      by_cases skip : 8 ≤ target ∧ FormalSW.Py.Builtin.Int.bitCount first % 3 ≠ 0
+      · have inherited := run_weaken
+          (invariant := fun finalEnv => Inputs p original posAddress powerAddress primeAddress target items finalEnv ∧ Stable keyed finalEnv)
+          (weaker := fun finalEnv => Inputs p original posAddress powerAddress primeAddress target items finalEnv ∧ Stable env finalEnv)
+          (fun finalEnv valid => ⟨valid.1, stable_trans prefixStable valid.2⟩)
+          (ih (first+1) (by omega) keyed keyedInputs)
+        have rejected : accepted target p items first = false := by unfold accepted; rw [if_pos skip]
+        rw [List.range'_succ, List.any_cons, rejected, Bool.false_or]
+        apply run_range_step (by simp [Calls.rangeContinues]; omega)
+        change Run p _ bound ([maskBody[0]'(by decide)] ++ (maskBody.drop 1 ++ [.loopResume next])) heap _
+        apply run_prepend assigned
+        apply run_branch (flag := true) (value := flag true)
+          (by simpa only [show decide (8 ≤ target ∧ FormalSW.Py.Builtin.Int.bitCount first % 3 ≠ 0) = true from decide_eq_true skip] using test) (by simp [Mutable.truth, scalarTruth])
+        exact run_continue (next := next) (rest := []) rfl inherited
+      · have counted := mask_tail p positive items original first posAddress powerAddress primeAddress target distinct bounded same
+          keyed heap bytes keyedInputs.getP keyedInputs.getOriginal (by simp [keyed, bound, setLocal])
+          keyedInputs.getPositions keyedInputs.getPowers keyedInputs.getLength keyedInputs.getPrimes keyedInputs.getTarget
+          positionsFound powersFound primesFound size correct
+        by_cases qualifies : target ≤ (familySize p (ProjectEulerSolutions.BitSubsets.select items first) : Int)
+        · have acceptedHere : accepted target p items first = true := by simp only [accepted, skip, if_false, qualifies, decide_true]
+          rw [List.range'_succ, List.any_cons, acceptedHere, Bool.true_or]
+          apply run_range_step (by simp [Calls.rangeContinues]; omega)
+          change Run p _ bound ([maskBody[0]'(by decide)] ++ (maskBody.drop 1 ++ [.loopResume next])) heap true
+          apply run_prepend assigned
+          apply run_branch (flag := false) (value := flag false)
+            (by simpa only [skip, decide_false] using test) (by simp [Mutable.truth, scalarTruth])
+          intro following
+          simpa only [List.append_assoc] using counted.1 qualifies ([.loopResume next] ++ following)
+        · have tooSmall : (familySize p (ProjectEulerSolutions.BitSubsets.select items first) : Int) < target := by omega
+          obtain ⟨middleEnv, continued, _, preserved⟩ := counted.2 tooSmall
+          have bodyStable : Stable keyed middleEnv := by
+            intro name untouched
+            exact preserved name (fun member => untouched (List.mem_append_right _ member))
+          have combined := stable_trans prefixStable bodyStable
+          have middleInputs := inputs.preserved combined
+          have inherited := run_weaken
+            (invariant := fun finalEnv => Inputs p original posAddress powerAddress primeAddress target items finalEnv ∧ Stable middleEnv finalEnv)
+            (weaker := fun finalEnv => Inputs p original posAddress powerAddress primeAddress target items finalEnv ∧ Stable env finalEnv)
+            (fun finalEnv valid => ⟨valid.1, stable_trans combined valid.2⟩)
+            (ih (first+1) (by omega) middleEnv middleInputs)
+          have rejected : accepted target p items first = false := by simp only [accepted, skip, if_false, qualifies, decide_false]
+          rw [List.range'_succ, List.any_cons, rejected, Bool.false_or]
+          apply run_range_step (by simp [Calls.rangeContinues]; omega)
+          change Run p _ bound ([maskBody[0]'(by decide)] ++ (maskBody.drop 1 ++ [.loopResume next])) heap _
+          apply run_prepend assigned
+          apply run_branch (flag := false) (value := flag false)
+            (by simpa only [skip, decide_false] using test) (by simp [Mutable.truth, scalarTruth])
+          change Run p _ keyed (maskBody.drop 2 ++ [.loopResume next]) heap _
+          exact run_prepend continued (run_resume inherited)
+
+private theorem run_for_range (arguments : Evaluates.Arguments program env expressions heap values heap)
+    (bounds : rangeBounds values = .ok (first, stop, stride))
+    (executed : Run p invariant env [.rangeStepLoop name first stop stride body []] heap found) :
+    Run p invariant env [.forIn (.name name) (.call (.name "range") expressions) body []] heap found := by
+  cases found with
+  | false =>
+      obtain ⟨finalEnv, continued, valid⟩ := executed
+      exact ⟨finalEnv, BlockContinues.for_range arguments bounds continued, valid⟩
+  | true =>
+      intro following
+      exact BlockReturns.for_range arguments bounds (executed following)
+
+/-- The complete source mask loop searches every surviving subset and preserves the outer search state. -/
+theorem result (p original posAddress powerAddress primeAddress : Nat) (target : Int)
+    (items : List Nat) (positive : 0 < p) (distinct : items.Nodup)
+    (bounded : ∀ index ∈ items, index < (Nat.digits 10 p).length)
+    (same : ProjectEulerSolutions.PrimeReplacement.SameDigit (Nat.digits 10 p).reverse items original)
+    (env : HeapCalls.Env) (heap : Mutable.Heap) (bytes : List UInt8)
+    (getP : env "p" = some (number p)) (getOriginal : env "d" = some (number original))
+    (getPositions : env "pos" = some (.ref posAddress)) (getPowers : env "pow10" = some (.ref powerAddress))
+    (getLength : env "m" = some (number items.length)) (getPrimes : env "is_prime" = some (.ref primeAddress))
+    (getTarget : env "target" = some (number target))
+    (positionsFound : heap[posAddress]? = some (.list (numbers items)))
+    (powersFound : heap[powerAddress]? = some (.list (numbers (powers (Nat.digits 10 p).length))))
+    (primesFound : heap[primeAddress]? = some (.bytearray bytes)) (size : bytes.length = 10^(Nat.digits 10 p).length)
+    (correct : ∀ i byte, bytes[i]? = some byte → (byte.toNat ≠ 0 ↔ Nat.Prime i)) :
+    Run p (Stable env) env [positionBody[3]'(by decide)] heap
+      ((List.range' 1 (2 ^ items.length - 1)).any (accepted target p items)) := by
+  have positiveStop : 0 < 2 ^ items.length := Nat.two_pow_pos _
+  have scanned := loop p original posAddress powerAddress primeAddress 1 (2 ^ items.length - 1) (2 ^ items.length) target items
+    positive distinct bounded same (by omega) env heap bytes
+    ⟨getP, getOriginal, getPositions, getPowers, getLength, getPrimes, getTarget⟩ positionsFound powersFound primesFound size correct
+  have stop : Evaluates program env (.binOp (.constant (.int 1)) .leftShift (.name "m")) heap (number (2 ^ items.length : Nat)) heap := by
+    apply Evaluates.binary (av := number 1) (bv := number items.length) (middle := heap) (afterRight := heap)
+      Evaluates.constant (Evaluates.lookup getLength)
+    simp only [Mutable.binary, scalarShiftLeft, scalarNumber, show ¬ (items.length : Int) < 0 by omega,
+      if_false, Int.toNat_natCast, integerShiftLeft, Int.one_mul, Int.natCast_pow]
+    rfl
+  exact run_weaken (weaker := Stable env) (fun _ valid => valid.2)
+    (run_for_range (.cons Evaluates.constant (.cons stop .nil)) rfl scanned)
+
+private theorem accepted_nat (target : Int) (p : Nat) (items : List Nat) :
+    accepted target p items = ProjectEulerSolutions.PrimeReplacementSearch.accepts target.toNat p items := by
+  funext bits
+  have threshold : 8 ≤ target ↔ 8 ≤ target.toNat := by omega
+  have score : target ≤ (familySize p (ProjectEulerSolutions.BitSubsets.select items bits) : Int) ↔
+      target.toNat ≤ familySize p (ProjectEulerSolutions.BitSubsets.select items bits) := by omega
+  simp only [accepted, ProjectEulerSolutions.PrimeReplacementSearch.accepts, threshold, score]
+
+/-- On an actual digit-position group, the source mask loop has the verified reference search result. -/
+theorem group_result (p original posAddress powerAddress primeAddress : Nat) (target : Int) (positive : 0 < p)
+    (env : HeapCalls.Env) (heap : Mutable.Heap) (bytes : List UInt8)
+    (getP : env "p" = some (number p)) (getOriginal : env "d" = some (number original))
+    (getPositions : env "pos" = some (.ref posAddress)) (getPowers : env "pow10" = some (.ref powerAddress))
+    (getLength : env "m" = some (number (ProjectEulerSolutions.PrimeReplacementSearch.group target.toNat p original).length))
+    (getPrimes : env "is_prime" = some (.ref primeAddress)) (getTarget : env "target" = some (number target))
+    (positionsFound : heap[posAddress]? = some (.list (numbers (ProjectEulerSolutions.PrimeReplacementSearch.group target.toNat p original))))
+    (powersFound : heap[powerAddress]? = some (.list (numbers (powers (Nat.digits 10 p).length))))
+    (primesFound : heap[primeAddress]? = some (.bytearray bytes)) (size : bytes.length = 10^(Nat.digits 10 p).length)
+    (correct : ∀ i byte, bytes[i]? = some byte → (byte.toNat ≠ 0 ↔ Nat.Prime i)) :
+    Run p (Stable env) env [positionBody[3]'(by decide)] heap
+      (ProjectEulerSolutions.PrimeReplacementSearch.query target.toNat p original) := by
+  have scanned := result p original posAddress powerAddress primeAddress target
+    (ProjectEulerSolutions.PrimeReplacementSearch.group target.toNat p original) positive
+    (ProjectEulerSolutions.PrimeReplacementSearch.group_nodup _ _ _)
+    (ProjectEulerSolutions.PrimeReplacementSearch.group_bounded _ _ _)
+    (ProjectEulerSolutions.PrimeReplacementSearch.group_same _ _ _)
+    env heap bytes getP getOriginal getPositions getPowers getLength getPrimes getTarget positionsFound powersFound primesFound size correct
+  simpa only [ProjectEulerSolutions.PrimeReplacementSearch.query, accepted_nat] using scanned
+
+end masks
 
 end solve
 
