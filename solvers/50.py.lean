@@ -1,5 +1,6 @@
 import «.formalsw».solvers.«50.py.ast»
 import lang.py.FormalSW.HeapCalls
+import lang.py.FormalSW.LoopCalls
 import ProjectEulerSolutions.Lib.PrimeSieve
 import ProjectEulerSolutions.Lib.BooleanPrimeSieve
 import ProjectEulerSolutions.Lib.ConsecutivePrimeSums
@@ -715,5 +716,417 @@ theorem prepared_result (limit : Nat) (large : 3 ≤ limit) (heap : Mutable.Heap
       simpa [finalEnv, setLocal, base, sievedHeap] using saved
   · exact maximum_length_bound (primes limit) (primes_ordered limit (by omega)) limit maximum stopped
 
+private def lengthBody : List Stmt := match (code[9]? : Option Stmt) with
+  | some (.forIn _ _ body _) => body | _ => []
+private def rowBody : List Stmt := match (lengthBody[0]? : Option Stmt) with
+  | some (.forIn _ _ body _) => body | _ => []
+
+private structure SearchHeap (heap : Mutable.Heap) (items : List Nat) (bytes : List UInt8)
+    (limit sieveAddress prefixAddress : Nat) : Prop where
+  sieve : heap[sieveAddress]? = some (.bytearray bytes)
+  prefixes : heap[prefixAddress]? = some (.list (numbers (ProjectEulerSolutions.ConsecutivePrimeSums.prefixes items)))
+  size : bytes.length = limit
+  correct : ∀ i byte, bytes[i]? = some byte → (byte.toNat ≠ 0 ↔ Nat.Prime i)
+
+private theorem SearchLocals.set (locals : SearchLocals env limit maximum count sieveAddress prefixAddress)
+    (name : String) (value : Mutable.Value) (unused : name ∉ ["limit", "max_len", "n", "is_prime", "prefix"]) :
+    SearchLocals (setLocal env name value) limit maximum count sieveAddress prefixAddress := by
+  have stable (query : String) (member : query ∈ ["limit", "max_len", "n", "is_prime", "prefix"]) :
+      setLocal env name value query = env query := by
+    have different : query ≠ name := by intro same; subst query; exact unused member
+    simp [setLocal, different]
+  exact ⟨(stable "limit" (by simp)).trans locals.getLimit, (stable "max_len" (by simp)).trans locals.getMaximum,
+    (stable "n" (by simp)).trans locals.getCount, (stable "is_prime" (by simp)).trans locals.getSieve,
+    (stable "prefix" (by simp)).trans locals.getPrefix⟩
+
+private def rowValues (items : List Nat) (answer : Window) : List Mutable.Value :=
+  [number (window items answer.first answer.length), number answer.length]
+
+/-- Unsuccessful scans preserve the heap; successful ones return one fresh pair. -/
+private def Scan (items : List Nat) (invariant : HeapCalls.Env → Prop) (env : HeapCalls.Env)
+    (body : List Stmt) (heap : Mutable.Heap) : Option Window → Prop
+  | none => ∃ finalEnv, BlockContinues program env body heap finalEnv heap ∧ invariant finalEnv
+  | some answer => ∀ following,
+      BlockReturns program env (body ++ following) heap (.ref heap.length) (heap ++ [.tuple (rowValues items answer)])
+
+/-- Both reads stay in bounds, and Python's signed subtraction equals the natural window sum. -/
+private theorem window_result (items : List Nat) (first length prefixAddress : Nat) (heap : Mutable.Heap)
+    (env : HeapCalls.Env) (inside : first + length ≤ items.length)
+    (getI : env "i" = some (number first)) (getLength : env "length" = some (number length))
+    (getPrefix : env "prefix" = some (.ref prefixAddress))
+    (found : heap[prefixAddress]? = some (.list (numbers (prefixes items)))) :
+    Evaluates program env (.binOp (.subscript (.name "prefix") (.binOp (.name "i") .add (.name "length")))
+      .sub (.subscript (.name "prefix") (.name "i"))) heap (number (window items first length)) heap := by
+  have endIndex : Evaluates program env (.binOp (.name "i") .add (.name "length")) heap
+      (number (first + length : Nat)) heap :=
+    Evaluates.binary (av := number first) (bv := number length) (Evaluates.lookup getI) (Evaluates.lookup getLength)
+      (by simp [Mutable.binary, scalarBinary])
+  have right := read_prefix items (first + length) prefixAddress (.binOp (.name "i") .add (.name "length")) heap env
+    inside getPrefix found (by intros; intro impossible; cases impossible) endIndex
+  have left := read_prefix items first prefixAddress (.name "i") heap env (by omega) getPrefix found
+    (by intros; intro impossible; cases impossible) (Evaluates.lookup getI)
+  have increasing : (items.take first).sum ≤ (items.take (first + length)).sum := by
+    simpa [window] using window_mono_length items 0 first (first + length) (by omega)
+  have naturalDifference : (items.take (first + length)).sum - (items.take first).sum = window items first length := by
+    simpa only [prefix_get items (first + length) inside, prefix_get items first (by omega), Option.getD_some] using
+      prefix_difference items first length inside
+  apply Evaluates.binary right left
+  simp [Mutable.binary, scalarBinary, ← Int.natCast_sub increasing, naturalDifference]
+
+private theorem large_test (limit value : Nat) (heap : Mutable.Heap) (env : HeapCalls.Env)
+    (getLimit : env "limit" = some (number limit)) (getValue : env "val" = some (number value)) :
+    Evaluates program env (.compare (.name "val") [(.gtE, .name "limit")]) heap
+      (flag (decide (limit ≤ value))) heap :=
+  Evaluates.compare (Evaluates.lookup getValue) (Evaluates.lookup getLimit)
+    (by simp [HeapCalls.compare, scalarCompare, evalCmpOp])
+
+private theorem prime_test (items : List Nat) (bytes : List UInt8) (limit maximum sieveAddress prefixAddress value : Nat)
+    (heap : Mutable.Heap) (env : HeapCalls.Env) (inside : value < limit)
+    (snapshot : SearchHeap heap items bytes limit sieveAddress prefixAddress)
+    (locals : SearchLocals env limit maximum items.length sieveAddress prefixAddress)
+    (getValue : env "val" = some (number value)) :
+    ∃ byte : UInt8, Evaluates program env (.subscript (.name "is_prime") (.name "val")) heap (number byte.toNat) heap ∧
+      (byte.toNat ≠ 0 ↔ Nat.Prime value) := by
+  have valid : value < bytes.length := by rw [snapshot.size]; exact inside
+  refine ⟨bytes[value], ?_, snapshot.correct value bytes[value] (List.getElem?_eq_getElem valid)⟩
+  apply Evaluates.subscript (middle := heap) (afterIndex := heap)
+    (by intros; intro impossible; cases impossible) (Evaluates.lookup locals.getSieve) (Evaluates.lookup getValue)
+  exact Mutable.getItem_buffer heap sieveAddress value bytes snapshot.sieve valid
+
+private theorem row_return (items : List Nat) (bytes : List UInt8) (limit maximum sieveAddress prefixAddress first length : Nat)
+    (heap : Mutable.Heap) (env : HeapCalls.Env) (inside : first + length ≤ items.length)
+    (snapshot : SearchHeap heap items bytes limit sieveAddress prefixAddress)
+    (locals : SearchLocals env limit maximum items.length sieveAddress prefixAddress)
+    (getI : env "i" = some (number first)) (getLength : env "length" = some (number length))
+    (below : window items first length < limit) (prime : Nat.Prime (window items first length)) (following : List Stmt) :
+    BlockReturns program env (rowBody ++ following) heap (.ref heap.length)
+      (heap ++ [.tuple (rowValues items ⟨first, length⟩)]) := by
+  let ready := setLocal env "val" (number (window items first length))
+  have readyLocals := locals.set "val" (number (window items first length)) (by simp)
+  have getValue : ready "val" = some (number (window items first length)) := by simp [ready, setLocal]
+  obtain ⟨byte, tested, live⟩ := prime_test items bytes limit maximum sieveAddress prefixAddress
+    (window items first length) heap ready below snapshot readyLocals getValue
+  apply BlockReturns.assign (window_result items first length prefixAddress heap env inside getI getLength locals.getPrefix snapshot.prefixes)
+  apply BlockReturns.branch (flag := false)
+    (large_test limit (window items first length) heap ready readyLocals.getLimit getValue)
+    (by simp [show ¬ limit ≤ window items first length by omega, Mutable.truth, scalarTruth])
+  apply BlockReturns.branch (flag := true) tested (by simp [Mutable.truth, scalarTruth, live.mpr prime])
+  apply BlockReturns.return_value
+  apply Evaluates.tuple (values := [number (window items first length), number length])
+    (.cons (Evaluates.lookup getValue) (.cons (Evaluates.lookup (by simpa [ready, setLocal] using getLength)) .nil))
+    (by simp)
+
+private theorem row_skip (items : List Nat) (bytes : List UInt8) (limit maximum sieveAddress prefixAddress first length : Nat)
+    (heap : Mutable.Heap) (env : HeapCalls.Env) (inside : first + length ≤ items.length)
+    (snapshot : SearchHeap heap items bytes limit sieveAddress prefixAddress)
+    (locals : SearchLocals env limit maximum items.length sieveAddress prefixAddress)
+    (getI : env "i" = some (number first)) (getLength : env "length" = some (number length))
+    (below : window items first length < limit) (composite : ¬ Nat.Prime (window items first length)) :
+    BlockContinues program env rowBody heap (setLocal env "val" (number (window items first length))) heap := by
+  let ready := setLocal env "val" (number (window items first length))
+  have readyLocals := locals.set "val" (number (window items first length)) (by simp)
+  have getValue : ready "val" = some (number (window items first length)) := by simp [ready, setLocal]
+  obtain ⟨byte, tested, live⟩ := prime_test items bytes limit maximum sieveAddress prefixAddress
+    (window items first length) heap ready below snapshot readyLocals getValue
+  have assigned : BlockContinues program env [rowBody[0]'(by decide)] heap ready heap :=
+    BlockContinues.assign (window_result items first length prefixAddress heap env inside getI getLength locals.getPrefix snapshot.prefixes)
+  have guarded : BlockContinues program ready [rowBody[1]'(by decide)] heap ready heap :=
+    BlockContinues.branch (flag := false)
+      (large_test limit (window items first length) heap ready readyLocals.getLimit getValue)
+      (by simp [show ¬ limit ≤ window items first length by omega, Mutable.truth, scalarTruth]) .nil
+  have skipped : BlockContinues program ready [rowBody[2]'(by decide)] heap ready heap := by
+    have zero : byte.toNat = 0 := by tauto
+    exact BlockContinues.branch (flag := false) tested (by simp [Mutable.truth, scalarTruth, zero]) .nil
+  exact assigned.append (guarded.append skipped)
+
+private theorem row_break (items : List Nat) (limit maximum sieveAddress prefixAddress first length : Nat)
+    (heap : Mutable.Heap) (env : HeapCalls.Env) (inside : first + length ≤ items.length)
+    (found : heap[prefixAddress]? = some (.list (numbers (prefixes items))))
+    (locals : SearchLocals env limit maximum items.length sieveAddress prefixAddress)
+    (getI : env "i" = some (number first)) (getLength : env "length" = some (number length))
+    (tooLarge : limit ≤ window items first length) (next : Stmt) :
+    BlockContinues program env (rowBody ++ [.loopResume next]) heap
+      (setLocal env "val" (number (window items first length))) heap := by
+  let ready := setLocal env "val" (number (window items first length))
+  have readyLocals := locals.set "val" (number (window items first length)) (by simp)
+  have getValue : ready "val" = some (number (window items first length)) := by simp [ready, setLocal]
+  have assigned : BlockContinues program env [rowBody[0]'(by decide)] heap ready heap :=
+    BlockContinues.assign (window_result items first length prefixAddress heap env inside getI getLength locals.getPrefix found)
+  apply assigned.append
+  apply BlockContinues.branch_next (flag := true)
+    (large_test limit (window items first length) heap ready readyLocals.getLimit getValue)
+    (by simp [tooLarge, Mutable.truth, scalarTruth])
+  exact BlockContinues.break_loop (next := next) (rest := []) rfl .nil
+
+private theorem scan_weaken {answer : Option Window}
+    (implication : ∀ finalEnv, invariant finalEnv → weaker finalEnv)
+    (executed : Scan items invariant env body heap answer) : Scan items weaker env body heap answer := by
+  cases answer with
+  | none =>
+      obtain ⟨finalEnv, continued, valid⟩ := executed
+      exact ⟨finalEnv, continued, implication finalEnv valid⟩
+  | some answer => exact executed
+
+private theorem scan_prepend {answer : Option Window}
+    (continued : BlockContinues program env body heap middleEnv heap)
+    (rest : Scan items invariant middleEnv following heap answer) :
+    Scan items invariant env (body ++ following) heap answer := by
+  cases answer with
+  | none =>
+      obtain ⟨finalEnv, finished, valid⟩ := rest
+      exact ⟨finalEnv, continued.append finished, valid⟩
+  | some answer =>
+      intro after
+      simpa only [List.append_assoc] using continued.returns (rest after)
+
+private theorem scan_resume {answer : Option Window}
+    (rest : Scan items invariant env [next] heap answer) :
+    Scan items invariant env [.loopResume next] heap answer := by
+  cases answer with
+  | none =>
+      obtain ⟨finalEnv, finished, valid⟩ := rest
+      exact ⟨finalEnv, fun following anchors stack => .next rfl (finished following anchors stack), valid⟩
+  | some answer =>
+      intro following
+      exact BlockReturns.loop_resume (rest following)
+
+private theorem scan_range_step {answer : Option Window}
+    (active : Calls.rangeContinues first stop stride = true)
+    (rest : Scan items invariant (setLocal env name (number first))
+      (body ++ [Calls.loopContinuation body (.rangeStepLoop name (first + stride) stop stride body [])]) heap answer) :
+    Scan items invariant env [.rangeStepLoop name first stop stride body []] heap answer := by
+  cases answer with
+  | none =>
+      obtain ⟨finalEnv, finished, valid⟩ := rest
+      exact ⟨finalEnv, BlockContinues.range_step active finished, valid⟩
+  | some answer =>
+      intro following
+      apply BlockReturns.range_step active
+      simpa only [List.append_assoc] using rest following
+
+private theorem scan_for_range {answer : Option Window}
+    (arguments : Evaluates.Arguments program env expressions heap values heap)
+    (bounds : rangeBounds values = .ok (first, stop, stride))
+    (rest : Scan items invariant env [.rangeStepLoop name first stop stride body []] heap answer) :
+    Scan items invariant env [.forIn (.name name) (.call (.name "range") expressions) body []] heap answer := by
+  cases answer with
+  | none =>
+      obtain ⟨finalEnv, finished, valid⟩ := rest
+      exact ⟨finalEnv, BlockContinues.for_range arguments bounds finished, valid⟩
+  | some answer =>
+      intro following
+      exact BlockReturns.for_range arguments bounds (rest following)
+
+/-- The live inner range agrees with the native row scan, including its early break and return. -/
+theorem inner_loop (items : List Nat) (bytes : List UInt8) (limit maximum sieveAddress prefixAddress length first count stop : Nat)
+    (endpoint : first + count = stop) (bounded : stop + length ≤ items.length + 1)
+    (heap : Mutable.Heap) (env : HeapCalls.Env)
+    (snapshot : SearchHeap heap items bytes limit sieveAddress prefixAddress)
+    (locals : SearchLocals env limit maximum items.length sieveAddress prefixAddress)
+    (getLength : env "length" = some (number length)) :
+    Scan items (fun finalEnv => SearchLocals finalEnv limit maximum items.length sieveAddress prefixAddress ∧
+      finalEnv "length" = some (number length)) env [.rangeStepLoop "i" first stop 1 rowBody []] heap
+      (scanRow items limit length first count) := by
+  induction count generalizing first env with
+  | zero =>
+      refine ⟨env, ?_, locals, getLength⟩
+      exact BlockContinues.range_done (by simp [Calls.rangeContinues]; omega) .nil
+  | succ count ih =>
+      let bound := setLocal env "i" (number first)
+      let ready := setLocal bound "val" (number (window items first length))
+      have boundLocals : SearchLocals bound limit maximum items.length sieveAddress prefixAddress :=
+        locals.set "i" (number first) (by simp)
+      have readyLocals : SearchLocals ready limit maximum items.length sieveAddress prefixAddress :=
+        boundLocals.set "val" (number (window items first length)) (by simp)
+      have boundLength : bound "length" = some (number length) := by simpa [bound, setLocal] using getLength
+      have readyLength : ready "length" = some (number length) := by simpa [ready, setLocal] using boundLength
+      have inside : first + length ≤ items.length := by omega
+      have active : Calls.rangeContinues first stop 1 = true := by simp [Calls.rangeContinues]; omega
+      by_cases tooLarge : limit ≤ window items first length
+      · simp only [scanRow, if_pos tooLarge]
+        refine ⟨ready, ?_, readyLocals, readyLength⟩
+        apply BlockContinues.range_step active
+        simpa only [Calls.loopContinuation, show Calls.loopControl rowBody = true from rfl,
+          if_true, Int.natCast_add, Int.natCast_one] using
+          row_break items limit maximum sieveAddress prefixAddress first length heap bound inside snapshot.prefixes
+            boundLocals (by simp [bound, setLocal]) boundLength tooLarge
+            (.rangeStepLoop "i" ((first + 1 : Nat) : Int) stop 1 rowBody [])
+      · by_cases prime : Nat.Prime (window items first length)
+        · simp only [scanRow, if_neg tooLarge, if_pos prime]
+          intro following
+          apply BlockReturns.range_step active
+          simpa only [List.append_assoc] using row_return items bytes limit maximum sieveAddress prefixAddress first length
+            heap bound inside snapshot boundLocals (by simp [bound, setLocal]) boundLength (by omega) prime
+            ([Calls.loopContinuation rowBody (.rangeStepLoop "i" ((first : Int) + 1) stop 1 rowBody [])] ++ following)
+        · simp only [scanRow, if_neg tooLarge, if_neg prime]
+          have continued := row_skip items bytes limit maximum sieveAddress prefixAddress first length heap bound inside
+            snapshot boundLocals (by simp [bound, setLocal]) boundLength (by omega) prime
+          have rest := ih (first + 1) (by omega) ready readyLocals readyLength
+          have resumed := scan_resume rest
+          apply scan_range_step active
+          simpa only [Calls.loopContinuation, show Calls.loopControl rowBody = true from rfl,
+            if_true, Int.natCast_add, Int.natCast_one] using scan_prepend continued resumed
+
+/-- The source row bounds enumerate all starts whose fixed-width window fits in the prime list. -/
+theorem row_result (items : List Nat) (bytes : List UInt8) (limit maximum sieveAddress prefixAddress length : Nat)
+    (bounded : length ≤ items.length) (heap : Mutable.Heap) (env : HeapCalls.Env)
+    (snapshot : SearchHeap heap items bytes limit sieveAddress prefixAddress)
+    (locals : SearchLocals env limit maximum items.length sieveAddress prefixAddress)
+    (getLength : env "length" = some (number length)) :
+    Scan items (fun finalEnv => SearchLocals finalEnv limit maximum items.length sieveAddress prefixAddress ∧
+      finalEnv "length" = some (number length)) env lengthBody heap
+      (scanRow items limit length 0 (items.length - length + 1)) := by
+  have rest := inner_loop items bytes limit maximum sieveAddress prefixAddress length 0 (items.length - length + 1)
+    (items.length - length + 1) (by omega) (by omega) heap env snapshot locals getLength
+  apply scan_for_range (values := [number 0, number (items.length - length + 1 : Nat)])
+    (first := 0) (stop := (items.length - length + 1 : Nat)) (stride := 1)
+  · refine .cons Evaluates.constant (.cons ?_ .nil)
+    apply Evaluates.binary (av := number (items.length - length : Nat)) (bv := number 1)
+      (middle := heap) (afterRight := heap)
+    · exact Evaluates.binary (av := number items.length) (bv := number length) (middle := heap) (afterRight := heap)
+        (Evaluates.lookup locals.getCount) (Evaluates.lookup getLength)
+        (by simp [Mutable.binary, scalarBinary, Int.natCast_sub bounded])
+    · exact Evaluates.constant
+    · simp [Mutable.binary, scalarBinary]
+  · rfl
+  · exact rest
+
+/-- Descending source lengths select precisely the native search's first successful row. -/
+theorem outer_loop (items : List Nat) (bytes : List UInt8) (limit maximum sieveAddress prefixAddress current : Nat)
+    (bounded : current ≤ items.length) (heap : Mutable.Heap) (env : HeapCalls.Env)
+    (snapshot : SearchHeap heap items bytes limit sieveAddress prefixAddress)
+    (locals : SearchLocals env limit maximum items.length sieveAddress prefixAddress) :
+    Scan items (fun finalEnv => SearchLocals finalEnv limit maximum items.length sieveAddress prefixAddress) env
+      [.rangeStepLoop "length" current 0 (-1) lengthBody []] heap (scanLengths items limit current) := by
+  induction current generalizing env with
+  | zero =>
+      refine ⟨env, ?_, locals⟩
+      exact BlockContinues.range_done (by simp [Calls.rangeContinues]) .nil
+  | succ current ih =>
+      let bound := setLocal env "length" (number (current + 1 : Nat))
+      have boundLocals : SearchLocals bound limit maximum items.length sieveAddress prefixAddress :=
+        locals.set "length" (number (current + 1 : Nat)) (by simp)
+      have scanned := row_result items bytes limit maximum sieveAddress prefixAddress (current + 1) bounded heap bound
+        snapshot boundLocals (by simp [bound, setLocal])
+      have active : Calls.rangeContinues ((current + 1 : Nat) : Int) 0 (-1) = true := by simp [Calls.rangeContinues]
+      cases rowAnswer : scanRow items limit (current + 1) 0 (items.length - (current + 1) + 1) with
+      | none =>
+          rw [rowAnswer] at scanned
+          obtain ⟨rowEnv, continued, rowLocals, getLength⟩ := scanned
+          have rest := ih (by omega) rowEnv rowLocals
+          simp only [scanLengths, rowAnswer, Option.orElse_none]
+          apply scan_range_step active
+          have previous : (((current + 1 : Nat) : Int) + -1) = (current : Int) := by omega
+          simpa only [Calls.loopContinuation, show Calls.loopControl lengthBody = false from rfl,
+            Bool.false_eq_true, if_false, previous] using scan_prepend continued rest
+      | some answer =>
+          rw [rowAnswer] at scanned
+          simp only [scanLengths, rowAnswer, Option.orElse_some]
+          intro following
+          apply BlockReturns.range_step active
+          simpa only [List.append_assoc] using scanned
+            ([Calls.loopContinuation lengthBody (.rangeStepLoop "length" (((current + 1 : Nat) : Int) + -1) 0 (-1) lengthBody [])] ++ following)
+
+theorem search_result (items : List Nat) (bytes : List UInt8) (limit maximum sieveAddress prefixAddress : Nat)
+    (bounded : maximum ≤ items.length) (heap : Mutable.Heap) (env : HeapCalls.Env)
+    (snapshot : SearchHeap heap items bytes limit sieveAddress prefixAddress)
+    (locals : SearchLocals env limit maximum items.length sieveAddress prefixAddress) :
+    Scan items (fun finalEnv => SearchLocals finalEnv limit maximum items.length sieveAddress prefixAddress) env
+      [code[9]'(by decide)] heap (scanLengths items limit maximum) := by
+  apply scan_for_range (values := [number maximum, number 0, number (-1)])
+    (first := maximum) (stop := 0) (stride := -1)
+    (.cons (Evaluates.lookup locals.getMaximum) (.cons Evaluates.constant
+      (.cons (Evaluates.unary Evaluates.constant rfl) .nil))) rfl
+  exact outer_loop items bytes limit maximum sieveAddress prefixAddress maximum bounded heap env snapshot locals
+
+def answerPair (limit : Nat) : Nat × Nat := match reference (primes limit) limit with
+  | none => (0, 0)
+  | some chosen => (window (primes limit) chosen.first chosen.length, chosen.length)
+
+private def pairValues (answer : Nat × Nat) : List Mutable.Value := [number answer.1, number answer.2]
+
+/-- The entire original helper returns the same pair as exhaustive mathematical enumeration. -/
+theorem positive_result (limit : Nat) (large : 3 ≤ limit) (heap : Mutable.Heap) :
+    ∃ bytes, ReturnsValue program "longest_consecutive_prime_sum" [number limit] heap
+      (.ref (preparedHeap heap limit bytes).length)
+      (preparedHeap heap limit bytes ++ [.tuple (pairValues (answerPair limit))]) := by
+  let env := functionEnv ((findFunctionIn program.body "longest_consecutive_prime_sum").getD ([], [])).1
+    ((findFunctionIn program.body "longest_consecutive_prime_sum").getD ([], [])).2 [number limit] []
+  obtain ⟨bytes, maximum, ready, prepared, locals, size, correct, bounded, covers⟩ := prepared_result limit large heap env rfl
+  let base := preparedHeap heap limit bytes
+  have snapshot : SearchHeap base (primes limit) bytes limit (heap.length + 1) (heap.length + 3) :=
+    ⟨by simp [base, preparedHeap], by simp [base, preparedHeap], size, correct⟩
+  have scanned := search_result (primes limit) bytes limit maximum (heap.length + 1) (heap.length + 3)
+    bounded base ready snapshot locals
+  have same := scanLengths_eq_reference (primes limit) (primes_ordered limit (by omega)) limit maximum bounded covers
+  rw [same] at scanned
+  refine ⟨bytes, ?_⟩
+  apply BlockReturns.function rfl rfl
+  cases selected : reference (primes limit) limit with
+  | none =>
+      rw [selected] at scanned
+      obtain ⟨finalEnv, continued, finalLocals⟩ := scanned
+      have finished : BlockReturns program finalEnv (code.drop 10) base (.ref base.length)
+          (base ++ [.tuple (pairValues (answerPair limit))]) := by
+        simp only [answerPair, selected]
+        apply BlockReturns.return_value
+        exact Evaluates.tuple (.cons Evaluates.constant (.cons Evaluates.constant .nil)) (by simp [pairValues])
+      have returned := continued.returns finished
+      simpa only [List.take_append_drop] using prepared.returns returned
+  | some chosen =>
+      rw [selected] at scanned
+      have returned := scanned (code.drop 10)
+      have joined := prepared.returns returned
+      simpa only [answerPair, selected, pairValues, rowValues, List.take_append_drop] using joined
+
+theorem small_result (limit : Int) (small : limit ≤ 2) (heap : Mutable.Heap) :
+    ReturnsValue program "longest_consecutive_prime_sum" [number limit] heap (.ref heap.length)
+      (heap ++ [.tuple (pairValues (0, 0))]) := by
+  apply BlockReturns.function rfl rfl
+  apply BlockReturns.branch (flag := true) (value := flag true) (middle := heap)
+    (Evaluates.compare (av := number limit) (bv := number 2) (Evaluates.lookup rfl) Evaluates.constant
+      (by simp [HeapCalls.compare, scalarCompare, evalCmpOp, small])) rfl
+  apply BlockReturns.return_value
+  exact Evaluates.tuple (.cons Evaluates.constant (.cons Evaluates.constant .nil)) (by simp [pairValues])
+
+/-- The helper terminates for every signed bound and returns its complete reference pair. -/
+theorem result (limit : Int) (heap : Mutable.Heap) :
+    ∃ address extra, ReturnsValue program "longest_consecutive_prime_sum" [number limit] heap (.ref address) (heap ++ extra) ∧
+      (heap ++ extra)[address]? = some (.tuple (pairValues (answerPair limit.toNat))) := by
+  by_cases small : limit ≤ 2
+  · have answer : answerPair limit.toNat = (0, 0) := by
+      have empty : limit.toNat - 2 = 0 := by omega
+      simp [answerPair, primes, empty, reference, candidates, row, Valid]
+    refine ⟨heap.length, [.tuple (pairValues (0, 0))], small_result limit small heap, ?_⟩
+    simp [answer]
+  · lift limit to Nat using (by omega : 0 ≤ limit)
+    obtain ⟨bytes, returned⟩ := positive_result limit (by omega) heap
+    refine ⟨(preparedHeap heap limit bytes).length,
+      [.bytearray [1], .bytearray bytes, .list (numbers (primes limit)), .list (numbers (prefixes (primes limit))),
+        .tuple (pairValues (answerPair limit))], ?_, ?_⟩
+    · simpa only [preparedHeap, List.append_assoc, List.cons_append, List.nil_append] using returned
+    · simp [preparedHeap]
+
 end longest_consecutive_prime_sum
+
+namespace solve
+/-- The public solver reads the first field of the helper's private result tuple. -/
+theorem result (limit : Int) (heap : Mutable.Heap) :
+    ∃ extra, ReturnsValue program "solve" [number limit] heap
+      (number (longest_consecutive_prime_sum.answerPair limit.toNat).1) (heap ++ extra) := by
+  obtain ⟨address, extra, returned, found⟩ := longest_consecutive_prime_sum.result limit heap
+  refine ⟨extra, ?_⟩
+  apply BlockReturns.function rfl rfl
+  apply BlockReturns.return_value
+  apply Evaluates.subscript (middle := heap ++ extra) (afterIndex := heap ++ extra)
+    (by intros; intro impossible; cases impossible)
+    (Evaluates.call (.cons (Evaluates.lookup rfl) .nil) returned) Evaluates.constant
+  simp [Mutable.getItem, found, longest_consecutive_prime_sum.pairValues, Mutable.index, Except.map]
+
+theorem «Returns» (limit : Int) : (HeapCalls.scalarFunction program "solve" [.int limit]).Returns := by
+  obtain ⟨extra, returned⟩ := result limit []
+  exact returned.scalar_returns
+
+theorem «Supported» (limit : Int) : (HeapCalls.scalarFunction program "solve" [.int limit]).Supported := («Returns» limit).supported
+end solve
 end solvers.«50»

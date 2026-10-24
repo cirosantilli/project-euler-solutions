@@ -61,6 +61,9 @@ def longest_consecutive_prime_sum(limit: int) -> tuple[int, int]:
 
 
 def solve(limit: int) -> int:
+    """
+    @formalsw: Returns
+    """
     return longest_consecutive_prime_sum(limit)[0]
 
 
