@@ -286,7 +286,7 @@
   solvers/eulersolve/57.cpp: 0.005
   solvers/57.lean: 0.348
 58:
-  solvers/58.py: 0.190
+  solvers/58.py: 0.097
   solvers/eulersolve/58.py: 0.168
   solvers/eulersolve/58.cpp: 0.169
   solvers/58.lean: 0.152

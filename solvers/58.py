@@ -3,6 +3,9 @@ from __future__ import annotations
 
 
 def is_prime(n: int) -> bool:
+    """
+    @formalsw: Returns
+    """
     if n < 2:
         return False
     small_primes: list[int] = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37]
@@ -39,6 +42,11 @@ def is_prime(n: int) -> bool:
 
 
 def solve() -> int:
+    """
+    @formalsw: Returns
+    @formalsw: Py from project_euler_statements.p58 import naive_default
+    @formalsw: Equiv(naive_default)
+    """
     # Start with side length 1
     prime_count = 0
     total_diag = 1
