@@ -15,15 +15,13 @@ def sum_proper_divisors_sieve(limit: int) -> list[int]:
 def solve(limit: int = 28123) -> int:
     """
     @formalsw: Py from project_euler_statements.p23 import naive
-    @formalsw: Requires(limit >= 28)
+    @formalsw: Returns
     @formalsw: Equiv(naive)
     """
+    if limit < 0:
+        return 0
     sums = sum_proper_divisors_sieve(limit)
-
-    # Checks derived from the statement
-    assert sums[28] == 28  # 28 is perfect
     abundant = [n for n in range(12, limit + 1) if sums[n] > n]
-    assert abundant and abundant[0] == 12  # 12 is the smallest abundant number
 
     # can[x] == 1 iff x can be written as sum of two abundant numbers
     can = bytearray(limit + 1)
@@ -39,8 +37,6 @@ def solve(limit: int = 28123) -> int:
                 break
             can[s] = 1
 
-    assert can[24] == 1  # 24 is the smallest sum of two abundant numbers
-
     total = 0
     for n in range(1, lim + 1):
         if not can[n]:
@@ -49,4 +45,7 @@ def solve(limit: int = 28123) -> int:
 
 
 if __name__ == "__main__":
+    assert sum_proper_divisors_sieve(28)[28] == 28
+    assert sum_proper_divisors_sieve(12)[12] > 12
+    assert solve(24) == 276
     print(solve())

@@ -305,19 +305,25 @@ def expression : Expr := .listComp (.name "n")
   [("n", .call (.name "range") [.constant (.int 12), .binOp (.name "limit") .add (.constant (.int 1))], [test])]
 
 /-- The optimized comprehension reads the proven sieve and produces all abundant numbers in order. -/
-theorem result (limit address : Nat) (large : 12 ≤ limit) (heap : Mutable.Heap)
+theorem result (limit address : Nat) (heap : Mutable.Heap)
     (found : heap[address]? = some (.list (Sieve.table (limit + 1) ProjectEulerStatements.P21.d)))
     (env : HeapCalls.Env) (getLimit : env "limit" = some (number limit))
     (getSums : env "sums" = some (.ref address)) :
     Evaluates program env expression heap (.ref heap.length)
       (heap ++ [.list (encode (ProjectEulerStatements.AbundantSums.values limit))]) := by
-  obtain ⟨finalEnv, executed⟩ := loop limit (limit - 11) 12 address (by omega) heap found []
-    (comprehensionEnv env [("n", .call (.name "range")
-      [.constant (.int 12), .binOp (.name "limit") .add (.constant (.int 1))], [test])])
-    (by simpa [comprehensionEnv, setLocal] using getSums)
-  apply Evaluates.list_comp_range (finalEnv := finalEnv)
-    (.cons Evaluates.constant (.cons (Evaluates.binary (Evaluates.lookup getLimit) Evaluates.constant rfl) .nil)) rfl
-  simpa [ProjectEulerStatements.AbundantSums.values] using executed
+  by_cases large : 12 ≤ limit
+  · obtain ⟨finalEnv, executed⟩ := loop limit (limit - 11) 12 address (by omega) heap found []
+      (comprehensionEnv env [("n", .call (.name "range")
+        [.constant (.int 12), .binOp (.name "limit") .add (.constant (.int 1))], [test])])
+      (by simpa [comprehensionEnv, setLocal] using getSums)
+    apply Evaluates.list_comp_range (finalEnv := finalEnv)
+      (.cons Evaluates.constant (.cons (Evaluates.binary (Evaluates.lookup getLimit) Evaluates.constant rfl) .nil)) rfl
+    simpa [ProjectEulerStatements.AbundantSums.values] using executed
+  · apply Evaluates.list_comp_range
+      (.cons Evaluates.constant (.cons (Evaluates.binary (Evaluates.lookup getLimit) Evaluates.constant rfl) .nil)) rfl
+    have count : limit - 11 = 0 := by omega
+    simp only [ProjectEulerStatements.AbundantSums.values, count, List.range'_zero, List.filter_nil]
+    exact BlockContinues.range_done (by simp [Calls.rangeContinues]; omega) .nil
 
 end AbundantList
 
@@ -634,8 +640,8 @@ private abbrev baseHeap (limit : Nat) : Mutable.Heap :=
 def finalHeap (limit : Nat) : Mutable.Heap :=
   baseHeap limit ++ [.bytearray (Marking.flags (limit + 1) (pairs (values limit)))]
 
-/-- The optimized Python algorithm returns the statement's sum, including its embedded assertions. -/
-theorem result (limit : Nat) (large : 28 ≤ limit) :
+/-- The sieve, triangular marking, and final scan implement every nonnegative bound. -/
+theorem result (limit : Nat) :
     ReturnsValue program "solve" [number limit] []
       (number (ProjectEulerStatements.P23.naive limit)) (finalHeap limit) := by
   let entry := functionEnv definition.1 definition.2 [number limit] []
@@ -646,43 +652,6 @@ theorem result (limit : Nat) (large : 28 ≤ limit) :
   let limitEnv := setLocal aliasEnv "lim" (number limit)
   let allEnv := setLocal limitEnv "L" (number (values limit).length)
   let allocated := baseHeap limit ++ [.bytearray (List.replicate (limit + 1) 0)]
-  have perfect : ProjectEulerStatements.P21.d 28 = 28 := twenty_eight_perfect
-  have perfectTest : Evaluates program sieveEnv
-      (.compare (.subscript (.name "sums") (.constant (.int 28))) [(.eq, .constant (.int 28))])
-      (sieveHeap limit) (.scalar (.bool true)) (sieveHeap limit) := by
-    apply Evaluates.compare (av := number 28) (bv := number 28)
-      (middle := sieveHeap limit) (afterRight := sieveHeap limit)
-    · apply Evaluates.subscript (by intro a b c impossible; cases impossible) (Evaluates.lookup rfl) Evaluates.constant
-      have item := Sieve.table_lookup (limit + 1) ProjectEulerStatements.P21.d 28 (by omega)
-      rw [perfect] at item
-      simpa only [(List.getElem?_eq_some_iff.mp item).2] using
-        Mutable.getItem_list (sieveHeap limit) 1 28 _ rfl (by simpa using (show 28 < limit + 1 by omega))
-    · exact Evaluates.constant
-    · rfl
-  have first : (values limit).head? = some 12 := values_head limit (by omega)
-  have nonempty : values limit ≠ [] := by
-    intro empty
-    simp [empty] at first
-  have abundantTest : Evaluates program abundantEnv
-      (.boolOp .and [.name "abundant", .compare (.subscript (.name "abundant") (.constant (.int 0)))
-        [(.eq, .constant (.int 12))]]) (baseHeap limit) (.scalar (.bool true)) (baseHeap limit) := by
-    apply Evaluates.boolean_next (value := .ref 2) (middle := baseHeap limit) (flag := true)
-      (Evaluates.lookup rfl)
-    · simp [Mutable.truth, baseHeap, sieveHeap, encode, nonempty]
-    · rfl
-    · apply Evaluates.boolean_last (flag := true)
-      · apply Evaluates.compare (av := number 12) (bv := number 12)
-          (middle := baseHeap limit) (afterRight := baseHeap limit)
-        · apply Evaluates.subscript (by intro a b c impossible; cases impossible) (Evaluates.lookup rfl) Evaluates.constant
-          have item : (encode (values limit))[0]? = some (number 12) := by
-            have firstIndex : (values limit)[0]? = some 12 := by
-              simpa only [List.head?_eq_getElem?] using first
-            simp only [encode, List.getElem?_map, firstIndex, Option.map_some]
-          simpa only [(List.getElem?_eq_some_iff.mp item).2] using
-            Mutable.getItem_list (baseHeap limit) 2 0 _ rfl (List.getElem?_eq_some_iff.mp item).1
-        · exact Evaluates.constant
-        · rfl
-      · rfl
   have allocate : Evaluates program abundantEnv
       (.builtinCall .bytearray [.binOp (.name "limit") .add (.constant (.int 1))])
       (baseHeap limit) (.ref 3) allocated := by
@@ -693,75 +662,77 @@ theorem result (limit : Nat) (large : 28 ≤ limit) :
     ⟨rfl, rfl, rfl, rfl⟩
   obtain ⟨finalEnv, finalLocals, _, marked⟩ := Marking.result (values limit) (values_sorted limit) limit 2
     (baseHeap limit) rfl allEnv locals
-  have twelve : 12 ∈ values limit := by
-    rw [mem_values]
-    simp [ProjectEulerStatements.P23.abundantSet, twelve_abundant, show 12 ≤ limit by omega]
-  have twentyFour : 24 ∈ pairs (values limit) := (mem_pairs 24 (values limit)).mpr
-    ⟨12, twelve, 12, twelve, rfl⟩
-  have flag24 : Evaluates program finalEnv (.subscript (.name "can") (.constant (.int 24)))
-      (finalHeap limit) (number 1) (finalHeap limit) := by
-    simpa [twentyFour] using Summation.read_flag limit 24 3 (by omega) (pairs (values limit))
-      (finalHeap limit) rfl finalEnv finalLocals.buffer
-      (by intro a b c impossible; cases impossible) Evaluates.constant
   apply BlockReturns.function (args := definition.1) (body := definition.2) rfl rfl
-  apply BlockReturns.assign (value := .ref 1) (middle := sieveHeap limit)
-  · exact Evaluates.call (.cons (Evaluates.lookup rfl) .nil) (Sieve.result limit [])
-  · apply BlockReturns.assertion perfectTest rfl
-    apply BlockReturns.assign (value := .ref 2) (middle := baseHeap limit)
-    · exact AbundantList.result limit 1 (by omega) (sieveHeap limit) rfl sieveEnv rfl rfl
-    · apply BlockReturns.assertion abundantTest rfl
-      apply BlockReturns.assign allocate
-      apply BlockReturns.assign (Evaluates.lookup rfl)
-      apply BlockReturns.assign (Evaluates.lookup rfl)
-      apply BlockReturns.assign (value := number (values limit).length) (middle := allocated)
-      · apply Evaluates.builtin (.cons (Evaluates.lookup rfl) .nil)
-        simp [HeapCalls.primitive, Mutable.length, allocated, sieveHeap, encode]
-      · apply BlockContinues.returns marked
-        apply BlockReturns.assertion (Evaluates.compare flag24 Evaluates.constant rfl) rfl
-        have summed := Summation.result limit 3 (pairs (values limit)) (finalHeap limit) rfl finalEnv
-          finalLocals.buffer finalLocals.bound
-        simpa only [unmarkedSum_values] using summed
+  apply BlockReturns.branch (flag := false) (value := .scalar (.bool false)) (middle := [])
+  · exact Evaluates.compare (Evaluates.lookup rfl) Evaluates.constant
+      (by simp [HeapCalls.compare, scalarCompare, evalCmpOp])
+  · rfl
+  · apply BlockReturns.assign (value := .ref 1) (middle := sieveHeap limit)
+    · exact Evaluates.call (.cons (Evaluates.lookup rfl) .nil) (Sieve.result limit [])
+    · apply BlockReturns.assign (value := .ref 2) (middle := baseHeap limit)
+      · exact AbundantList.result limit 1 (sieveHeap limit) rfl sieveEnv rfl rfl
+      · apply BlockReturns.assign allocate
+        apply BlockReturns.assign (Evaluates.lookup rfl)
+        apply BlockReturns.assign (Evaluates.lookup rfl)
+        apply BlockReturns.assign (value := number (values limit).length) (middle := allocated)
+        · apply Evaluates.builtin (.cons (Evaluates.lookup rfl) .nil)
+          simp [HeapCalls.primitive, Mutable.length, allocated, sieveHeap, encode]
+        · apply BlockContinues.returns marked
+          have summed := Summation.result limit 3 (pairs (values limit)) (finalHeap limit) rfl finalEnv
+            finalLocals.buffer finalLocals.bound
+          simpa only [unmarkedSum_values] using summed
+
+/-- A negative upper bound has no positive candidates and requires no allocation. -/
+theorem negative (limit : Int) (below : limit < 0) :
+    ReturnsValue program "solve" [.scalar (.int limit)] [] (.scalar (.int 0)) [] := by
+  apply BlockReturns.function (args := definition.1) (body := definition.2) rfl rfl
+  apply BlockReturns.branch (flag := true) (value := .scalar (.bool true)) (middle := [])
+  · exact Evaluates.compare (Evaluates.lookup rfl) Evaluates.constant
+      (by simp [HeapCalls.compare, scalarCompare, evalCmpOp, below])
+  · rfl
+  · exact BlockReturns.return_value Evaluates.constant
 
 end Optimized
 
-private abbrev inputEnv (limit : Int) : ScalarEnv :=
-  fun key => if key = "limit" then some (.int limit) else none
+theorem solve.«Returns» (limit : Int) :
+    (HeapCalls.scalarFunction program "solve" [.int limit]).Returns := by
+  by_cases below : limit < 0
+  · exact (Optimized.negative limit below).scalar_returns (values := [.int limit])
+  · lift limit to Nat using (by omega : 0 ≤ limit)
+    exact (Optimized.result limit).scalar_returns (values := [.int limit])
 
-private theorem accepted_limit (limit : Int)
-    (requires : Calls.Condition program (inputEnv limit) Solvers.P23Ast.requires_solve_0) :
-    28 ≤ limit := by
-  simpa [evalCmpOp] using Calls.Evaluates.condition_int_compare requires rfl
-
-theorem solve.«Equiv(naive)» (limit : Int)
-    (requires : Calls.Condition program (inputEnv limit) Solvers.P23Ast.requires_solve_0) :
+theorem solve.«Equiv(naive)» (limit : Int) :
     (SetCalls.call program "solve" [.scalar (.int limit)] []).Equiv
       (SetCalls.call P23Ast.module "naive" [.scalar (.int limit)] []) := by
-  have large := accepted_limit limit requires
-  lift limit to Nat using (by omega : 0 ≤ limit)
-  have large : 28 ≤ limit := by omega
   intro leftChoices rightChoices
-  obtain ⟨referenceHeap, reference⟩ :=
-    data.«project-euler-statements».data.py.project_euler_statements.p23.naive.result limit rightChoices
-  apply Mutable.Call.equiv_of_finishes
-    (a := (SetCalls.call program "solve" [.scalar (.int limit)] []).run leftChoices)
-    (b := (SetCalls.call P23Ast.module "naive" [.scalar (.int limit)] []).run rightChoices)
-    (SetCalls.finishes_of_heap (Optimized.result limit large).finishes leftChoices 0) reference
-  exact Mutable.Completion.equivalent_allocations [] (Optimized.finalHeap limit) referenceHeap
-    (.scalar (.int (ProjectEulerStatements.P23.naive limit))) [] (by simp [Mutable.Heap.Valid]) trivial (by simp)
+  by_cases below : limit < 0
+  · have optimized := SetCalls.finishes_of_heap (Optimized.negative limit below).finishes leftChoices 0
+    have reference := data.«project-euler-statements».data.py.project_euler_statements.p23.naive.negative limit below rightChoices
+    apply Mutable.Call.equiv_of_finishes
+      (a := (SetCalls.call program "solve" [.scalar (.int limit)] []).run leftChoices)
+      (b := (SetCalls.call P23Ast.module "naive" [.scalar (.int limit)] []).run rightChoices)
+      optimized reference
+    exact Mutable.Completion.equivalent_allocations [] [] _
+      (.scalar (.int 0)) [] (by simp [Mutable.Heap.Valid]) trivial (by simp)
+  · lift limit to Nat using (by omega : 0 ≤ limit)
+    obtain ⟨referenceHeap, reference⟩ :=
+      data.«project-euler-statements».data.py.project_euler_statements.p23.naive.result limit rightChoices
+    apply Mutable.Call.equiv_of_finishes
+      (a := (SetCalls.call program "solve" [.scalar (.int limit)] []).run leftChoices)
+      (b := (SetCalls.call P23Ast.module "naive" [.scalar (.int limit)] []).run rightChoices)
+      (SetCalls.finishes_of_heap (Optimized.result limit).finishes leftChoices 0) reference
+    exact Mutable.Completion.equivalent_allocations [] (Optimized.finalHeap limit) referenceHeap
+      (.scalar (.int (ProjectEulerStatements.P23.naive limit))) [] (by simp [Mutable.Heap.Valid]) trivial (by simp)
 
 theorem solve.«Supported» :
-    (∀ (limit : Int), Calls.Condition program (inputEnv limit) Solvers.P23Ast.requires_solve_0 →
-      (SetCalls.call program "solve" [.scalar (.int limit)] []).Supported) ∧
-    (∀ (limit : Int), Calls.Condition program (inputEnv limit) Solvers.P23Ast.requires_solve_0 →
-      (SetCalls.call P23Ast.module "naive" [.scalar (.int limit)] []).Supported) := by
+    (∀ limit : Int, (SetCalls.call program "solve" [.scalar (.int limit)] []).Supported) ∧
+    (∀ limit : Int, (SetCalls.call P23Ast.module "naive" [.scalar (.int limit)] []).Supported) := by
   constructor
-  · intro limit requires
-    have large := accepted_limit limit requires
-    lift limit to Nat using (by omega : 0 ≤ limit)
-    have large : 28 ≤ limit := by omega
-    intro choices
-    exact (SetCalls.returns_of_heap (Optimized.result limit large).returns choices).supported
-  · intro limit _
-    exact data.«project-euler-statements».data.py.project_euler_statements.p23.naive.«Supported» limit
+  · intro limit choices
+    by_cases below : limit < 0
+    · exact (SetCalls.returns_of_heap (Optimized.negative limit below).returns choices).supported
+    · lift limit to Nat using (by omega : 0 ≤ limit)
+      exact (SetCalls.returns_of_heap (Optimized.result limit).returns choices).supported
+  · exact data.«project-euler-statements».data.py.project_euler_statements.p23.naive.«Supported»
 
 end solvers.«23»
