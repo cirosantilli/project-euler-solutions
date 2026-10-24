@@ -4,14 +4,14 @@ import lang.py.FormalSW.LoopCalls
 import ProjectEulerSolutions.Lib.PrimeSieve
 import ProjectEulerSolutions.Lib.PrimeReplacement
 import ProjectEulerSolutions.Lib.PrimeReplacementSearch
+import ProjectEulerSolutions.Lib.PrimeReplacementMinimum
 import ProjectEulerSolutions.Lib.BitSubsets
 import ProjectEulerSolutions.Lib.HeapCollection
 import ProjectEulerSolutions.Lib.HeapRows
 import Mathlib.Data.Nat.Sqrt
 import ProjectEulerStatements.Lib.DecimalDigits
-import data.«project-euler-statements».data.py.project_euler_statements.«p51.py»
 
-/-! Source-level termination and equivalence proofs for problem 51's complete prime-family search. -/
+/-! Exact source execution of finite prime replacement windows of arbitrary width. -/
 
 set_option Elab.async false
 
@@ -729,8 +729,8 @@ end count_prime_family_for_positions
 
 namespace solve
 private def code : List Stmt := executableBody ((findFunctionIn program.body "solve").getD ([], [])).2
-private def digitBody : List Stmt := match (code[0]? : Option Stmt) with
-  | some (.forIn _ _ body _) => body | _ => []
+def digitBody : List Stmt := match (code[1]? : Option Stmt) with
+  | some (.whileDo _ body _) => body.dropLast | _ => []
 private def primeBody : List Stmt := match (digitBody[4]? : Option Stmt) with
   | some (.forIn _ _ body _) => body | _ => []
 private def positionBody : List Stmt := match (primeBody[5]? : Option Stmt) with
@@ -2192,8 +2192,8 @@ end primeSearch
 
 namespace digitSearch
 open ProjectEulerSolutions
-private def upper (width : Nat) : Nat := 10 ^ width - 1
-private def lower (width : Nat) : Nat := 10 ^ (width - 1)
+def upper (width : Nat) : Nat := 10 ^ width - 1
+def lower (width : Nat) : Nat := 10 ^ (width - 1)
 private def powerExpression : Expr := .binOp (.constant (.int 10)) .pow
   (.binOp (.binOp (.name "ndigits") .sub (.constant (.int 1))) .sub (.name "i"))
 private def powerBody (address : Nat) : List Stmt := [.comprehensionAppend address powerExpression]
@@ -2302,11 +2302,11 @@ theorem prepare (width : Nat) (positive : 1 ≤ width) (env : HeapCalls.Env) (he
   dsimp only [upper] at length
   omega
 
-private def writes : List String := ["upper", "lower", "is_prime", "primes", "pow10"] ++ primeSearch.writes
-private def Stable (before after : HeapCalls.Env) : Prop := ∀ name, name ∉ writes → after name = before name
-private def answer (target : Int) (width : Nat) : Option Nat :=
+def writes : List String := ["upper", "lower", "is_prime", "primes", "pow10"] ++ primeSearch.writes
+def Stable (before after : HeapCalls.Env) : Prop := ∀ name, name ∉ writes → after name = before name
+def answer (target : Int) (width : Nat) : Option Nat :=
   (sieve.primes (upper width)).find? (primeSearch.accepted target (lower width))
-private def Scan (env : HeapCalls.Env) (body : List Stmt) (heap : Mutable.Heap) : Option Nat → Prop
+def Scan (env : HeapCalls.Env) (body : List Stmt) (heap : Mutable.Heap) : Option Nat → Prop
   | none => ∃ finalEnv finalHeap, BlockContinues program env body heap finalEnv finalHeap ∧
       Stable env finalEnv ∧ primeSearch.HeapFrame heap finalHeap
   | some value => ∃ finalHeap, (∀ following, BlockReturns program env (body ++ following) heap (number value) finalHeap) ∧
@@ -2359,185 +2359,11 @@ theorem result (width : Nat) (positive : 1 ≤ width) (target : Int) (env : Heap
       exact (preserved name notPrimeWrite).trans
         (by simp only [preparedEnv, sievedEnv, boundsEnv, setLocal, noUpper, noLower, noBuffer, noArray, noPower, if_false])
 
+/-- The finite source answer is the complete mathematical prime-width window. -/
+theorem answer_eq_window (target : Int) (width : Nat) :
+    answer target width = ProjectEulerSolutions.PrimeReplacementMinimum.window target width := rfl
+
 end digitSearch
 
-namespace minimum
-private abbrev reference := data.«project-euler-statements».data.py.project_euler_statements.p51.naive.answer
-private abbrev width (target : Int) := (Nat.digits 10 (reference target)).length
-
-private theorem prime (target : Int) (supported : target ≤ 8) : Nat.Prime (reference target) := by
-  have family := data.«project-euler-statements».data.py.project_euler_statements.p51.naive.answer_family target supported
-  simp only [ProjectEulerStatements.P51.hasPrimeFamily, Bool.and_eq_true, ProjectEulerStatements.P51.isPrime, decide_eq_true_eq] at family
-  exact family.2
-
-private theorem find_least (predicate : Nat → Bool) (winner : Nat) : ∀ items : List Nat,
-    items.Pairwise (· < ·) → winner ∈ items → predicate winner = true →
-      (∀ p ∈ items, predicate p = true → winner ≤ p) → items.find? predicate = some winner := by
-  intro items
-  induction items with
-  | nil => intro _ member; simp at member
-  | cons head tail ih =>
-      intro ordered member good least
-      obtain ⟨before, rest⟩ := List.pairwise_cons.mp ordered
-      cases accepted : predicate head with
-      | true =>
-          have lower := least head (by simp) accepted
-          have upper : head ≤ winner := by
-            rcases List.mem_cons.mp member with same | present
-            · omega
-            · exact Nat.le_of_lt (before winner present)
-          have same : head = winner := by omega
-          simp only [List.find?_cons, accepted]
-          exact congrArg some same
-      | false =>
-          have present : winner ∈ tail := by
-            rcases List.mem_cons.mp member with same | present
-            · rw [same, accepted] at good
-              contradiction
-            · exact present
-          have found := ih rest present good (fun p member => least p (by simp [member]))
-          simpa only [List.find?_cons, accepted, Bool.false_eq_true, if_false] using found
-
-/-- A sorted prime-window scan finds the reference minimum as soon as its upper bound reaches it. -/
-theorem window (target : Int) (supported : target ≤ 8) (digits : Nat) (lower : digitSearch.lower digits ≤ reference target) :
-    digitSearch.answer target digits = if reference target ≤ digitSearch.upper digits then some (reference target) else none := by
-  by_cases inside : reference target ≤ digitSearch.upper digits
-  · rw [if_pos inside]
-    apply find_least (primeSearch.accepted target (digitSearch.lower digits)) (reference target)
-      (sieve.primes (digitSearch.upper digits)) (sieve.primes_pairwise _)
-    · exact (sieve.mem_primes _ _).mpr ⟨prime target supported, inside⟩
-    · simp only [primeSearch.accepted, lower, decide_true, Bool.true_and]
-      exact data.«project-euler-statements».data.py.project_euler_statements.p51.naive.answer_family target supported
-    · intro p _ accepted
-      simp only [primeSearch.accepted, Bool.and_eq_true, decide_eq_true_eq] at accepted
-      exact data.«project-euler-statements».data.py.project_euler_statements.p51.naive.answer_minimal target supported p accepted.2
-  · rw [if_neg inside]
-    apply List.find?_eq_none.mpr
-    intro p member accepted
-    have upper := (sieve.mem_primes _ p).mp member |>.2
-    simp only [primeSearch.accepted, Bool.and_eq_true, decide_eq_true_eq] at accepted
-    have least : reference target ≤ p := data.«project-euler-statements».data.py.project_euler_statements.p51.naive.answer_minimal target supported p accepted.2
-    omega
-
-/-- The checked 121313 witness confines the original source search to its first six widths. -/
-theorem width_bounds (target : Int) (supported : target ≤ 8) : 1 ≤ width target ∧ width target ≤ 6 := by
-  have positive := (prime target supported).pos
-  have nonempty := (Nat.digits_ne_nil_iff_ne_zero (b := 10)).mpr (by omega : reference target ≠ 0)
-  refine ⟨by simpa only [width] using List.length_pos_iff.mpr nonempty, ?_⟩
-  apply (Nat.digits_length_le_iff (b := 10) (k := 6) (by decide) (reference target)).mpr
-  have maximum : reference target ≤ 121313 := data.«project-euler-statements».data.py.project_euler_statements.p51.naive.answer_le_witness target supported
-  norm_num
-  omega
-
-private theorem lower_bound (target : Int) (supported : target ≤ 8) (first : Nat) (before : first ≤ width target) :
-    digitSearch.lower first ≤ reference target := by
-  have widths := width_bounds target supported
-  have leading : 10 ^ (width target - 1) ≤ reference target :=
-    (Nat.lt_digits_length_iff (b := 10) (k := width target-1) (by decide) (reference target)).mp (by change width target - 1 < width target; omega)
-  exact (Nat.pow_le_pow_right (by decide : 1 ≤ 10) (show first-1 ≤ width target-1 by omega)).trans leading
-
-private theorem inside_width (target : Int) (supported : target ≤ 8) : reference target ≤ digitSearch.upper (width target) := by
-  have upper : reference target < 10 ^ width target :=
-    (Nat.digits_length_le_iff (b := 10) (k := width target) (by decide) (reference target)).mp (Nat.le_refl _)
-  have positive := (prime target supported).pos
-  unfold digitSearch.upper
-  omega
-
-/-- The source outer loop reaches the least qualifying prime within six decimal widths. -/
-private theorem widths_loop (target : Int) (supported : target ≤ 8) (first : Nat)
-    (positive : 1 ≤ first) (before : first ≤ width target) (env : HeapCalls.Env) (heap : Mutable.Heap)
-    (getTarget : env "target" = some (number target)) :
-    ∃ finalHeap, ∀ following, BlockReturns program env
-      (.rangeStepLoop "ndigits" first 10 1 digitBody [] :: following) heap (number (reference target)) finalHeap := by
-  have bounds := width_bounds target supported
-  have active : Calls.rangeContinues first 10 1 = true := by
-    simp [Calls.rangeContinues]
-    omega
-  let boundEnv := setLocal env "ndigits" (number first)
-  have scanned := digitSearch.result first positive target boundEnv heap
-    (by simp [boundEnv, setLocal]) (by simpa [boundEnv, setLocal] using getTarget)
-  have selected := window target supported first (lower_bound target supported first before)
-  by_cases inside : reference target ≤ digitSearch.upper first
-  · rw [if_pos inside] at selected
-    rw [selected] at scanned
-    obtain ⟨finalHeap, returned, _⟩ := scanned
-    refine ⟨finalHeap, ?_⟩
-    intro following
-    apply BlockReturns.range_step active
-    exact returned (.rangeStepLoop "ndigits" ((first : Int)+1) 10 1 digitBody [] :: following)
-  · rw [if_neg inside] at selected
-    rw [selected] at scanned
-    obtain ⟨finalEnv, middle, continued, stable, _⟩ := scanned
-    have earlier : first < width target := by
-      have reached := inside_width target supported
-      by_contra late
-      have same : first = width target := by omega
-      exact inside (same ▸ reached)
-    have preserved : finalEnv "target" = some (number target) :=
-      (stable "target" (by decide)).trans (by simpa [boundEnv, setLocal] using getTarget)
-    obtain ⟨finalHeap, returned⟩ := widths_loop target supported (first+1) (by omega) (by omega) finalEnv middle preserved
-    refine ⟨finalHeap, ?_⟩
-    intro following
-    apply BlockReturns.range_step active
-    have rest := returned following
-    have joined := continued.returns rest
-    simpa only [Nat.cast_add, Nat.cast_one] using joined
-termination_by width target - first
-
-end minimum
-
-/-- The executable Python solver terminates and returns the reference minimum for every supported target. -/
-theorem result (target : Int) (supported : target ≤ 8) (heap : Mutable.Heap) :
-    ∃ finalHeap, ReturnsValue program "solve" [number target] heap (number (minimum.reference target)) finalHeap := by
-  let entry := functionEnv ((findFunctionIn program.body "solve").getD ([], [])).1
-    ((findFunctionIn program.body "solve").getD ([], [])).2 [number target] []
-  obtain ⟨finalHeap, returned⟩ := minimum.widths_loop target supported 1 (by decide)
-    (minimum.width_bounds target supported).1 entry heap rfl
-  refine ⟨finalHeap, ?_⟩
-  apply BlockReturns.function rfl rfl
-  exact BlockReturns.for_range (.cons Evaluates.constant (.cons Evaluates.constant .nil)) rfl
-    (returned (code.drop 1))
-
-private abbrev inputEnv (target : Int) : ScalarEnv :=
-  fun name => if name = "target" then some (.int target) else none
-
-private theorem target_bound (target : Int)
-    (condition : Calls.Condition program (inputEnv target) Solvers.P51Ast.requires_solve_0) : target ≤ 8 := by
-  have bound := Calls.Evaluates.condition_int_compare condition (by rfl : inputEnv target "target" = some (.int target))
-  simpa only [evalCmpOp, decide_eq_true_eq] using bound
-
-theorem «Equiv(naive)» (target : Int)
-    (condition : Calls.Condition program (inputEnv target) Solvers.P51Ast.requires_solve_0) :
-    (HeapCalls.scalarFunction program "solve" [.int target]).Equiv
-      (HeapCalls.scalarFunction P51Ast.module "naive" [.int target]) := by
-  have bound := target_bound target condition
-  obtain ⟨finalHeap, returned⟩ := result target bound []
-  obtain ⟨extra, reference⟩ := data.«project-euler-statements».data.py.project_euler_statements.p51.naive.result target bound []
-  have optimized := returned.scalar_finishes (values := [.int target])
-  have original := reference.scalar_finishes (values := [.int target])
-  intro outcome
-  constructor
-  · intro finished
-    rw [finished.unique optimized]
-    exact original
-  · intro finished
-    rw [finished.unique original]
-    exact optimized
-
-theorem «Supported» :
-    (∀ target : Int, Calls.Condition program (inputEnv target) Solvers.P51Ast.requires_solve_0 →
-      (HeapCalls.scalarFunction program "solve" [.int target]).Supported) ∧
-    (∀ target : Int, Calls.Condition program (inputEnv target) Solvers.P51Ast.requires_solve_0 →
-      (HeapCalls.scalarFunction P51Ast.module "naive" [.int target]).Supported) := by
-  constructor
-  · intro target condition
-    obtain ⟨finalHeap, returned⟩ := result target (target_bound target condition) []
-    exact (returned.scalar_returns (values := [.int target])).supported
-  · intro target condition
-    obtain ⟨extra, returned⟩ := data.«project-euler-statements».data.py.project_euler_statements.p51.naive.result
-      target (target_bound target condition) []
-    exact (returned.scalar_returns (values := [.int target])).supported
-
 end solve
-
 end solvers.«51»

@@ -36,6 +36,8 @@ Problem 26 has structural termination and equivalence proofs for every signed up
 
 Problem 38 has structural termination and equivalence proofs for every signed target width. The reference collector and optimized running maximum implement the same complete candidate set. Seed and product-count bounds follow from the requested width. Both functions return zero for widths below two or above nine; two positive products need at least two digits, and decimal notation cannot supply digit ten. The default call inherits termination from the general proof.
 
+Problem 51 has structural equivalence and support proofs for every signed family threshold. Both unbounded source searches return exactly when a qualifying family exists, returning its least prime; otherwise both diverge. The checked eight-member witness establishes termination for every threshold at most eight and for the default call. Thresholds above ten are impossible because there are only ten replacement digits. For thresholds nine and ten, termination retains the general existence condition. The Lean statement uses zero for absence in its mathematical minimum and makes no universal existence assumption.
+
 == Remaining implementation and proof restrictions
 
 [cols="1,3,3"]
@@ -46,7 +48,6 @@ Problem 38 has structural termination and equivalence proofs for every signed ta
 | 19 | The solver starts its calendar at 1900 and the proof excludes earlier years. | Extend the implementation before claiming arbitrary year ranges.
 | 37 | Fixed: the optimized sieve doubles until it finds the eleven primes specified by the problem. | Restore equivalence to the unbounded reference; there is no fixed sieve cutoff.
 | 44 | Both implementations accept the same finite pentagonal-index bound. | This is a valid bounded parameterization, but equivalence alone does not prove that the default answer is the global minimum over all indices.
-| 51 | Fixed: the decimal-width cutoff and proof-only target cap are removed. | Replace the archived restricted-domain proof; establish termination when a matching family exists.
 | 62 | Unbounded equivalence and a termination characterization hold for every signed class size. | A separate `Returns` theorem for the default target still needs a verified existence witness.
 |===
 

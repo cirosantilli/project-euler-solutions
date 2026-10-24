@@ -722,7 +722,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/48.py[48.py] | link:solvers/48.md[48.md] | link:solvers/48.py.lean[48.py.lean] | 0.114 | 9110846700 |
 | link:solvers/49.py[49.py] | link:solvers/49.md[49.md] | link:solvers/49.py.lean[49.py.lean] | 0.129 | 296962999629 |
 | link:solvers/50.py[50.py] | link:solvers/50.md[50.md] | link:solvers/50.py.lean[50.py.lean] | 0.150 | 997651 |
-| link:solvers/51.py[51.py] | link:solvers/51.md[51.md] |  | 0.149 | 121313 |
+| link:solvers/51.py[51.py] | link:solvers/51.md[51.md] | link:solvers/51.py.lean[51.py.lean] | 0.149 | 121313 |
 | link:solvers/52.py[52.py] | link:solvers/52.md[52.md] | link:solvers/52.py.lean[52.py.lean] | 0.123 | 142857 |
 | link:solvers/53.py[53.py] | link:solvers/53.md[53.md] | link:solvers/53.py.lean[53.py.lean] | 0.106 | 4075 |
 | link:solvers/54.py[54.py] | link:solvers/54.md[54.md] | link:solvers/54.py.lean[54.py.lean] | 0.198 | 376 |
