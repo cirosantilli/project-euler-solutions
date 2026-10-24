@@ -1,6 +1,7 @@
 import «.formalsw».solvers.«62.py.ast»
 import lang.py.FormalSW.HeapCalls
 import ProjectEulerSolutions.Lib.CubicPermutations
+import ProjectEulerSolutions.Lib.HeapCollection
 
 /-! Source proofs for the cubic-permutation solver. -/
 set_option Elab.async false
@@ -10,6 +11,7 @@ open FormalSW.PyAst FormalSW.PyAst.HeapCalls
 open ProjectEulerSolutions.CubicPermutations ProjectEulerSolutions.DigitHistogram
 private abbrev program := Solvers.P62Ast.module
 private abbrev number (n : Int) : Mutable.Value := .scalar (.int n)
+private abbrev flag (b : Bool) : Mutable.Value := .scalar (.bool b)
 private abbrev character (digit : Nat) : Mutable.Value := .scalar (.string (String.singleton (Nat.digitChar digit)))
 private def numbers (items : List Nat) : List Mutable.Value := items.map (fun (n : Nat) => number n)
 
@@ -135,6 +137,102 @@ theorem result (n : Nat) (heap : Mutable.Heap) :
       Except.map, show (BinOp.mult == BinOp.mult) = true from rfl]
   · simpa [ready, entry, base, working, table, ProjectEulerSolutions.CubicPermutations.signature, List.append_assoc, Nat.add_assoc] using traversed
 end digit_signature
+
+namespace groups
+def condition : Expr := .membership (.name "sig") (.name "groups") false
+def bucketExpression : Expr := .subscript (.name "groups") (.name "sig")
+def minimumExpression : Expr := .subscript bucketExpression (.constant (.int 1))
+def existing : List Stmt :=
+  [.augAssign (.subscript bucketExpression (.constant (.int 0))) .add (.constant (.int 1)),
+    .ifThen (.compare (.name "cube") [(.lt, minimumExpression)])
+      [.assign [.subscript bucketExpression (.constant (.int 1))] (.name "cube")] []]
+def fresh : List Stmt := [.assign [.subscript (.name "groups") (.name "sig")]
+  (.list [.constant (.int 1), .name "cube"])]
+private def sourceCode : List Stmt := executableBody ((findFunctionIn program.body "solve").getD ([], [])).2
+def iteration : List Stmt := match (sourceCode[3]? : Option Stmt) with | some (.whileDo _ body _) => body | _ => []
+theorem branch_source : iteration[4]? = some (.ifThen condition existing fresh) := rfl
+
+theorem hash_signature (n : Nat) (heap : Mutable.Heap) (address : Nat)
+    (found : heap[address]? = some (.tuple (numbers (ProjectEulerSolutions.CubicPermutations.signature n)))) :
+    Mutable.hashKey (.ref address) heap = some (.ok (key n), heap) := by
+  have hashed := Mutable.hashKey_tuple_scalars heap address
+    ((ProjectEulerSolutions.CubicPermutations.signature n).map (fun value : Nat => Constant.int value))
+    (by simpa only [numbers, List.map_map, Function.comp_def] using found)
+  simpa only [key, counterKey, List.map_map, Function.comp_def] using hashed
+
+theorem membership_keyed (n : Nat) (heap : Mutable.Heap) (env : HeapCalls.Env) (dictionary signatureAddress : Nat)
+    (entries : List (HashDict.Entry Mutable.Value))
+    (getGroups : env "groups" = some (.ref dictionary)) (getSignature : env "sig" = some (.ref signatureAddress))
+    (found : heap[dictionary]? = some (.keyDict entries))
+    (signatureFound : heap[signatureAddress]? = some (.tuple (numbers (ProjectEulerSolutions.CubicPermutations.signature n)))) :
+    Evaluates program env condition heap (flag (HashDict.lookup entries (key n)).isSome) heap := by
+  apply Evaluates.membership (.cons (Evaluates.lookup getSignature) (.cons (Evaluates.lookup getGroups) .nil))
+  simp [HeapCalls.membership, found, hash_signature n heap signatureAddress signatureFound, flag, Except.map]
+
+theorem membership_empty (n : Nat) (heap : Mutable.Heap) (env : HeapCalls.Env) (dictionary signatureAddress : Nat)
+    (getGroups : env "groups" = some (.ref dictionary)) (getSignature : env "sig" = some (.ref signatureAddress))
+    (found : heap[dictionary]? = some (.dict []))
+    (signatureFound : heap[signatureAddress]? = some (.tuple (numbers (ProjectEulerSolutions.CubicPermutations.signature n)))) :
+    Evaluates program env condition heap (flag false) heap := by
+  apply Evaluates.membership (.cons (Evaluates.lookup getSignature) (.cons (Evaluates.lookup getGroups) .nil))
+  simp [HeapCalls.membership, found, hash_signature n heap signatureAddress signatureFound,
+    Mutable.promoteDictionary, HashDict.lookup, HashDict.find?, flag, Except.map]
+
+theorem bucket_evaluate (n : Nat) (heap : Mutable.Heap) (env : HeapCalls.Env) (dictionary signatureAddress bucket : Nat)
+    (entries : List (HashDict.Entry Mutable.Value))
+    (getGroups : env "groups" = some (.ref dictionary)) (getSignature : env "sig" = some (.ref signatureAddress))
+    (found : heap[dictionary]? = some (.keyDict entries))
+    (signatureFound : heap[signatureAddress]? = some (.tuple (numbers (ProjectEulerSolutions.CubicPermutations.signature n))))
+    (selected : HashDict.lookup entries (key n) = some (.ref bucket)) :
+    Evaluates program env bucketExpression heap (.ref bucket) heap := by
+  apply Evaluates.subscript (middle := heap) (afterIndex := heap) (finalHeap := heap)
+    (by intro a b c impossible; cases impossible) (Evaluates.lookup getGroups) (Evaluates.lookup getSignature)
+  simp [Mutable.getItem, found, hash_signature n heap signatureAddress signatureFound, selected]
+
+/-- A new group keeps the original tuple key and allocates a shared count/minimum bucket. -/
+theorem insert_keyed (n : Nat) (cube : Int) (heap : Mutable.Heap) (env : HeapCalls.Env) (dictionary signatureAddress : Nat)
+    (entries : List (HashDict.Entry Mutable.Value))
+    (getGroups : env "groups" = some (.ref dictionary)) (getSignature : env "sig" = some (.ref signatureAddress))
+    (getCube : env "cube" = some (number cube)) (found : heap[dictionary]? = some (.keyDict entries))
+    (signatureFound : heap[signatureAddress]? = some (.tuple (numbers (ProjectEulerSolutions.CubicPermutations.signature n)))) :
+    BlockContinues program env fresh heap env
+      ((heap ++ [Mutable.Object.list [number 1, number cube]]).set dictionary
+        (.keyDict (HashDict.insert entries (key n) (.ref signatureAddress) (.ref heap.length)))) := by
+  let allocated := heap ++ [Mutable.Object.list [number 1, number cube]]
+  have dictAfter : allocated[dictionary]? = some (.keyDict entries) :=
+    ProjectEulerSolutions.HeapCollection.prefix_found heap _ dictionary _ found
+  have signatureAfter : allocated[signatureAddress]? =
+      some (.tuple (numbers (ProjectEulerSolutions.CubicPermutations.signature n))) :=
+    ProjectEulerSolutions.HeapCollection.prefix_found heap _ signatureAddress _ signatureFound
+  apply BlockContinues.setItem (value := .ref heap.length) (receiver := .ref dictionary)
+    (subscript := .ref signatureAddress) (afterRhs := allocated) (afterTarget := allocated)
+    (by intro a b c impossible; cases impossible)
+    (Evaluates.list (.cons Evaluates.constant (.cons (Evaluates.lookup getCube) .nil)))
+    (.cons (Evaluates.lookup getGroups) (.cons (Evaluates.lookup getSignature) .nil))
+  simp [Mutable.setItem, dictAfter, hash_signature n allocated signatureAddress signatureAfter, Except.map, allocated]
+
+/-- The first tuple insertion promotes the initially scalar-only empty dictionary. -/
+theorem insert_empty (n : Nat) (cube : Int) (heap : Mutable.Heap) (env : HeapCalls.Env) (dictionary signatureAddress : Nat)
+    (getGroups : env "groups" = some (.ref dictionary)) (getSignature : env "sig" = some (.ref signatureAddress))
+    (getCube : env "cube" = some (number cube)) (found : heap[dictionary]? = some (.dict []))
+    (signatureFound : heap[signatureAddress]? = some (.tuple (numbers (ProjectEulerSolutions.CubicPermutations.signature n)))) :
+    BlockContinues program env fresh heap env
+      ((heap ++ [Mutable.Object.list [number 1, number cube]]).set dictionary
+        (.keyDict [(key n, .ref signatureAddress, .ref heap.length)])) := by
+  let allocated := heap ++ [Mutable.Object.list [number 1, number cube]]
+  have dictAfter : allocated[dictionary]? = some (.dict []) :=
+    ProjectEulerSolutions.HeapCollection.prefix_found heap _ dictionary _ found
+  have signatureAfter : allocated[signatureAddress]? =
+      some (.tuple (numbers (ProjectEulerSolutions.CubicPermutations.signature n))) :=
+    ProjectEulerSolutions.HeapCollection.prefix_found heap _ signatureAddress _ signatureFound
+  apply BlockContinues.setItem (value := .ref heap.length) (receiver := .ref dictionary)
+    (subscript := .ref signatureAddress) (afterRhs := allocated) (afterTarget := allocated)
+    (by intro a b c impossible; cases impossible)
+    (Evaluates.list (.cons Evaluates.constant (.cons (Evaluates.lookup getCube) .nil)))
+    (.cons (Evaluates.lookup getGroups) (.cons (Evaluates.lookup getSignature) .nil))
+  simp [Mutable.setItem, dictAfter, hash_signature n allocated signatureAddress signatureAfter,
+    Mutable.promoteDictionary, HashDict.insert, Except.map, allocated]
+end groups
 
 theorem digit_signature_source_result (n : Nat) (heap : Mutable.Heap) :
     ReturnsValue program "digit_signature" [number n] heap (.ref (heap.length + 2))
