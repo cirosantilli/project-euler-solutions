@@ -17,6 +17,7 @@ import ProjectEulerSolutions.Lib.PrimePairBudget
 import ProjectEulerSolutions.Lib.PrimePairBudgetSearch
 import ProjectEulerSolutions.Lib.PrimePairVertices.All
 import ProjectEulerSolutions.Lib.PrimePairCache.SmallPrefix
+import ProjectEulerSolutions.Lib.PrimePairUpper.SmallCertificate
 import data.«project-euler-statements».data.py.project_euler_statements.«p60.py»
 import Mathlib.Data.List.Sort
 import lang.py.FormalSW.ComprehensionCalls
@@ -5565,5 +5566,16 @@ theorem large_model_of_budget_lookup_certificate (graph : PrimePairCertificate.G
   rw [PrimePairCertificate.Budget.search_eq_lookup graph 26034 5 [] PrimePairVertices.large 0
     ⟨26034, []⟩ (by decide) (by decide)]
   exact checked
+
+/-- The complete possible-edge certificate leaves the source sentinel unchanged. -/
+theorem small_model_checked : solve_search.answerModel 8388 = ⟨solve_setup.sentinel, []⟩ :=
+  small_model_of_upper_certificate PrimePairUpper.smallGraph
+    PrimePairUpper.smallGraph_covers PrimePairUpper.smallGraph_coverage
+    PrimePairUpper.small_search_checked
+
+/-- The largest witness-free prefix also determines every smaller signed limit. -/
+theorem small_model_below_witness (limit : Int) (small : limit < 8389) :
+    solve_search.answerModel limit = ⟨solve_setup.sentinel, []⟩ :=
+  competitive.small_result_of_search_certificate small_model_checked limit small
 
 end solvers.«60».certificate
