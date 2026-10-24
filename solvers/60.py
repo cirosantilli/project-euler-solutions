@@ -53,6 +53,9 @@ def is_prime(n: int) -> bool:
 
 
 def pow10_for(n: int) -> int:
+    """
+    @formalsw: Returns
+    """
     p = 1
     while p <= n:
         p *= 10
