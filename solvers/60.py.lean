@@ -6,6 +6,7 @@ import ProjectEulerSolutions.Lib.PrimeSieve
 import ProjectEulerSolutions.Lib.IntPairCache
 import ProjectEulerSolutions.Lib.HeapCollection
 import ProjectEulerSolutions.Lib.CliqueSearch
+import ProjectEulerSolutions.Lib.CliqueSearchCorrectness
 import lang.py.FormalSW.ComprehensionCalls
 import Mathlib.Data.Nat.Sqrt
 
@@ -4645,6 +4646,35 @@ def answerModel (limit : Int) : CliqueSearch.Best :=
 theorem answerModel_eq_search (limit : Int) :
     answerModel limit = CliqueSearch.search (fun p q => pair_ok.answer p q) 5 [] (solve_setup.vertices limit) 0
       ⟨solve_setup.sentinel, []⟩ := outerModel_eq_search _ _
+
+theorem answerModel_optimal (limit : Int) :
+    CliqueSearch.Optimal (fun p q => pair_ok.answer p q) 5 [] (solve_setup.vertices limit) 0
+      ⟨solve_setup.sentinel, []⟩ (answerModel limit) := by
+  rw [answerModel_eq_search]
+  exact CliqueSearch.search_optimal _ _ _ _ _ _ (solve_setup.vertices_increasing limit)
+
+theorem answerModel_completion (limit : Int) :
+    answerModel limit = ⟨solve_setup.sentinel, []⟩ ∨
+      CliqueSearch.Completion (fun p q => pair_ok.answer p q) 5 (solve_setup.vertices limit) (answerModel limit).chosen ∧
+      (answerModel limit).bound = ((answerModel limit).chosen.sum : Int) ∧
+      (answerModel limit).bound < solve_setup.sentinel := by
+  rcases (answerModel_optimal limit).sound with same | ⟨chosen, completion, total, selected, improves⟩
+  · exact Or.inl same
+  · have selectedEq : (answerModel limit).chosen = chosen := by simpa only [List.nil_append] using selected
+    exact Or.inr ⟨by simpa only [selectedEq] using completion,
+      by simpa only [selectedEq, Int.zero_add] using total, improves⟩
+
+theorem answerModel_minimal (limit : Int) (chosen : List Nat)
+    (completion : CliqueSearch.Completion (fun p q => pair_ok.answer p q) 5 (solve_setup.vertices limit) chosen) :
+    (answerModel limit).bound ≤ (chosen.sum : Int) := by
+  simpa only [Int.zero_add] using (answerModel_optimal limit).minimal chosen completion
+
+theorem answerModel_prime_members (limit : Int) (p : Nat) (member : p ∈ (answerModel limit).chosen) :
+    Nat.Prime p ∧ 3 ≤ p ∧ (p : Int) ≤ limit ∧ p ≠ 5 := by
+  rcases answerModel_completion limit with same | ⟨completion, _, _⟩
+  · rw [same] at member
+    simp at member
+  · exact (solve_setup.mem_vertices limit p).mp (completion.sublist.mem member)
 
 def returnExpression : Expr := .tuple
   [sumExpression, .subscript (.name "__formalsw_cell_solve_best_set") (.constant (.int 0))]
