@@ -7,6 +7,8 @@ from math import isqrt
 def sieve_is_prime(limit: int) -> bytearray:
     """
     Returns is_prime array for [0..limit], where is_prime[x]=1 iff x is prime.
+
+    @formalsw: Returns
     """
     if limit < 1:
         return bytearray(b"\x00") * (limit + 1)
