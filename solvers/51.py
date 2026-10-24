@@ -2,10 +2,9 @@
 from __future__ import annotations
 
 from math import isqrt
-from typing import List, Tuple
 
 
-def sieve(n: int) -> Tuple[bytearray, List[int]]:
+def sieve(n: int) -> tuple[bytearray, list[int]]:
     """Return (is_prime[0..n], list_of_primes_up_to_n)."""
     if n < 1:
         return bytearray(b"\x00") * (n + 1), []
@@ -21,7 +20,7 @@ def sieve(n: int) -> Tuple[bytearray, List[int]]:
     return is_prime, primes
 
 
-def count_prime_family_for_positions(p: int, idxs: List[int]) -> int:
+def count_prime_family_for_positions(p: int, idxs: list[int]) -> int:
     """
     For a fixed prime p and fixed digit positions idxs, replace those positions
     with the same digit r in [0..9] (skipping leading zero) and count primes.
@@ -71,7 +70,7 @@ def solve(target: int = 8) -> int:
             ds = [ord(c) - 48 for c in s]
 
             # group positions by digit, excluding the last digit (can't get family size 8 otherwise)
-            pos_lists: List[List[int]] = [[] for _ in range(10)]
+            pos_lists: list[list[int]] = [[] for _ in range(10)]
             for i, dig in enumerate(ds[:-1]):
                 pos_lists[dig].append(i)
 
