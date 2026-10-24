@@ -1,5 +1,6 @@
 import Mathlib.Data.Nat.Prime.Basic
-import Mathlib.Tactic
+import Mathlib.Tactic.IntervalCases
+import Mathlib.Tactic.Linarith
 
 /-! Finite spiral-prefix mathematics, independent of the old P58 search and termination files. -/
 namespace ProjectEulerSolutions.SpiralPrimes
