@@ -82,6 +82,88 @@ def collect : Nat → Int → Int → List Int
 
 def answer (sides : Int) : List Int := collect 140 sides 1
 
+/-- Later positive indices never decrease within a polygonal family. -/
+theorem monotone_from (s n : Int) (sides : 3 ≤ s) (positive : 1 ≤ n) (offset : Nat) :
+    polygonal s n ≤ polygonal s (n + offset) := by
+  induction offset with
+  | zero => simp
+  | succ offset ih =>
+      have step := data.«project-euler-statements».data.py.project_euler_statements.p61.polygonal.increasing_step
+        s (n + offset) sides (by omega)
+      exact ih.trans (by simpa [Nat.cast_add, Nat.cast_one, add_assoc] using step.le)
+
+/-- Early termination discards only values which fail the four-digit filter. -/
+theorem collect_eq_window (fuel : Nat) (s n : Int) (sides : 3 ≤ s) (positive : 1 ≤ n) :
+    collect fuel s n =
+      ((List.range fuel).map (fun offset : Nat => polygonal s (n + offset))).filter
+        (fun value => decide (accepted value)) := by
+  induction fuel generalizing n with
+  | zero => rfl
+  | succ fuel ih =>
+      have mapped : (List.range (fuel + 1)).map (fun offset : Nat => polygonal s (n + offset)) =
+          polygonal s n :: (List.range fuel).map (fun offset : Nat => polygonal s (n + 1 + offset)) := by
+        rw [List.range_succ_eq_map, List.map_cons, List.map_map]
+        simp only [Nat.cast_zero, add_zero]
+        congr 1
+        apply List.map_congr_left
+        intro offset _
+        dsimp
+        congr 1
+        ring
+      rw [mapped]
+      by_cases done : 10000 ≤ polygonal s n
+      · have rejected (offset : Nat) : ¬ accepted (polygonal s (n + offset)) := by
+          have above := done.trans (monotone_from s n sides positive offset)
+          intro accepted
+          have upper := accepted.2.1
+          omega
+        have first : ¬ accepted (polygonal s n) := by simpa using rejected 0
+        have tail :
+            ((List.range fuel).map (fun offset : Nat => polygonal s (n + 1 + offset))).filter
+              (fun value => decide (accepted value)) = [] := by
+          apply List.filter_eq_nil_iff.mpr
+          intro value member
+          obtain ⟨offset, _, rfl⟩ := List.mem_map.mp member
+          have absent : ¬ accepted (polygonal s (n + 1 + offset)) := by
+            simpa [Nat.cast_add, Nat.cast_one, add_assoc, add_comm, add_left_comm] using rejected (offset + 1)
+          simpa using absent
+        simp [collect, done, first, tail]
+      · rw [collect, if_neg done, ih (n + 1) (by omega)]
+        by_cases keep : accepted (polygonal s n) <;> simp [emitted, keep]
+
+/-- The generated list contains every qualifying positive-index polygonal number. -/
+theorem mem_answer (s value : Int) (sides : 3 ≤ s) :
+    value ∈ answer s ↔
+      ∃ n : Nat, 1 ≤ n ∧ n ≤ 140 ∧ polygonal s n = value ∧ accepted value := by
+  rw [answer, collect_eq_window 140 s 1 sides (by decide)]
+  simp only [List.mem_filter, decide_eq_true_eq, List.mem_map, List.mem_range]
+  constructor
+  · rintro ⟨⟨offset, bound, equal⟩, keep⟩
+    refine ⟨offset + 1, by omega, by omega, ?_, keep⟩
+    simpa [Nat.cast_add, Nat.cast_one, add_comm] using equal
+  · rintro ⟨n, positive, upper, equal, keep⟩
+    refine ⟨⟨n - 1, by omega, ?_⟩, keep⟩
+    have index : (1 : Int) + ↑(n - 1) = n := by omega
+    simpa [index] using equal
+
+/-- No positive index outside the finite window can add a qualifying value. -/
+theorem mem_answer_iff (s value : Int) (sides : 3 ≤ s) :
+    value ∈ answer s ↔
+      ∃ n : Nat, 1 ≤ n ∧ polygonal s n = value ∧ accepted value := by
+  rw [mem_answer s value sides]
+  constructor
+  · rintro ⟨n, positive, _, equal, keep⟩
+    exact ⟨n, positive, equal, keep⟩
+  · rintro ⟨n, positive, equal, keep⟩
+    refine ⟨n, positive, ?_, equal, keep⟩
+    by_contra outside
+    have above := data.«project-euler-statements».data.py.project_euler_statements.p61.polygonal.above_four_digits
+      s n sides (by omega)
+    have upper := keep.2.1
+    change 10000 ≤ polygonal s n at above
+    rw [equal] at above
+    omega
+
 private def numbers (values : List Int) : List Mutable.Value := values.map number
 private def working (base : Mutable.Heap) (values : List Int) : Mutable.Heap :=
   base ++ [.list (numbers values)]
@@ -246,3 +328,16 @@ theorem result (s : Int) (sides : 3 ≤ s) (heap : Mutable.Heap) (globals : Muta
     (by cases globals <;> rfl) rfl rfl globals
 
 end solvers.«61».generate_4digit_polygonals
+
+namespace solvers.«61»
+
+theorem generate_4digit_polygonals_source_result (s : Int) (heap : FormalSW.PyAst.Mutable.Heap)
+    (globals : FormalSW.PyAst.Mutable.Globals) :
+    3 ≤ s → FormalSW.PyAst.HeapCalls.ReturnsValue Solvers.P61Ast.module "generate_4digit_polygonals"
+      [.scalar (.int s)] heap (.ref heap.length)
+      (heap ++ [.list ((solvers.«61».generate_4digit_polygonals.answer s).map
+        (fun value => .scalar (.int value)))]) globals := by
+  intro sides
+  exact solvers.«61».generate_4digit_polygonals.result s sides heap globals
+
+end solvers.«61»

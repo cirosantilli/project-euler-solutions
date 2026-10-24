@@ -1,4 +1,13 @@
 #!/usr/bin/env python
+"""
+@formalsw: theorem generate_4digit_polygonals_source_result
+  (s : Int) (heap : FormalSW.PyAst.Mutable.Heap)
+  (globals : FormalSW.PyAst.Mutable.Globals) :
+  3 ≤ s → FormalSW.PyAst.HeapCalls.ReturnsValue Solvers.P61Ast.module "generate_4digit_polygonals"
+    [.scalar (.int s)] heap (.ref heap.length)
+    (heap ++ [.list ((solvers.«61».generate_4digit_polygonals.answer s).map
+      (fun value => .scalar (.int value)))]) globals
+"""
 from __future__ import annotations
 
 
