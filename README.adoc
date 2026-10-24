@@ -59,6 +59,8 @@ Each Python solution file should be completely self contained and have no depend
 
 Expose the computation as a function named `solve`. Put example assertions, input loading, and printing directly under `if __name__ == "__main__":`, without a `main()` wrapper. Print single-use results directly, for example `print(solve(1000))`.
 
+Keep specification comments focused on current design considerations: useful argument generalizations or constraints the formal fields cannot express. Put argument types, preconditions, and return behavior in their structured fields; keep change history in commits.
+
 Solutions must run on a single CPU core, multithreading or accelerators like GPUs are not allowed. The reason to forbid multithreading is so as to put greater focus on algorithmic improvements rather than micro-optimizations and hardware parallelism. Yes, serial execution speed on a single core varies across CPUs, but parallel execution varies much more even across CPUs. So having everything on a single core makes it much easier to estimate algorithm quality even across CPUs.
 
 We are initially striving strongly for a 10 minute maximum runtime of each solution. This number is semi arbitrary, but it feels like a ridiculously high ceiling above which a non-bruteforce algorithm with the key insight should never ever go above, and we are yet to see a compelling case of the contrary. A few seconds is much much more common and pleasant. One minute starts to feel bad. Five is already basically hopeless. So ten feels like beyond reasonable. The slowest known solvers are listed at: <<slowest-solvers>>.
@@ -703,7 +705,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/31.py[31.py] | link:solvers/31.md[31.md] | link:solvers/31.py.lean[31.py.lean] | 0.117 | 73682 |
 | link:solvers/32.py[32.py] | link:solvers/32.md[32.md] |  | 0.153 | 45228 |
 | link:solvers/33.py[33.py] | link:solvers/33.md[33.md] | link:solvers/33.py.lean[33.py.lean] | 0.124 | 100 |
-| link:solvers/34.py[34.py] | link:solvers/34.md[34.md] |  | 0.284 | 40730 |
+| link:solvers/34.py[34.py] | link:solvers/34.md[34.md] | link:solvers/34.py.lean[34.py.lean] | 0.284 | 40730 |
 | link:solvers/35.py[35.py] | link:solvers/35.md[35.md] | link:solvers/35.py.lean[35.py.lean] | 0.161 | 55 |
 | link:solvers/36.py[36.py] | link:solvers/36.md[36.md] | link:solvers/36.py.lean[36.py.lean] | 0.127 | 872187 |
 | link:solvers/37.py[37.py] | link:solvers/37.md[37.md] |  | 0.140 | 748317 |

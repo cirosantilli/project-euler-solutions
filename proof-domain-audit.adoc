@@ -10,7 +10,7 @@ Prefer a meaningful argument shared by both implementations. A reference-only se
 |===
 | Problem | Former reference restriction | Current reference
 | 32 | Supplied factor limits 99 and 9999 | Split every permutation of the actual nine digits into factors and product.
-| 34 | Supplied inclusive limit 2540160 | Derive the maximum possible digit count using `d * 9!` and `10**(d-1)`.
+| 34 | Supplied inclusive limit 2540160 | Accept the same numeral base as the optimized solver and derive a complete bound from `d * (base - 1)!` and `base**(d-1)`.
 | 37 | Scan below a million | Exhaust the right-truncatable-prime tree until its frontier is empty.
 | 38 | Supplied base limit 9999 | Derive the maximum base width from fitting at least two products into nine digits.
 | 40 | Supplied decimal-stream construction limit | Accept the same requested digit positions as the optimized solver and extend the stream until they exist.
@@ -27,6 +27,8 @@ Problem 62 has structural equivalence and support proofs for every signed class 
 Problem 45 has structural termination and equivalence proofs for every signed `after` threshold. A recurrence supplies arbitrarily large common pentagonal and hexagonal values. Both source loops reach the least common value above the threshold; the three-way merge advances its least cursor without passing that answer.
 
 Problem 46 has structural equivalence and support proofs for every signed `after` threshold. Both functions terminate exactly when a counterexample above that threshold exists, returning the least one; otherwise both diverge. The default call has a separate termination proof from the explicit counterexample 5777.
+
+Problem 34 has structural termination and equivalence proofs for every numeral base at least two. Both source searches sum fixed points with at least two digits in that base. A general bound theorem contains every positive fixed point, without a fixed base or digit-width cutoff. The default call inherits termination from the arbitrary-base proof.
 
 == Remaining implementation and proof restrictions
 
@@ -46,6 +48,6 @@ Problem 46 has structural equivalence and support proofs for every signed `after
 
 Other explicit bounds were checked for their role: the quadratic coefficient ranges in problem 27, the fifth power in problem 30, the target decimal digits in problems 32 and 38, the four-digit progression in problem 49, the fifty reverse-and-add steps in problem 55, and the one-tenth spiral threshold in problem 58 come from their stated problem variants. Problem 60's bound is shared by both implementations and its theorem covers every signed bound; it is not a reference-only cutoff. Such shared parameters still deserve review when a more natural generalization is available.
 
-Further useful shared parameters include coefficient ranges in problem 27, the digit-power exponent in problem 30, the numeral base in problem 34, the target digit set in problems 32 and 38, the substring divisors in problem 43, and the diagonal-prime ratio in problem 58. Existing fixed-input proofs do not replace these prospective generalized results. Problems 40, 45, and 46 have shared position and threshold parameters.
+Further useful shared parameters include coefficient ranges in problem 27, the digit-power exponent in problem 30, the target digit set in problems 32 and 38, the substring divisors in problem 43, and the diagonal-prime ratio in problem 58. Existing fixed-input proofs do not replace these prospective generalized results. Problems 34, 40, 45, and 46 have shared base, position, and threshold parameters.
 
 The default root-partition certificate for problem 62 is numerical evidence toward a termination witness, not an execution cap. Its class batches were checked, but final assembly has not passed and is not a completed proof.

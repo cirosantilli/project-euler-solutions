@@ -1,45 +1,43 @@
 #!/usr/bin/env python
-from typing import List
 
 
-def precompute_factorials() -> List[int]:
-    facts = [1] * 10
+def precompute_factorials(base: int = 10) -> list[int]:
+    facts = [1]
     f = 1
-    for d in range(1, 10):
-        f *= d
-        facts[d] = f
+    for digit in range(1, base):
+        f *= digit
+        facts.append(f)
     return facts
 
 
-def digit_factorial_sum(n: int, facts: List[int]) -> int:
-    s = 0
+def digit_factorial_sum(n: int, facts: list[int], base: int = 10) -> int:
+    total = 0
     while n:
-        n, r = divmod(n, 10)
-        s += facts[r]
-    return s
+        n, remainder = divmod(n, base)
+        total += facts[remainder]
+    return total
 
 
-def solve() -> int:
+def solve(base: int = 10) -> int:
     """
-    @formalsw: Py from project_euler_statements.p34 import naive_default
-    @formalsw: Equiv(naive_default)
-    """
-    facts = precompute_factorials()
+    Sum the numbers with at least two base-b digits equal to their digit-factorial sum.
 
-    # Upper bound:
-    # For an n-digit number, the maximum sum of digit factorials is n * 9!.
-    # Find largest n where n*9! can still reach an n-digit number (>= 10^(n-1)).
-    nine_fact = facts[9]
-    n = 1
-    while n * nine_fact >= 10 ** (n - 1):
-        n += 1
-    # After loop, n is first that fails, so max digits is n-1
-    upper = (n - 1) * nine_fact
+    @formalsw: Requires(base >= 2)
+    @formalsw: Py from project_euler_statements.p34 import naive
+    @formalsw: Returns
+    @formalsw: Equiv(naive)
+    """
+    facts = precompute_factorials(base)
+    max_fact = facts[base - 1]
+    digits = 1
+    while digits * max_fact >= base ** (digits - 1):
+        digits += 1
+    upper = (digits - 1) * max_fact
 
     total = 0
-    for x in range(3, upper + 1):  # exclude 1 and 2 per statement
-        if x == digit_factorial_sum(x, facts):
-            total += x
+    for n in range(base, upper + 1):
+        if n == digit_factorial_sum(n, facts, base):
+            total += n
     return total
 
 
