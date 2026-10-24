@@ -11,6 +11,9 @@ def load_cipher() -> bytes:
 
 
 def build_scoring_tables() -> tuple[list[bool], list[int]]:
+    """
+    @formalsw: Returns
+    """
     printable = [False] * 256
     for v in range(32, 127):
         printable[v] = True
