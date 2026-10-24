@@ -1,4 +1,13 @@
 #!/usr/bin/env python
+"""
+@formalsw: theorem digit_signature_source_result
+  (n : Nat) (heap : FormalSW.PyAst.Mutable.Heap) :
+  FormalSW.PyAst.HeapCalls.ReturnsValue Solvers.P62Ast.module "digit_signature" [.scalar (.int n)] heap
+    (.ref (heap.length + 2))
+    (heap ++ [.list [.scalar (.int 0)],
+      .list ((ProjectEulerSolutions.CubicPermutations.signature n).map (fun (value : Nat) => .scalar (.int value))),
+      .tuple ((ProjectEulerSolutions.CubicPermutations.signature n).map (fun (value : Nat) => .scalar (.int value)))])
+"""
 from __future__ import annotations
 
 Signature = tuple[int, ...]
