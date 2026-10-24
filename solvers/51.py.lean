@@ -8,6 +8,7 @@ import ProjectEulerSolutions.Lib.BitSubsets
 import ProjectEulerSolutions.Lib.HeapCollection
 import ProjectEulerSolutions.Lib.HeapRows
 import Mathlib.Data.Nat.Sqrt
+import ProjectEulerStatements.Lib.DecimalDigits
 
 /-! Source proofs for problem 51's sieve, replacement counts, and bit-mask selection. -/
 
@@ -1434,6 +1435,168 @@ theorem append_current (digits : List Nat) (base index digit : Nat) (digitBound 
     · rw [List.getElem?_set_ne (by omega)]
       simpa only [step, if_neg same, List.append_nil] using rowsFound original inside
 
+private def FillStable (before after : HeapCalls.Env) : Prop :=
+  ∀ name, name ≠ "i" → name ≠ "dig" → after name = before name
+
+private def RowsFrame (base : Nat) (before after : Mutable.Heap) : Prop :=
+  ∀ address, (∀ digit < 10, address ≠ base + 1 + digit) → after[address]? = before[address]?
+
+/-- The enumeration fills every digit row while leaving the source sequence and all other heap cells intact. -/
+theorem fill_loop (digits : List Nat) (base sourceAddress count first remaining : Nat)
+    (within : count ≤ digits.length) (endpoint : first + remaining = count)
+    (digitBounds : ∀ digit ∈ digits, digit < 10)
+    (sourceOutside : ∀ digit < 10, sourceAddress ≠ base + 1 + digit)
+    (env : HeapCalls.Env) (heap : Mutable.Heap) (getParent : env "pos_lists" = some (.ref base))
+    (parentFound : heap[base]? = some (.list ((HeapRows.addresses base 10).map Mutable.Value.ref)))
+    (sourceFound : heap[sourceAddress]? = some (.list (numbers (digits.take count))))
+    (rowsFound : ∀ original < 10, heap[base + 1 + original]? =
+      some (.list (numbers (PrimeReplacementSearch.prefixGroup digits first original)))) :
+    ∃ finalEnv finalHeap,
+      BlockContinues program env [.enumerateStepLoop "i" "dig" (.ref sourceAddress) first first fillBody []] heap finalEnv finalHeap ∧
+      finalHeap[base]? = some (.list ((HeapRows.addresses base 10).map Mutable.Value.ref)) ∧
+      (∀ original < 10, finalHeap[base + 1 + original]? =
+        some (.list (numbers (PrimeReplacementSearch.prefixGroup digits count original)))) ∧
+      finalHeap[sourceAddress]? = some (.list (numbers (digits.take count))) ∧
+      FillStable env finalEnv ∧ RowsFrame base heap finalHeap ∧ finalHeap.length = heap.length := by
+  induction remaining generalizing first env heap with
+  | zero =>
+      refine ⟨env, heap, BlockContinues.enumerate_done (source := .ref sourceAddress) (items := numbers (digits.take count))
+        (by simp [sequenceValue, Mutable.sequence, sourceFound]) ?_ .nil, parentFound, ?_, sourceFound,
+        (fun _ _ _ => rfl), (fun _ _ => rfl), rfl⟩
+      · exact List.getElem?_eq_none (by simp only [numbers, List.length_map, List.length_take]; omega)
+      · simpa only [show first = count by omega] using rowsFound
+  | succ remaining ih =>
+      have inside : first < digits.length := by omega
+      have chosen : first < count := by omega
+      let digit := digits[first]
+      have digitBound : digit < 10 := digitBounds digit (List.getElem_mem inside)
+      have read : digits[first]? = some digit := List.getElem?_eq_getElem inside
+      let bound := setLocal (setLocal env "i" (number first)) "dig" (number digit)
+      let nextHeap := heap.set (base + 1 + digit)
+        (.list (numbers (PrimeReplacementSearch.prefixGroup digits first digit ++ [first])))
+      obtain ⟨appended, parentSaved, nextRows⟩ := append_current digits base first digit digitBound read bound heap
+        (by simpa [bound, setLocal] using getParent) rfl (by simp [bound, setLocal]) parentFound rowsFound
+      have nextParent : nextHeap[base]? = some (.list ((HeapRows.addresses base 10).map Mutable.Value.ref)) :=
+        parentSaved.trans parentFound
+      have nextSource : nextHeap[sourceAddress]? = some (.list (numbers (digits.take count))) := by
+        rw [List.getElem?_set_ne (Ne.symm (sourceOutside digit digitBound))]
+        exact sourceFound
+      obtain ⟨finalEnv, finalHeap, executed, finalParent, finalRows, finalSource, preserved, framed, sameLength⟩ :=
+        ih (first+1) (by omega) bound nextHeap (by simpa [bound, setLocal] using getParent) nextParent nextSource nextRows
+      refine ⟨finalEnv, finalHeap, ?_, finalParent, finalRows, finalSource, ?_, ?_, ?_⟩
+      · apply BlockContinues.enumerate_step (source := .ref sourceAddress) (items := numbers (digits.take count))
+          (by simp [sequenceValue, Mutable.sequence, sourceFound])
+          (value := number digit)
+        · simp only [numbers, List.getElem?_map, List.getElem?_take_of_lt chosen, read, Option.map_some]
+        · exact appended.append executed
+      · intro name hi hd
+        exact (preserved name hi hd).trans (by simp only [bound, setLocal, hi, hd, if_false])
+      · intro address outside
+        exact (framed address outside).trans (List.getElem?_set_ne (Ne.symm (outside digit digitBound)))
+      · simpa only [nextHeap, List.length_set] using sameLength
+
+private def digitSource : Expr := match (primeBody[4]? : Option Stmt) with
+  | some (.forIn _ (.call _ [source]) _ _) => source | _ => .constant .none
+private def digitCount (target : Int) (digits : List Nat) : Nat :=
+  if 8 ≤ target then digits.length - 1 else digits.length
+
+/-- The source's conditional slice drops only the units position for an eight-prime search. -/
+theorem select_digits (digits : List Nat) (target : Int) (address : Nat) (env : HeapCalls.Env) (heap : Mutable.Heap)
+    (getTarget : env "target" = some (number target)) (getDigits : env "ds" = some (.ref address))
+    (found : heap[address]? = some (.list (numbers digits))) :
+    ∃ selectedAddress extra, Evaluates program env digitSource heap (.ref selectedAddress) (heap ++ extra) ∧
+      (heap ++ extra)[selectedAddress]? = some (.list (numbers (digits.take (digitCount target digits)))) ∧
+      (selectedAddress = address ∨ selectedAddress = heap.length) := by
+  have test : Evaluates program env (.compare (.name "target") [(.gtE, .constant (.int 8))]) heap
+      (flag (decide (8 ≤ target))) heap := by
+    apply Evaluates.compare (av := number target) (bv := number 8) (middle := heap) (afterRight := heap)
+      (Evaluates.lookup getTarget) Evaluates.constant
+    simp [HeapCalls.compare, scalarCompare, evalCmpOp]
+  by_cases large : 8 ≤ target
+  · have lengthEq : FormalSW.Py.Builtin.Slice.prefixLength (numbers digits).length (-1) = digits.length - 1 := by
+      simp only [numbers, List.length_map, FormalSW.Py.Builtin.Slice.prefixLength]
+      omega
+    have sliced : Evaluates program env
+        (.subscript (.name "ds") (.slice none (some (.unaryOp .uSub (.constant (.int 1)))) none))
+        heap (.ref heap.length) (heap ++ [.list (numbers (digits.take (digits.length-1)))]) := by
+      apply Evaluates.slice (receiver := .ref address) (first := .scalar .none) (last := number (-1)) (stepValue := .scalar .none) (middle := heap)
+        (.cons (Evaluates.lookup getDigits) (.cons Evaluates.constant (.cons (Evaluates.unary Evaluates.constant rfl) (.cons Evaluates.constant .nil))))
+      have operation := Mutable.getSlice_list_prefix heap address (numbers digits) (-1) found
+      rw [lengthEq] at operation
+      simpa only [numbers, List.map_take] using operation
+    refine ⟨heap.length, [.list (numbers (digits.take (digitCount target digits)))], ?_, by simp, Or.inr rfl⟩
+    apply Evaluates.conditional (flag := true) (value := flag true)
+      (by simpa only [large, decide_true] using test) (by simp [Mutable.truth, scalarTruth])
+    simpa only [digitCount, large, if_true] using sliced
+  · refine ⟨address, [], ?_, ?_, Or.inl rfl⟩
+    · simp only [List.append_nil]
+      apply Evaluates.conditional (flag := false) (value := flag false)
+        (by simpa only [large, decide_false] using test) (by simp [Mutable.truth, scalarTruth])
+      exact Evaluates.lookup getDigits
+    · simpa only [List.append_nil, digitCount, large, if_false, List.take_length] using found
+
+/-- The source allocation, conditional slice, and grouping loop construct every reference digit-position group. -/
+theorem build (p : Nat) (target : Int) (digitsAddress : Nat) (env : HeapCalls.Env) (heap : Mutable.Heap)
+    (getTarget : env "target" = some (number target)) (getDigits : env "ds" = some (.ref digitsAddress))
+    (found : heap[digitsAddress]? = some (.list (numbers (Nat.digits 10 p).reverse))) :
+    ∃ finalEnv finalHeap,
+      BlockContinues program env ((primeBody.drop 3).take 2) heap finalEnv finalHeap ∧
+      finalEnv "pos_lists" = some (.ref heap.length) ∧
+      finalHeap[heap.length]? = some (.list ((HeapRows.addresses heap.length 10).map Mutable.Value.ref)) ∧
+      (∀ original < 10, finalHeap[heap.length + 1 + original]? =
+        some (.list (numbers (PrimeReplacementSearch.group target.toNat p original)))) ∧
+      (∀ (address : Nat) (object : Mutable.Object), heap[address]? = some object → finalHeap[address]? = some object) ∧
+      (∀ name, name ∉ ["pos_lists", "i", "dig"] → finalEnv name = env name) := by
+  let digits := (Nat.digits 10 p).reverse
+  let initialized := HeapRows.empty heap 10
+  let ready := setLocal env "pos_lists" (.ref heap.length)
+  have allocated := allocate_rows env heap
+  have savedDigits := HeapRows.prefix_found heap 10 digitsAddress (.list (numbers digits)) found
+  obtain ⟨selectedAddress, extra, selected, chosenFound, location⟩ := select_digits digits target digitsAddress ready initialized
+    (by simpa [ready, setLocal] using getTarget) (by simpa [ready, setLocal] using getDigits) savedDigits
+  have parent := HeapCollection.prefix_found initialized extra heap.length _ (HeapRows.parent_found heap 10)
+  have rows : ∀ original < 10, (initialized ++ extra)[heap.length + 1 + original]? =
+      some (.list (numbers (PrimeReplacementSearch.prefixGroup digits 0 original))) := by
+    intro original inside
+    exact HeapCollection.prefix_found initialized extra (heap.length + 1 + original) _ (HeapRows.row_found heap 10 original inside)
+  have countWithin : digitCount target digits ≤ digits.length := by unfold digitCount; split_ifs <;> omega
+  have digitBounds : ∀ digit ∈ digits, digit < 10 := by
+    intro digit member
+    exact Nat.digits_lt_base (by decide : 1 < 10) (by simpa only [digits, List.mem_reverse] using member)
+  have sourceOutside : ∀ digit < 10, selectedAddress ≠ heap.length + 1 + digit := by
+    intro digit inside equal
+    rcases location with old | fresh
+    · have live := (List.getElem?_eq_some_iff.mp found).1
+      rw [old] at equal
+      omega
+    · have live : heap.length + 1 + digit < initialized.length :=
+        (List.getElem?_eq_some_iff.mp (HeapRows.row_found heap 10 digit inside)).1
+      exact (Nat.ne_of_lt live) (equal.symm.trans fresh)
+  obtain ⟨finalEnv, finalHeap, executed, finalParent, finalRows, _, preserved, framed, _⟩ :=
+    fill_loop digits heap.length selectedAddress (digitCount target digits) 0 (digitCount target digits) countWithin (by omega)
+      digitBounds sourceOutside ready (initialized ++ extra) rfl parent chosenFound rows
+  have filled : BlockContinues program ready [primeBody[4]'(by decide)] initialized finalEnv finalHeap := by
+    apply BlockContinues.for_enumerate (source := .ref selectedAddress) (items := numbers (digits.take (digitCount target digits)))
+      selected (by simp [Mutable.sequence, chosenFound]) executed
+  refine ⟨finalEnv, finalHeap, allocated.append filled, (preserved "pos_lists" (by decide) (by decide)).trans rfl,
+    finalParent, ?_, ?_, ?_⟩
+  · intro original inside
+    have same : PrimeReplacementSearch.prefixGroup digits (digitCount target digits) original =
+        PrimeReplacementSearch.group target.toNat p original := by
+      rw [PrimeReplacementSearch.group_eq_prefix]
+      have threshold : 8 ≤ target ↔ 8 ≤ target.toNat := by omega
+      simp only [digits, digitCount, List.length_reverse, threshold]
+    simpa only [same] using finalRows original inside
+  · intro address object previous
+    have live := (List.getElem?_eq_some_iff.mp previous).1
+    exact (framed address (fun _ _ => by omega)).trans
+      (HeapCollection.prefix_found initialized extra address object (HeapRows.prefix_found heap 10 address object previous))
+  · intro name untouched
+    have hi : name ≠ "i" := fun equal => untouched (by simp [equal])
+    have hd : name ≠ "dig" := fun equal => untouched (by simp [equal])
+    have hp : name ≠ "pos_lists" := fun equal => untouched (by simp [equal])
+    exact (preserved name hi hd).trans (by simp only [ready, setLocal, hp, if_false])
+
 private def emptyTest : Expr := match (positionBody[1]? : Option Stmt) with
   | some (.ifThen condition _ _) => condition | _ => .constant .none
 private def smallTest : Expr := match (positionBody[2]? : Option Stmt) with
@@ -1629,6 +1792,98 @@ theorem result (p parentAddress powerAddress primeAddress : Nat) (target : Int) 
   simpa only [← List.range_eq_range', same] using masks.run_weaken (weaker := Stable env) (fun _ valid => valid.2) searched
 
 end groups
+
+namespace decimalDigits
+private abbrev text (digits : List Nat) := String.ofList (digits.map Nat.digitChar)
+private abbrev character (digit : Nat) : Mutable.Value := .scalar (.string (String.singleton (Nat.digitChar digit)))
+private def expression : Expr := .binOp (.builtinCall .ord [.name "c"]) .sub (.constant (.int 48))
+private def body (address : Nat) : List Stmt := [.comprehensionAppend address expression]
+
+private theorem ordinal_value (digit : Nat) (decimal : digit < 10) :
+    ((Nat.digitChar digit).toNat : Int) - 48 = (digit : Int) := by
+  interval_cases digit <;> decide +kernel
+
+private theorem ordinal (digit : Nat) (decimal : digit < 10) (env : HeapCalls.Env) (heap : Mutable.Heap)
+    (getCharacter : env "c" = some (character digit)) : Evaluates program env expression heap (number digit) heap := by
+  apply Evaluates.binary (av := number (Nat.digitChar digit).toNat) (bv := number 48) (middle := heap) (afterRight := heap)
+  · apply Evaluates.builtin (.cons (Evaluates.lookup getCharacter) .nil)
+    change scalarResult (some (Strings.ord (.string (String.ofList [Nat.digitChar digit])))) heap = _
+    rw [Strings.ord_character]
+    rfl
+  · exact Evaluates.constant
+  · simp [Mutable.binary, scalarBinary, ordinal_value digit decimal]
+
+private theorem loop (items remaining : List Nat) (position : Nat) (base : Mutable.Heap) (before : List Nat)
+    (env : HeapCalls.Env) (suffix : items.drop position = remaining) (decimal : ∀ digit ∈ remaining, digit < 10) :
+    ∃ finalEnv, BlockContinues program env
+      [.sequenceStepLoop "c" (.scalar (.string (text items))) position (body base.length) []]
+      (ProjectEulerSolutions.HeapCollection.working base (numbers before) []) finalEnv
+      (ProjectEulerSolutions.HeapCollection.working base (numbers (before ++ remaining)) []) := by
+  have sequence (stored : List Nat) : Mutable.sequence (.scalar (.string (text items)))
+      (ProjectEulerSolutions.HeapCollection.working base (numbers stored) []) =
+      some (.ok (items.map character), ProjectEulerSolutions.HeapCollection.working base (numbers stored) []) := by
+    simp [Mutable.sequence, text, character, List.map_map]
+  induction remaining generalizing position before env with
+  | nil =>
+      refine ⟨env, ?_⟩
+      simp only [List.append_nil]
+      apply BlockContinues.sequence_done (source := .scalar (.string (text items))) (sequence before)
+      · have missing : items[position]? = none := by
+          simpa [suffix] using (List.head?_drop (l := items) (i := position)).symm
+        simp [missing]
+      · exact .nil
+  | cons head tail ih =>
+      have item : items[position]? = some head := by
+        simpa [suffix] using (List.head?_drop (l := items) (i := position)).symm
+      let bound := setLocal env "c" (character head)
+      have evaluated := ordinal head (decimal head (by simp)) bound
+        (ProjectEulerSolutions.HeapCollection.working base (numbers before) []) rfl
+      have emitted := ProjectEulerSolutions.HeapCollection.emit base (numbers before) [] [] (number head)
+        (by simpa only [List.append_nil] using evaluated)
+      have emitted' : BlockContinues program bound (body base.length)
+          (ProjectEulerSolutions.HeapCollection.working base (numbers before) []) bound
+          (ProjectEulerSolutions.HeapCollection.working base (numbers (before ++ [head])) []) := by
+        simpa only [body, numbers, List.map_append, List.map_singleton, List.nil_append] using emitted
+      have suffixTail : items.drop (position+1) = tail := by simp [List.drop_add_one_eq_tail_drop, suffix]
+      obtain ⟨finalEnv, executed⟩ := ih (position+1) (before ++ [head]) bound suffixTail
+        (fun digit member => decimal digit (by simp [member]))
+      refine ⟨finalEnv, ?_⟩
+      apply BlockContinues.sequence_step (source := .scalar (.string (text items))) (value := character head) (sequence before) (by simp [item])
+      simpa only [body, List.append_assoc, List.singleton_append] using emitted'.append executed
+
+/-- The actual character comprehension produces the canonical most-significant-first decimal digits. -/
+theorem result (p : Nat) (positive : 0 < p) (env : HeapCalls.Env) (heap : Mutable.Heap)
+    (getString : env "s" = some (.scalar (.string (toString (p : Int))))) :
+    Evaluates program env (.listComp expression [("c", .name "s", [])]) heap (.ref heap.length)
+      (heap ++ [.list (numbers (Nat.digits 10 p).reverse)]) := by
+  let digits := (Nat.digits 10 p).reverse
+  have equal : toString (p : Int) = text digits := by
+    apply String.toList_injective
+    simpa [toString, Int.repr, Nat.repr, text, digits] using ProjectEulerStatements.DecimalDigits.toDigits_eq_digitChars p positive
+  have decimal : ∀ digit ∈ digits, digit < 10 := by
+    intro digit member
+    exact Nat.digits_lt_base (by decide : 1 < 10) (by simpa only [digits, List.mem_reverse] using member)
+  obtain ⟨finalEnv, executed⟩ := loop digits digits 0 heap [] (comprehensionEnv env [("c", .name "s", [])]) rfl decimal
+  apply Evaluates.list_comp_sequence (value := .scalar (.string (text digits))) (items := digits.map character)
+    (by intros; intro impossible; cases impossible)
+    (Evaluates.lookup (by simpa only [equal] using getString))
+    (by simp [Mutable.sequence, text, character, List.map_map])
+  exact executed
+
+/-- The two source statements build the decimal string and its fresh digit list. -/
+theorem prepare (p : Nat) (positive : 0 < p) (env : HeapCalls.Env) (heap : Mutable.Heap) (getP : env "p" = some (number p)) :
+    BlockContinues program env ((primeBody.drop 1).take 2) heap
+      (setLocal (setLocal env "s" (.scalar (.string (toString (p : Int))))) "ds" (.ref heap.length))
+      (heap ++ [.list (numbers (Nat.digits 10 p).reverse)]) := by
+  let stringEnv := setLocal env "s" (.scalar (.string (toString (p : Int))))
+  have first : BlockContinues program env [primeBody[1]'(by decide)] heap stringEnv heap :=
+    BlockContinues.assign (Evaluates.builtin (.cons (Evaluates.lookup getP) .nil) rfl)
+  have second : BlockContinues program stringEnv [primeBody[2]'(by decide)] heap
+      (setLocal stringEnv "ds" (.ref heap.length)) (heap ++ [.list (numbers (Nat.digits 10 p).reverse)]) :=
+    BlockContinues.assign (result p positive stringEnv heap rfl)
+  exact first.append second
+
+end decimalDigits
 
 end solve
 
