@@ -5579,3 +5579,50 @@ theorem small_model_below_witness (limit : Int) (small : limit < 8389) :
   competitive.small_result_of_search_certificate small_model_checked limit small
 
 end solvers.«60».certificate
+
+
+namespace solvers.«60».source_equivalence
+open FormalSW.PyAst FormalSW.PyAst.HeapCalls
+
+/-- The actual optimized call after executing its two source table assignments. -/
+def left (limit : Int) (caller : Mutable.Heap) : Mutable.Call :=
+  HeapCalls.call Solvers.P60Ast.module "solve" [.scalar (.int limit)]
+    (is_prime.initialization.heap caller) (is_prime.initialization.globals caller)
+
+/-- The exhaustive reference observes the same caller heap and initialized globals. -/
+def right (limit : Int) (caller : Mutable.Heap) : Mutable.Call :=
+  HeapCalls.call P60Ast.module "naive" [.scalar (.int limit)]
+    (is_prime.initialization.heap caller) (is_prime.initialization.globals caller)
+
+/-- Initialization is executed, and its environment supplies the shared globals. -/
+def Initialized (caller : Mutable.Heap) : Prop :=
+  BlockContinues Solvers.P60Ast.module (fun _ => none) is_prime.initialization.code caller
+    (is_prime.initialization.env caller) (is_prime.initialization.heap caller) [] ∧
+  ∀ name, is_prime.initialization.env caller name = (is_prime.initialization.globals caller).lookup name
+
+/-- The public comparison includes source initialization and termination of both actual calls. -/
+def Verified (limit : Int) (caller : Mutable.Heap) : Prop :=
+  Initialized caller ∧ (left limit caller).Returns ∧ (right limit caller).Returns ∧
+    (left limit caller).Equiv (right limit caller)
+
+/-- Both original source calls terminate at every signed limit, independently of the finite checks. -/
+theorem coverage (limit : Int) (caller : Mutable.Heap) :
+    Initialized caller ∧ (left limit caller).Returns ∧ (right limit caller).Returns := by
+  obtain ⟨_, _, optimized, _, _, _, _⟩ := solve_search.result limit
+    (is_prime.initialization.heap caller) (is_prime.initialization.globals caller)
+    (is_prime.initialization.context caller)
+  obtain ⟨_, _, reference, _, _, _⟩ :=
+    data.«project-euler-statements».data.py.project_euler_statements.p60.naive.result limit
+      (is_prime.initialization.heap caller) (is_prime.initialization.globals caller)
+  exact ⟨⟨is_prime.initialization.executes caller, is_prime.initialization.exports caller⟩,
+    optimized.returns, reference.returns⟩
+
+/-- Exact model equality transfers to the complete initialized source contract. -/
+theorem verified_of_models (limit : Int) (caller : Mutable.Heap) (valid : caller.Valid)
+    (modelsEqual : solve_search.answerModel limit =
+      data.«project-euler-statements».data.py.project_euler_statements.p60.naive.answerModel limit) :
+    Verified limit caller := by
+  obtain ⟨prepared, optimized, reference⟩ := coverage limit caller
+  exact ⟨prepared, optimized, reference, (initialized.equiv_of_models limit caller valid modelsEqual).2⟩
+
+end solvers.«60».source_equivalence
