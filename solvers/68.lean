@@ -3,4 +3,4 @@ import ProjectEulerSolutions.P68
 open ProjectEulerSolutions.P68
 
 def main : IO Unit := do
-  IO.println solve
+  IO.println (solve 5 16)

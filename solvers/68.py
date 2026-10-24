@@ -15,6 +15,10 @@ def solve(n: int = 5, digits: int = 16) -> str:
     """
     Maximize a canonical magic n-gon string using labels 1 through 2*n.
     Return an empty string if no ring has the requested decimal length.
+
+    @formalsw: Py from project_euler_statements.p68 import naive
+    @formalsw: Returns
+    @formalsw: Equiv(naive)
     """
     if n < 3 or digits < 3 * n:
         return ""

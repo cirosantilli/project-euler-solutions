@@ -466,7 +466,7 @@ example : ProjectEulerStatements.P67.naive = ProjectEulerSolutions.P67.solve := 
   apply (funext_iff).2
   simpa [funext_iff] using ProjectEulerSolutions.P67.equiv
 
-example : ProjectEulerStatements.P68.naive = ProjectEulerSolutions.P68.solve := by
+example : @ProjectEulerStatements.P68.naive = @ProjectEulerSolutions.P68.solve := by
   exact ProjectEulerSolutions.P68.equiv
 
 example : ProjectEulerStatements.P69.naive = ProjectEulerSolutions.P69.solve := by
