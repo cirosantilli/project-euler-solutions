@@ -34,7 +34,7 @@ Problem 23 has structural termination and equivalence proofs for every signed up
 
 Problem 26 has structural termination and equivalence proofs for every signed upper bound. Both searches consider only positive denominators, keep the least denominator on equal cycle lengths, and return zero exactly when the candidate range is empty.
 
-Problem 38 accepts a shared target width. The mathematical model proves complete seed and product-count bounds, equivalence of the mask and permutation predicates, and uniqueness of a candidate at the first sufficient product count. Source proofs for positional concatenation and the optimized width loop are checked; source equivalence for the full generalized searches is pending.
+Problem 38 has structural termination and equivalence proofs for every signed target width. The reference collector and optimized running maximum implement the same complete candidate set. Seed and product-count bounds follow from the requested width. Both functions return zero for widths below two or above nine; two positive products need at least two digits, and decimal notation cannot supply digit ten. The default call inherits termination from the general proof.
 
 == Remaining implementation and proof restrictions
 
