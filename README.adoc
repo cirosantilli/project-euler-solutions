@@ -546,7 +546,7 @@ Problem 41’s source-level equivalence proof covers trial division, tuple-to-in
 
 Problem 42’s source-level equivalence proof covers Unicode ordinal sums, filtered generators, input validation, and the integer-square-root criterion for triangular numbers. The contract accepts lists of nonempty uppercase ASCII words, including an empty list. The reference terminates for every typed string list, including inputs outside that contract. The proofs use only standard Lean axioms.
 
-Problem 43’s reference has complete source-level termination and exact-result proofs, including list copies, three-digit slices, set construction, short-circuiting divisibility checks, and the permutation sum. The mathematical groundwork connects its table-and-mask search to exhaustive permutations, proving completeness and exclusion of leading-zero solutions. The optimized Python source proof and equivalence theorem are still in progress.
+Problem 43’s source-level equivalence proof covers the complete tuple-key table builder, seed states, mask-based leftward extension, missing-digit completion, and decimal sum. A general constrained-permutation proof connects the optimized search to the exhaustive reference, establishing completeness and exclusion of leading-zero solutions. Both source implementations terminate and preserve the input heap. The contract requires the initialized `PRIMES` list and preserves its shared identity. The proofs use only standard Lean axioms.
 
 ====== Problem 14: Collatz termination
 

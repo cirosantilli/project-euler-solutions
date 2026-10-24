@@ -1,10 +1,7 @@
 #!/usr/bin/env python
 from __future__ import annotations
 
-from typing import Dict, List, Tuple
-
-
-PRIMES: List[int] = [2, 3, 5, 7, 11, 13, 17]
+PRIMES: list[int] = [2, 3, 5, 7, 11, 13, 17]
 
 
 def is_pandigital_substring_property(n: int) -> bool:
@@ -23,14 +20,14 @@ def is_pandigital_substring_property(n: int) -> bool:
     return True
 
 
-def build_maps() -> Dict[int, Dict[Tuple[int, int], List[int]]]:
+def build_maps() -> dict[int, dict[tuple[int, int], list[int]]]:
     """
     For each prime p, build map[(b,c)] -> [a] such that abc (3-digit, with leading zeros)
     is divisible by p and a,b,c are all distinct digits.
     """
-    maps: Dict[int, Dict[Tuple[int, int], List[int]]] = {}
+    maps: dict[int, dict[tuple[int, int], list[int]]] = {}
     for p in PRIMES:
-        mp: Dict[Tuple[int, int], List[int]] = {}
+        mp: dict[tuple[int, int], list[int]] = {}
         for x in range(0, 1000, p):
             a, b, c = x // 100, (x // 10) % 10, x % 10
             if a == b or a == c or b == c:
@@ -41,10 +38,15 @@ def build_maps() -> Dict[int, Dict[Tuple[int, int], List[int]]]:
 
 
 def solve() -> int:
+    """
+    @formalsw: Py from project_euler_statements.p43 import naive
+    @formalsw: Requires(PRIMES == [2, 3, 5, 7, 11, 13, 17])
+    @formalsw: Equiv(naive)
+    """
     maps = build_maps()
 
     # Start from the last constraint: d8 d9 d10 divisible by 17
-    states: List[Tuple[Tuple[int, ...], int]] = []
+    states: list[tuple[tuple[int, ...], int]] = []
     for x in range(0, 1000, 17):
         a, b, c = x // 100, (x // 10) % 10, x % 10
         if a == b or a == c or b == c:
@@ -55,7 +57,7 @@ def solve() -> int:
     # Extend leftwards with primes 13, 11, 7, 5, 3, 2
     for p in [13, 11, 7, 5, 3, 2]:
         mp = maps[p]
-        new_states: List[Tuple[Tuple[int, ...], int]] = []
+        new_states: list[tuple[tuple[int, ...], int]] = []
         for digits, used in states:
             b, c = digits[0], digits[1]  # these become d_{i+1}, d_{i+2}
             for a in mp.get((b, c), []):  # candidate new digit d_i
@@ -80,11 +82,9 @@ def solve() -> int:
             num = num * 10 + d
         total += num
 
-    # Problem statement example check
-    assert is_pandigital_substring_property(1406357289)
-
     return total
 
 
 if __name__ == "__main__":
+    assert is_pandigital_substring_property(1406357289)
     print(solve())
