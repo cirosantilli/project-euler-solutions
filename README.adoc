@@ -530,7 +530,7 @@ Problem 30’s source-level equivalence proof covers digit extraction, the fifth
 
 Problem 31’s source-level equivalence proof connects recursive coin counting to the dynamic programming table for every nonnegative target and list of positive denominations. It covers empty, repeated, and unsorted denominations, with repeated entries treated as distinct coin types. The proofs use only standard Lean axioms.
 
-Problem 32’s previous fixed-instance source proof is archived as an attempt. The reference now splits permutations of the actual nine problem digits, with no separate factor-search limits. Structural `Equiv` checking remains to be attached to this reference.
+Problem 32 accepts the target width in both implementations and uses each decimal digit from one through that width once. A general digit-length theorem derives the product interval and square-root factor bound, without fixed factor-search limits. The mathematical proof equates the complete factor search with all permutation splits and their deduplicated sums. Source proofs cover the digit checker, positional conversion, and optimized candidate and inner loops; the complete source `Equiv` and termination proofs remain pending. The archived fixed-instance proofs are not counted as current proofs.
 
 Problem 33’s source-level equivalence proof covers decimal string replacement, the nested fraction search, tuple allocations, and reduction of the product by its greatest common divisor.
 

@@ -9,7 +9,7 @@ Prefer a meaningful argument shared by both implementations. A reference-only se
 [cols="1,3,3"]
 |===
 | Problem | Former reference restriction | Current reference
-| 32 | Supplied factor limits 99 and 9999 | Split every permutation of the actual nine digits into factors and product.
+| 32 | Supplied factor limits 99 and 9999 | Share the target width and split every permutation of its digits into factors and product; the optimized bounds follow from the total digit count.
 | 34 | Supplied inclusive limit 2540160 | Accept the same numeral base as the optimized solver and derive a complete bound from `d * (base - 1)!` and `base**(d-1)`.
 | 37 | Scan below a million | Accept the same numeral base as the optimized solver and exhaust its right-truncatable-prime tree until the frontier is empty.
 | 38 | Supplied base limit 9999 | Share the target width and derive the seed endpoint and product-count bound from that width.
@@ -38,6 +38,8 @@ Problem 38 has structural termination and equivalence proofs for every signed ta
 
 Problem 37 has structural source equivalence and support proofs for every numeral base at least two. Both searches terminate exactly when the right-truncatable-prime tree exhausts, returning the sum of all primes with at least two digits that remain prime under truncation from either end; otherwise both supported-diverge. The proof establishes complete, duplicate-free frontiers and agreement of arithmetic suffix checks with the reference's digit-list truncations. The decimal certificate proves global completeness and default-call termination without imposing a bound on the arbitrary-base theorem.
 
+Problem 32 shares a target width between both Python implementations. The general mathematical proof derives the complete product interval and factor bounds, and shows that the factor search and all permutation splits have the same product membership and deduplicated sum. Widths below three and above nine are impossible. The source digit checker, positional conversion, candidate step, and optimized inner loop are proved; complete source equivalence and termination remain pending.
+
 Problem 51 has structural equivalence and support proofs for every signed family threshold. Both unbounded source searches return exactly when a qualifying family exists, returning its least prime; otherwise both diverge. The checked eight-member witness establishes termination for every threshold at most eight and for the default call. Thresholds above ten are impossible because there are only ten replacement digits. For thresholds nine and ten, termination retains the general existence condition. The Lean statement uses zero for absence in its mathematical minimum and makes no universal existence assumption.
 
 == Remaining implementation and proof restrictions
@@ -52,8 +54,8 @@ Problem 51 has structural equivalence and support proofs for every signed family
 | 62 | Unbounded equivalence and a termination characterization hold for every signed class size. | A separate `Returns` theorem for the default target still needs a verified existence witness.
 |===
 
-Other explicit bounds were checked for their role: the quadratic coefficient ranges in problem 27, the fifth power in problem 30, the target decimal digits in problems 32 and 38, the four-digit progression in problem 49, the fifty reverse-and-add steps in problem 55, and the one-tenth spiral threshold in problem 58 come from their stated problem variants. Problem 60's bound is shared by both implementations and its theorem covers every signed bound; it is not a reference-only cutoff. Such shared parameters still deserve review when a more natural generalization is available.
+Other explicit bounds were checked for their role: the quadratic coefficient ranges in problem 27, the fifth power in problem 30, the four-digit progression in problem 49, the fifty reverse-and-add steps in problem 55, and the one-tenth spiral threshold in problem 58 come from their stated problem variants. Problems 32 and 38 accept a shared target width. Problem 60's bound is shared by both implementations and its theorem covers every signed bound; it is not a reference-only cutoff. Such shared parameters still deserve review when a more natural generalization is available.
 
-Further useful shared parameters include coefficient ranges in problem 27, the digit-power exponent in problem 30, the target digit set in problem 32 and arbitrary digit subsets in problem 38, the substring divisors in problem 43, and the diagonal-prime ratio in problem 58. Existing fixed-input proofs do not replace these prospective generalized results. Problems 34, 40, 45, and 46 have shared base, position, and threshold parameters.
+Further useful shared parameters include coefficient ranges in problem 27, the digit-power exponent in problem 30, arbitrary target digit subsets in problems 32 and 38, the substring divisors in problem 43, and the diagonal-prime ratio in problem 58. Existing fixed-input proofs do not replace these prospective generalized results. Problems 34, 40, 45, and 46 have shared base, position, and threshold parameters.
 
 The default root-partition certificate for problem 62 is numerical evidence toward a termination witness, not an execution cap. Its class batches were checked, but final assembly has not passed and is not a completed proof.

@@ -1,100 +1,50 @@
 #!/usr/bin/env python
-from __future__ import annotations
 
-from typing import Tuple, Set
-
-
-FULL_MASK = (1 << 9) - 1  # digits 1..9 all present
+from math import isqrt
 
 
-def digit_mask(n: int) -> Tuple[int, int]:
-    """
-    Returns (mask, length) where mask has bit (d-1) set if digit d occurs.
-    If n contains 0 or repeated digits, returns (-1, 0).
-    """
+def is_pandigital(s: str, width: int = 9) -> bool:
+    if len(s) != width:
+        return False
     mask = 0
-    length = 0
-    while n > 0:
-        d = n % 10
-        if d == 0:
-            return -1, 0
-        bit = 1 << (d - 1)
+    for ch in s:
+        digit = ord(ch) - 48
+        if digit < 1:
+            return False
+        if digit > width:
+            return False
+        bit = 1 << digit
         if mask & bit:
-            return -1, 0
+            return False
         mask |= bit
-        length += 1
-        n //= 10
-    return mask, length
+    return True
 
 
-def solve() -> int:
+def solve(width: int = 9) -> int:
     """
-    @formalsw: Py from project_euler_statements.p32 import naive_default
-    @formalsw: Requires(FULL_MASK == 511)
-    @formalsw: Equiv(naive_default)
+    Sum distinct products whose two positive factors and product use digits 1..width once.
+
+    @formalsw: Py from project_euler_statements.p32 import naive
+    @formalsw: Returns
+    @formalsw: Equiv(naive)
     """
-    products: Set[int] = set()
-
-    # Case 1: 1-digit * 4-digit = 4-digit
-    for a in range(1, 10):
-        ma, la = digit_mask(a)
-        if ma < 0:
-            continue
-
-        # b is 4-digit; product must be 4-digit => 1000 <= a*b <= 9999
-        b_min = (1000 + a - 1) // a
-        b_max = 9999 // a
-        if b_min < 1000:
-            b_min = 1000
-        if b_max > 9999:
-            b_max = 9999
-
-        for b in range(b_min, b_max + 1):
-            mb, lb = digit_mask(b)
-            if mb < 0 or (ma & mb):
-                continue
-
-            p = a * b
-            if p < 1000 or p > 9999:
-                continue
-            mp, lp = digit_mask(p)
-            if mp < 0 or ((ma | mb) & mp):
-                continue
-
-            if la + lb + lp == 9 and (ma | mb | mp) == FULL_MASK:
-                products.add(p)
-
-    # Case 2: 2-digit * 3-digit = 4-digit
-    for a in range(10, 100):
-        ma, la = digit_mask(a)
-        if ma < 0:
-            continue
-
-        # b is 3-digit; product must be 4-digit => 1000 <= a*b <= 9999
-        b_min = (1000 + a - 1) // a
-        b_max = 9999 // a
-        if b_min < 100:
-            b_min = 100
-        if b_max > 999:
-            b_max = 999
-
-        for b in range(b_min, b_max + 1):
-            mb, lb = digit_mask(b)
-            if mb < 0 or (ma & mb):
-                continue
-
-            p = a * b
-            if p < 1000 or p > 9999:
-                continue
-            mp, lp = digit_mask(p)
-            if mp < 0 or ((ma | mb) & mp):
-                continue
-
-            if la + lb + lp == 9 and (ma | mb | mp) == FULL_MASK:
-                products.add(p)
-
+    if width < 3:
+        return 0
+    if width > 9:
+        return 0
+    product_width = width // 2
+    lower = 10 ** (product_width - 1)
+    upper = 10 ** product_width - 1
+    products: set[int] = set()
+    for a in range(1, isqrt(upper) + 1):
+        first_b = max(a, (lower + a - 1) // a)
+        for b in range(first_b, upper // a + 1):
+            product = a * b
+            if is_pandigital(str(a) + str(b) + str(product), width):
+                products.add(product)
     return sum(products)
 
 
 if __name__ == "__main__":
+    assert is_pandigital("391867254")
     print(solve())
