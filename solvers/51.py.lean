@@ -1360,6 +1360,231 @@ theorem group_result (p original posAddress powerAddress primeAddress : Nat) (ta
 
 end masks
 
+namespace groups
+open ProjectEulerSolutions
+private abbrev refs (addresses : List Nat) : List Mutable.Value := addresses.map Mutable.Value.ref
+private def writes : List String := ["d", "pos", "m"] ++ masks.writes
+private def Stable (before after : HeapCalls.Env) : Prop := ∀ name, name ∉ writes → after name = before name
+private theorem stable_refl (env : HeapCalls.Env) : Stable env env := fun _ _ => rfl
+private theorem stable_trans (first : Stable before middle) (second : Stable middle after) : Stable before after :=
+  fun name untouched => (second name untouched).trans (first name untouched)
+private theorem stable_set (env : HeapCalls.Env) (name : String) (value : Mutable.Value) (written : name ∈ writes) :
+    Stable env (setLocal env name value) := by
+  intro key untouched
+  have different : key ≠ name := by intro same; subst key; exact untouched written
+  simp only [setLocal, different, if_false]
+private theorem stable_masks (saved : masks.Stable before after) : Stable before after :=
+  fun name untouched => saved name (fun member => untouched (List.mem_append_right _ member))
+
+private structure Inputs (p parentAddress powerAddress primeAddress : Nat) (target : Int) (env : HeapCalls.Env) : Prop where
+  getP : env "p" = some (number p)
+  getGroups : env "pos_lists" = some (.ref parentAddress)
+  getPowers : env "pow10" = some (.ref powerAddress)
+  getPrimes : env "is_prime" = some (.ref primeAddress)
+  getTarget : env "target" = some (number target)
+
+private theorem Inputs.preserved (inputs : Inputs p parentAddress powerAddress primeAddress target before)
+    (saved : Stable before after) : Inputs p parentAddress powerAddress primeAddress target after :=
+  ⟨(saved "p" (by decide)).trans inputs.getP, (saved "pos_lists" (by decide)).trans inputs.getGroups,
+    (saved "pow10" (by decide)).trans inputs.getPowers, (saved "is_prime" (by decide)).trans inputs.getPrimes,
+    (saved "target" (by decide)).trans inputs.getTarget⟩
+
+private def emptyTest : Expr := match (positionBody[1]? : Option Stmt) with
+  | some (.ifThen condition _ _) => condition | _ => .constant .none
+private def smallTest : Expr := match (positionBody[2]? : Option Stmt) with
+  | some (.ifThen condition _ _) => condition | _ => .constant .none
+
+private theorem empty_evaluates (length : Nat) (env : HeapCalls.Env) (heap : Mutable.Heap)
+    (getLength : env "m" = some (number length)) :
+    Evaluates program env emptyTest heap (flag (decide (length = 0))) heap := by
+  apply Evaluates.compare (av := number length) (bv := number 0) (middle := heap) (afterRight := heap)
+    (Evaluates.lookup getLength) Evaluates.constant
+  simp [HeapCalls.compare, scalarCompare, evalCmpOp]
+
+private theorem small_evaluates (target : Int) (length : Nat) (env : HeapCalls.Env) (heap : Mutable.Heap)
+    (getTarget : env "target" = some (number target)) (getLength : env "m" = some (number length)) :
+    Evaluates program env smallTest heap (flag (decide (8 ≤ target ∧ length < 3))) heap := by
+  have threshold : Evaluates program env (.compare (.name "target") [(.gtE, .constant (.int 8))]) heap
+      (flag (decide (8 ≤ target))) heap := by
+    apply Evaluates.compare (av := number target) (bv := number 8) (middle := heap) (afterRight := heap)
+      (Evaluates.lookup getTarget) Evaluates.constant
+    simp [HeapCalls.compare, scalarCompare, evalCmpOp]
+  by_cases large : 8 ≤ target
+  · apply Evaluates.boolean_next (value := flag true) (flag := true)
+      (by simpa only [large, decide_true] using threshold) (by simp [Mutable.truth, scalarTruth]) (by decide)
+    apply Evaluates.boolean_last (flag := decide (length < 3))
+    · apply Evaluates.compare (av := number length) (bv := number 3) (middle := heap) (afterRight := heap)
+        (Evaluates.lookup getLength) Evaluates.constant
+      simp [HeapCalls.compare, scalarCompare, evalCmpOp, large]
+    · simp [Mutable.truth, scalarTruth, large]
+  · simpa [smallTest, large] using Evaluates.boolean_stop (op := BoolOp.and)
+      (rest := [.compare (.name "m") [(.lt, .constant (.int 3))]])
+      (value := flag false) (flag := false) (by simpa only [large, decide_false] using threshold)
+      (by simp [Mutable.truth, scalarTruth]) (by decide)
+
+private theorem run_enumerate_step
+    (sequence : Mutable.sequence (sequenceValue source) heap = some (.ok items, heap))
+    (item : items[position]? = some value)
+    (executed : masks.Run p invariant (setLocal (setLocal env index (number counter)) name value)
+      (body ++ [Calls.loopContinuation body (.enumerateStepLoop index name source (position+1) (counter+1) body [])]) heap found) :
+    masks.Run p invariant env [.enumerateStepLoop index name source position counter body []] heap found := by
+  cases found with
+  | false =>
+      obtain ⟨finalEnv, continued, valid⟩ := executed
+      exact ⟨finalEnv, BlockContinues.enumerate_step sequence item continued, valid⟩
+  | true =>
+      intro following
+      apply BlockReturns.enumerate_step sequence item
+      simpa only [List.append_assoc] using executed following
+
+private theorem loop (p parentAddress powerAddress primeAddress first remaining : Nat) (target : Int)
+    (addresses : List Nat) (length : addresses.length = 10) (positive : 0 < p) (endpoint : first + remaining = 10)
+    (env : HeapCalls.Env) (heap : Mutable.Heap) (bytes : List UInt8)
+    (inputs : Inputs p parentAddress powerAddress primeAddress target env)
+    (parentFound : heap[parentAddress]? = some (.list (refs addresses)))
+    (rowsFound : ∀ digit (inside : digit < addresses.length), heap[addresses[digit]]? =
+      some (.list (numbers (PrimeReplacementSearch.group target.toNat p digit))))
+    (powersFound : heap[powerAddress]? = some (.list (numbers (powers (Nat.digits 10 p).length))))
+    (primesFound : heap[primeAddress]? = some (.bytearray bytes)) (size : bytes.length = 10^(Nat.digits 10 p).length)
+    (correct : ∀ i byte, bytes[i]? = some byte → (byte.toNat ≠ 0 ↔ Nat.Prime i)) :
+    masks.Run p (fun finalEnv => Inputs p parentAddress powerAddress primeAddress target finalEnv ∧ Stable env finalEnv)
+      env [.enumerateStepLoop "d" "pos" (.ref parentAddress) first first positionBody []] heap
+      ((List.range' first remaining).any (PrimeReplacementSearch.query target.toNat p)) := by
+  have sequence : Mutable.sequence (.ref parentAddress) heap = some (.ok (refs addresses), heap) := by
+    simp [Mutable.sequence, parentFound]
+  induction remaining generalizing first env with
+  | zero =>
+      refine ⟨env, BlockContinues.enumerate_done (source := .ref parentAddress) sequence ?_ .nil, inputs, stable_refl env⟩
+      simp [refs, show first = addresses.length by omega]
+  | succ remaining ih =>
+      have inside : first < addresses.length := by omega
+      let items := PrimeReplacementSearch.group target.toNat p first
+      let bound := setLocal (setLocal env "d" (number first)) "pos" (.ref addresses[first])
+      let counted := setLocal bound "m" (number items.length)
+      let next := Stmt.enumerateStepLoop "d" "pos" (.ref parentAddress) (first+1) (first+1 : Nat) positionBody []
+      have prefixStable : Stable env counted := stable_trans (stable_set env "d" _ (by decide))
+        (stable_trans (stable_set (setLocal env "d" (number first)) "pos" _ (by decide)) (stable_set bound "m" _ (by decide)))
+      have countedInputs := inputs.preserved prefixStable
+      have readLength : BlockContinues program bound [positionBody[0]'(by decide)] heap counted heap := by
+        apply BlockContinues.assign
+        apply Evaluates.builtin (values := [.ref addresses[first]]) (middle := heap)
+          (.cons (Evaluates.lookup (by simp [bound, setLocal])) .nil)
+        simp [primitive, Mutable.length, rowsFound first inside, numbers, items]
+      have emptyTested := empty_evaluates items.length counted heap rfl
+      have smallTested := small_evaluates target items.length counted heap countedInputs.getTarget rfl
+      have current : (refs addresses)[first]? = some (.ref addresses[first]) := by
+        simp only [List.getElem?_map, List.getElem?_eq_getElem inside, Option.map_some]
+      by_cases empty : items.length = 0
+      · have rejected : PrimeReplacementSearch.query target.toNat p first = false := by
+          simp only [PrimeReplacementSearch.query, ← show items = PrimeReplacementSearch.group target.toNat p first from rfl,
+            empty, Nat.pow_zero, Nat.sub_self, List.range'_zero, List.any_nil]
+        have inherited := masks.run_weaken
+          (invariant := fun finalEnv => Inputs p parentAddress powerAddress primeAddress target finalEnv ∧ Stable counted finalEnv)
+          (weaker := fun finalEnv => Inputs p parentAddress powerAddress primeAddress target finalEnv ∧ Stable env finalEnv)
+          (fun finalEnv valid => ⟨valid.1, stable_trans prefixStable valid.2⟩)
+          (ih (first+1) (by omega) counted countedInputs)
+        rw [List.range'_succ, List.any_cons, rejected, Bool.false_or]
+        apply run_enumerate_step (source := .ref parentAddress) sequence current
+        change masks.Run p _ bound ([positionBody[0]'(by decide)] ++ (positionBody.drop 1 ++ [.loopResume next])) heap _
+        apply masks.run_prepend readLength
+        apply masks.run_branch (flag := true) (value := flag true)
+          (by simpa only [empty, decide_true] using emptyTested) (by simp [Mutable.truth, scalarTruth])
+        exact masks.run_continue (next := next) (rest := []) rfl inherited
+      · by_cases small : 8 ≤ target ∧ items.length < 3
+        · have rejected : PrimeReplacementSearch.query target.toNat p first = false :=
+            PrimeReplacementSearch.query_false_of_small _ _ _ (by omega) small.2
+          have inherited := masks.run_weaken
+            (invariant := fun finalEnv => Inputs p parentAddress powerAddress primeAddress target finalEnv ∧ Stable counted finalEnv)
+            (weaker := fun finalEnv => Inputs p parentAddress powerAddress primeAddress target finalEnv ∧ Stable env finalEnv)
+            (fun finalEnv valid => ⟨valid.1, stable_trans prefixStable valid.2⟩)
+            (ih (first+1) (by omega) counted countedInputs)
+          rw [List.range'_succ, List.any_cons, rejected, Bool.false_or]
+          apply run_enumerate_step (source := .ref parentAddress) sequence current
+          change masks.Run p _ bound ([positionBody[0]'(by decide)] ++ (positionBody.drop 1 ++ [.loopResume next])) heap _
+          apply masks.run_prepend readLength
+          apply masks.run_branch (flag := false) (value := flag false)
+            (by simpa only [empty, decide_false] using emptyTested) (by simp [Mutable.truth, scalarTruth])
+          change masks.Run p _ counted (positionBody.drop 2 ++ [.loopResume next]) heap _
+          apply masks.run_branch (flag := true) (value := flag true)
+            (by simpa only [show decide (8 ≤ target ∧ items.length < 3) = true from decide_eq_true small] using smallTested)
+            (by simp [Mutable.truth, scalarTruth])
+          exact masks.run_continue (next := next) (rest := []) rfl inherited
+        · have scanned := masks.group_result p first addresses[first] powerAddress primeAddress target positive counted heap bytes
+            countedInputs.getP (by simp [counted, bound, setLocal]) (by simp [counted, bound, setLocal]) countedInputs.getPowers rfl
+            countedInputs.getPrimes countedInputs.getTarget (rowsFound first inside) powersFound primesFound size correct
+          cases found : PrimeReplacementSearch.query target.toNat p first with
+          | true =>
+              rw [found] at scanned
+              rw [List.range'_succ, List.any_cons, found, Bool.true_or]
+              apply run_enumerate_step (source := .ref parentAddress) sequence current
+              change masks.Run p _ bound ([positionBody[0]'(by decide)] ++ (positionBody.drop 1 ++ [.loopResume next])) heap true
+              apply masks.run_prepend readLength
+              apply masks.run_branch (flag := false) (value := flag false)
+                (by simpa only [empty, decide_false] using emptyTested) (by simp [Mutable.truth, scalarTruth])
+              change masks.Run p _ counted (positionBody.drop 2 ++ [.loopResume next]) heap true
+              apply masks.run_branch (flag := false) (value := flag false)
+                (by simpa only [small, decide_false] using smallTested) (by simp [Mutable.truth, scalarTruth])
+              intro following
+              simpa only [List.append_assoc] using scanned ([.loopResume next] ++ following)
+          | false =>
+              rw [found] at scanned
+              obtain ⟨middleEnv, continued, saved⟩ := scanned
+              have combined := stable_trans prefixStable (stable_masks saved)
+              have middleInputs := inputs.preserved combined
+              have inherited := masks.run_weaken
+                (invariant := fun finalEnv => Inputs p parentAddress powerAddress primeAddress target finalEnv ∧ Stable middleEnv finalEnv)
+                (weaker := fun finalEnv => Inputs p parentAddress powerAddress primeAddress target finalEnv ∧ Stable env finalEnv)
+                (fun finalEnv valid => ⟨valid.1, stable_trans combined valid.2⟩)
+                (ih (first+1) (by omega) middleEnv middleInputs)
+              rw [List.range'_succ, List.any_cons, found, Bool.false_or]
+              apply run_enumerate_step (source := .ref parentAddress) sequence current
+              change masks.Run p _ bound ([positionBody[0]'(by decide)] ++ (positionBody.drop 1 ++ [.loopResume next])) heap _
+              apply masks.run_prepend readLength
+              apply masks.run_branch (flag := false) (value := flag false)
+                (by simpa only [empty, decide_false] using emptyTested) (by simp [Mutable.truth, scalarTruth])
+              change masks.Run p _ counted (positionBody.drop 2 ++ [.loopResume next]) heap _
+              apply masks.run_branch (flag := false) (value := flag false)
+                (by simpa only [small, decide_false] using smallTested) (by simp [Mutable.truth, scalarTruth])
+              change masks.Run p _ counted ([positionBody[3]'(by decide)] ++ [.loopResume next]) heap _
+              exact masks.run_prepend continued (masks.run_resume inherited)
+
+private theorem run_for_enumerate (iterable : Evaluates program env expression heap source heap)
+    (sequence : Mutable.sequence source heap = some (.ok items, heap))
+    (executed : masks.Run p invariant env [.enumerateStepLoop index name (sequenceSource source) 0 0 body []] heap found) :
+    masks.Run p invariant env [.forIn (.tuple [.name index, .name name]) (.call (.name "enumerate") [expression]) body []] heap found := by
+  cases found with
+  | false =>
+      obtain ⟨finalEnv, continued, valid⟩ := executed
+      exact ⟨finalEnv, BlockContinues.for_enumerate iterable sequence continued, valid⟩
+  | true =>
+      intro following
+      exact BlockReturns.for_enumerate iterable sequence (executed following)
+
+/-- Searching all ten source digit groups returns precisely when the prime has a qualifying reference family. -/
+theorem result (p parentAddress powerAddress primeAddress : Nat) (target : Int) (prime : Nat.Prime p)
+    (addresses : List Nat) (length : addresses.length = 10) (env : HeapCalls.Env) (heap : Mutable.Heap) (bytes : List UInt8)
+    (getP : env "p" = some (number p)) (getGroups : env "pos_lists" = some (.ref parentAddress))
+    (getPowers : env "pow10" = some (.ref powerAddress)) (getPrimes : env "is_prime" = some (.ref primeAddress))
+    (getTarget : env "target" = some (number target))
+    (parentFound : heap[parentAddress]? = some (.list (refs addresses)))
+    (rowsFound : ∀ digit (inside : digit < addresses.length), heap[addresses[digit]]? =
+      some (.list (numbers (PrimeReplacementSearch.group target.toNat p digit))))
+    (powersFound : heap[powerAddress]? = some (.list (numbers (powers (Nat.digits 10 p).length))))
+    (primesFound : heap[primeAddress]? = some (.bytearray bytes)) (size : bytes.length = 10^(Nat.digits 10 p).length)
+    (correct : ∀ i byte, bytes[i]? = some byte → (byte.toNat ≠ 0 ↔ Nat.Prime i)) :
+    masks.Run p (Stable env) env [primeBody[5]'(by decide)] heap (ProjectEulerStatements.P51.hasPrimeFamily target.toNat p) := by
+  have sequence : Mutable.sequence (.ref parentAddress) heap = some (.ok (refs addresses), heap) := by
+    simp [Mutable.sequence, parentFound]
+  have scanned := loop p parentAddress powerAddress primeAddress 0 10 target addresses length prime.pos rfl env heap bytes
+    ⟨getP, getGroups, getPowers, getPrimes, getTarget⟩ parentFound rowsFound powersFound primesFound size correct
+  have searched := run_for_enumerate (Evaluates.lookup getGroups) sequence scanned
+  have same : (List.range 10).any (PrimeReplacementSearch.query target.toNat p) = ProjectEulerStatements.P51.hasPrimeFamily target.toNat p := by
+    apply Bool.eq_iff_iff.mpr
+    simpa only [prime, true_and] using (PrimeReplacementSearch.hasPrimeFamily_iff_query target.toNat p).symm
+  simpa only [← List.range_eq_range', same] using masks.run_weaken (weaker := Stable env) (fun _ valid => valid.2) searched
+
+end groups
+
 end solve
 
 end solvers.«51»
