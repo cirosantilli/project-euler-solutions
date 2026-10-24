@@ -4,6 +4,8 @@
 def compute_phi_linear(limit: int) -> list[int]:
     """
     Linear sieve computing phi[0..limit] in O(limit).
+
+    @formalsw: Returns
     """
     phi = [0] * (limit + 1)
     if limit < 1:
@@ -32,6 +34,8 @@ def digit_signature(x: int) -> list[int]:
     """
     Count each decimal digit without restricting the number of repetitions.
     Nonpositive inputs have zero counts.
+
+    @formalsw: Returns
     """
     counts = [0] * 10
     while x > 0:

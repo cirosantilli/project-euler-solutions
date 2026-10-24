@@ -99,7 +99,7 @@ The following interfaces have matching Python arguments and passing numerical re
 | 100 | Search arrangements with at least two discs, starting at three blue out of four total. Both implementations advance their recurrence until the total strictly exceeds the supplied bound, without an iteration budget.
 |===
 
-Problem 70 has checked universal mathematical proofs for the linear sieve's product pass and completed totient table, decimal-width and mod-nine pruning, and least-ratio selection with a zero sentinel for absence. Source proofs cover the reference's signed totient helper and the optimized solver's signed digit-count helper. The sieve's Python heap updates, complete source equivalence, and standalone Lean model reconciliation remain pending.
+Problem 70 has checked universal mathematical proofs for the linear sieve's product pass and completed totient table, decimal-width and mod-nine pruning, and least-ratio selection with a zero sentinel for absence. Source proofs cover the reference's signed totient helper, the optimized signed digit-count helper, and the initialized linear sieve for every signed bound. The sieve proof tracks live list addresses, integer-one composite marks, prime-cache appends, both inner-loop breaks, the complete outer range, and returned totient-table contents. Complete solver source equivalence and standalone Lean model reconciliation remain pending.
 
 == Further reference defects awaiting implementation
 
