@@ -32,6 +32,8 @@ Problem 34 has structural termination and equivalence proofs for every numeral b
 
 Problem 23 has structural termination and equivalence proofs for every signed upper bound. Negative bounds return zero, and the empty abundant list and marking loops are covered for small nonnegative bounds. Statement examples execute outside the solver.
 
+Problem 26 has structural termination and equivalence proofs for every signed upper bound. Both searches consider only positive denominators, keep the least denominator on equal cycle lengths, and return zero exactly when the candidate range is empty.
+
 == Remaining implementation and proof restrictions
 
 [cols="1,3,3"]
@@ -40,7 +42,6 @@ Problem 23 has structural termination and equivalence proofs for every signed up
 | 11 | The proof fixes the grid to the original 20 by 20 shape. | Consider general rectangular grids; the current theorem is restricted.
 | 17 | Number spelling and its proof stop at 1000. | This is the original problem's range, not an exhaustion bound. A broader naming convention would be a new parameterized problem.
 | 19 | The solver starts its calendar at 1900 and the proof excludes earlier years. | Extend the implementation before claiming arbitrary year ranges.
-| 26 | The proof excludes small limits because the two implementations disagree on empty searches and zero-length ties. | Align the boundary semantics rather than hiding them with a lower bound.
 | 37 | Fixed: the optimized sieve doubles until it finds the eleven primes specified by the problem. | Restore equivalence to the unbounded reference; there is no fixed sieve cutoff.
 | 44 | Both implementations accept the same finite pentagonal-index bound. | This is a valid bounded parameterization, but equivalence alone does not prove that the default answer is the global minimum over all indices.
 | 51 | Fixed: the decimal-width cutoff and proof-only target cap are removed. | Replace the archived restricted-domain proof; establish termination when a matching family exists.

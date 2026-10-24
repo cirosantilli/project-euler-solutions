@@ -130,9 +130,9 @@ theorem recurring_cycle_length.«Returns» (d : Int)
 
 
 private def searchBody : List Stmt :=
-  [.assign [.name "L"] (.call (.name "recurring_cycle_length") [.name "d"]),
-   .ifThen (.compare (.name "L") [(.gt, .name "best_len")])
-     [.assign [.name "best_len"] (.name "L"), .assign [.name "best_d"] (.name "d")] []]
+  [.assign [.name "length"] (.call (.name "recurring_cycle_length") [.name "d"]),
+   .ifThen (.compare (.name "length") [(.gt, .name "best_len")])
+     [.assign [.name "best_len"] (.name "length"), .assign [.name "best_d"] (.name "d")] []]
 
 /-- Maximum selection keeps the earlier denominator when cycle lengths tie. -/
 private theorem search_loop (count start limit winner : Nat) (stop : start + count = limit)
@@ -170,88 +170,85 @@ private theorem search_loop (count start limit winner : Nat) (stop : start + cou
             ih (start + 1) winner (by omega) (by omega) _
               (by simpa [ScalarEnv.set] using getBest) (by simpa [ScalarEnv.set] using getLength)
 
-private theorem zero_score : cycleLen 0 = 0 := by
-  have two : stripFactor 2 0 = 0 := by rw [stripFactor]; norm_num
-  have five : stripFactor 5 0 = 0 := by rw [stripFactor]; norm_num
-  simp [cycleLen, reducedDenom, two, five, cycleLenAux]
 private theorem one_score : cycleLen 1 = 0 := by
   simp [cycleLen, reducedDenom, stripFactor_done 2 1 (by decide) (by decide),
     stripFactor_done 5 1 (by decide) (by decide)]
-private theorem two_score : cycleLen 2 = 0 := by
-  have two : stripFactor 2 2 = 1 := by
-    rw [stripFactor_step 2 2 (by decide) (by decide) (by decide)]
-    exact stripFactor_done 2 1 (by decide) (by decide)
-  simp [cycleLen, reducedDenom, two, stripFactor_done 5 1 (by decide) (by decide)]
-private theorem three_score : cycleLen 3 = 1 := by
-  simp [cycleLen, reducedDenom, stripFactor_done 2 3 (by decide) (by decide),
-    stripFactor_done 5 3 (by decide) (by decide), cycleLenAux, cycleLenAux.go]
 
-private theorem winner_eq (limit : Nat) (large : 4 ≤ limit) :
-    ((List.range' 3 (limit - 3)).foldl (ProjectEulerStatements.ArgMaximum.select cycleLen) 2) = naive limit := by
-  obtain ⟨extra, rfl⟩ := Nat.exists_eq_add_of_le large
-  simp [naive, List.range_eq_range', List.range'_succ, ProjectEulerStatements.ArgMaximum.argmax_cons,
-    ProjectEulerStatements.ArgMaximum.select, zero_score, one_score, two_score, three_score,
-    show 4 + extra = extra + 4 by omega]
+private theorem winner_eq (limit : Nat) (large : 2 ≤ limit) :
+    ((List.range' 2 (limit - 2)).foldl (ProjectEulerStatements.ArgMaximum.select cycleLen) 1) = naive limit := by
+  have count : limit - 1 = limit - 2 + 1 := by omega
+  simp [naive, count, List.range'_succ, ProjectEulerStatements.ArgMaximum.argmax_cons]
 
-/-- The source's range starts at two; index three supplies a positive score before later maxima. -/
-theorem solve.result (limit : Nat) (large : 4 ≤ limit) :
-    ReturnsValue program "solve" [.int limit] (.int (naive limit)) := by
+/-- The empty source range leaves the zero sentinel in place for every signed bound at most one. -/
+theorem solve.empty (limit : Int) (small : limit ≤ 1) :
+    ReturnsValue program "solve" [.int limit] (.int 0) := by
   apply BlockReturns.function rfl rfl
   apply BlockReturns.assign Evaluates.constant
-  apply BlockReturns.assign (value := .int (-1))
-    (Evaluates.unary Evaluates.constant rfl)
+  apply BlockReturns.assign (value := .int (-1)) (Evaluates.unary Evaluates.constant rfl)
   apply BlockReturns.for_range (.cons Evaluates.constant (.cons (Evaluates.lookup rfl) .nil)) rfl
-  apply BlockReturns.range_step (by simp [rangeContinues]; omega)
-  apply BlockReturns.assign (Evaluates.call (.cons (Evaluates.lookup rfl) .nil)
-    (recurring_cycle_length.result 2 (by decide)))
-  apply BlockReturns.branch (value := .bool true)
-  · exact Evaluates.compare (Evaluates.lookup rfl) (Evaluates.lookup rfl)
-      (by simp [scalarCompare, evalCmpOp, two_score])
-  · apply BlockReturns.assign (Evaluates.lookup rfl)
-    apply BlockReturns.assign (Evaluates.lookup rfl)
-    rw [← winner_eq limit large]
-    exact search_loop (limit - 3) 3 limit 2 (by omega) (by decide) _ rfl rfl
+  apply BlockReturns.range_done (by simp [rangeContinues]; omega)
+  exact BlockReturns.return_value (Evaluates.lookup rfl)
 
-theorem solve.«Returns» (limit : Int)
-    (requires : Calls.Condition program (fun key => if key = "limit" then some (.int limit) else none)
-      Solvers.P26Ast.requires_solve_0) :
-    (Calls.function program "solve" [.int limit]).Returns := by
-  have large : 4 ≤ limit := by
-    simpa [evalCmpOp] using Evaluates.condition_int_compare requires rfl
-  lift limit to Nat using (by omega : 0 ≤ limit)
-  exact (solve.result limit (by omega)).returns
+/-- The first candidate initializes the score even when every reciprocal terminates. -/
+theorem solve.result (limit : Nat) :
+    ReturnsValue program "solve" [.int limit] (.int (naive limit)) := by
+  by_cases small : limit ≤ 1
+  · have count : limit - 1 = 0 := by omega
+    simpa [naive, count] using solve.empty limit (by omega)
+  · apply BlockReturns.function rfl rfl
+    apply BlockReturns.assign Evaluates.constant
+    apply BlockReturns.assign (value := .int (-1))
+      (Evaluates.unary Evaluates.constant rfl)
+    apply BlockReturns.for_range (.cons Evaluates.constant (.cons (Evaluates.lookup rfl) .nil)) rfl
+    apply BlockReturns.range_step (by simp [rangeContinues]; omega)
+    apply BlockReturns.assign (Evaluates.call (.cons (Evaluates.lookup rfl) .nil)
+      (recurring_cycle_length.result 1 (by decide)))
+    apply BlockReturns.branch (value := .bool true)
+    · exact Evaluates.compare (Evaluates.lookup rfl) (Evaluates.lookup rfl)
+        (by simp [scalarCompare, evalCmpOp, one_score])
+    · apply BlockReturns.assign (Evaluates.lookup rfl)
+      apply BlockReturns.assign (Evaluates.lookup rfl)
+      rw [← winner_eq limit (by omega)]
+      exact search_loop (limit - 2) 2 limit 1 (by omega) (by decide) _ rfl rfl
 
+theorem solve.«Returns» (limit : Int) : (Calls.function program "solve" [.int limit]).Returns := by
+  by_cases nonnegative : 0 ≤ limit
+  · lift limit to Nat using nonnegative
+    exact (solve.result limit).returns
+  · exact (solve.empty limit (by omega)).returns
 
-theorem solve.«Equiv(naive)» (limit : Int)
-    (requires : Calls.Condition program (fun key => if key = "limit" then some (.int limit) else none)
-      Solvers.P26Ast.requires_solve_0) :
+theorem solve.«Equiv(naive)» (limit : Int) :
     (Calls.function program "solve" [.int limit]).Equiv
       (Calls.function P26Ast.module "naive" [.int limit]) := by
-  have large : 4 ≤ limit := by
-    simpa [evalCmpOp] using Evaluates.condition_int_compare requires rfl
-  lift limit to Nat using (by omega : 0 ≤ limit)
-  have optimized := (solve.result limit (by omega)).finishes
-  have reference := (data.«project-euler-statements».data.py.project_euler_statements.p26.naive.result limit).finishes
-  intro outcome
-  constructor
-  · intro finished
-    rw [finished.unique optimized]
-    exact reference
-  · intro finished
-    rw [finished.unique reference]
-    exact optimized
+  by_cases nonnegative : 0 ≤ limit
+  · lift limit to Nat using nonnegative
+    have optimized := (solve.result limit).finishes
+    have reference := (data.«project-euler-statements».data.py.project_euler_statements.p26.naive.result limit).finishes
+    intro outcome
+    constructor
+    · intro finished
+      rw [finished.unique optimized]
+      exact reference
+    · intro finished
+      rw [finished.unique reference]
+      exact optimized
+  · have optimized := (solve.empty limit (by omega)).finishes
+    have reference := (data.«project-euler-statements».data.py.project_euler_statements.p26.naive.empty limit (by omega)).finishes
+    intro outcome
+    constructor
+    · intro finished
+      rw [finished.unique optimized]
+      exact reference
+    · intro finished
+      rw [finished.unique reference]
+      exact optimized
 
 theorem solve.«Supported» :
-    (∀ limit : Int, Calls.Condition program
-      (fun key => if key = "limit" then some (.int limit) else none) Solvers.P26Ast.requires_solve_0 →
-      (Calls.function program "solve" [.int limit]).Supported) ∧
-    (∀ limit : Int, Calls.Condition program
-      (fun key => if key = "limit" then some (.int limit) else none) Solvers.P26Ast.requires_solve_0 →
-      (Calls.function P26Ast.module "naive" [.int limit]).Supported) := by
+    (∀ limit : Int, (Calls.function program "solve" [.int limit]).Supported) ∧
+    (∀ limit : Int, (Calls.function P26Ast.module "naive" [.int limit]).Supported) := by
   constructor
-  · intro limit requires
-    exact (solve.«Returns» limit requires).supported
-  · intro limit _
-    exact (data.«project-euler-statements».data.py.project_euler_statements.p26.naive.«Returns» limit).supported
+  · intro limit
+    exact (solve.«Returns» limit).supported
+  · exact data.«project-euler-statements».data.py.project_euler_statements.p26.naive.«Supported»
 
 end solvers.«26»

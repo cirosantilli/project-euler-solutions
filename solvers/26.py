@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from typing import Tuple
 
 
 def recurring_cycle_length(d: int) -> int:
@@ -31,15 +30,15 @@ def recurring_cycle_length(d: int) -> int:
 def solve(limit: int = 1000) -> int:
     """
     @formalsw: Py from project_euler_statements.p26 import naive
-    @formalsw: Requires(limit >= 4)
+    @formalsw: Returns
     @formalsw: Equiv(naive)
     """
     best_d = 0
     best_len = -1
-    for d in range(2, limit):
-        L = recurring_cycle_length(d)
-        if L > best_len:
-            best_len = L
+    for d in range(1, limit):
+        length = recurring_cycle_length(d)
+        if length > best_len:
+            best_len = length
             best_d = d
     return best_d
 
