@@ -25,6 +25,9 @@ def sieve_primes_upto(n: int) -> list[bool]:
 
 
 def find_prime_perm_arith_sequence() -> tuple[int, int, int]:
+    """
+    @formalsw: Returns
+    """
     is_prime = sieve_primes_upto(9999)
     primes_4d = [p for p in range(1000, 10000) if is_prime[p]]
 
@@ -58,6 +61,10 @@ def find_prime_perm_arith_sequence() -> tuple[int, int, int]:
 
 
 def solve() -> int:
+    """
+    @formalsw: Py from project_euler_statements.p49 import naive_default
+    @formalsw: Equiv(naive_default)
+    """
     a, b, c = find_prime_perm_arith_sequence()
     return int(f"{a}{b}{c}")
 

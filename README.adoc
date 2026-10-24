@@ -558,6 +558,8 @@ Problem 47’s source-level equivalence proof covers guarded primality calls, fi
 
 Problem 48’s source-level equivalence proof connects repeated modular multiplication to the three-argument `pow` builtin and the exact self-power sum. It covers every integer bound and nonnegative decimal width, including empty ranges, width zero, string conversion, and leading-zero padding. The reference helpers also terminate for negative exponents and signed nonzero moduli. The proofs use only standard Lean axioms.
 
+Problem 49’s source-level equivalence proof covers the Boolean sieve, decimal digit grouping, shared bucket lists, live dictionary iteration, nested pair search, exclusion of the given example, and final decimal concatenation. Small kernel certificates classify all qualifying four-digit triples and establish the winning result. The proofs use only standard Lean axioms.
+
 ====== Problem 14: Collatz termination
 
 Research checked on 2026-10-25. The existing `ProjectEulerStatements.P14.collatzConjecture` assumes that each positive natural number eventually reaches 1. The reference source proofs are conditional on that exact assumption; they do not establish the conjecture. Zero is handled separately by the implementation. Negative starting values are outside the termination claim.
@@ -686,7 +688,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/46.py[46.py] | link:solvers/46.md[46.md] | link:solvers/46.py.lean[46.py.lean] | 0.163 | 5777 |
 | link:solvers/47.py[47.py] | link:solvers/47.md[47.md] | link:solvers/47.py.lean[47.py.lean] | 0.116 | 134043 |
 | link:solvers/48.py[48.py] | link:solvers/48.md[48.md] | link:solvers/48.py.lean[48.py.lean] | 0.114 | 9110846700 |
-| link:solvers/49.py[49.py] | link:solvers/49.md[49.md] |  | 0.129 | 296962999629 |
+| link:solvers/49.py[49.py] | link:solvers/49.md[49.md] | link:solvers/49.py.lean[49.py.lean] | 0.129 | 296962999629 |
 | link:solvers/50.py[50.py] | link:solvers/50.md[50.md] |  | 0.150 | 997651 |
 | link:solvers/51.py[51.py] | link:solvers/51.md[51.md] |  | 0.149 | 121313 |
 | link:solvers/52.py[52.py] | link:solvers/52.md[52.md] |  | 0.123 | 142857 |
