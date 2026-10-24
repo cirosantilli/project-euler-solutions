@@ -1,4 +1,5 @@
 import solvers.«70.scan.loop.source»
+import ProjectEulerSolutions.P70
 
 /-! Initialized source proofs for the optimized totient-permutation search. -/
 namespace solvers.«70»
@@ -110,5 +111,12 @@ theorem solve.default_result (base : Mutable.Heap) :
     ∃ finalHeap, ReturnsValue program "solve" [] base
       (number (TotientPermutation.result 9_999_999)) finalHeap :=
   solve.result 9_999_999 base _ rfl
+
+/-- The actual Python source returns the same value as the standalone array solver. -/
+theorem solve.model_result (limit : Int) (base : Mutable.Heap) :
+    ∃ finalHeap, ReturnsValue program "solve" [number limit] base
+      (number (ProjectEulerSolutions.P70.solve limit)) finalHeap := by
+  rw [ProjectEulerSolutions.P70.solve_eq_reference]
+  exact solve.full_result limit base
 
 end solvers.«70»
