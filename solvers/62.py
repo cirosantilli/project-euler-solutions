@@ -30,6 +30,21 @@
     solvers.«62».groups.widthBody heap (.scalar (.int (rest.foldl min first)))
     (ProjectEulerSolutions.HeapCollection.working heap
       ((solvers.«62».candidates.selected k rows).map (fun (value : Int) => .scalar (.int value))) extra)
+
+@formalsw: theorem grouping_store_source_result
+  (cube : Nat) (heap : FormalSW.PyAst.Mutable.Heap) (env : FormalSW.PyAst.HeapCalls.Env)
+  (dictionary : Nat) (cells : List solvers.«62».store.Cell)
+  (view : solvers.«62».store.Store heap dictionary cells) (floor : Nat) :
+  env "groups" = some (.ref dictionary) → env "cube" = some (.scalar (.int cube)) →
+  floor ≤ dictionary → solvers.«62».store.Above floor cells →
+  ∃ finalHeap finalCells, FormalSW.PyAst.HeapCalls.BlockContinues Solvers.P62Ast.module env
+    solvers.«62».groups.groupingCode heap
+    (FormalSW.PyAst.HeapCalls.setLocal env "sig" (.ref (heap.length + 2))) finalHeap ∧
+    solvers.«62».store.Store finalHeap dictionary finalCells ∧
+    solvers.«62».store.logical finalCells =
+      ProjectEulerSolutions.CubicGroups.record cube (solvers.«62».store.logical cells) ∧
+    solvers.«62».store.Above floor finalCells ∧ finalHeap.take floor = heap.take floor ∧
+    heap.length ≤ finalHeap.length
 """
 from __future__ import annotations
 
