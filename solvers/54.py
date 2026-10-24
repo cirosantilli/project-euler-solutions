@@ -22,7 +22,12 @@ VALUE_MAP = {
 }
 
 
-def parse_card(token: str) -> Tuple[int, str]:
+def parse_card(token: str) -> tuple[int, str]:
+    """
+    @formalsw: Requires(len(token) >= 2)
+    @formalsw: Requires(token[0] in VALUE_MAP)
+    @formalsw: Returns
+    """
     # Euler 54 format: e.g. "5H", "TD", "AC"
     v = VALUE_MAP[token[0]]
     s = token[1]
@@ -143,5 +148,4 @@ if __name__ == "__main__":
     assert hand_rank(["AS", "2D", "3H", "4C", "5S"]) > hand_rank(
         ["KS", "QD", "9H", "4C", "3S"]
     )
-    lines = _read_input_lines()
-    print(solve(lines))
+    print(solve(_read_input_lines()))
