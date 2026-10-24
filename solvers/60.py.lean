@@ -10,6 +10,8 @@ import ProjectEulerSolutions.Lib.CliqueSearch
 import ProjectEulerSolutions.Lib.CliqueSearchCorrectness
 import ProjectEulerSolutions.Lib.CliqueSearchAgreement
 import ProjectEulerSolutions.Lib.TrialPrimeCertificate
+import ProjectEulerSolutions.Lib.PrimePairCertificate
+import ProjectEulerSolutions.Lib.PrimePairVertices.All
 import data.«project-euler-statements».data.py.project_euler_statements.«p60.py»
 import Mathlib.Data.List.Sort
 import lang.py.FormalSW.ComprehensionCalls
@@ -5182,3 +5184,82 @@ theorem models_eq_of_search_certificates
   exact mathematical.unique referenceOptimal
 
 end solvers.«60».competitive
+
+
+namespace solvers.«60».certificate
+open ProjectEulerSolutions
+
+theorem relation_eq (p q : Nat) (smallP : p < 100000) (smallQ : q < 100000) :
+    pair_ok.answer p q = PrimePairCertificate.relation p q := by
+  simp only [pair_ok.answer, pair_ok.concatenated, PrimePairCertificate.relation,
+    DecimalShift.fiveDigits_eq p smallP, DecimalShift.fiveDigits_eq q smallQ,
+    ← Int.natCast_mul, ← Int.natCast_add, Int.toNat_natCast]
+  have condition : ((p + q : Nat) : Int) % 3 = 0 ↔ (p + q) % 3 = 0 := by omega
+  simp only [condition]
+
+theorem answerModel_eq_search (limit : Int) (small : limit < 100000) :
+    solve_search.answerModel limit = CliqueSearch.search PrimePairCertificate.relation 5 []
+      (solve_setup.vertices limit) 0 ⟨solve_setup.sentinel, []⟩ := by
+  have agreement : CliqueSearch.AgreeBelow (fun p q => pair_ok.answer p q)
+      PrimePairCertificate.relation (solve_setup.vertices limit) 100000 := by
+    intro p memberP q memberQ _ _
+    have upperP := ((solve_setup.mem_vertices limit p).mp memberP).2.2.1
+    have upperQ := ((solve_setup.mem_vertices limit q).mp memberQ).2.2.1
+    exact relation_eq p q (by omega) (by omega)
+  have bounded : ∀ p ∈ solve_setup.vertices limit, p ≤ 100000 := by
+    intro p member
+    have upper := ((solve_setup.mem_vertices limit p).mp member).2.2.1
+    omega
+  have optimal := (solve_search.answerModel_optimal limit).change_relation_on
+    (solve_setup.vertices_increasing limit) agreement bounded
+  exact optimal.unique (CliqueSearch.search_optimal _ _ _ _ _ _ (solve_setup.vertices_increasing limit))
+
+theorem vertices_eq_segment (limit : Nat) :
+    solve_setup.vertices limit = PrimePairCertificate.primeSegment 2 (limit - 1) := by
+  simp only [solve_setup.vertices, primes_up_to.primes, Int.toNat_natCast, PrimePairCertificate.primeSegment,
+    List.filter_filter, solve_setup.keep]
+  congr 1
+  funext n
+  rw [Bool.eq_iff_iff]
+  simp only [Bool.and_eq_true, decide_eq_true_eq]
+  tauto
+
+theorem small_vertices : solve_setup.vertices 8388 = PrimePairVertices.small := by
+  simpa only [Nat.cast_ofNat] using (vertices_eq_segment 8388).trans PrimePairVertices.small_checked
+
+theorem large_vertices : solve_setup.vertices 26033 = PrimePairVertices.large := by
+  simpa only [Nat.cast_ofNat] using (vertices_eq_segment 26033).trans PrimePairVertices.large_checked
+
+theorem small_model_of_certificate
+    (checked : CliqueSearch.search PrimePairCertificate.relation 5 [] PrimePairVertices.small 0
+      ⟨solve_setup.sentinel, []⟩ = ⟨solve_setup.sentinel, []⟩) :
+    solve_search.answerModel 8388 = ⟨solve_setup.sentinel, []⟩ := by
+  rw [answerModel_eq_search 8388 (by decide), small_vertices]
+  exact checked
+
+theorem large_model_of_seeded_certificate
+    (checked : CliqueSearch.search PrimePairCertificate.relation 5 [] PrimePairVertices.large 0
+      ⟨26034, []⟩ = ⟨26033, competitive.witness⟩) :
+    solve_search.answerModel 26033 = ⟨26033, competitive.witness⟩ := by
+  have optimal := CliqueSearch.search_optimal PrimePairCertificate.relation 5 []
+    (solve_setup.vertices 26033) 0 ⟨26034, []⟩ (solve_setup.vertices_increasing 26033)
+  have seeded : CliqueSearch.search PrimePairCertificate.relation 5 [] (solve_setup.vertices 26033) 0
+      ⟨26034, []⟩ = ⟨26033, competitive.witness⟩ := by
+    rw [large_vertices]
+    exact checked
+  rw [seeded] at optimal
+  have rebased := optimal.rebase (replacement := ⟨solve_setup.sentinel, []⟩) (by decide) (by decide)
+  rw [answerModel_eq_search 26033 (by decide)]
+  exact CliqueSearch.search_eq_of_optimal _ _ _ _ _ _ _ (solve_setup.vertices_increasing 26033) rebased
+
+theorem models_eq_of_finite_checks
+    (smallChecked : CliqueSearch.search PrimePairCertificate.relation 5 [] PrimePairVertices.small 0
+      ⟨solve_setup.sentinel, []⟩ = ⟨solve_setup.sentinel, []⟩)
+    (largeChecked : CliqueSearch.search PrimePairCertificate.relation 5 [] PrimePairVertices.large 0
+      ⟨26034, []⟩ = ⟨26033, competitive.witness⟩) (limit : Int) :
+    solve_search.answerModel limit =
+      data.«project-euler-statements».data.py.project_euler_statements.p60.naive.answerModel limit :=
+  competitive.models_eq_of_search_certificates (small_model_of_certificate smallChecked)
+    (large_model_of_seeded_certificate largeChecked) limit
+
+end solvers.«60».certificate
