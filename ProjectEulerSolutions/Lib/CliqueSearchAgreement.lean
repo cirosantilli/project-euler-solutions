@@ -79,4 +79,20 @@ theorem Optimal.change_relation_on {left right : Nat → Nat → Bool} {need : N
   · intro chosen completion total improves
     exact optimal.first chosen (transfer agreement.symm chosen completion) total improves
 
+/-- A certified improving optimum can be reused with any larger incumbent.
+This permits finite checking with a tight initial bound, while the source
+keeps its original sentinel and strict update behavior. -/
+theorem Optimal.rebase {relation : Nat → Nat → Bool} {need : Nat} {clique values : List Nat}
+    {sum : Int} {before after replacement : Best} (optimal : Optimal relation need clique values sum before after)
+    (improves : after.bound < before.bound) (replacementBound : after.bound < replacement.bound) :
+    Optimal relation need clique values sum replacement after := by
+  constructor
+  · rcases optimal.sound with same | ⟨chosen, completion, total, selected, _⟩
+    · rw [same] at improves
+      omega
+    · exact Or.inr ⟨chosen, completion, total, selected, replacementBound⟩
+  · exact optimal.minimal
+  · intro chosen completion total _
+    exact optimal.first chosen completion total improves
+
 end ProjectEulerSolutions.CliqueSearch
