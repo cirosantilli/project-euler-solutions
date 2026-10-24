@@ -89,6 +89,7 @@ The following interfaces have matching Python arguments and passing numerical re
 [cols="1,3"]
 |===
 | Problem | Current design
+| 70 | Share the inclusive totient-permutation bound. The linear sieve stores arbitrary-precision integers, and the ten digit counters have no repetition limit. Bounds below two return zero; strict ratio comparisons retain the least minimizer on ties.
 | 74 | Share the exclusive starting bound and desired chain length. The reference walks until repetition; the optimized solver memoizes tails and cycles without fixed arrays or iteration limits. Zero has digit-factorial successor one and is excluded as a starting value.
 | 77 | Share only the prime-partition threshold and search integers from two until it is exceeded.
 | 78 | Share the positive partition divisor and search positive indices until divisible. No universal existence claim is assumed.
@@ -97,6 +98,8 @@ The following interfaces have matching Python arguments and passing numerical re
 | 92 | Share the exclusive starting bound. The reference walks complete chains; the optimized solver groups arbitrary bound prefixes by digit-square sum. No fixed seven-digit domain is assumed.
 | 100 | Search arrangements with at least two discs, starting at three blue out of four total. Both implementations advance their recurrence until the total strictly exceeds the supplied bound, without an iteration budget.
 |===
+
+Problem 70 has checked universal mathematical proofs for the linear sieve's product pass and completed totient table, decimal-width and mod-nine pruning, and least-ratio selection with a zero sentinel for absence. Source proofs cover the reference's signed totient helper and the optimized solver's signed digit-count helper. The sieve's Python heap updates, complete source equivalence, and standalone Lean model reconciliation remain pending.
 
 == Further reference defects awaiting implementation
 

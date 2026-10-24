@@ -1,28 +1,21 @@
 #!/usr/bin/env python
-from __future__ import annotations
-
-from array import array
-from typing import List, Tuple
 
 
-MAX_N = 9_999_999  # 1 < n < 10^7  => n <= 9_999_999
-
-
-def compute_phi_linear(limit: int) -> array:
+def compute_phi_linear(limit: int) -> list[int]:
     """
     Linear sieve computing phi[0..limit] in O(limit).
-    Returns array('I') of size limit+1.
     """
-    phi = array("I", [0]) * (limit + 1)
-    is_comp = bytearray(limit + 1)
-    primes = array("I")
+    phi = [0] * (limit + 1)
+    if limit < 1:
+        return phi
+    is_comp = [False] * (limit + 1)
+    primes: list[int] = []
 
     phi[1] = 1
     for i in range(2, limit + 1):
         if not is_comp[i]:
             primes.append(i)
             phi[i] = i - 1
-        # iterate primes until p*i > limit
         for p in primes:
             ip = i * p
             if ip > limit:
@@ -31,30 +24,29 @@ def compute_phi_linear(limit: int) -> array:
             if i % p == 0:
                 phi[ip] = phi[i] * p
                 break
-            else:
-                phi[ip] = phi[i] * (p - 1)
+            phi[ip] = phi[i] * (p - 1)
     return phi
 
 
-_SHIFT = [1 << (3 * d) for d in range(10)]
-
-
-def digit_signature(x: int) -> int:
+def digit_signature(x: int) -> list[int]:
     """
-    Packed digit counts in base 8 per digit (3 bits each).
-    For numbers < 10^7, each digit count <= 7, so 3 bits is enough.
+    Count each decimal digit without restricting the number of repetitions.
+    Nonpositive inputs have zero counts.
     """
-    if x == 0:
-        return _SHIFT[0]
-    s = 0
-    sh = _SHIFT
-    while x:
-        s += sh[x % 10]
+    counts = [0] * 10
+    while x > 0:
+        counts[x % 10] += 1
         x //= 10
-    return s
+    return counts
 
 
-def solve(limit: int = MAX_N) -> int:
+def solve(limit: int = 9_999_999) -> int:
+    """
+    Return the least totient-permutation ratio minimizer up to the inclusive bound.
+    Return zero if there is no candidate.
+    """
+    if limit < 2:
+        return 0
     phi = compute_phi_linear(limit)
 
     best_n = 0
@@ -69,7 +61,7 @@ def solve(limit: int = MAX_N) -> int:
             low = high
             high *= 10
 
-        pn = int(phi[n])
+        pn = phi[n]
 
         # Permutations must have same number of digits
         if pn < low or pn >= high:
@@ -91,7 +83,6 @@ def solve(limit: int = MAX_N) -> int:
 
 if __name__ == "__main__":
     sample_phi = compute_phi_linear(87109)
-    # Asserts from the statement / examples.
     assert sample_phi[1] == 1
     assert sample_phi[9] == 6
     assert sample_phi[87109] == 79180
