@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Set, Tuple
-
 
 def polygonal(s: int, n: int) -> int:
     """
@@ -11,8 +9,8 @@ def polygonal(s: int, n: int) -> int:
     return n * ((s - 2) * n - (s - 4)) // 2
 
 
-def generate_4digit_polygonals(s: int) -> List[int]:
-    nums: List[int] = []
+def generate_4digit_polygonals(s: int) -> list[int]:
+    nums: list[int] = []
     n = 1
     while True:
         val = polygonal(s, n)
@@ -26,8 +24,8 @@ def generate_4digit_polygonals(s: int) -> List[int]:
     return nums
 
 
-def build_prefix_map(nums: List[int]) -> Dict[int, List[int]]:
-    mp: Dict[int, List[int]] = {}
+def build_prefix_map(nums: list[int]) -> dict[int, list[int]]:
+    mp: dict[int, list[int]] = {}
     for x in nums:
         pref = x // 100
         mp.setdefault(pref, []).append(x)
@@ -36,16 +34,16 @@ def build_prefix_map(nums: List[int]) -> Dict[int, List[int]]:
 
 def solve() -> int:
     types = [3, 4, 5, 6, 7, 8]
-    nums_by_type: Dict[int, List[int]] = {
+    nums_by_type: dict[int, list[int]] = {
         t: generate_4digit_polygonals(t) for t in types
     }
-    pref_map: Dict[int, Dict[int, List[int]]] = {
+    pref_map: dict[int, dict[int, list[int]]] = {
         t: build_prefix_map(nums_by_type[t]) for t in types
     }
 
-    Path = List[Tuple[int, int]]  # (number, type)
-
-    def dfs(path: Path, used_types: Set[int], used_nums: Set[int]) -> Optional[Path]:
+    def dfs(
+        path: list[tuple[int, int]], used_types: set[int], used_nums: set[int]
+    ) -> list[tuple[int, int]] | None:
         if len(path) == 6:
             last_num = path[-1][0]
             first_num = path[0][0]
