@@ -3,10 +3,11 @@ import lang.py.FormalSW.HeapCalls
 import lang.py.FormalSW.LoopCalls
 import ProjectEulerSolutions.Lib.PrimeSieve
 import ProjectEulerSolutions.Lib.PrimeReplacement
+import ProjectEulerSolutions.Lib.BitSubsets
 import ProjectEulerSolutions.Lib.HeapCollection
 import Mathlib.Data.Nat.Sqrt
 
-/-! Shared-heap source semantics for problem 51's inclusive sieve and returned prime list. -/
+/-! Source proofs for problem 51's sieve, replacement counts, and bit-mask selection. -/
 
 set_option Elab.async false
 
@@ -664,5 +665,50 @@ theorem counting_loop (p : Nat) (positive : 0 < p) (indices : List Nat) (origina
   simpa only [← List.range_eq_range', ← counted] using finalCount
 
 end count_prime_family_for_positions
+
+namespace solve
+private def code : List Stmt := executableBody ((findFunctionIn program.body "solve").getD ([], [])).2
+private def digitBody : List Stmt := match (code[0]? : Option Stmt) with
+  | some (.forIn _ _ body _) => body | _ => []
+private def primeBody : List Stmt := match (digitBody[4]? : Option Stmt) with
+  | some (.forIn _ _ body _) => body | _ => []
+private def positionBody : List Stmt := match (primeBody[5]? : Option Stmt) with
+  | some (.forIn _ _ body _) => body | _ => []
+private def maskBody : List Stmt := match (positionBody[3]? : Option Stmt) with
+  | some (.forIn _ _ body _) => body | _ => []
+private def slotBody : List Stmt := match (maskBody[4]? : Option Stmt) with
+  | some (.forIn _ _ body _) => body | _ => []
+private def slotCondition : Expr := match (slotBody[0]? : Option Stmt) with
+  | some (.ifThen condition _ _) => condition | _ => .constant .none
+
+/-- The source subset-size assignment counts exactly the selected mask positions. -/
+theorem mask_cardinality_assignment (bits width : Nat) (bounded : bits < 2 ^ width)
+    (env : HeapCalls.Env) (heap : Mutable.Heap) (getMask : env "mask" = some (number bits)) :
+    BlockContinues program env [maskBody[0]'(by decide)] heap
+      (setLocal env "k" (number (ProjectEulerSolutions.BitSubsets.positions bits width).length)) heap := by
+  apply BlockContinues.assign
+  apply Evaluates.builtin (.cons (Evaluates.lookup getMask) .nil)
+  change scalarResult (some (Math.bitCountCall (.int bits))) heap = _
+  simp only [Math.bitCountCall, scalarNumber]
+  rw [ProjectEulerSolutions.BitSubsets.bitCount_positions bits width bounded]
+  rfl
+
+/-- Testing a mask slot in the actual Python expression reads the corresponding natural-number bit. -/
+theorem mask_slot_evaluates (bits index : Nat) (env : HeapCalls.Env) (heap : Mutable.Heap)
+    (getMask : env "mask" = some (number bits)) (getIndex : env "j" = some (number index)) :
+    Evaluates program env slotCondition
+      heap (number ((bits / 2 ^ index) % 2 : Nat)) heap := by
+  apply Evaluates.binary (av := number (bits / 2 ^ index : Nat)) (bv := number 1)
+      (middle := heap) (afterRight := heap)
+  · apply Evaluates.binary (av := number bits) (bv := number index)
+      (middle := heap) (afterRight := heap) (Evaluates.lookup getMask) (Evaluates.lookup getIndex)
+    simp only [Mutable.binary, scalarShiftRight, scalarNumber,
+      show ¬ (index : Int) < 0 by omega, if_false, Int.toNat_natCast, integerShiftRight_nat]
+    rfl
+  · exact Evaluates.constant
+  · simp only [Mutable.binary, scalarBitAnd, scalarNumber, integerBitAnd_nat_one]
+    rfl
+
+end solve
 
 end solvers.«51»
