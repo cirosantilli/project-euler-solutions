@@ -7,6 +7,8 @@ import ProjectEulerSolutions.Lib.IntPairCache
 import ProjectEulerSolutions.Lib.HeapCollection
 import ProjectEulerSolutions.Lib.CliqueSearch
 import ProjectEulerSolutions.Lib.CliqueSearchCorrectness
+import data.«project-euler-statements».data.py.project_euler_statements.«p60.py»
+import Mathlib.Data.List.Sort
 import lang.py.FormalSW.ComprehensionCalls
 import Mathlib.Data.Nat.Sqrt
 
@@ -4731,3 +4733,21 @@ theorem result (limit : Int) (caller : Mutable.Heap) (globals : Mutable.Globals)
       (caller_preserved caller buffers limit context finalWorld transition address object found)
 
 end solvers.«60».solve_search
+
+
+namespace solvers.«60».reference
+open ProjectEulerSolutions
+open data.«project-euler-statements».data.py.project_euler_statements.p60.naive
+
+theorem vertices_eq (limit : Int) : vertices limit = solve_setup.vertices limit := by
+  apply (vertices_increasing limit).eq_of_mem_iff (solve_setup.vertices_increasing limit)
+  intro p
+  rw [mem_vertices, solve_setup.mem_vertices]
+
+/-- Both source algorithms now use the same ordered vertices and the same
+canonical search engine; their remaining difference is the pair predicate. -/
+theorem model_eq_math_search (limit : Int) :
+    answerModel limit = CliqueSearch.search relation 5 [] (solve_setup.vertices limit) 0 ⟨solve_setup.sentinel, []⟩ := by
+  simpa only [vertices_eq] using answerModel_eq_search limit
+
+end solvers.«60».reference
