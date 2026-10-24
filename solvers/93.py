@@ -72,7 +72,7 @@ def solve() -> Tuple[str, int]:
     return "".join(map(str, best_digits)), best_len
 
 
-def _self_test() -> None:
+if __name__ == "__main__":
     # From the statement: for {1,2,3,4}, first non-expressible is 29, so run length is 28.
     L_1234, ints_1234 = consecutive_length((1, 2, 3, 4))
     assert L_1234 == 28
@@ -80,9 +80,4 @@ def _self_test() -> None:
 
     ans, L = solve()
     assert L == 51
-
-
-if __name__ == "__main__":
-    _self_test()
-    ans, _ = solve()
     print(ans)

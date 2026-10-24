@@ -35,7 +35,7 @@ def totients_up_to(n: int) -> array:
     return phi
 
 
-def count_reduced_proper_fractions(max_d: int) -> int:
+def solve(max_d: int) -> int:
     """
     Count reduced proper fractions n/d with 1 <= n < d <= max_d and gcd(n,d)=1.
     This equals sum_{d=2..max_d} phi(d).
@@ -46,19 +46,10 @@ def count_reduced_proper_fractions(max_d: int) -> int:
     return int(sum(phi[2:]))
 
 
-def _tests() -> None:
-    # From the statement: for d <= 8 there are 21 reduced proper fractions.
-    assert count_reduced_proper_fractions(8) == 21
-    assert count_reduced_proper_fractions(1) == 0
-    assert count_reduced_proper_fractions(2) == 1  # only 1/2
-
-
-def main() -> None:
-    _tests()
-    n = 1_000_000
-    ans = count_reduced_proper_fractions(n)
-    print(ans)
-
-
 if __name__ == "__main__":
-    main()
+    # From the statement: for d <= 8 there are 21 reduced proper fractions.
+    assert solve(8) == 21
+    assert solve(1) == 0
+    assert solve(2) == 1  # only 1/2
+    n = 1_000_000
+    print(solve(n))

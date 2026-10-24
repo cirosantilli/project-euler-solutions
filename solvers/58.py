@@ -40,7 +40,7 @@ def is_prime(n: int) -> bool:
     return True
 
 
-def side_length_when_ratio_below_10_percent() -> int:
+def solve() -> int:
     # Start with side length 1
     prime_count = 0
     total_diag = 1
@@ -79,7 +79,7 @@ def _prime_ratio_counts_for_side(side: int) -> tuple[int, int]:
     return prime_count, total_diag
 
 
-def main() -> None:
+if __name__ == "__main__":
     # Problem statement check: for side length 7, ratio is 8/13
     p, t = _prime_ratio_counts_for_side(7)
     assert (p, t) == (8, 13)
@@ -88,9 +88,4 @@ def main() -> None:
     p, t = _prime_ratio_counts_for_side(3)
     assert (p, t) == (3, 5)
 
-    ans = side_length_when_ratio_below_10_percent()
-    print(ans)
-
-
-if __name__ == "__main__":
-    main()
+    print(solve())

@@ -16,7 +16,7 @@ def load_matrix_file() -> List[List[int]]:
     return parse_matrix_from_text(Path("0083_matrix.txt").read_text(encoding="utf-8"))
 
 
-def dijkstra_min_path_sum(mat: List[List[int]]) -> int:
+def solve(mat: List[List[int]]) -> int:
     n = len(mat)
     m = len(mat[0])
     total = n * m
@@ -72,7 +72,7 @@ def dijkstra_min_path_sum(mat: List[List[int]]) -> int:
     raise RuntimeError("No path found (unexpected for a grid).")
 
 
-def _test_sample() -> None:
+if __name__ == "__main__":
     sample = """
     131,673,234,103,18
     201,96,342,965,150
@@ -81,15 +81,6 @@ def _test_sample() -> None:
     805,732,524,37,331
     """
     mat = parse_matrix_from_text(sample)
-    assert dijkstra_min_path_sum(mat) == 2297
-
-
-def main() -> None:
-    _test_sample()
+    assert solve(mat) == 2297
     mat = load_matrix_file()
-    ans = dijkstra_min_path_sum(mat)
-    print(ans)
-
-
-if __name__ == "__main__":
-    main()
+    print(solve(mat))

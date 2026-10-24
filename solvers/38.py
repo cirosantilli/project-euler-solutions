@@ -41,6 +41,11 @@ def is_1_to_9_pandigital(s: str) -> bool:
 
 
 def solve() -> int:
+    """
+    @formalsw: Py from project_euler_statements.p38 import naive_default
+    @formalsw: Requires(TARGET_MASK == 1022)
+    @formalsw: Equiv(naive_default)
+    """
     best = 0
     # x cannot exceed 9999; for x >= 10000, x*1 already has 5 digits and
     # concatenating with x*2 gives at least 10 digits.
@@ -57,16 +62,11 @@ def _concat_fixed(x: int, n: int) -> str:
     return "".join(str(x * k) for k in range(1, n + 1))
 
 
-def main() -> None:
+if __name__ == "__main__":
     # Examples from the statement
     assert _concat_fixed(192, 3) == "192384576"
     assert is_1_to_9_pandigital("192384576")
     assert _concat_fixed(9, 5) == "918273645"
     assert is_1_to_9_pandigital("918273645")
 
-    ans = solve()
-    print(ans)
-
-
-if __name__ == "__main__":
-    main()
+    print(solve())

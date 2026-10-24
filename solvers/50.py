@@ -59,14 +59,13 @@ def longest_consecutive_prime_sum(limit: int) -> Tuple[int, int]:
     return (0, 0)
 
 
-def main() -> None:
+def solve(limit: int) -> int:
+    return longest_consecutive_prime_sum(limit)[0]
+
+
+if __name__ == "__main__":
     # Problem statement checks
     assert longest_consecutive_prime_sum(100) == (41, 6)
     assert longest_consecutive_prime_sum(1000) == (953, 21)
 
-    ans, _terms = longest_consecutive_prime_sum(1_000_000)
-    print(ans)
-
-
-if __name__ == "__main__":
-    main()
+    print(solve(1_000_000))

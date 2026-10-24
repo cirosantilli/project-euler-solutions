@@ -16,7 +16,7 @@ def parse_triangle(text: str) -> List[List[int]]:
     return rows
 
 
-def max_path_sum(triangle: List[List[int]]) -> int:
+def solve(triangle: List[List[int]]) -> int:
     if not triangle:
         return 0
     # Bottom-up DP: dp[j] holds best sum from current position to bottom.
@@ -32,24 +32,17 @@ def read_triangle_file() -> str:
     return Path("0067_triangle.txt").read_text(encoding="utf-8")
 
 
-def main() -> None:
+if __name__ == "__main__":
     # Sample from the statement
-    sample = """\
+    sample = """
     3
     7 4
     2 4 6
     8 5 9 3
     """
-    assert max_path_sum(parse_triangle(sample)) == 23
+    assert solve(parse_triangle(sample)) == 23
 
     text = read_triangle_file()
     tri = parse_triangle(text)
-    ans = max_path_sum(tri)
 
-    # Project Euler #67 known answer (helps catch file/parse issues)
-
-    print(ans)
-
-
-if __name__ == "__main__":
-    main()
+    print(solve(tri))

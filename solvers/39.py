@@ -5,8 +5,12 @@ from math import gcd
 from typing import List
 
 
-def max_solutions_perimeter(limit: int) -> int:
+def solve(limit: int) -> int:
     """
+    @formalsw: Py from project_euler_statements.p39 import naive
+    @formalsw: Requires(limit >= 0)
+    @formalsw: Equiv(naive)
+
     Counts right-triangle integer solutions (a,b,c) for each perimeter p<=limit
     using Euclid's formula for Pythagorean triples.
     Returns p that maximizes the number of solutions.
@@ -34,7 +38,7 @@ def max_solutions_perimeter(limit: int) -> int:
         m += 1
 
     best_p = 0
-    best_count = -1
+    best_count = 0
     for p in range(1, limit + 1):
         if counts[p] > best_count:
             best_count = counts[p]
@@ -42,9 +46,8 @@ def max_solutions_perimeter(limit: int) -> int:
     return best_p
 
 
-def main() -> None:
+if __name__ == "__main__":
     limit = 1000
-    answer = max_solutions_perimeter(limit)
 
     # Test from statement: p=120 has exactly 3 solutions.
     # Our counting counts distinct (a,b,c) solutions ignoring order of legs, matching the statement.
@@ -69,8 +72,4 @@ def main() -> None:
 
     assert count_for(1000, 120) == 3
 
-    print(answer)
-
-
-if __name__ == "__main__":
-    main()
+    print(solve(limit))

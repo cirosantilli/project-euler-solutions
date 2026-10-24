@@ -29,6 +29,10 @@ def digit_at(n: int) -> int:
 
 
 def solve() -> int:
+    """
+    @formalsw: Py from project_euler_statements.p40 import naive_default
+    @formalsw: Equiv(naive_default)
+    """
     positions: List[int] = [1, 10, 100, 1000, 10000, 100000, 1000000]
     prod = 1
     for p in positions:
@@ -49,6 +53,5 @@ if __name__ == "__main__":
     assert digit_at(100000) == 2
     assert digit_at(1000000) == 1
 
-    ans = solve()
 
-    print(ans)
+    print(solve())

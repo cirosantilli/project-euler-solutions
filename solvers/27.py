@@ -103,5 +103,4 @@ def solve() -> int:
 
 
 if __name__ == "__main__":
-    ans = solve()
-    print(ans)
+    print(solve())

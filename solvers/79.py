@@ -66,16 +66,11 @@ def topo_sort(nodes: Set[str], adj: Dict[str, Set[str]], indeg: Dict[str, int]) 
     return "".join(out)
 
 
-def derive_passcode(attempts: Iterable[str]) -> str:
+def solve(attempts: Iterable[str]) -> str:
     nodes, adj, indeg = build_graph(attempts)
     return topo_sort(nodes, adj, indeg)
 
 
-def main() -> None:
-    attempts = load_attempts()
-    passcode = derive_passcode(attempts)
-    print(passcode)
-
-
 if __name__ == "__main__":
-    main()
+    attempts = load_attempts()
+    print(solve(attempts))

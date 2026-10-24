@@ -14,7 +14,7 @@ def valid_permutation_input(digits: list[int], n: int) -> bool:
     return 1 <= n <= count
 
 
-def nth_lexicographic_permutation(digits: list[int], n: int) -> str:
+def solve(digits: list[int], n: int) -> str:
     """
     Returns the n-th lexicographic permutation (1-indexed) of the given digits.
 
@@ -42,11 +42,6 @@ def nth_lexicographic_permutation(digits: list[int], n: int) -> str:
     return "".join(out)
 
 
-def main() -> None:
-    digits = list(range(10))
-    ans = nth_lexicographic_permutation(digits, 1_000_000)
-    print(ans)
-
-
 if __name__ == "__main__":
-    main()
+    digits = list(range(10))
+    print(solve(digits, 1_000_000))

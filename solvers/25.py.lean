@@ -9,7 +9,7 @@ open ProjectEulerStatements.FibonacciDigits
 
 private abbrev program := Solvers.P25Ast.module
 private def loop : List Stmt :=
-  (executableBody ((findFunctionIn program.body "first_fib_index_with_digits").getD ([], [])).2).drop 4
+  (executableBody ((findFunctionIn program.body "solve").getD ([], [])).2).drop 4
 
 private theorem decimal_length (index : Nat) (positive : 0 < index) (env : ScalarEnv)
     (lookup : env "b" = some (.int (Nat.fib index))) :
@@ -55,8 +55,8 @@ private theorem loop_result (digits index : Nat) (positive : 0 < index)
           exact BlockReturns.return_value (Evaluates.lookup (by simpa only [castSame] using getN))
 
 /-- Exact result of the optimized Python function, including its one-digit special case. -/
-theorem first_fib_index_with_digits.result (digits : Nat) (positive : 0 < digits) :
-    ReturnsValue program "first_fib_index_with_digits" [.int digits] (.int (first digits)) := by
+theorem solve.result (digits : Nat) (positive : 0 < digits) :
+    ReturnsValue program "solve" [.int digits] (.int (first digits)) := by
   apply BlockReturns.function rfl rfl
   apply BlockReturns.assertion (value := .bool true)
   · exact Evaluates.compare (Evaluates.lookup rfl) Evaluates.constant
@@ -84,27 +84,27 @@ theorem first_fib_index_with_digits.result (digits : Nat) (positive : 0 < digits
             omega
           exact loop_result digits 1 (by decide) initial _ rfl rfl rfl rfl
 
-theorem first_fib_index_with_digits.«Returns» (digits : Int)
+theorem solve.«Returns» (digits : Int)
     (requires : Calls.Condition program
       (fun key => if key = "digits" then some (.int digits) else none)
-      Solvers.P25Ast.requires_first_fib_index_with_digits_0) :
-    (Calls.function program "first_fib_index_with_digits" [.int digits]).Returns := by
+      Solvers.P25Ast.requires_solve_0) :
+    (Calls.function program "solve" [.int digits]).Returns := by
   have positive : 1 ≤ digits := by
     simpa [evalCmpOp] using Evaluates.condition_int_compare requires rfl
   lift digits to Nat using (by omega : 0 ≤ digits)
-  exact (first_fib_index_with_digits.result digits (by omega)).returns
+  exact (solve.result digits (by omega)).returns
 
 
-theorem first_fib_index_with_digits.«Equiv(naive)» (digits : Int)
+theorem solve.«Equiv(naive)» (digits : Int)
     (requires : Calls.Condition program
       (fun key => if key = "digits" then some (.int digits) else none)
-      Solvers.P25Ast.requires_first_fib_index_with_digits_0) :
-    (Calls.function program "first_fib_index_with_digits" [.int digits]).Equiv
+      Solvers.P25Ast.requires_solve_0) :
+    (Calls.function program "solve" [.int digits]).Equiv
       (MemoHeapCalls.scalarFunction P25Ast.module "naive" [.int digits]) := by
   have positive : 1 ≤ digits := by
     simpa [evalCmpOp] using Evaluates.condition_int_compare requires rfl
   lift digits to Nat using (by omega : 0 ≤ digits)
-  have optimized := (first_fib_index_with_digits.result digits (by omega)).finishes
+  have optimized := (solve.result digits (by omega)).finishes
   obtain ⟨heap, result⟩ := data.«project-euler-statements».data.py.project_euler_statements.p25.naive.result digits []
   have reference := MemoHeapCalls.ReturnsValue.scalar_finishes (values := [.int digits]) result
   intro outcome
@@ -116,18 +116,18 @@ theorem first_fib_index_with_digits.«Equiv(naive)» (digits : Int)
     rw [finished.unique reference]
     exact optimized
 
-theorem first_fib_index_with_digits.«Supported» :
+theorem solve.«Supported» :
     (∀ digits : Int, Calls.Condition program
       (fun key => if key = "digits" then some (.int digits) else none)
-      Solvers.P25Ast.requires_first_fib_index_with_digits_0 →
-      (Calls.function program "first_fib_index_with_digits" [.int digits]).Supported) ∧
+      Solvers.P25Ast.requires_solve_0 →
+      (Calls.function program "solve" [.int digits]).Supported) ∧
     (∀ digits : Int, Calls.Condition program
       (fun key => if key = "digits" then some (.int digits) else none)
-      Solvers.P25Ast.requires_first_fib_index_with_digits_0 →
+      Solvers.P25Ast.requires_solve_0 →
       (MemoHeapCalls.scalarFunction P25Ast.module "naive" [.int digits]).Supported) := by
   constructor
   · intro digits requires
-    exact (first_fib_index_with_digits.«Returns» digits requires).supported
+    exact (solve.«Returns» digits requires).supported
   · intro digits requires
     have positive : 1 ≤ digits := by
       simpa [evalCmpOp] using Evaluates.condition_int_compare requires rfl

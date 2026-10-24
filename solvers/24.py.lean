@@ -375,7 +375,7 @@ theorem setup (digits : List Int) (address : Nat) (env : HeapCalls.Env) (heap : 
       counted.append (allocated.append loop)
 
 theorem source_prefix :
-    (executableBody ((findFunctionIn program.body "nth_lexicographic_permutation").getD ([], [])).2).take 3 =
+    (executableBody ((findFunctionIn program.body "solve").getD ([], [])).2).take 3 =
       setupBody := rfl
 
 end Factorials
@@ -425,7 +425,7 @@ def body : List Stmt :=
    .expr appendExpression]
 
 theorem source_body :
-    (match ((executableBody ((findFunctionIn program.body "nth_lexicographic_permutation").getD ([], [])).2)[6]? : Option Stmt) with
+    (match ((executableBody ((findFunctionIn program.body "solve").getD ([], [])).2)[6]? : Option Stmt) with
      | some (.forIn _ _ body _) => body
      | _ => []) = body := rfl
 
@@ -541,7 +541,7 @@ private abbrev solverArgs : List Arg :=
 theorem optimized.result (heap : Mutable.Heap) (address : Nat) (digits : List Int) (rank : Nat)
     (found : heap[address]? = some (.list (digits.map number)))
     (rankBound : rank < Math.factorial digits.length) :
-    ∃ extra, ReturnsValue program "nth_lexicographic_permutation" [.ref address, number (rank + 1)] heap
+    ∃ extra, ReturnsValue program "solve" [.ref address, number (rank + 1)] heap
       (.scalar (.string (String.intercalate "" ((PermutationRank.unrank digits.length digits rank).map toString))))
       (heap ++ extra) := by
   let entry := argumentEnv solverArgs [.ref address, number (rank + 1)]
@@ -612,7 +612,7 @@ theorem optimized.result (heap : Mutable.Heap) (address : Nat) (digits : List In
 theorem optimized.equiv (heap : Mutable.Heap) (address : Nat) (digits : List Int) (rank : Nat)
     (valid : heap.Valid) (found : heap[address]? = some (.list (digits.map number)))
     (sorted : digits.Pairwise (· < ·)) (rankBound : rank < Math.factorial digits.length) :
-    (HeapCalls.call program "nth_lexicographic_permutation" [.ref address, number (rank + 1)] heap).Equiv
+    (HeapCalls.call program "solve" [.ref address, number (rank + 1)] heap).Equiv
       (HeapCalls.call P24Ast.module "naive_text" [.ref address, number (rank + 1)] heap) := by
   obtain ⟨extra, executed⟩ := optimized.result heap address digits rank found rankBound
   obtain ⟨referenceExtra, reference⟩ :=
@@ -834,32 +834,32 @@ private abbrev inputEnv (address : Nat) (n : Int) : HeapCalls.Env :=
 
 private theorem condition_result (digits : List Int) (n : Int) (heap : Mutable.Heap) (address : Nat)
     (found : heap[address]? = some (.list (digits.map number))) :
-    Evaluates program (inputEnv address n) Solvers.P24Ast.requires_nth_lexicographic_permutation_0 heap
+    Evaluates program (inputEnv address n) Solvers.P24Ast.requires_solve_0 heap
       (.scalar (.bool (Domain.increasing digits && decide (1 ≤ n ∧ n ≤ Math.factorial digits.length)))) heap :=
   Evaluates.call (.cons (Evaluates.lookup rfl) (.cons (Evaluates.lookup rfl) .nil))
     (valid_permutation_input.result digits n heap address found)
 
 private theorem condition_domain (digits : List Int) (n : Int) (heap : Mutable.Heap) (address : Nat)
     (found : heap[address]? = some (.list (digits.map number)))
-    (requires : HeapCalls.Condition program (inputEnv address n) Solvers.P24Ast.requires_nth_lexicographic_permutation_0 heap) :
+    (requires : HeapCalls.Condition program (inputEnv address n) Solvers.P24Ast.requires_solve_0 heap) :
     digits.Pairwise (· < ·) ∧ 1 ≤ n ∧ n ≤ Math.factorial digits.length := by
   have accepted := (condition_result digits n heap address found).condition_iff.mp requires
   have accepted : Domain.increasing digits = true ∧ 1 ≤ n ∧ n ≤ Math.factorial digits.length := by
     simpa only [Mutable.Value.scalar.injEq, Constant.bool.injEq, Bool.and_eq_true, decide_eq_true_eq] using accepted
   exact ⟨(Domain.increasing_iff digits).mp accepted.1, accepted.2⟩
 
-theorem requires_nth_lexicographic_permutation_0_supported
+theorem requires_solve_0_supported
     (heap : Mutable.Heap) (address : Nat) (n : Int) (_valid : heap.Valid)
     (typed : Mutable.Value.HasType heap (.ref address) "list[int]") :
-    (HeapCalls.evaluate program (inputEnv address n) Solvers.P24Ast.requires_nth_lexicographic_permutation_0 heap).Supported := by
+    (HeapCalls.evaluate program (inputEnv address n) Solvers.P24Ast.requires_solve_0 heap).Supported := by
   obtain ⟨digits, found⟩ := Mutable.Value.ints_of_hasType typed
   exact Execution.supported_of_finishes (condition_result digits n heap address found).finishes
 
-theorem nth_lexicographic_permutation.«Equiv(naive)»
+theorem solve.«Equiv(naive)»
     (heap : Mutable.Heap) (address : Nat) (n : Int) (valid : heap.Valid)
     (typed : Mutable.Value.HasType heap (.ref address) "list[int]")
-    (requires : HeapCalls.Condition program (inputEnv address n) Solvers.P24Ast.requires_nth_lexicographic_permutation_0 heap) :
-    (HeapCalls.call program "nth_lexicographic_permutation" [.ref address, number n] heap).Equiv
+    (requires : HeapCalls.Condition program (inputEnv address n) Solvers.P24Ast.requires_solve_0 heap) :
+    (HeapCalls.call program "solve" [.ref address, number n] heap).Equiv
       (HeapCalls.call P24Ast.module "naive_text" [.ref address, number n] heap) := by
   obtain ⟨digits, found⟩ := Mutable.Value.ints_of_hasType typed
   obtain ⟨sorted, lower, upper⟩ := condition_domain digits n heap address found requires
@@ -868,12 +868,12 @@ theorem nth_lexicographic_permutation.«Equiv(naive)»
   have bound : rank < Math.factorial digits.length := by omega
   simpa only [index] using optimized.equiv heap address digits rank valid found sorted bound
 
-theorem nth_lexicographic_permutation.«Supported» :
+theorem solve.«Supported» :
     (∀ (heap : Mutable.Heap) (address : Nat) (n : Int), heap.Valid → Mutable.Value.HasType heap (.ref address) "list[int]" →
-      HeapCalls.Condition program (inputEnv address n) Solvers.P24Ast.requires_nth_lexicographic_permutation_0 heap →
-      (HeapCalls.call program "nth_lexicographic_permutation" [.ref address, number n] heap).Supported) ∧
+      HeapCalls.Condition program (inputEnv address n) Solvers.P24Ast.requires_solve_0 heap →
+      (HeapCalls.call program "solve" [.ref address, number n] heap).Supported) ∧
     (∀ (heap : Mutable.Heap) (address : Nat) (n : Int), heap.Valid → Mutable.Value.HasType heap (.ref address) "list[int]" →
-      HeapCalls.Condition program (inputEnv address n) Solvers.P24Ast.requires_nth_lexicographic_permutation_0 heap →
+      HeapCalls.Condition program (inputEnv address n) Solvers.P24Ast.requires_solve_0 heap →
       (HeapCalls.call P24Ast.module "naive_text" [.ref address, number n] heap).Supported) := by
   constructor
   · intro heap address n _ typed requires

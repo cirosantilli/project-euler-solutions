@@ -1,8 +1,7 @@
 #!/usr/bin/env python
-from typing import Tuple
 
 
-def count_sqrt2_convergents(limit: int) -> int:
+def solve(limit: int) -> int:
     """
     Count among the first `limit` convergents of sqrt(2) (as in the problem's expansions)
     how many have a numerator with more digits than the denominator.
@@ -22,16 +21,8 @@ def count_sqrt2_convergents(limit: int) -> int:
     return cnt
 
 
-def _self_tests() -> None:
-    # The 8th expansion 1393/985 is the first where numerator has more digits.
-    assert count_sqrt2_convergents(7) == 0
-    assert count_sqrt2_convergents(8) == 1
-
-
-def main() -> None:
-    _self_tests()
-    print(count_sqrt2_convergents(1000))
-
-
 if __name__ == "__main__":
-    main()
+    # The 8th expansion 1393/985 is the first where numerator has more digits.
+    assert solve(7) == 0
+    assert solve(8) == 1
+    print(solve(1000))

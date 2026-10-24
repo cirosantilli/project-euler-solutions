@@ -5,7 +5,7 @@ from itertools import combinations, permutations
 from typing import List, Set
 
 
-def magic_5gon_max_16digit() -> str:
+def solve() -> str:
     """
     Returns the maximum 16-digit string for a magic 5-gon ring using 1..10.
 
@@ -70,10 +70,5 @@ def magic_5gon_max_16digit() -> str:
     return best
 
 
-def main() -> None:
-    ans = magic_5gon_max_16digit()
-    print(ans)
-
-
 if __name__ == "__main__":
-    main()
+    print(solve())

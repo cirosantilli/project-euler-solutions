@@ -23,7 +23,7 @@ def days_in_month(year: int, month: int) -> int:
     return 31
 
 
-def count_sundays_on_first(start_year: int, end_year: int) -> int:
+def solve(start_year: int, end_year: int) -> int:
     """
     @formalsw: Py from project_euler_statements.p19 import naive_years
     @formalsw: Requires(1900 <= start_year <= end_year)
@@ -42,10 +42,5 @@ def count_sundays_on_first(start_year: int, end_year: int) -> int:
     return count
 
 
-def main() -> None:
-    ans = count_sundays_on_first(1901, 2000)
-    print(ans)
-
-
 if __name__ == "__main__":
-    main()
+    print(solve(1901, 2000))

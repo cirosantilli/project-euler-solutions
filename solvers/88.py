@@ -5,7 +5,7 @@ from typing import List, Set
 import sys
 
 
-def minimal_product_sum_numbers_sum(K: int) -> int:
+def solve(K: int) -> int:
     """
     Returns the sum of all unique minimal product-sum numbers for 2 <= k <= K.
     Uses the standard factor-combination DFS:
@@ -40,16 +40,7 @@ def minimal_product_sum_numbers_sum(K: int) -> int:
     return sum(uniq)
 
 
-def _tests() -> None:
-    assert minimal_product_sum_numbers_sum(6) == 30
-    assert minimal_product_sum_numbers_sum(12) == 61
-
-
-def main() -> None:
-    _tests()
-    ans = minimal_product_sum_numbers_sum(12000)
-    print(ans)
-
-
 if __name__ == "__main__":
-    main()
+    assert solve(6) == 30
+    assert solve(12) == 61
+    print(solve(12000))

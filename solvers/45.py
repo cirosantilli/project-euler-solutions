@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import math
-from typing import Final
 
 
 def triangle(n: int) -> int:
@@ -28,12 +27,6 @@ def is_pentagonal(x: int) -> bool:
 
 
 def solve() -> int:
-    # Given check from statement:
-    assert triangle(285) == 40755
-    assert pentagonal(165) == 40755
-    assert hexagonal(143) == 40755
-    assert triangle(285) == pentagonal(165) == hexagonal(143)
-
     # Every hexagonal number is triangular, so we only need H_n that is pentagonal.
     n = 144  # next after H_143
     while True:
@@ -43,10 +36,11 @@ def solve() -> int:
         n += 1
 
 
-def main() -> None:
-    ans: Final[int] = solve()
-    print(ans)
-
-
 if __name__ == "__main__":
-    main()
+    # Given check from statement:
+    assert triangle(285) == 40755
+    assert pentagonal(165) == 40755
+    assert hexagonal(143) == 40755
+    assert triangle(285) == pentagonal(165) == hexagonal(143)
+
+    print(solve())

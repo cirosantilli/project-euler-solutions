@@ -71,7 +71,7 @@ def load_lines() -> List[str]:
         return [line.strip() for line in f if line.strip()]
 
 
-def total_characters_saved(lines: List[str]) -> int:
+def solve(lines: List[str]) -> int:
     saved = 0
     for s in lines:
         val = roman_to_int(s)
@@ -80,7 +80,7 @@ def total_characters_saved(lines: List[str]) -> int:
     return saved
 
 
-def _self_tests() -> None:
+if __name__ == "__main__":
     assert roman_to_int("XVI") == 16
     assert int_to_min_roman(16) == "XVI"
 
@@ -97,14 +97,5 @@ def _self_tests() -> None:
 
     assert roman_to_int("MMMMCMXCIX") == 4999
     assert int_to_min_roman(4999) == "MMMMCMXCIX"
-
-
-def main() -> None:
-    _self_tests()
     lines = load_lines()
-    ans = total_characters_saved(lines)
-    print(ans)
-
-
-if __name__ == "__main__":
-    main()
+    print(solve(lines))

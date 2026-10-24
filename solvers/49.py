@@ -55,10 +55,10 @@ def find_prime_perm_arith_sequence() -> Tuple[int, int, int]:
     raise RuntimeError("No valid sequence found.")
 
 
-def main() -> None:
+def solve() -> int:
     a, b, c = find_prime_perm_arith_sequence()
-    print(int(f"{a}{b}{c}"))
+    return int(f"{a}{b}{c}")
 
 
 if __name__ == "__main__":
-    main()
+    print(solve())

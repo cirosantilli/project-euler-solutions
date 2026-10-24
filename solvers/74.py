@@ -5,7 +5,7 @@ from array import array
 from typing import List
 
 
-def main() -> None:
+def solve() -> int:
     # Upper bound:
     # For any number with d digits, sum of digit factorials <= d * 9!
     # Starting numbers < 1_000_000 have at most 6 digits, so first step <= 6*9! (7 digits).
@@ -95,8 +95,8 @@ def main() -> None:
         if ln == 60:
             count += 1
 
-    print(count)
+    return count
 
 
 if __name__ == "__main__":
-    main()
+    print(solve())

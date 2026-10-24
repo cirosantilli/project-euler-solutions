@@ -200,11 +200,11 @@ private theorem triangleLoop.result (remaining : Nat) (heap : Mutable.Heap) (env
 private abbrev lastExpression : Expr :=
   .subscript (.name "triangle") (.unaryOp .uSub (.constant (.int 1)))
 
-private theorem max_path_sum.result (heap : Mutable.Heap) (address : Nat) (rows : TriangleRows)
+private theorem solve.result (heap : Mutable.Heap) (address : Nat) (rows : TriangleRows)
     (getTriangle : heap[address]? = some (.list (rows.map (fun pair => .ref pair.1))))
     (getRows : ∀ pair ∈ rows, heap[pair.1]? = some (.list (encode pair.2)))
     (shape : RowShape rows) (nonempty : rows ≠ []) :
-    ∃ extra, HeapCalls.ReturnsValue program "max_path_sum" [.ref address] heap
+    ∃ extra, HeapCalls.ReturnsValue program "solve" [.ref address] heap
       (.scalar (.int ((reduceRowValues (rows.map Prod.snd)).headD 0))) (heap ++ extra) := by
   let env := HeapCalls.argumentEnv
     [⟨"triangle", some (.subscript (.name "list") (.subscript (.name "list") (.name "int"))), none⟩]
@@ -388,7 +388,7 @@ private abbrev triangleEnv (address : Nat) : HeapCalls.Env :=
 
 private theorem triangle_condition (heap : Mutable.Heap) (address : Nat)
     (typed : Mutable.Value.HasType heap (.ref address) "list[list[int]]") :
-    ∃ flag, HeapCalls.Evaluates program (triangleEnv address) Solvers.P18Ast.requires_max_path_sum_0 heap
+    ∃ flag, HeapCalls.Evaluates program (triangleEnv address) Solvers.P18Ast.requires_solve_0 heap
       (.scalar (.bool flag)) heap ∧ (flag = true → TriangleDomain heap address) := by
   obtain ⟨rows, found, reads⟩ := decode_rows heap address typed
   rcases is_triangle.result heap address rows found reads with ⟨nonempty, shape, executed⟩ | executed
@@ -398,43 +398,43 @@ private theorem triangle_condition (heap : Mutable.Heap) (address : Nat)
 
 private theorem triangle_domain_of_condition (heap : Mutable.Heap) (address : Nat)
     (typed : Mutable.Value.HasType heap (.ref address) "list[list[int]]")
-    (requires : HeapCalls.Condition program (triangleEnv address) Solvers.P18Ast.requires_max_path_sum_0 heap) :
+    (requires : HeapCalls.Condition program (triangleEnv address) Solvers.P18Ast.requires_solve_0 heap) :
     TriangleDomain heap address := by
   obtain ⟨flag, evaluated, domain⟩ := triangle_condition heap address typed
   exact domain (by simpa using evaluated.condition_iff.mp requires)
 
-theorem requires_max_path_sum_0_supported (heap : Mutable.Heap) (address : Nat) (_valid : heap.Valid)
+theorem requires_solve_0_supported (heap : Mutable.Heap) (address : Nat) (_valid : heap.Valid)
     (typed : Mutable.Value.HasType heap (.ref address) "list[list[int]]") :
-    (HeapCalls.evaluate program (triangleEnv address) Solvers.P18Ast.requires_max_path_sum_0 heap).Supported := by
+    (HeapCalls.evaluate program (triangleEnv address) Solvers.P18Ast.requires_solve_0 heap).Supported := by
   obtain ⟨_, evaluated, _⟩ := triangle_condition heap address typed
   exact Execution.supported_of_finishes evaluated.finishes
 
-theorem max_path_sum.«Equiv(naive)» (heap : Mutable.Heap) (address : Nat) (valid : heap.Valid)
+theorem solve.«Equiv(naive)» (heap : Mutable.Heap) (address : Nat) (valid : heap.Valid)
     (typed : Mutable.Value.HasType heap (.ref address) "list[list[int]]")
-    (requires : HeapCalls.Condition program (triangleEnv address) Solvers.P18Ast.requires_max_path_sum_0 heap) :
-    (HeapCalls.call program "max_path_sum" [.ref address] heap).Equiv
+    (requires : HeapCalls.Condition program (triangleEnv address) Solvers.P18Ast.requires_solve_0 heap) :
+    (HeapCalls.call program "solve" [.ref address] heap).Equiv
       (HeapCalls.call P18Ast.module "naive" [.ref address] heap) := by
   obtain ⟨rows, found, reads, shape, nonempty⟩ := triangle_domain_of_condition heap address typed requires
-  obtain ⟨extra, optimized⟩ := max_path_sum.result heap address rows found reads shape nonempty
+  obtain ⟨extra, optimized⟩ := solve.result heap address rows found reads shape nonempty
   obtain ⟨referenceExtra, reference⟩ :=
     data.«project-euler-statements».data.py.project_euler_statements.p18.naive.result heap address rows found reads
   exact Mutable.Call.equiv_of_finishes optimized.finishes reference.finishes
     (Mutable.Completion.equivalent_allocations heap extra referenceExtra
       (.scalar (.int ((reduceRowValues (rows.map Prod.snd)).headD 0))) [] valid trivial (by simp))
 
-theorem max_path_sum.«Supported» :
+theorem solve.«Supported» :
     (∀ (heap : Mutable.Heap) (address : Nat), heap.Valid →
       Mutable.Value.HasType heap (.ref address) "list[list[int]]" →
-      HeapCalls.Condition program (triangleEnv address) Solvers.P18Ast.requires_max_path_sum_0 heap →
-      (HeapCalls.call program "max_path_sum" [.ref address] heap).Supported) ∧
+      HeapCalls.Condition program (triangleEnv address) Solvers.P18Ast.requires_solve_0 heap →
+      (HeapCalls.call program "solve" [.ref address] heap).Supported) ∧
     (∀ (heap : Mutable.Heap) (address : Nat), heap.Valid →
       Mutable.Value.HasType heap (.ref address) "list[list[int]]" →
-      HeapCalls.Condition program (triangleEnv address) Solvers.P18Ast.requires_max_path_sum_0 heap →
+      HeapCalls.Condition program (triangleEnv address) Solvers.P18Ast.requires_solve_0 heap →
       (HeapCalls.call P18Ast.module "naive" [.ref address] heap).Supported) := by
   constructor
   · intro heap address _ typed requires
     obtain ⟨rows, found, reads, shape, nonempty⟩ := triangle_domain_of_condition heap address typed requires
-    obtain ⟨_, executed⟩ := max_path_sum.result heap address rows found reads shape nonempty
+    obtain ⟨_, executed⟩ := solve.result heap address rows found reads shape nonempty
     exact executed.returns.supported
   · intro heap address valid typed _
     exact data.«project-euler-statements».data.py.project_euler_statements.p18.naive.«Supported» heap address valid typed

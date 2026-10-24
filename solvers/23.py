@@ -12,7 +12,7 @@ def sum_proper_divisors_sieve(limit: int) -> list[int]:
     return sums
 
 
-def non_abundant_sums(limit: int = 28123) -> int:
+def solve(limit: int = 28123) -> int:
     """
     @formalsw: Py from project_euler_statements.p23 import naive
     @formalsw: Requires(limit >= 28)
@@ -48,9 +48,5 @@ def non_abundant_sums(limit: int = 28123) -> int:
     return total
 
 
-def main() -> None:
-    print(non_abundant_sums())
-
-
 if __name__ == "__main__":
-    main()
+    print(solve())

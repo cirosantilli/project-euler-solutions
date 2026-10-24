@@ -16,7 +16,7 @@ def parse_pairs(lines: Iterable[str]) -> List[Tuple[int, int]]:
     return pairs
 
 
-def best_line_number(pairs: List[Tuple[int, int]]) -> int:
+def solve(pairs: List[Tuple[int, int]]) -> int:
     best_idx = -1
     best_score = float("-inf")
     for i, (base, exp) in enumerate(pairs, start=1):
@@ -31,14 +31,9 @@ def find_input_file() -> str:
     return "0099_base_exp.txt"
 
 
-def main() -> None:
+if __name__ == "__main__":
     path = find_input_file()
     with open(path, "r", encoding="utf-8") as f:
         pairs = parse_pairs(f)
-    assert best_line_number(pairs[:2]) == 2
-    ans = best_line_number(pairs)
-    print(ans)
-
-
-if __name__ == "__main__":
-    main()
+    assert solve(pairs[:2]) == 2
+    print(solve(pairs))

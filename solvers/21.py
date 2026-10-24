@@ -54,7 +54,7 @@ def proper_divisor_sum_factorization(n: int) -> int:
     return sigma - original
 
 
-def amicable_sum_under(limit: int) -> int:
+def solve(limit: int) -> int:
     """
     @formalsw: Py from project_euler_statements.p21 import naive
     @formalsw: Equiv(naive)
@@ -74,14 +74,9 @@ def amicable_sum_under(limit: int) -> int:
     return total
 
 
-def main() -> None:
+if __name__ == "__main__":
     # Given example checks
     assert proper_divisor_sum_factorization(220) == 284
     assert proper_divisor_sum_factorization(284) == 220
 
-    ans = amicable_sum_under(10000)
-    print(ans)
-
-
-if __name__ == "__main__":
-    main()
+    print(solve(10000))

@@ -42,16 +42,16 @@ def digit_sum(x: int) -> int:
 
 
 def solve() -> int:
-    # Test from the statement: 10th convergent numerator is 1457, digit sum is 17
-    coeffs_10 = e_continued_fraction_coeffs(10)
-    p10, q10 = convergent_numerator_denominator(coeffs_10)
-    assert (p10, q10) == (1457, 536)
-    assert digit_sum(p10) == 17
-
     coeffs_100 = e_continued_fraction_coeffs(100)
     p100, _ = convergent_numerator_denominator(coeffs_100)
     return digit_sum(p100)
 
 
 if __name__ == "__main__":
+    # Test from the statement: 10th convergent numerator is 1457, digit sum is 17
+    coeffs_10 = e_continued_fraction_coeffs(10)
+    p10, q10 = convergent_numerator_denominator(coeffs_10)
+    assert (p10, q10) == (1457, 536)
+    assert digit_sum(p10) == 17
+
     print(solve())

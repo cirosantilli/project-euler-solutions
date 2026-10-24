@@ -11,7 +11,7 @@ def digit_signature(n: int) -> Tuple[int, ...]:
     return tuple(cnt)
 
 
-def smallest_permuted_multiple(limit_mul: int = 6) -> int:
+def solve(limit_mul: int = 6) -> int:
     d = 1
     while True:
         lo = 10 ** (d - 1)
@@ -28,10 +28,5 @@ def smallest_permuted_multiple(limit_mul: int = 6) -> int:
         d += 1
 
 
-def main() -> None:
-    ans = smallest_permuted_multiple(6)
-    print(ans)
-
-
 if __name__ == "__main__":
-    main()
+    print(solve(6))

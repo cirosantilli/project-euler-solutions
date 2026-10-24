@@ -34,7 +34,7 @@ def build_prefix_map(nums: List[int]) -> Dict[int, List[int]]:
     return mp
 
 
-def find_cycle_sum() -> int:
+def solve() -> int:
     types = [3, 4, 5, 6, 7, 8]
     nums_by_type: Dict[int, List[int]] = {
         t: generate_4digit_polygonals(t) for t in types
@@ -74,16 +74,10 @@ def find_cycle_sum() -> int:
     raise RuntimeError("No cycle found")
 
 
-def main() -> None:
+if __name__ == "__main__":
     # Problem statement examples
     assert polygonal(3, 127) == 8128
     assert polygonal(4, 91) == 8281
     assert polygonal(5, 44) == 2882
 
-    ans = find_cycle_sum()
-
-    print(ans)
-
-
-if __name__ == "__main__":
-    main()
+    print(solve())

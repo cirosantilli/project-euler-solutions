@@ -29,7 +29,7 @@ def partitions_upto(n: int) -> List[int]:
     return p
 
 
-def least_n_partition_divisible(mod: int) -> int:
+def solve(mod: int) -> int:
     """
     Returns the least n such that p(n) % mod == 0.
     Computes p(n) modulo mod via pentagonal recurrence.
@@ -58,16 +58,11 @@ def least_n_partition_divisible(mod: int) -> int:
         n += 1
 
 
-def main() -> None:
+if __name__ == "__main__":
     # Small sanity checks from known partition values.
     small = partitions_upto(10)
     assert small[0] == 1
     assert small[5] == 7
     assert small[10] == 42
 
-    ans = least_n_partition_divisible(1_000_000)
-    print(ans)
-
-
-if __name__ == "__main__":
-    main()
+    print(solve(1_000_000))

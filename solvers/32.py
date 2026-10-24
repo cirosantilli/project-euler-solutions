@@ -28,6 +28,11 @@ def digit_mask(n: int) -> Tuple[int, int]:
 
 
 def solve() -> int:
+    """
+    @formalsw: Py from project_euler_statements.p32 import naive_default
+    @formalsw: Requires(FULL_MASK == 511)
+    @formalsw: Equiv(naive_default)
+    """
     products: Set[int] = set()
 
     # Case 1: 1-digit * 4-digit = 4-digit

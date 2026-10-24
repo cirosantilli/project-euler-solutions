@@ -14,7 +14,7 @@ def is_triangle(triangle: list[list[int]]) -> bool:
     return True
 
 
-def max_path_sum(triangle: list[list[int]]) -> int:
+def solve(triangle: list[list[int]]) -> int:
     """
     @formalsw: Py from project_euler_statements.p18 import naive
     @formalsw: Requires(is_triangle(triangle))
@@ -27,7 +27,7 @@ def max_path_sum(triangle: list[list[int]]) -> int:
     return dp[0]
 
 
-def main() -> None:
+if __name__ == "__main__":
     # Sample from statement (answer = 23)
     sample = [
         [3],
@@ -35,7 +35,7 @@ def main() -> None:
         [2, 4, 6],
         [8, 5, 9, 3],
     ]
-    assert max_path_sum(sample) == 23
+    assert solve(sample) == 23
 
     triangle = [
         [75],
@@ -55,8 +55,4 @@ def main() -> None:
         [4, 62, 98, 27, 23, 9, 70, 98, 73, 93, 38, 53, 60, 4, 23],
     ]
 
-    print(max_path_sum(triangle))
-
-
-if __name__ == "__main__":
-    main()
+    print(solve(triangle))

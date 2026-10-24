@@ -23,7 +23,7 @@ def primes_up_to_needed() -> List[int]:
     return primes
 
 
-def totient_max_n(limit: int) -> int:
+def solve(limit: int) -> int:
     """
     Returns n <= limit maximizing n/phi(n).
     The maximum is achieved by multiplying consecutive smallest primes
@@ -37,14 +37,9 @@ def totient_max_n(limit: int) -> int:
     return n
 
 
-def main() -> None:
+if __name__ == "__main__":
     # Given example: for n <= 10, maximum n/phi(n) occurs at n = 6
-    assert totient_max_n(10) == 6
+    assert solve(10) == 6
 
     limit = 1_000_000
-    ans = totient_max_n(limit)
-    print(ans)
-
-
-if __name__ == "__main__":
-    main()
+    print(solve(limit))

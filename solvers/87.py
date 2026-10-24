@@ -20,7 +20,7 @@ def sieve_primes(n: int) -> List[int]:
     return [i for i in range(2, n + 1) if is_prime[i]]
 
 
-def count_prime_power_triples(limit: int) -> int:
+def solve(limit: int) -> int:
     """
     Count numbers < limit expressible as p^2 + q^3 + r^4 with p,q,r prime.
     """
@@ -65,13 +65,8 @@ def count_prime_power_triples(limit: int) -> int:
     return len(representable)
 
 
-def main() -> None:
-    # From the problem statement: exactly four numbers below 50 are representable.
-    assert count_prime_power_triples(50) == 4
-
-    ans = count_prime_power_triples(50_000_000)
-    print(ans)
-
-
 if __name__ == "__main__":
-    main()
+    # From the problem statement: exactly four numbers below 50 are representable.
+    assert solve(50) == 4
+
+    print(solve(50_000_000))

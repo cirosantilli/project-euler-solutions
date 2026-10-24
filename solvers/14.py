@@ -73,7 +73,7 @@ def solve(limit: int) -> int:
     return longest_collatz_under(limit + 1)[0]
 
 
-def main() -> None:
+if __name__ == "__main__":
     # Problem statement example: 13 produces a chain of 10 terms.
     limit = 1_000_000
     cache_small = [0] * (limit + 1)
@@ -82,10 +82,4 @@ def main() -> None:
     assert collatz_length(1, limit, cache_small, cache_big) == 1
     assert collatz_length(13, limit, cache_small, cache_big) == 10
 
-    ans_n, ans_len = longest_collatz_under(1_000_000)
-
-    print(ans_n)
-
-
-if __name__ == "__main__":
-    main()
+    print(solve(999_999))

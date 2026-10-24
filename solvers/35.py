@@ -43,8 +43,12 @@ def is_circular_prime(n: int, is_prime: bytearray) -> bool:
     return all(is_prime[r] for r in rotations_of(n))
 
 
-def circular_prime_count(limit: int) -> int:
+def solve(limit: int) -> int:
     """
+    @formalsw: Py from project_euler_statements.p35 import naive
+    @formalsw: Requires(limit >= 0)
+    @formalsw: Equiv(naive)
+
     Count circular primes < limit.
     For correctness with arbitrary limit, sieve up to 10^d where d = digits(limit-1),
     since any rotation keeps the same digit count and is < 10^d.
@@ -94,16 +98,11 @@ def circular_prime_count(limit: int) -> int:
     return count
 
 
-def main() -> None:
+if __name__ == "__main__":
     # Given in statement: 13 circular primes below 100
-    assert circular_prime_count(100) == 13
+    assert solve(100) == 13
 
     # Example: 197 is a circular prime (197, 971, 719 are prime)
     assert is_circular_prime(197, prime_sieve(1000))
 
-    ans = circular_prime_count(1_000_000)
-    print(ans)
-
-
-if __name__ == "__main__":
-    main()
+    print(solve(1_000_000))

@@ -15,7 +15,7 @@ def distinct_prime_factor_counts(limit: int) -> List[int]:
     return cnt
 
 
-def first_consecutive_with_k_factors(k: int, run_len: int, start_limit: int) -> int:
+def solve(k: int, run_len: int, start_limit: int) -> int:
     """
     Finds the first integer n such that n..n+run_len-1 each have exactly k distinct prime factors.
     """
@@ -33,16 +33,11 @@ def first_consecutive_with_k_factors(k: int, run_len: int, start_limit: int) -> 
         limit *= 2  # expand search if not found
 
 
-def main() -> None:
+if __name__ == "__main__":
     # Problem statement examples / sanity checks
-    assert first_consecutive_with_k_factors(2, 2, 100) == 14
-    assert first_consecutive_with_k_factors(3, 3, 2000) == 644
+    assert solve(2, 2, 100) == 14
+    assert solve(3, 3, 2000) == 644
 
     # Target problem
-    ans = first_consecutive_with_k_factors(4, 4, 200_000)
 
-    print(ans)
-
-
-if __name__ == "__main__":
-    main()
+    print(solve(4, 4, 200_000))

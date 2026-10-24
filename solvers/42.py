@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 from __future__ import annotations
 
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, List
 import math
 
 
-def triangle_numbers(n: int) -> List[int]:
+def triangle_numbers(n: int) -> list[int]:
     return [k * (k + 1) // 2 for k in range(1, n + 1)]
 
 
@@ -28,7 +26,7 @@ def word_value(word: str) -> int:
     return sum((ord(c) - ord("A") + 1) for c in word if "A" <= c <= "Z")
 
 
-def parse_words_file(text: str) -> List[str]:
+def parse_words_file(text: str) -> list[str]:
     # File format: "WORD1","WORD2",...
     # Split by commas and strip surrounding quotes.
     parts = text.strip().split(",")
@@ -39,25 +37,35 @@ def find_words_file() -> Path:
     return Path("0042_words.txt")
 
 
-def count_triangle_words(words: Iterable[str]) -> int:
+def words_are_uppercase(words: list[str]) -> bool:
+    """
+    Check the problem's input domain of nonempty words containing only A–Z.
+    """
+    for word in words:
+        if len(word) == 0:
+            return False
+        for c in word:
+            if not 65 <= ord(c) <= 90:
+                return False
+    return True
+
+
+def solve(words: list[str]) -> int:
+    """
+    @formalsw: Py from project_euler_statements.p42 import naive
+    @formalsw: Requires(words_are_uppercase(words))
+    @formalsw: Equiv(naive)
+    """
     return sum(1 for w in words if is_triangle(word_value(w)))
 
 
-def _asserts() -> None:
+if __name__ == "__main__":
     # From statement: first ten triangle numbers
     assert triangle_numbers(10) == [1, 3, 6, 10, 15, 21, 28, 36, 45, 55]
     # From statement: SKY = 55 which is triangular (t_10)
     assert word_value("SKY") == 55
     assert is_triangle(55)
-
-
-def main() -> None:
-    _asserts()
     path = find_words_file()
     text = path.read_text(encoding="utf-8")
     words = parse_words_file(text)
-    print(count_triangle_words(words))
-
-
-if __name__ == "__main__":
-    main()
+    print(solve(words))

@@ -69,6 +69,7 @@ require formalsw from
 @[default_target]
 lean_lib ProjectEulerSolutions where
   srcDir := ".."
+  globs := #[.one `ProjectEulerSolutions, .submodules `ProjectEulerSolutions.Lib]
 
 lean_lib Exes
 

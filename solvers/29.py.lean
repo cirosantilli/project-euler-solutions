@@ -92,8 +92,8 @@ private theorem outer (count start : Nat) (stop maxB : Int) (length : (stop - st
       simpa [Calls.loopContinuation, Calls.loopControl, Calls.loopControlStmt, outerBody, body,
         List.range'_succ, List.foldl_append, Nat.cast_add, Nat.cast_one, bound, afterRow] using rowRun.append rest
 
-theorem count_distinct_powers.result (a b : Int) (heap : Mutable.Heap) :
-    ReturnsValue program "count_distinct_powers" [.scalar (.int a), .scalar (.int b)] heap
+theorem solve.result (a b : Int) (heap : Mutable.Heap) :
+    ReturnsValue program "solve" [.scalar (.int a), .scalar (.int b)] heap
       (num (values a b).eraseDups.length) (heap ++ [.set (keys (values a b).eraseDups)]) := by
   apply BlockReturns.function rfl rfl
   apply BlockContinues.returns (BlockContinues.annAssign
@@ -122,10 +122,10 @@ theorem count_distinct_powers.result (a b : Int) (heap : Mutable.Heap) :
   apply Evaluates.builtin (.cons (Evaluates.lookup finalSet) .nil)
   simp [primitive, Mutable.length, keys, num]
 
-theorem count_distinct_powers.«Equiv(naive)» (a b : Int) :
-    (HeapCalls.scalarFunction program "count_distinct_powers" [.int a, .int b]).Equiv
+theorem solve.«Equiv(naive)» (a b : Int) :
+    (HeapCalls.scalarFunction program "solve" [.int a, .int b]).Equiv
       (HeapCalls.scalarFunction P29Ast.module "naive" [.int a, .int b]) := by
-  have optimized := HeapCalls.ReturnsValue.scalar_finishes (values := [.int a, .int b]) (count_distinct_powers.result a b [])
+  have optimized := HeapCalls.ReturnsValue.scalar_finishes (values := [.int a, .int b]) (solve.result a b [])
   have reference := HeapCalls.ReturnsValue.scalar_finishes (values := [.int a, .int b]) (data.«project-euler-statements».data.py.project_euler_statements.p29.naive.result a b [])
   intro outcome
   constructor
@@ -136,12 +136,12 @@ theorem count_distinct_powers.«Equiv(naive)» (a b : Int) :
     rw [finished.unique reference]
     exact optimized
 
-theorem count_distinct_powers.«Supported» :
-    (∀ a b : Int, (HeapCalls.scalarFunction program "count_distinct_powers" [.int a, .int b]).Supported) ∧
+theorem solve.«Supported» :
+    (∀ a b : Int, (HeapCalls.scalarFunction program "solve" [.int a, .int b]).Supported) ∧
     (∀ a b : Int, (HeapCalls.scalarFunction P29Ast.module "naive" [.int a, .int b]).Supported) := by
   constructor
   · intro a b
-    exact (count_distinct_powers.result a b []).scalar_returns.supported
+    exact (solve.result a b []).scalar_returns.supported
   · intro a b
     exact (data.«project-euler-statements».data.py.project_euler_statements.p29.naive.«Returns» a b).supported
 

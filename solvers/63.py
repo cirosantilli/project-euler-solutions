@@ -1,8 +1,7 @@
 #!/usr/bin/env python
-from typing import Final
 
 
-def count_n_digit_nth_powers() -> int:
+def solve() -> int:
     """
     Counts pairs (a, n) with a^n having exactly n decimal digits,
     where a is a positive integer.
@@ -19,14 +18,9 @@ def count_n_digit_nth_powers() -> int:
     return total
 
 
-def main() -> None:
+if __name__ == "__main__":
     # Examples from the statement
     assert len(str(pow(7, 5))) == 5
     assert len(str(pow(8, 9))) == 9
 
-    ans: Final[int] = count_n_digit_nth_powers()
-    print(ans)
-
-
-if __name__ == "__main__":
-    main()
+    print(solve())

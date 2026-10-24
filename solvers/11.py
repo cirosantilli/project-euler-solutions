@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 
-GRID_STR = """\
+GRID_STR = """
 08 02 22 97 38 15 00 40 00 75 04 05 07 78 52 12 50 77 91 08
 49 49 99 40 17 81 18 57 60 87 17 40 98 43 69 48 04 56 62 00
 81 49 31 73 55 79 14 29 93 71 40 67 53 88 30 03 49 13 36 65
@@ -48,7 +48,7 @@ def is_euler_grid(grid: list[list[int]]) -> bool:
     return True
 
 
-def max_adjacent_product(grid: list[list[int]], k: int = 4) -> int:
+def solve(grid: list[list[int]], k: int = 4) -> int:
     """
     @formalsw: Py from project_euler_statements.p11 import naive
     @formalsw: Requires(k >= 0)
@@ -80,15 +80,10 @@ def max_adjacent_product(grid: list[list[int]], k: int = 4) -> int:
     return best
 
 
-def main() -> None:
+if __name__ == "__main__":
     grid = parse_grid(GRID_STR)
 
     # Example shown in the statement: 26 * 63 * 78 * 14 = 1788696
     assert 26 * 63 * 78 * 14 == 1788696
 
-    ans = max_adjacent_product(grid, 4)
-    print(ans)
-
-
-if __name__ == "__main__":
-    main()
+    print(solve(grid, 4))

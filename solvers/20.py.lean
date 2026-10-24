@@ -8,12 +8,12 @@ open FormalSW.PyAst
 private abbrev program := Solvers.P20Ast.module
 
 private def finalExpr : Expr :=
-  match executableBody ((findFunctionIn program.body "factorial_digit_sum").getD ([], [])).2 with
+  match executableBody ((findFunctionIn program.body "solve").getD ([], [])).2 with
   | [_, _, .return expression] => expression
   | _ => .constant .none
 
 private def body : List Stmt :=
-  match executableBody ((findFunctionIn program.body "factorial_digit_sum").getD ([], [])).2 with
+  match executableBody ((findFunctionIn program.body "solve").getD ([], [])).2 with
   | [_, .forIn _ _ statements _, _] => statements
   | _ => []
 
@@ -91,8 +91,8 @@ private theorem loop_result (n k acc : Nat) (env : Mutable.Env) (heap : Mutable.
         simpa only [Calls.loopContinuation, show Calls.loopControl body = false from rfl,
           Bool.false_eq_true, if_false, Int.natCast_add, Int.natCast_one] using next
 
-theorem factorial_digit_sum.result (n : Nat) (heap : Mutable.Heap) :
-    HeapCalls.ReturnsValue program "factorial_digit_sum" [.scalar (.int n)] heap
+theorem solve.result (n : Nat) (heap : Mutable.Heap) :
+    HeapCalls.ReturnsValue program "solve" [.scalar (.int n)] heap
       (.scalar (.int (ProjectEulerSolutions.P20.solve n))) heap := by
   apply HeapCalls.BlockReturns.function rfl rfl
   apply HeapCalls.BlockReturns.assign HeapCalls.Evaluates.constant
@@ -105,16 +105,16 @@ theorem factorial_digit_sum.result (n : Nat) (heap : Mutable.Heap) :
   · rfl
   · exact loop_result n 2 1 _ heap (by simp [HeapCalls.setLocal])
 
-theorem factorial_digit_sum.«Equiv(naive)» (n : Int) (condition : Calls.Condition program
-    (fun name => if name = "n" then some (.int n) else none) Solvers.P20Ast.requires_factorial_digit_sum_0) :
-    (HeapCalls.scalarFunction program "factorial_digit_sum" [.int n]).Equiv
+theorem solve.«Equiv(naive)» (n : Int) (condition : Calls.Condition program
+    (fun name => if name = "n" then some (.int n) else none) Solvers.P20Ast.requires_solve_0) :
+    (HeapCalls.scalarFunction program "solve" [.int n]).Equiv
       (HeapCalls.scalarFunction P20Ast.module "naive" [.int n]) := by
   have nonnegative : 0 ≤ n := by
     simpa [evalCmpOp] using Calls.Evaluates.condition_int_compare condition rfl
   lift n to Nat using nonnegative
   have reference := data.«project-euler-statements».data.py.project_euler_statements.p20.naive.result n []
   rw [ProjectEulerSolutions.P20.equiv] at reference
-  have optimized := HeapCalls.ReturnsValue.scalar_finishes (values := [.int n]) (factorial_digit_sum.result n [])
+  have optimized := HeapCalls.ReturnsValue.scalar_finishes (values := [.int n]) (solve.result n [])
   have referenceRun := HeapCalls.ReturnsValue.scalar_finishes (values := [.int n]) reference
   intro outcome
   constructor
@@ -125,17 +125,17 @@ theorem factorial_digit_sum.«Equiv(naive)» (n : Int) (condition : Calls.Condit
     rw [run.unique referenceRun]
     exact optimized
 
-theorem factorial_digit_sum.«Supported» :
+theorem solve.«Supported» :
     (∀ (n : Int), Calls.Condition program (fun name => if name = "n" then some (.int n) else none)
-      Solvers.P20Ast.requires_factorial_digit_sum_0 → (HeapCalls.scalarFunction program "factorial_digit_sum" [.int n]).Supported) ∧
+      Solvers.P20Ast.requires_solve_0 → (HeapCalls.scalarFunction program "solve" [.int n]).Supported) ∧
     (∀ (n : Int), Calls.Condition program (fun name => if name = "n" then some (.int n) else none)
-      Solvers.P20Ast.requires_factorial_digit_sum_0 → (HeapCalls.scalarFunction P20Ast.module "naive" [.int n]).Supported) := by
+      Solvers.P20Ast.requires_solve_0 → (HeapCalls.scalarFunction P20Ast.module "naive" [.int n]).Supported) := by
   constructor
   · intro n condition
     have nonnegative : 0 ≤ n := by
       simpa [evalCmpOp] using Calls.Evaluates.condition_int_compare condition rfl
     lift n to Nat using nonnegative
-    exact (factorial_digit_sum.result n []).scalar_returns.supported
+    exact (solve.result n []).scalar_returns.supported
   · intro n condition
     have nonnegative : 0 ≤ n := by
       simpa [evalCmpOp] using Calls.Evaluates.condition_int_compare condition rfl

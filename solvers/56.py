@@ -25,13 +25,12 @@ def max_digital_sum(limit: int) -> Tuple[int, int, int]:
     return best, best_a, best_b
 
 
-def main() -> None:
-    # Basic sanity checks
-    assert digit_sum(10**100) == 1
-    assert digit_sum(2**15) == 26
-    best, a, b = max_digital_sum(100)
-    print(best)
+def solve(limit: int) -> int:
+    return max_digital_sum(limit)[0]
 
 
 if __name__ == "__main__":
-    main()
+    # Basic sanity checks
+    assert digit_sum(10**100) == 1
+    assert digit_sum(2**15) == 26
+    print(solve(100))

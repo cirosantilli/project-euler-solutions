@@ -2,7 +2,12 @@
 from typing import List
 
 
-def count_ways(target: int, coins: List[int]) -> int:
+def solve(target: int, coins: List[int]) -> int:
+    """
+    @formalsw: Py from project_euler_statements.p31 import count_ways_bound
+    @formalsw: Requires(target >= 0 and all(c > 0 for c in coins))
+    @formalsw: Equiv(count_ways_bound)
+    """
     dp = [0] * (target + 1)
     dp[0] = 1
     for c in coins:
@@ -11,20 +16,15 @@ def count_ways(target: int, coins: List[int]) -> int:
     return dp[target]
 
 
-def main() -> None:
+if __name__ == "__main__":
     coins = [1, 2, 5, 10, 20, 50, 100, 200]
 
     # Basic sanity checks (no official test cases were given in the statement)
-    assert count_ways(0, coins) == 1
-    assert count_ways(1, coins) == 1
-    assert count_ways(2, coins) == 2
-    assert count_ways(5, coins) == 4
-    assert count_ways(10, coins) == 11
-
-    ans = count_ways(200, coins)
-
-    print(ans)
+    assert solve(0, coins) == 1
+    assert solve(1, coins) == 1
+    assert solve(2, coins) == 2
+    assert solve(5, coins) == 4
+    assert solve(10, coins) == 11
 
 
-if __name__ == "__main__":
-    main()
+    print(solve(200, coins))

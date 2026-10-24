@@ -117,7 +117,16 @@ def player1_wins(line: str) -> bool:
     return hand_rank(h1) > hand_rank(h2)
 
 
-def _run_sample_asserts() -> None:
+def _read_input_lines() -> List[str]:
+    with open("0054_poker.txt", "r", encoding="utf-8") as f:
+        return [ln.strip() for ln in f if ln.strip()]
+
+
+def solve(lines: Iterable[str]) -> int:
+    return sum(1 for line in lines if player1_wins(line))
+
+
+if __name__ == "__main__":
     # Samples from the statement:
     # 1) Player 2
     assert player1_wins("5H 5C 6S 7S KD 2C 3S 8S 8D TD") is False
@@ -134,19 +143,5 @@ def _run_sample_asserts() -> None:
     assert hand_rank(["AS", "2D", "3H", "4C", "5S"]) > hand_rank(
         ["KS", "QD", "9H", "4C", "3S"]
     )
-
-
-def _read_input_lines() -> List[str]:
-    with open("0054_poker.txt", "r", encoding="utf-8") as f:
-        return [ln.strip() for ln in f if ln.strip()]
-
-
-def main() -> None:
-    _run_sample_asserts()
     lines = _read_input_lines()
-    wins = sum(1 for ln in lines if player1_wins(ln))
-    print(wins)
-
-
-if __name__ == "__main__":
-    main()
+    print(solve(lines))

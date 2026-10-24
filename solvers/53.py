@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-def count_combinatoric_selections(limit_n: int, threshold: int) -> int:
+def solve(limit_n: int, threshold: int) -> int:
     total = 0
     for n in range(1, limit_n + 1):
         c = 1  # C(n, 0)
@@ -13,10 +13,5 @@ def count_combinatoric_selections(limit_n: int, threshold: int) -> int:
     return total
 
 
-def main() -> None:
-    ans = count_combinatoric_selections(100, 1_000_000)
-    print(ans)
-
-
 if __name__ == "__main__":
-    main()
+    print(solve(100, 1_000_000))

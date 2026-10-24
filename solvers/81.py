@@ -6,7 +6,7 @@ import sys
 from typing import List
 
 
-def min_path_sum(matrix: List[List[int]]) -> int:
+def solve(matrix: List[List[int]]) -> int:
     n = len(matrix)
     assert n > 0
     m = len(matrix[0])
@@ -38,7 +38,7 @@ def read_matrix() -> List[List[int]]:
         return parse_matrix_from_text(f.read())
 
 
-def _tests() -> None:
+if __name__ == "__main__":
     sample = [
         [131, 673, 234, 103, 18],
         [201, 96, 342, 965, 150],
@@ -46,15 +46,6 @@ def _tests() -> None:
         [537, 699, 497, 121, 956],
         [805, 732, 524, 37, 331],
     ]
-    assert min_path_sum(sample) == 2427
-
-
-def main() -> None:
-    _tests()
+    assert solve(sample) == 2427
     matrix = read_matrix()
-    ans = min_path_sum(matrix)
-    print(ans)
-
-
-if __name__ == "__main__":
-    main()
+    print(solve(matrix))

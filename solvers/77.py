@@ -37,7 +37,7 @@ def count_prime_summations(n: int, primes: List[int]) -> int:
     return ways[n]
 
 
-def first_value_over(target: int) -> int:
+def solve(target: int) -> int:
     n = 2
     while True:
         primes = sieve_primes(n)
@@ -47,15 +47,11 @@ def first_value_over(target: int) -> int:
         n += 1
 
 
-def main() -> None:
+if __name__ == "__main__":
     # Example from the statement: 10 has exactly 5 prime-sum partitions
     assert count_prime_summations(10, sieve_primes(10)) == 5
 
-    ans = first_value_over(5000)
+    ans = solve(5000)
     assert count_prime_summations(ans, sieve_primes(ans)) > 5000
 
     print(ans)
-
-
-if __name__ == "__main__":
-    main()

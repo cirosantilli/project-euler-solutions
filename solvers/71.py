@@ -37,6 +37,4 @@ if __name__ == "__main__":
     # Test from the statement: for d <= 8, fraction immediately left of 3/7 is 2/5
     assert best_fraction_left_of(3, 7, 8) == (2, 5)
 
-    ans = solve(1_000_000)
-
-    print(ans)
+    print(solve(1_000_000))

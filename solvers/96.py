@@ -133,8 +133,7 @@ def top_left_number(solution_cands):
     return 100 * a + 10 * b + c
 
 
-def main(path="0096_sudoku.txt"):
-    text = Path(path).read_text(encoding="utf-8")
+def solve(text: str) -> int:
     total = 0
     for grid in parse_puzzles(text):
         cands = grid_to_cands(grid)
@@ -142,8 +141,9 @@ def main(path="0096_sudoku.txt"):
         if solved is None:
             raise ValueError("Unsolvable puzzle encountered")
         total += top_left_number(solved)
-    print(total)
+    return total
 
 
 if __name__ == "__main__":
-    main()
+    text = Path("0096_sudoku.txt").read_text(encoding="utf-8")
+    print(solve(text))

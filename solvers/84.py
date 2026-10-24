@@ -154,7 +154,7 @@ def stationary_distribution(P: List[List[Tuple[State, float]]]) -> List[float]:
     return v
 
 
-def modal_string(sides: int) -> str:
+def solve(sides: int) -> str:
     P = build_transition(sides)
     v = stationary_distribution(P)
 
@@ -166,13 +166,8 @@ def modal_string(sides: int) -> str:
     return "".join(f"{i:02d}" for i in top3)
 
 
-def main() -> None:
-    # Check the example from the statement (standard dice)
-    assert modal_string(6) == "102400"
-
-    ans = modal_string(4)
-    print(ans)
-
-
 if __name__ == "__main__":
-    main()
+    # Check the example from the statement (standard dice)
+    assert solve(6) == "102400"
+
+    print(solve(4))

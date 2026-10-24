@@ -723,7 +723,7 @@ theorem divisorCount.call (m : Nat) (positive : 0 < m) (heap : Mutable.Heap) (ad
   · exact HeapCalls.Evaluates.method lookup (by decide) bound (.cons argument .nil) execution
 
 private def searchBody : List Stmt :=
-  match ((executableBody ((findFunctionIn program.body "first_triangular_with_over").getD ([], [])).2)[2]? : Option Stmt) with
+  match ((executableBody ((findFunctionIn program.body "solve").getD ([], [])).2)[2]? : Option Stmt) with
   | some (.whileDo _ body _) => body
   | _ => []
 
@@ -854,7 +854,7 @@ decreasing_by omega
 
 /-- The optimized Python function returns the same mathematical least triangle as the reference. -/
 theorem search.result (k : Nat) (heap : Mutable.Heap) :
-    ∃ finalHeap, HeapCalls.ReturnsValue program "first_triangular_with_over" [.scalar (.int k)] heap
+    ∃ finalHeap, HeapCalls.ReturnsValue program "solve" [.scalar (.int k)] heap
       (.scalar (.int (ProjectEulerStatements.P12.naive k))) finalHeap := by
   let env := HeapCalls.setLocal (HeapCalls.setLocal
     (HeapCalls.argumentEnv [⟨"k", some (.name "int"), none⟩] [.scalar (.int k)])
@@ -868,10 +868,10 @@ theorem search.result (k : Nat) (heap : Mutable.Heap) :
   apply HeapCalls.BlockReturns.assign HeapCalls.Evaluates.constant
   simpa only [ProjectEulerStatements.P12.naive_eq_firstTriangleOver] using loop
 
-theorem first_triangular_with_over.«Equiv(naive)» (k : Int)
+theorem solve.«Equiv(naive)» (k : Int)
     (domain : Calls.Condition program (fun name => if name = "k" then some (.int k) else none)
-      Solvers.P12Ast.requires_first_triangular_with_over_0) :
-    (HeapCalls.scalarFunction program "first_triangular_with_over" [.int k]).Equiv
+      Solvers.P12Ast.requires_solve_0) :
+    (HeapCalls.scalarFunction program "solve" [.int k]).Equiv
       (HeapCalls.scalarFunction P12Ast.module "naive" [.int k]) := by
   have nonnegative : 0 ≤ k := by
     simpa [evalCmpOp] using Calls.Evaluates.condition_int_compare domain rfl
@@ -889,12 +889,12 @@ theorem first_triangular_with_over.«Equiv(naive)» (k : Int)
     rw [finished.unique reference]
     exact optimized
 
-theorem first_triangular_with_over.«Supported» :
+theorem solve.«Supported» :
     (∀ k : Int, Calls.Condition program (fun name => if name = "k" then some (.int k) else none)
-      Solvers.P12Ast.requires_first_triangular_with_over_0 →
-      (HeapCalls.scalarFunction program "first_triangular_with_over" [.int k]).Supported) ∧
+      Solvers.P12Ast.requires_solve_0 →
+      (HeapCalls.scalarFunction program "solve" [.int k]).Supported) ∧
     (∀ k : Int, Calls.Condition program (fun name => if name = "k" then some (.int k) else none)
-      Solvers.P12Ast.requires_first_triangular_with_over_0 →
+      Solvers.P12Ast.requires_solve_0 →
       (HeapCalls.scalarFunction P12Ast.module "naive" [.int k]).Supported) := by
   constructor
   · intro k domain

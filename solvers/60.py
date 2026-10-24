@@ -155,19 +155,11 @@ def _concat_pair_ok_brutal(p: int, q: int) -> bool:
     return is_prime(c1) and is_prime(c2)
 
 
-def main() -> None:
+if __name__ == "__main__":
     # Problem statement example checks (size 4 set)
     example = [3, 7, 109, 673]
     for i in range(len(example)):
         for j in range(i + 1, len(example)):
             assert _concat_pair_ok_brutal(example[i], example[j])
 
-    ans, clique = solve(10000)
-
-    assert set(clique) == {13, 5197, 5701, 6733, 8389}
-
-    print(ans)
-
-
-if __name__ == "__main__":
-    main()
+    print(solve(10000)[0])

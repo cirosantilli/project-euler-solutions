@@ -78,15 +78,10 @@ def solve(n: int = 1000) -> int:
     return sum(letters_in_number(i) for i in range(1, n + 1))
 
 
-def main() -> None:
+if __name__ == "__main__":
     # Given examples / checks
     assert sum(letters_in_number(i) for i in range(1, 6)) == 19
     assert letters_in_number(342) == 23
     assert letters_in_number(115) == 20
 
-    ans = solve()
-    print(ans)
-
-
-if __name__ == "__main__":
-    main()
+    print(solve())

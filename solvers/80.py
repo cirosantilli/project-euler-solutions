@@ -33,14 +33,8 @@ def solve() -> int:
     return total
 
 
-def main() -> None:
+if __name__ == "__main__":
     # Given example check: sqrt(2) first 100 digits sum is 475
     assert digital_sum_first_100_digits_of_sqrt(2) == 475
 
-    ans = solve()
-
-    print(ans)
-
-
-if __name__ == "__main__":
-    main()
+    print(solve())

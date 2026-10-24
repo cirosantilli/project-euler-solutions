@@ -53,15 +53,7 @@ def solve(limit: int = 1000) -> int:
     return best_d
 
 
-def _tests() -> None:
+if __name__ == "__main__":
     # From the statement/example
     assert minimal_pell_x(13) == 649
-
-
-def main() -> None:
-    _tests()
     print(solve(1000))
-
-
-if __name__ == "__main__":
-    main()

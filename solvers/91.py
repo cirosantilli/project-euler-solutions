@@ -4,7 +4,7 @@ from __future__ import annotations
 from math import gcd
 
 
-def count_right_triangles(n: int) -> int:
+def solve(n: int) -> int:
     """
     Count right triangles OPQ with O=(0,0), P and Q integer points in [0,n]x[0,n],
     P != Q, P,Q != O.
@@ -36,13 +36,8 @@ def count_right_triangles(n: int) -> int:
     return total
 
 
-def main() -> None:
-    # Example from the statement: for n=2 there are 14 right triangles
-    assert count_right_triangles(2) == 14
-
-    ans = count_right_triangles(50)
-    print(ans)
-
-
 if __name__ == "__main__":
-    main()
+    # Example from the statement: for n=2 there are 14 right triangles
+    assert solve(2) == 14
+
+    print(solve(50))

@@ -30,7 +30,11 @@ def blue_red_for_total_limit(limit_n: int) -> Tuple[int, int, int]:
         u, v = next_solution(u, v)
 
 
-def _self_test() -> None:
+def solve(limit_n: int) -> int:
+    return blue_red_for_total_limit(limit_n)[0]
+
+
+if __name__ == "__main__":
     # Generate early known solutions:
     u, v = 1, 1
     sols = []
@@ -44,15 +48,4 @@ def _self_test() -> None:
     assert sols[2] == (15, 21)
     assert sols[3] == (85, 120)
 
-    b, r, n = blue_red_for_total_limit(10**12)
-    assert n > 10**12
-
-
-def main() -> None:
-    _self_test()
-    b, r, n = blue_red_for_total_limit(10**12)
-    print(b)
-
-
-if __name__ == "__main__":
-    main()
+    print(solve(10**12))

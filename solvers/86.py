@@ -27,7 +27,7 @@ def count_solutions_up_to(M: int) -> int:
     return total
 
 
-def least_M_exceeding(target: int) -> int:
+def solve(target: int) -> int:
     """
     Incrementally extend max side length c = M, maintaining total count.
     """
@@ -47,14 +47,9 @@ def least_M_exceeding(target: int) -> int:
     return c
 
 
-def main() -> None:
+if __name__ == "__main__":
     # Given checks from the problem statement
     assert count_solutions_up_to(99) == 1975
     assert count_solutions_up_to(100) == 2060
 
-    ans = least_M_exceeding(1_000_000)
-    print(ans)
-
-
-if __name__ == "__main__":
-    main()
+    print(solve(1_000_000))

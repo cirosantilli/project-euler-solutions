@@ -57,12 +57,6 @@ def digit_signature(x: int) -> int:
 def solve(limit: int = MAX_N) -> int:
     phi = compute_phi_linear(limit)
 
-    # Asserts from the statement / examples.
-    assert phi[1] == 1
-    assert phi[9] == 6
-    assert phi[87109] == 79180
-    assert digit_signature(87109) == digit_signature(79180)
-
     best_n = 0
     best_phi = 1
 
@@ -96,5 +90,11 @@ def solve(limit: int = MAX_N) -> int:
 
 
 if __name__ == "__main__":
-    ans = solve()
-    print(ans)
+    sample_phi = compute_phi_linear(87109)
+    # Asserts from the statement / examples.
+    assert sample_phi[1] == 1
+    assert sample_phi[9] == 6
+    assert sample_phi[87109] == 79180
+    assert digit_signature(87109) == digit_signature(79180)
+
+    print(solve())

@@ -26,14 +26,6 @@ def amicable_chain_best(limit: int) -> Tuple[int, int]:
     """
     s = compute_sum_proper_divisors(limit)
 
-    # Quick correctness checks (from problem statement examples)
-    assert s[28] == 28
-    assert s[220] == 284 and s[284] == 220
-    # 12496 chain example (length 5)
-    example = [12496, 14288, 15472, 14536, 14264]
-    for a, b in zip(example, example[1:] + example[:1]):
-        assert s[a] == b
-
     processed = [False] * (limit + 1)
 
     best_len = 0
@@ -82,11 +74,19 @@ def amicable_chain_best(limit: int) -> Tuple[int, int]:
     return best_len, best_min
 
 
-def main() -> None:
-    limit = 1_000_000
-    best_len, best_min = amicable_chain_best(limit)
-    print(best_min)
+def solve(limit: int) -> int:
+    return amicable_chain_best(limit)[1]
 
 
 if __name__ == "__main__":
-    main()
+    sample_s = compute_sum_proper_divisors(15472)
+    # Quick correctness checks (from problem statement examples)
+    assert sample_s[28] == 28
+    assert sample_s[220] == 284 and sample_s[284] == 220
+    # 12496 chain example (length 5)
+    example = [12496, 14288, 15472, 14536, 14264]
+    for a, b in zip(example, example[1:] + example[:1]):
+        assert sample_s[a] == b
+
+    limit = 1_000_000
+    print(solve(limit))

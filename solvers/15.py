@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from typing import Final
 
 
 def binom(n: int, k: int) -> int:
@@ -32,14 +31,9 @@ def solve(n: int) -> int:
     return lattice_paths(n, n)
 
 
-def main() -> None:
+if __name__ == "__main__":
     # Test from statement: 2x2 grid has 6 routes
     assert lattice_paths(2, 2) == 6
 
     # Project Euler #15 target: 20x20 grid
-    ans: Final[int] = lattice_paths(20, 20)
-    print(ans)
-
-
-if __name__ == "__main__":
-    main()
+    print(lattice_paths(20, 20))

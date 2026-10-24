@@ -39,7 +39,7 @@ def build_terminal_for_sums(sum_sq: List[int], max_sum: int = 567) -> List[int]:
     return terminal
 
 
-def count_ending_at_89(limit_exclusive: int = 10_000_000) -> int:
+def solve(limit_exclusive: int = 10_000_000) -> int:
     # For numbers < 10,000,000 we have at most 7 digits, so max digit-square-sum is 7*81=567.
     MAX_SUM = 7 * 81
 
@@ -76,9 +76,5 @@ def count_ending_at_89(limit_exclusive: int = 10_000_000) -> int:
     return count
 
 
-def main() -> None:
-    print(count_ending_at_89(10_000_000))
-
-
 if __name__ == "__main__":
-    main()
+    print(solve(10_000_000))

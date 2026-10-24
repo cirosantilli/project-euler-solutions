@@ -14,11 +14,7 @@ def solve(n: int = 1000) -> int:
     return digit_sum(2**n)
 
 
-def _tests() -> None:
+if __name__ == "__main__":
     # Example from the statement
     assert digit_sum(2**15) == 26
-
-
-if __name__ == "__main__":
-    _tests()
     print(solve())

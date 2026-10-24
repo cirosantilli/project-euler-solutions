@@ -44,6 +44,10 @@ def is_truncatable_prime(n: int, is_prime: bytearray) -> bool:
 
 
 def solve() -> int:
+    """
+    @formalsw: Py from project_euler_statements.p37 import naive_default
+    @formalsw: Equiv(naive_default)
+    """
     # Known to be < 1,000,000; 739397 is the largest truncatable prime.
     LIMIT = 1_000_000
     is_prime = sieve(LIMIT)
@@ -70,9 +74,5 @@ def solve() -> int:
     return result
 
 
-def main() -> None:
-    print(solve())
-
-
 if __name__ == "__main__":
-    main()
+    print(solve())

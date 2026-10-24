@@ -5,7 +5,7 @@ from math import gcd
 from typing import Final
 
 
-def count_between_one_third_and_one_half(limit: int) -> int:
+def solve(limit: int) -> int:
     """
     Count reduced proper fractions n/d with:
       1/3 < n/d < 1/2, 1 <= d <= limit, gcd(n,d)=1
@@ -29,14 +29,9 @@ def count_between_one_third_and_one_half(limit: int) -> int:
     return total
 
 
-def main() -> None:
+if __name__ == "__main__":
     # Example from the statement: d <= 8 has exactly 3 fractions in (1/3, 1/2)
-    assert count_between_one_third_and_one_half(8) == 3
+    assert solve(8) == 3
 
     LIMIT: Final[int] = 12_000
-    ans = count_between_one_third_and_one_half(LIMIT)
-    print(ans)
-
-
-if __name__ == "__main__":
-    main()
+    print(solve(LIMIT))

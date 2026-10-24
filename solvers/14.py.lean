@@ -339,7 +339,7 @@ private theorem walk_hit (limit n : Nat) (positive : 0 < n) (env : Mutable.Env) 
     · apply BlockContinues.assign (value := .scalar (.int (collatzLen n))) (finalHeap := heap)
       apply Evaluates.dictionary_get (by intro name same; cases same; simp [bigLocal])
         (Evaluates.lookup bigLocal) bigFound (.cons (Evaluates.lookup vertexLocal) .nil)
-      simp [primitive, Mutable.dictionaryGet, Mutable.dictionaryKey, bigFound, show ScalarDict.lookup big (.int n) = some (.scalar (.int (collatzLen n))) by simpa [inside] using known]
+      simp [primitive, Mutable.dictionaryGet, bigFound, show ScalarDict.lookup big (.int n) = some (.scalar (.int (collatzLen n))) by simpa [inside] using known]
     · apply BlockContinues.branch_next (value := .scalar (.bool true)) (flag := true)
       · apply Evaluates.unary
         · exact Evaluates.builtin (.cons (Evaluates.lookup rfl) (.cons .constant .nil)) rfl
@@ -384,7 +384,7 @@ private theorem probe_miss (limit n : Nat) (env : Mutable.Env) (heap : Mutable.H
     · apply BlockContinues.assign (value := .scalar .none) (finalHeap := heap)
       apply Evaluates.dictionary_get (by intro name same; cases same; simp [bigLocal])
         (Evaluates.lookup bigLocal) bigFound (.cons (Evaluates.lookup vertexLocal) .nil)
-      simp [primitive, Mutable.dictionaryGet, Mutable.dictionaryKey, bigFound, show ScalarDict.lookup big (.int n) = none by simpa [inside] using miss]
+      simp [primitive, Mutable.dictionaryGet, bigFound, show ScalarDict.lookup big (.int n) = none by simpa [inside] using miss]
     · apply BlockContinues.branch (value := .scalar (.bool false)) (flag := false)
       · apply Evaluates.unary
         · exact Evaluates.builtin (.cons (Evaluates.lookup rfl) (.cons .constant .nil)) rfl

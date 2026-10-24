@@ -288,8 +288,8 @@ theorem small_result (maximum : Int) (small : maximum ≤ 0) (heap : Mutable.Hea
 end Sieve
 
 /-- Empty candidate ranges still execute the sieve allocation and return zero. -/
-theorem amicable_sum_under.small_result (limit : Int) (small : limit ≤ 1) (heap : Mutable.Heap) :
-    ReturnsValue program "amicable_sum_under" [.scalar (.int limit)] heap (.scalar (.int 0))
+theorem solve.small_result (limit : Int) (small : limit ≤ 1) (heap : Mutable.Heap) :
+    ReturnsValue program "solve" [.scalar (.int limit)] heap (.scalar (.int 0))
       (heap ++ [.list [.scalar (.int 0)], .list (List.replicate limit.toNat (.scalar (.int 0)))]) := by
   let allocated := heap ++ [.list [.scalar (.int 0)], .list (List.replicate limit.toNat (.scalar (.int 0)))]
   apply BlockReturns.function rfl rfl
@@ -303,10 +303,10 @@ theorem amicable_sum_under.small_result (limit : Int) (small : limit ≤ 1) (hea
     apply BlockReturns.range_done (by simp [Calls.rangeContinues]; omega)
     exact BlockReturns.return_value (Evaluates.lookup rfl)
 
-theorem amicable_sum_under.small_equiv (limit : Int) (small : limit ≤ 1) :
-    (HeapCalls.scalarFunction program "amicable_sum_under" [.int limit]).Equiv
+theorem solve.small_equiv (limit : Int) (small : limit ≤ 1) :
+    (HeapCalls.scalarFunction program "solve" [.int limit]).Equiv
       (Calls.function P21Ast.module "naive" [.int limit]) := by
-  have optimized := ReturnsValue.scalar_finishes (values := [.int limit]) (amicable_sum_under.small_result limit small [])
+  have optimized := ReturnsValue.scalar_finishes (values := [.int limit]) (solve.small_result limit small [])
   have reference := (data.«project-euler-statements».data.py.project_euler_statements.p21.naive.empty_result limit small).finishes
   intro outcome
   constructor
@@ -662,12 +662,12 @@ private theorem test (x size address : Nat) (env : Mutable.Env) (heap : Mutable.
     · simp [HeapCalls.compare, scalarCompare, evalCmpOp]
 
 private def definition : List Arg × List Stmt :=
-  (findFunctionIn program.body "__formalsw_local_amicable_sum_under_d").getD ([], [])
+  (findFunctionIn program.body "__formalsw_local_solve_d").getD ([], [])
 
 /-- The local helper reads the captured sieve or computes the same value by factorization. -/
 theorem result (x size address : Nat) (heap : Mutable.Heap)
     (found : heap[address]? = some (.list (Sieve.table size d))) :
-    ReturnsValue program "__formalsw_local_amicable_sum_under_d" [number x, .ref address]
+    ReturnsValue program "__formalsw_local_solve_d" [number x, .ref address]
       heap (number (d x)) heap := by
   apply BlockReturns.function rfl rfl
   have condition := test x size address (functionEnv definition.1 definition.2 [number x, .ref address] []) heap rfl rfl found
@@ -690,11 +690,11 @@ private abbrev number (n : Nat) : Mutable.Value := .scalar (.int n)
 
 private def condition : Expr := .boolOp .and
   [.compare (.name "b") [(.notEq, .name "a")],
-   .compare (.call (.name "__formalsw_local_amicable_sum_under_d") [.name "b", .name "divsum"])
+   .compare (.call (.name "__formalsw_local_solve_d") [.name "b", .name "divsum"])
      [(.eq, .name "a")]]
 
 private def body : List Stmt :=
-  [.assign [.name "b"] (.call (.name "__formalsw_local_amicable_sum_under_d") [.name "a", .name "divsum"]),
+  [.assign [.name "b"] (.call (.name "__formalsw_local_solve_d") [.name "a", .name "divsum"]),
    .ifThen condition [.augAssign (.name "total") .add (.name "a")] []]
 
 private def term (n : Nat) : Nat := if isAmicable n then n else 0
@@ -805,11 +805,11 @@ private theorem selected_eq (limit : Nat) (large : 2 ≤ limit) :
   · exact (List.nodup_range' (s := 2) (n := limit - 2)).filter _
 
 private def definition : List Arg × List Stmt :=
-  (findFunctionIn program.body "amicable_sum_under").getD ([], [])
+  (findFunctionIn program.body "solve").getD ([], [])
 
 /-- The original solver's sieve, captured helper, and outer loop implement the finite statement. -/
 theorem result (limit : Nat) (large : 2 ≤ limit) (heap : Mutable.Heap) :
-    ReturnsValue program "amicable_sum_under" [number limit] heap (number (naive limit))
+    ReturnsValue program "solve" [number limit] heap (number (naive limit))
       (heap ++ [.list [number 0], .list (Sieve.table limit d)]) := by
   let allocated := heap ++ [.list [number 0], .list (Sieve.table limit d)]
   let initial := setLocal (setLocal (functionEnv definition.1 definition.2 [number limit] [])
@@ -837,11 +837,11 @@ theorem result (limit : Nat) (large : 2 ≤ limit) (heap : Mutable.Heap) :
 end Sum
 
 /-- Every integer input agrees with the independently proved naive Python implementation. -/
-theorem amicable_sum_under.«Equiv(naive)» (limit : Int) :
-    (HeapCalls.scalarFunction program "amicable_sum_under" [.int limit]).Equiv
+theorem solve.«Equiv(naive)» (limit : Int) :
+    (HeapCalls.scalarFunction program "solve" [.int limit]).Equiv
       (Calls.function P21Ast.module "naive" [.int limit]) := by
   by_cases small : limit ≤ 1
-  · exact amicable_sum_under.small_equiv limit small
+  · exact solve.small_equiv limit small
   · lift limit to Nat using (by omega : 0 ≤ limit)
     have optimized := ReturnsValue.scalar_finishes (values := [.int limit]) (Sum.result limit (by omega) [])
     have reference := (data.«project-euler-statements».data.py.project_euler_statements.p21.naive.result limit).finishes
@@ -854,14 +854,14 @@ theorem amicable_sum_under.«Equiv(naive)» (limit : Int) :
       rw [finished.unique reference]
       exact optimized
 
-theorem amicable_sum_under.«Supported» :
-    (∀ limit : Int, (HeapCalls.scalarFunction program "amicable_sum_under" [.int limit]).Supported) ∧
+theorem solve.«Supported» :
+    (∀ limit : Int, (HeapCalls.scalarFunction program "solve" [.int limit]).Supported) ∧
     (∀ limit : Int, (Calls.function P21Ast.module "naive" [.int limit]).Supported) := by
   constructor
   · intro limit
     by_cases small : limit ≤ 1
     · exact (ReturnsValue.scalar_returns (values := [.int limit])
-        (amicable_sum_under.small_result limit small [])).supported
+        (solve.small_result limit small [])).supported
     · lift limit to Nat using (by omega : 0 ≤ limit)
       exact (ReturnsValue.scalar_returns (values := [.int limit]) (Sum.result limit (by omega) [])).supported
   · intro limit

@@ -20,6 +20,10 @@ def digit_factorial_sum(n: int, facts: List[int]) -> int:
 
 
 def solve() -> int:
+    """
+    @formalsw: Py from project_euler_statements.p34 import naive_default
+    @formalsw: Equiv(naive_default)
+    """
     facts = precompute_factorials()
 
     # Upper bound:
@@ -40,5 +44,4 @@ def solve() -> int:
 
 
 if __name__ == "__main__":
-    ans = solve()
-    print(ans)
+    print(solve())

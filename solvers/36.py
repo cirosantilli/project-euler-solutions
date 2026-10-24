@@ -27,6 +27,11 @@ def generate_decimal_palindromes(limit: int) -> List[int]:
 
 
 def solve(limit: int = 1_000_000) -> int:
+    """
+    @formalsw: Py from project_euler_statements.p36 import naive
+    @formalsw: Requires(0 <= limit <= 1_000_000)
+    @formalsw: Equiv(naive)
+    """
     total = 0
     for n in generate_decimal_palindromes(limit):
         # Binary palindrome cannot be even (would end with 0 -> leading zero when reversed)
@@ -37,15 +42,10 @@ def solve(limit: int = 1_000_000) -> int:
     return total
 
 
-def main() -> None:
+if __name__ == "__main__":
     # Provided example: 585 is palindromic in base 10 and base 2
     assert str(585) == str(585)[::-1]
     assert is_palindrome_base2(585)
 
-    ans = solve(1_000_000)
 
-    print(ans)
-
-
-if __name__ == "__main__":
-    main()
+    print(solve(1_000_000))

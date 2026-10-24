@@ -335,13 +335,13 @@ private theorem yearLoop.result (startYear endYear year count : Nat) (initial : 
         · simpa only [ProjectEulerStatements.P19.eligibleYears_succ, if_neg eligible, Nat.cast_add,
             Nat.cast_zero, years, Int.add_zero, Int.zero_add] using savedFinal
 
-theorem count_sundays_on_first.result (heap : Mutable.Heap) (startYear endYear : Nat)
+theorem solve.result (heap : Mutable.Heap) (startYear endYear : Nat)
     (afterEpoch : 1900 ≤ startYear) (ordered : startYear ≤ endYear) :
-    ∃ extra, ReturnsValue program "count_sundays_on_first" [.scalar (.int startYear), .scalar (.int endYear)] heap
+    ∃ extra, ReturnsValue program "solve" [.scalar (.int startYear), .scalar (.int endYear)] heap
       (.scalar (.int (sundaysInYears startYear (endYear + 1 - startYear)))) (heap ++ extra) := by
   let env := functionEnv
     [{name := "start_year", annotation := some (.name "int")}, {name := "end_year", annotation := some (.name "int")}]
-    ((findFunctionIn program.body "count_sundays_on_first").getD ([], [])).2
+    ((findFunctionIn program.body "solve").getD ([], [])).2
     [.scalar (.int startYear), .scalar (.int endYear)] []
   let initialEnv := setLocal (setLocal env "dow_first_of_month" (.scalar (.int 0))) "count" (.scalar (.int 0))
   have saved : CountEnv initialEnv startYear endYear (dayOfWeek 1900 1 1) 0 := ⟨rfl, rfl, rfl, rfl⟩
@@ -363,7 +363,7 @@ theorem count_sundays_on_first.result (heap : Mutable.Heap) (startYear endYear :
 
 private abbrev CountCondition (startYear endYear : Int) := Calls.Condition program
   (fun name => if name = "start_year" then some (.int startYear) else if name = "end_year" then some (.int endYear) else none)
-  Solvers.P19Ast.requires_count_sundays_on_first_0
+  Solvers.P19Ast.requires_solve_0
 
 private theorem countConditionEvaluation (module : Module) (startYear endYear : Int) :
     Calls.Evaluates module
@@ -394,14 +394,14 @@ private theorem CountCondition.domain (startYear endYear : Int) (condition : Cou
   have same := (countConditionEvaluation program startYear endYear).condition_iff.mp condition
   simpa only [Constant.bool.injEq, decide_eq_true_eq] using same
 
-theorem count_sundays_on_first.«Equiv(naive_years)» (startYear endYear : Int)
+theorem solve.«Equiv(naive_years)» (startYear endYear : Int)
     (condition : CountCondition startYear endYear) :
-    (HeapCalls.scalarFunction program "count_sundays_on_first" [.int startYear, .int endYear]).Equiv
+    (HeapCalls.scalarFunction program "solve" [.int startYear, .int endYear]).Equiv
       (HeapCalls.scalarFunction P19Ast.module "naive_years" [.int startYear, .int endYear]) := by
   obtain ⟨afterEpoch, ordered⟩ := CountCondition.domain startYear endYear condition
   lift startYear to Nat using (by omega : 0 ≤ startYear)
   lift endYear to Nat using (by omega : 0 ≤ endYear)
-  obtain ⟨extra, optimized⟩ := count_sundays_on_first.result [] startYear endYear (by omega) (by omega)
+  obtain ⟨extra, optimized⟩ := solve.result [] startYear endYear (by omega) (by omega)
   obtain ⟨other, reference⟩ := data.«project-euler-statements».data.py.project_euler_statements.p19.naive_years.result
     [] startYear endYear (by omega) (by omega)
   have optimizedRun := ReturnsValue.scalar_finishes (values := [.int startYear, .int endYear]) optimized
@@ -415,9 +415,9 @@ theorem count_sundays_on_first.«Equiv(naive_years)» (startYear endYear : Int)
     rw [run.unique referenceRun]
     exact optimizedRun
 
-theorem count_sundays_on_first.«Supported» :
+theorem solve.«Supported» :
     (∀ startYear endYear, CountCondition startYear endYear →
-      (HeapCalls.scalarFunction program "count_sundays_on_first" [.int startYear, .int endYear]).Supported) ∧
+      (HeapCalls.scalarFunction program "solve" [.int startYear, .int endYear]).Supported) ∧
     (∀ startYear endYear, CountCondition startYear endYear →
       (HeapCalls.scalarFunction P19Ast.module "naive_years" [.int startYear, .int endYear]).Supported) := by
   constructor
@@ -425,7 +425,7 @@ theorem count_sundays_on_first.«Supported» :
     obtain ⟨afterEpoch, ordered⟩ := CountCondition.domain startYear endYear condition
     lift startYear to Nat using (by omega : 0 ≤ startYear)
     lift endYear to Nat using (by omega : 0 ≤ endYear)
-    obtain ⟨extra, optimized⟩ := count_sundays_on_first.result [] startYear endYear (by omega) (by omega)
+    obtain ⟨extra, optimized⟩ := solve.result [] startYear endYear (by omega) (by omega)
     exact optimized.scalar_returns.supported
   · intro startYear endYear _
     exact (data.«project-euler-statements».data.py.project_euler_statements.p19.naive_years.«Returns» startYear endYear).supported

@@ -2,7 +2,7 @@
 from typing import Tuple
 
 
-def first_fib_index_with_digits(digits: int) -> int:
+def solve(digits: int) -> int:
     """
     @formalsw: Py from project_euler_statements.p25 import naive
     @formalsw: Requires(digits >= 1)
@@ -24,15 +24,10 @@ def first_fib_index_with_digits(digits: int) -> int:
     return n
 
 
-def main() -> None:
-    # Tests implied by the statement / known small cases
-    assert first_fib_index_with_digits(1) == 1  # F_1 = 1
-    assert first_fib_index_with_digits(2) == 7  # F_7 = 13
-    assert first_fib_index_with_digits(3) == 12  # F_12 = 144
-
-    ans = first_fib_index_with_digits(1000)
-    print(ans)
-
-
 if __name__ == "__main__":
-    main()
+    # Tests implied by the statement / known small cases
+    assert solve(1) == 1  # F_1 = 1
+    assert solve(2) == 7  # F_7 = 13
+    assert solve(3) == 12  # F_12 = 144
+
+    print(solve(1000))

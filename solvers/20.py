@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 
-def factorial_digit_sum(n: int) -> int:
+def solve(n: int) -> int:
     """
     @formalsw: Py from project_euler_statements.p20 import naive
     @formalsw: Requires(n >= 0)
@@ -13,12 +13,8 @@ def factorial_digit_sum(n: int) -> int:
     return sum(int(ch) for ch in str(fact))
 
 
-def main() -> None:
-    # Test case from the problem statement
-    assert factorial_digit_sum(10) == 27
-
-    print(factorial_digit_sum(100))
-
-
 if __name__ == "__main__":
-    main()
+    # Test case from the problem statement
+    assert solve(10) == 27
+
+    print(solve(100))

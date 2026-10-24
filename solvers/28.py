@@ -2,7 +2,7 @@
 from typing import Final
 
 
-def spiral_diagonals_sum(n: int) -> int:
+def solve(n: int) -> int:
     """
     Sum of the numbers on both diagonals in an n x n number spiral (n odd).
 
@@ -23,16 +23,12 @@ def spiral_diagonals_sum(n: int) -> int:
     return total
 
 
-def main() -> None:
+if __name__ == "__main__":
     # Given example
-    assert spiral_diagonals_sum(5) == 101
+    assert solve(5) == 101
     # Small sanity checks
-    assert spiral_diagonals_sum(1) == 1
-    assert spiral_diagonals_sum(3) == 25
+    assert solve(1) == 1
+    assert solve(3) == 25
 
     N: Final[int] = 1001
-    print(spiral_diagonals_sum(N))
-
-
-if __name__ == "__main__":
-    main()
+    print(solve(N))

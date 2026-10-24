@@ -118,11 +118,6 @@ def solve(words: List[str]) -> int:
     return best
 
 
-def main() -> None:
-    words = read_words()
-    ans = solve(words)
-    print(ans)
-
-
 if __name__ == "__main__":
-    main()
+    words = read_words()
+    print(solve(words))

@@ -29,7 +29,7 @@ def names_are_uppercase(names: list[str]) -> bool:
     return True
 
 
-def total_name_scores(names: list[str]) -> int:
+def solve(names: list[str]) -> int:
     """
     @formalsw: Py from project_euler_statements.p22 import naive
     @formalsw: Requires(names_are_uppercase(names))
@@ -42,7 +42,7 @@ def total_name_scores(names: list[str]) -> int:
     return total
 
 
-def main() -> None:
+if __name__ == "__main__":
     names = load_names()
     names_sorted = sorted(names)
 
@@ -52,10 +52,5 @@ def main() -> None:
     assert colin_pos == 938
     assert colin_score == 49714
 
-    ans = total_name_scores(names)
 
-    print(ans)
-
-
-if __name__ == "__main__":
-    main()
+    print(solve(names))

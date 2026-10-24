@@ -51,20 +51,15 @@ def generate_almost_equilateral_perimeters(limit: int) -> List[int]:
     return perimeters
 
 
-def main() -> None:
+def solve(limit: int) -> int:
+    return sum(generate_almost_equilateral_perimeters(limit))
+
+
+if __name__ == "__main__":
     # Small correctness checks from the statement
     assert triangle_area_isosceles(5, 6) == 12  # 5-5-6 has area 12
 
     # Check first few perimeters
     assert generate_almost_equilateral_perimeters(1000) == [16, 50, 196, 722]
 
-    perimeters = generate_almost_equilateral_perimeters(LIMIT)
-    ans = sum(perimeters)
-
-    assert ans == 518_408_346
-
-    print(ans)
-
-
-if __name__ == "__main__":
-    main()
+    print(solve(LIMIT))

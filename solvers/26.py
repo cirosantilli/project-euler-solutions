@@ -44,7 +44,7 @@ def solve(limit: int = 1000) -> int:
     return best_d
 
 
-def _tests() -> None:
+if __name__ == "__main__":
     # Examples from the statement
     assert recurring_cycle_length(2) == 0
     assert recurring_cycle_length(3) == 1
@@ -55,12 +55,4 @@ def _tests() -> None:
     assert recurring_cycle_length(8) == 0
     assert recurring_cycle_length(9) == 1
     assert recurring_cycle_length(10) == 0
-
-
-def main() -> None:
-    _tests()
     print(solve(1000))
-
-
-if __name__ == "__main__":
-    main()

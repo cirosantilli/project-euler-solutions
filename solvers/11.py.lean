@@ -303,14 +303,14 @@ private abbrev countEnv (k : Int) : HeapCalls.Env :=
   fun name => if name = "k" then some (.scalar (.int k)) else none
 
 private theorem count_condition (heap : Mutable.Heap) (k : Int) :
-    HeapCalls.Evaluates program (countEnv k) Solvers.P11Ast.requires_max_adjacent_product_0 heap
+    HeapCalls.Evaluates program (countEnv k) Solvers.P11Ast.requires_solve_0 heap
       (.scalar (.bool (decide (0 ≤ k)))) heap :=
   HeapCalls.Evaluates.compare (HeapCalls.Evaluates.lookup rfl) HeapCalls.Evaluates.constant
     (by simp [HeapCalls.compare, scalarCompare, evalCmpOp])
 
-theorem requires_max_adjacent_product_0_supported (heap : Mutable.Heap) (grid : Nat) (k : Int)
+theorem requires_solve_0_supported (heap : Mutable.Heap) (grid : Nat) (k : Int)
     (_valid : Mutable.Heap.Valid heap) (_typed : Mutable.Value.HasType heap (.ref grid) "list[list[int]]") :
-    (HeapCalls.evaluate program (countEnv k) Solvers.P11Ast.requires_max_adjacent_product_0 heap).Supported :=
+    (HeapCalls.evaluate program (countEnv k) Solvers.P11Ast.requires_solve_0 heap).Supported :=
   Execution.supported_of_finishes (count_condition heap k).finishes
 
 /-- The four direction pairs are Python tuples stored in a Python list. -/
@@ -583,10 +583,10 @@ private abbrev directionAnnotation : Expr :=
 
 /-- The optimized source returns the cell-first mathematical maximum, extending
 only the private heap with its direction table. -/
-theorem max_adjacent_product.exact (heap : Mutable.Heap) (address : Nat)
+theorem solve.exact (heap : Mutable.Heap) (address : Nat)
     (grid : List (List Nat)) (view : GridView heap address grid) (columns n : Nat)
     (nonempty : 0 < grid.length) (rectangle : ∀ row ∈ grid, row.length = columns) :
-    HeapCalls.ReturnsValue program "max_adjacent_product" [.ref address, .scalar (.int n)] heap
+    HeapCalls.ReturnsValue program "solve" [.ref address, .scalar (.int n)] heap
       (.scalar (.int (↑((scannedProducts grid grid.length columns n).foldl max 0))))
       (heap ++ directionObjects heap) := by
   let args : List Arg :=
@@ -869,7 +869,7 @@ private abbrev gridEnv (address : Nat) : HeapCalls.Env :=
 
 private theorem grid_condition (heap : Mutable.Heap) (address : Nat)
     (typed : Mutable.Value.HasType heap (.ref address) "list[list[int]]") :
-    ∃ flag, HeapCalls.Evaluates program (gridEnv address) Solvers.P11Ast.requires_max_adjacent_product_1 heap
+    ∃ flag, HeapCalls.Evaluates program (gridEnv address) Solvers.P11Ast.requires_solve_1 heap
       (.scalar (.bool flag)) heap ∧ (flag = true → GridDomain heap address) := by
   rcases is_euler_grid.result heap address typed with ⟨domain, executed⟩ | executed
   · exact ⟨true, HeapCalls.Evaluates.call (.cons (HeapCalls.Evaluates.lookup rfl) .nil) executed, by intros; exact domain⟩
@@ -877,28 +877,28 @@ private theorem grid_condition (heap : Mutable.Heap) (address : Nat)
 
 private theorem grid_domain_of_condition (heap : Mutable.Heap) (address : Nat)
     (typed : Mutable.Value.HasType heap (.ref address) "list[list[int]]")
-    (requires : HeapCalls.Condition program (gridEnv address) Solvers.P11Ast.requires_max_adjacent_product_1 heap) :
+    (requires : HeapCalls.Condition program (gridEnv address) Solvers.P11Ast.requires_solve_1 heap) :
     GridDomain heap address := by
   obtain ⟨flag, evaluated, domain⟩ := grid_condition heap address typed
   exact domain (by simpa using evaluated.condition_iff.mp requires)
 
-theorem requires_max_adjacent_product_1_supported (heap : Mutable.Heap) (grid : Nat) (k : Int)
+theorem requires_solve_1_supported (heap : Mutable.Heap) (grid : Nat) (k : Int)
     (_valid : Mutable.Heap.Valid heap) (typed : Mutable.Value.HasType heap (.ref grid) "list[list[int]]")
-    (_count : HeapCalls.Condition program (countEnv k) Solvers.P11Ast.requires_max_adjacent_product_0 heap) :
-    (HeapCalls.evaluate program (gridEnv grid) Solvers.P11Ast.requires_max_adjacent_product_1 heap).Supported := by
+    (_count : HeapCalls.Condition program (countEnv k) Solvers.P11Ast.requires_solve_0 heap) :
+    (HeapCalls.evaluate program (gridEnv grid) Solvers.P11Ast.requires_solve_1 heap).Supported := by
   obtain ⟨_, evaluated, _⟩ := grid_condition heap grid typed
   exact Execution.supported_of_finishes evaluated.finishes
 
-theorem max_adjacent_product.«Equiv(naive)» (heap : Mutable.Heap) (address : Nat) (k : Int)
+theorem solve.«Equiv(naive)» (heap : Mutable.Heap) (address : Nat) (k : Int)
     (valid : Mutable.Heap.Valid heap) (typed : Mutable.Value.HasType heap (.ref address) "list[list[int]]")
-    (count : HeapCalls.Condition program (countEnv k) Solvers.P11Ast.requires_max_adjacent_product_0 heap)
-    (domain : HeapCalls.Condition program (gridEnv address) Solvers.P11Ast.requires_max_adjacent_product_1 heap) :
-    (HeapCalls.call program "max_adjacent_product" [.ref address, .scalar (.int k)] heap).Equiv
+    (count : HeapCalls.Condition program (countEnv k) Solvers.P11Ast.requires_solve_0 heap)
+    (domain : HeapCalls.Condition program (gridEnv address) Solvers.P11Ast.requires_solve_1 heap) :
+    (HeapCalls.call program "solve" [.ref address, .scalar (.int k)] heap).Equiv
       (HeapCalls.call P11Ast.module "naive" [.ref address, .scalar (.int k)] heap) := by
   have nonnegative : 0 ≤ k := by simpa using (count_condition heap k).condition_iff.mp count
   lift k to Nat using nonnegative
   obtain ⟨grid, ⟨view⟩, size, rectangle⟩ := grid_domain_of_condition heap address typed domain
-  have optimized := max_adjacent_product.exact heap address grid view 20 k (by omega) rectangle
+  have optimized := solve.exact heap address grid view 20 k (by omega) rectangle
   obtain ⟨extra, reference⟩ := data.«project-euler-statements».data.py.project_euler_statements.p11.naive.exact heap address grid view k
   have same : (scannedProducts grid grid.length 20 k).foldl max 0 = (directionalProducts grid 20 20 k).foldl max 0 := by
     rw [size, ← ProjectEulerStatements.P11.naive_eq_scanned, ProjectEulerStatements.P11.naive_eq_directional]
@@ -907,23 +907,23 @@ theorem max_adjacent_product.«Equiv(naive)» (heap : Mutable.Heap) (address : N
     (Mutable.Completion.equivalent_allocations heap (directionObjects heap) extra
       (.scalar (.int (↑((directionalProducts grid 20 20 k).foldl max 0)))) [] valid trivial (by simp))
 
-theorem max_adjacent_product.«Supported» :
+theorem solve.«Supported» :
     (∀ (heap : Mutable.Heap) (address : Nat) (k : Int), Mutable.Heap.Valid heap →
       Mutable.Value.HasType heap (.ref address) "list[list[int]]" →
-      HeapCalls.Condition program (countEnv k) Solvers.P11Ast.requires_max_adjacent_product_0 heap →
-      HeapCalls.Condition program (gridEnv address) Solvers.P11Ast.requires_max_adjacent_product_1 heap →
-      (HeapCalls.call program "max_adjacent_product" [.ref address, .scalar (.int k)] heap).Supported) ∧
+      HeapCalls.Condition program (countEnv k) Solvers.P11Ast.requires_solve_0 heap →
+      HeapCalls.Condition program (gridEnv address) Solvers.P11Ast.requires_solve_1 heap →
+      (HeapCalls.call program "solve" [.ref address, .scalar (.int k)] heap).Supported) ∧
     (∀ (heap : Mutable.Heap) (address : Nat) (k : Int), Mutable.Heap.Valid heap →
       Mutable.Value.HasType heap (.ref address) "list[list[int]]" →
-      HeapCalls.Condition program (countEnv k) Solvers.P11Ast.requires_max_adjacent_product_0 heap →
-      HeapCalls.Condition program (gridEnv address) Solvers.P11Ast.requires_max_adjacent_product_1 heap →
+      HeapCalls.Condition program (countEnv k) Solvers.P11Ast.requires_solve_0 heap →
+      HeapCalls.Condition program (gridEnv address) Solvers.P11Ast.requires_solve_1 heap →
       (HeapCalls.call P11Ast.module "naive" [.ref address, .scalar (.int k)] heap).Supported) := by
   constructor
   · intro heap address k _ typed count domain
     have nonnegative : 0 ≤ k := by simpa using (count_condition heap k).condition_iff.mp count
     lift k to Nat using nonnegative
     obtain ⟨grid, ⟨view⟩, size, rectangle⟩ := grid_domain_of_condition heap address typed domain
-    exact (max_adjacent_product.exact heap address grid view 20 k (by omega) rectangle).returns.supported
+    exact (solve.exact heap address grid view 20 k (by omega) rectangle).returns.supported
   · intro heap address k valid typed _ _
     exact data.«project-euler-statements».data.py.project_euler_statements.p11.naive.«Supported» heap address k valid typed
 

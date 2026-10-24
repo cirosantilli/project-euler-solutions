@@ -50,7 +50,7 @@ class PrimeTable:
         return total
 
 
-def first_triangular_with_over(k: int) -> int:
+def solve(k: int) -> int:
     """
     @formalsw: Py from project_euler_statements.p12 import naive
     @formalsw: Requires(k >= 0)
@@ -75,13 +75,8 @@ def first_triangular_with_over(k: int) -> int:
         n += 1
 
 
-def main() -> None:
-    # From the statement: first triangular number with over 5 divisors is 28.
-    assert first_triangular_with_over(5) == 28
-
-    ans = first_triangular_with_over(500)
-    print(ans)
-
-
 if __name__ == "__main__":
-    main()
+    # From the statement: first triangular number with over 5 divisors is 28.
+    assert solve(5) == 28
+
+    print(solve(500))

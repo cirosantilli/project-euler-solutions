@@ -18,7 +18,7 @@ def is_pentagonal(x: int) -> bool:
     return s * s == t and (1 + s) % 6 == 0
 
 
-def find_min_difference(limit: int = 10_000) -> int:
+def solve(limit: int = 10_000) -> int:
     pent: List[int] = [0] * (limit + 1)
     for n in range(1, limit + 1):
         pent[n] = pentagonal(n)
@@ -36,7 +36,7 @@ def find_min_difference(limit: int = 10_000) -> int:
     return best
 
 
-def _tests() -> None:
+if __name__ == "__main__":
     first10 = [1, 5, 12, 22, 35, 51, 70, 92, 117, 145]
     for i, v in enumerate(first10, start=1):
         assert pentagonal(i) == v
@@ -44,14 +44,4 @@ def _tests() -> None:
 
     assert pentagonal(4) + pentagonal(7) == pentagonal(8)  # 22 + 70 = 92
     assert not is_pentagonal(pentagonal(7) - pentagonal(4))  # 48 is not pentagonal
-
-
-def main() -> None:
-    _tests()
-    ans = find_min_difference(10_000)
-    assert ans == 5_482_660
-    print(ans)
-
-
-if __name__ == "__main__":
-    main()
+    print(solve(10_000))

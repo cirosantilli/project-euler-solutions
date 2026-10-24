@@ -1,6 +1,6 @@
 import «.formalsw».solvers.«2.py.ast»
 import data.«project-euler-statements».data.py.project_euler_statements.«p2.py»
-import FormalSW
+import lang.py.FormalSW.Calls
 import ProjectEulerSolutions.Equiv.P2
 
 namespace solvers.«2»

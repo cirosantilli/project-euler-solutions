@@ -49,7 +49,11 @@ def reduced_product_denominator(fracs: List[Tuple[int, int]]) -> int:
     return den_prod
 
 
-def main() -> None:
+def solve() -> int:
+    """
+    @formalsw: Py from project_euler_statements.p33 import naive
+    @formalsw: Equiv(naive)
+    """
     fracs = find_curious_fractions()
 
     # Tests based on known examples from the problem statement / known result
@@ -58,8 +62,8 @@ def main() -> None:
 
     ans = reduced_product_denominator(fracs)
 
-    print(ans)
+    return ans
 
 
 if __name__ == "__main__":
-    main()
+    print(solve())

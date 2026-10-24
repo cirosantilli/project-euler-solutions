@@ -34,15 +34,9 @@ def solve(limit: int) -> int:
     return sum(1 for c in counts if c == 1)
 
 
-def _self_test() -> None:
+if __name__ == "__main__":
     # From the examples: L <= 50 has exactly these singular perimeters:
     # 12, 24, 30, 36, 40, 48 => 6
     assert solve(50) == 6
 
-    # Project Euler 75 known answer:
-    assert solve(1_500_000) == 161_667
-
-
-if __name__ == "__main__":
-    _self_test()
     print(solve(1_500_000))

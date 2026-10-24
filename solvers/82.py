@@ -5,7 +5,7 @@ import sys
 from typing import List
 
 
-def minimal_path_sum_three_ways(mat: List[List[int]]) -> int:
+def solve(mat: List[List[int]]) -> int:
     """
     Project Euler 82:
     Start in any cell in left column, end in any cell in right column.
@@ -48,7 +48,7 @@ def read_input_matrix() -> List[List[int]]:
         return parse_matrix_from_text(f.read())
 
 
-def _self_test() -> None:
+if __name__ == "__main__":
     sample = [
         [131, 673, 234, 103, 18],
         [201, 96, 342, 965, 150],
@@ -56,15 +56,6 @@ def _self_test() -> None:
         [537, 699, 497, 121, 956],
         [805, 732, 524, 37, 331],
     ]
-    assert minimal_path_sum_three_ways(sample) == 994
-
-
-def main() -> None:
-    _self_test()
+    assert solve(sample) == 994
     mat = read_input_matrix()
-    ans = minimal_path_sum_three_ways(mat)
-    print(ans)
-
-
-if __name__ == "__main__":
-    main()
+    print(solve(mat))

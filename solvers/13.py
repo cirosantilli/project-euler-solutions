@@ -125,11 +125,6 @@ def solve(nums: list[int], k: int) -> int:
     return int(leading) if leading else 0
 
 
-def main() -> None:
-    nums = [line.strip() for line in NUMBERS_TEXT.splitlines() if line.strip()]
-    ans = first_ten_digits(nums)
-    print(ans)
-
-
 if __name__ == "__main__":
-    main()
+    nums = [line.strip() for line in NUMBERS_TEXT.splitlines() if line.strip()]
+    print(first_ten_digits(nums))

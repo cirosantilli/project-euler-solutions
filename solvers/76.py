@@ -2,7 +2,7 @@
 from typing import List
 
 
-def count_summations(n: int) -> int:
+def solve(n: int) -> int:
     """
     Number of ways to write n as a sum of at least two positive integers,
     where order does not matter (i.e., integer partitions excluding [n]).
@@ -18,12 +18,8 @@ def count_summations(n: int) -> int:
     return dp[n]
 
 
-def main() -> None:
-    # Given example: 5 can be written in 6 ways (excluding "5" itself)
-    assert count_summations(5) == 6
-
-    print(count_summations(100))
-
-
 if __name__ == "__main__":
-    main()
+    # Given example: 5 can be written in 6 ways (excluding "5" itself)
+    assert solve(5) == 6
+
+    print(solve(100))

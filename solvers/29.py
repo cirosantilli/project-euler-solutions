@@ -2,7 +2,7 @@
 from typing import Set
 
 
-def count_distinct_powers(max_a: int, max_b: int) -> int:
+def solve(max_a: int, max_b: int) -> int:
     """
     @formalsw: Py from project_euler_statements.p29 import naive
     @formalsw: Equiv(naive)
@@ -14,12 +14,8 @@ def count_distinct_powers(max_a: int, max_b: int) -> int:
     return len(vals)
 
 
-def main() -> None:
-    # Test case from the problem statement: 2 <= a <= 5, 2 <= b <= 5 -> 15 distinct terms
-    assert count_distinct_powers(5, 5) == 15
-
-    print(count_distinct_powers(100, 100))
-
-
 if __name__ == "__main__":
-    main()
+    # Test case from the problem statement: 2 <= a <= 5, 2 <= b <= 5 -> 15 distinct terms
+    assert solve(5, 5) == 15
+
+    print(solve(100, 100))

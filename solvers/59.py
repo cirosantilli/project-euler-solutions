@@ -106,17 +106,16 @@ def best_key_and_sum(cipher: bytes) -> Tuple[bytes, int]:
     return bytes(best_key), best_sum
 
 
-def main() -> None:
+def solve(cipher: bytes) -> int:
+    return best_key_and_sum(cipher)[1]
+
+
+if __name__ == "__main__":
     # Small sanity check from statement: 65 XOR 42 = 107
     assert (65 ^ 42) == 107
     assert (107 ^ 42) == 65
 
     cipher = load_cipher()
-    key, total = best_key_and_sum(cipher)
 
     # Print the required answer: sum of ASCII values in the decrypted text
-    print(total)
-
-
-if __name__ == "__main__":
-    main()
+    print(solve(cipher))

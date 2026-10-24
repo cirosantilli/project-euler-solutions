@@ -46,7 +46,7 @@ def can_be_written_as_prime_plus_twice_square(n: int, primes: List[int]) -> bool
     return False
 
 
-def smallest_counterexample() -> int:
+def solve() -> int:
     primes: List[int] = [2, 3]
     n = 9
     while True:
@@ -57,18 +57,9 @@ def smallest_counterexample() -> int:
         n += 2
 
 
-def _self_test() -> None:
+if __name__ == "__main__":
     primes: List[int] = [2, 3]
     # Examples given in the statement should all be representable.
     for x in [9, 15, 21, 25, 27, 33]:
         assert can_be_written_as_prime_plus_twice_square(x, primes), x
-
-
-def main() -> None:
-    _self_test()
-    ans = smallest_counterexample()
-    print(ans)
-
-
-if __name__ == "__main__":
-    main()
+    print(solve())

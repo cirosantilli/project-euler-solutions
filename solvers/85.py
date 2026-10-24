@@ -51,13 +51,12 @@ def best_grid_area_near(target: int) -> Tuple[int, int, int]:
     return best_m, best_n, best_area
 
 
-def main() -> None:
-    # Given example from statement: 3 by 2 contains 18 rectangles
-    assert rectangle_count(3, 2) == 18
-
-    m, n, area = best_grid_area_near(TARGET)
-    print(area)
+def solve(target: int) -> int:
+    return best_grid_area_near(target)[2]
 
 
 if __name__ == "__main__":
-    main()
+    # Given example from statement: 3 by 2 contains 18 rectangles
+    assert rectangle_count(3, 2) == 18
+
+    print(solve(TARGET))

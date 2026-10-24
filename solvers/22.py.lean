@@ -208,13 +208,13 @@ private theorem loop_result (names remaining : List String) (heap : Mutable.Heap
       simpa [Calls.loopContinuation, body] using recurse
 
 private def definition : List Arg × List Stmt :=
-  (findFunctionIn program.body "total_name_scores").getD ([], [])
+  (findFunctionIn program.body "solve").getD ([], [])
 
 /-- The optimized loop returns the independently proved reference score and preserves the input heap. -/
 theorem result (names : List String) (heap : Mutable.Heap) (address : Nat)
     (found : heap[address]? = some (.list (names.map (fun s => .scalar (.string s)))))
     (accepted : names.all uppercase = true) :
-    ReturnsValue program "total_name_scores" [.ref address] heap
+    ReturnsValue program "solve" [.ref address] heap
       (number (data.«project-euler-statements».data.py.project_euler_statements.p22.scores names))
       (heap ++ [.list ((ScalarSort.strings names).map (fun s => .scalar (.string s)))]) := by
   let ordered := ScalarSort.strings names
@@ -251,20 +251,20 @@ private abbrev inputEnv (address : Nat) : Mutable.Env :=
 
 private theorem condition_result (names : List String) (heap : Mutable.Heap) (address : Nat)
     (found : heap[address]? = some (.list (names.map (fun s => .scalar (.string s))))) :
-    Evaluates program (inputEnv address) Solvers.P22Ast.requires_total_name_scores_0 heap
+    Evaluates program (inputEnv address) Solvers.P22Ast.requires_solve_0 heap
       (.scalar (.bool (names.all uppercase))) heap :=
   Evaluates.call (.cons (Evaluates.lookup rfl) .nil) (names_are_uppercase.result names heap address found)
 
-theorem requires_total_name_scores_0_supported (heap : Mutable.Heap) (address : Nat) (_valid : heap.Valid)
+theorem requires_solve_0_supported (heap : Mutable.Heap) (address : Nat) (_valid : heap.Valid)
     (typed : Mutable.Value.HasType heap (.ref address) "list[str]") :
-    (HeapCalls.evaluate program (inputEnv address) Solvers.P22Ast.requires_total_name_scores_0 heap).Supported := by
+    (HeapCalls.evaluate program (inputEnv address) Solvers.P22Ast.requires_solve_0 heap).Supported := by
   obtain ⟨names, found⟩ := Mutable.Value.strings_of_hasType typed
   exact Execution.supported_of_finishes (condition_result names heap address found).finishes
 
-theorem total_name_scores.«Equiv(naive)» (heap : Mutable.Heap) (address : Nat) (valid : heap.Valid)
+theorem solve.«Equiv(naive)» (heap : Mutable.Heap) (address : Nat) (valid : heap.Valid)
     (typed : Mutable.Value.HasType heap (.ref address) "list[str]")
-    (requires : HeapCalls.Condition program (inputEnv address) Solvers.P22Ast.requires_total_name_scores_0 heap) :
-    (HeapCalls.call program "total_name_scores" [.ref address] heap).Equiv
+    (requires : HeapCalls.Condition program (inputEnv address) Solvers.P22Ast.requires_solve_0 heap) :
+    (HeapCalls.call program "solve" [.ref address] heap).Equiv
       (HeapCalls.call P22Ast.module "naive" [.ref address] heap) := by
   obtain ⟨names, found⟩ := Mutable.Value.strings_of_hasType typed
   have accepted : names.all uppercase = true := by
@@ -275,12 +275,12 @@ theorem total_name_scores.«Equiv(naive)» (heap : Mutable.Heap) (address : Nat)
     (Mutable.Completion.equivalent_allocations heap _ _
       (number (data.«project-euler-statements».data.py.project_euler_statements.p22.scores names)) [] valid trivial (by simp))
 
-theorem total_name_scores.«Supported» :
+theorem solve.«Supported» :
     (∀ (heap : Mutable.Heap) (address : Nat), heap.Valid → Mutable.Value.HasType heap (.ref address) "list[str]" →
-      HeapCalls.Condition program (inputEnv address) Solvers.P22Ast.requires_total_name_scores_0 heap →
-      (HeapCalls.call program "total_name_scores" [.ref address] heap).Supported) ∧
+      HeapCalls.Condition program (inputEnv address) Solvers.P22Ast.requires_solve_0 heap →
+      (HeapCalls.call program "solve" [.ref address] heap).Supported) ∧
     (∀ (heap : Mutable.Heap) (address : Nat), heap.Valid → Mutable.Value.HasType heap (.ref address) "list[str]" →
-      HeapCalls.Condition program (inputEnv address) Solvers.P22Ast.requires_total_name_scores_0 heap →
+      HeapCalls.Condition program (inputEnv address) Solvers.P22Ast.requires_solve_0 heap →
       (HeapCalls.call P22Ast.module "naive" [.ref address] heap).Supported) := by
   constructor
   · intro heap address _ typed requires

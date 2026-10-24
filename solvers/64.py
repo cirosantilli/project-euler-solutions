@@ -29,7 +29,7 @@ def period_length_sqrt(n: int) -> int:
             return period
 
 
-def count_odd_periods(limit: int) -> int:
+def solve(limit: int) -> int:
     cnt = 0
     for n in range(2, limit + 1):
         r = isqrt(n)
@@ -40,13 +40,9 @@ def count_odd_periods(limit: int) -> int:
     return cnt
 
 
-def main() -> None:
+if __name__ == "__main__":
     # Test from the statement: N <= 13 has exactly four odd periods.
-    assert count_odd_periods(13) == 4
+    assert solve(13) == 4
 
     LIMIT: Final[int] = 10_000
-    print(count_odd_periods(LIMIT))
-
-
-if __name__ == "__main__":
-    main()
+    print(solve(LIMIT))

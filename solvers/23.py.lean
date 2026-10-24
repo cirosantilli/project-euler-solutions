@@ -626,7 +626,7 @@ open ProjectEulerStatements.AbundantSums
 private abbrev number (n : Nat) : Mutable.Value := .scalar (.int n)
 private abbrev encode (items : List Nat) : List Mutable.Value := items.map number
 private def definition : List Arg × List Stmt :=
-  (findFunctionIn program.body "non_abundant_sums").getD ([], [])
+  (findFunctionIn program.body "solve").getD ([], [])
 private abbrev sieveHeap (limit : Nat) : Mutable.Heap :=
   [.list [number 0], .list (Sieve.table (limit + 1) ProjectEulerStatements.P21.d)]
 private abbrev baseHeap (limit : Nat) : Mutable.Heap :=
@@ -636,7 +636,7 @@ def finalHeap (limit : Nat) : Mutable.Heap :=
 
 /-- The optimized Python algorithm returns the statement's sum, including its embedded assertions. -/
 theorem result (limit : Nat) (large : 28 ≤ limit) :
-    ReturnsValue program "non_abundant_sums" [number limit] []
+    ReturnsValue program "solve" [number limit] []
       (number (ProjectEulerStatements.P23.naive limit)) (finalHeap limit) := by
   let entry := functionEnv definition.1 definition.2 [number limit] []
   let sieveEnv := setLocal entry "sums" (.ref 1)
@@ -728,13 +728,13 @@ private abbrev inputEnv (limit : Int) : ScalarEnv :=
   fun key => if key = "limit" then some (.int limit) else none
 
 private theorem accepted_limit (limit : Int)
-    (requires : Calls.Condition program (inputEnv limit) Solvers.P23Ast.requires_non_abundant_sums_0) :
+    (requires : Calls.Condition program (inputEnv limit) Solvers.P23Ast.requires_solve_0) :
     28 ≤ limit := by
   simpa [evalCmpOp] using Calls.Evaluates.condition_int_compare requires rfl
 
-theorem non_abundant_sums.«Equiv(naive)» (limit : Int)
-    (requires : Calls.Condition program (inputEnv limit) Solvers.P23Ast.requires_non_abundant_sums_0) :
-    (SetCalls.call program "non_abundant_sums" [.scalar (.int limit)] []).Equiv
+theorem solve.«Equiv(naive)» (limit : Int)
+    (requires : Calls.Condition program (inputEnv limit) Solvers.P23Ast.requires_solve_0) :
+    (SetCalls.call program "solve" [.scalar (.int limit)] []).Equiv
       (SetCalls.call P23Ast.module "naive" [.scalar (.int limit)] []) := by
   have large := accepted_limit limit requires
   lift limit to Nat using (by omega : 0 ≤ limit)
@@ -743,16 +743,16 @@ theorem non_abundant_sums.«Equiv(naive)» (limit : Int)
   obtain ⟨referenceHeap, reference⟩ :=
     data.«project-euler-statements».data.py.project_euler_statements.p23.naive.result limit rightChoices
   apply Mutable.Call.equiv_of_finishes
-    (a := (SetCalls.call program "non_abundant_sums" [.scalar (.int limit)] []).run leftChoices)
+    (a := (SetCalls.call program "solve" [.scalar (.int limit)] []).run leftChoices)
     (b := (SetCalls.call P23Ast.module "naive" [.scalar (.int limit)] []).run rightChoices)
     (SetCalls.finishes_of_heap (Optimized.result limit large).finishes leftChoices 0) reference
   exact Mutable.Completion.equivalent_allocations [] (Optimized.finalHeap limit) referenceHeap
     (.scalar (.int (ProjectEulerStatements.P23.naive limit))) [] (by simp [Mutable.Heap.Valid]) trivial (by simp)
 
-theorem non_abundant_sums.«Supported» :
-    (∀ (limit : Int), Calls.Condition program (inputEnv limit) Solvers.P23Ast.requires_non_abundant_sums_0 →
-      (SetCalls.call program "non_abundant_sums" [.scalar (.int limit)] []).Supported) ∧
-    (∀ (limit : Int), Calls.Condition program (inputEnv limit) Solvers.P23Ast.requires_non_abundant_sums_0 →
+theorem solve.«Supported» :
+    (∀ (limit : Int), Calls.Condition program (inputEnv limit) Solvers.P23Ast.requires_solve_0 →
+      (SetCalls.call program "solve" [.scalar (.int limit)] []).Supported) ∧
+    (∀ (limit : Int), Calls.Condition program (inputEnv limit) Solvers.P23Ast.requires_solve_0 →
       (SetCalls.call P23Ast.module "naive" [.scalar (.int limit)] []).Supported) := by
   constructor
   · intro limit requires
