@@ -16,7 +16,7 @@ Prefer a meaningful argument shared by both implementations. A reference-only se
 | 40 | Supplied decimal-stream construction limit | Accept the same requested digit positions as the optimized solver and extend the stream until they exist.
 | 45 | Scan 100001 triangular indices | Accept the same `after` threshold as the optimized solver and merge the three increasing polygonal sequences without a cutoff.
 | 46 | Scan below 10000 | Accept the same `after` threshold as the optimized solver and search until the first counterexample, without a cutoff.
-| 61 | Supplied polygonal index limit 140 | Enumerate each family until its values reach the problem's four-digit boundary.
+| 61 | Supplied polygonal index limit 140 | Share the largest required polygonal type, enumerate each family to its four-digit value boundary, and return the greatest cycle sum.
 | 62 | Supplied cube-root limit | Accept only the requested class size and expand complete digit widths until successful. Internal finite counting windows come from those widths.
 |===
 
@@ -41,6 +41,8 @@ Problem 37 has structural source equivalence and support proofs for every numera
 Problem 32 has structural source termination and equivalence proofs for every signed target width. The product interval and factor bounds follow from digit lengths. The optimized traversal and every reference permutation split collect the same products, and deduplication makes the sum independent of traversal order. The proofs cover copied slices and their temporary allocations. Widths below three and above nine are impossible and return zero; no supplied search limit or whole-program evaluation is used.
 
 Problem 51 has structural equivalence and support proofs for every signed family threshold. Both unbounded source searches return exactly when a qualifying family exists, returning its least prime; otherwise both diverge. The checked eight-member witness establishes termination for every threshold at most eight and for the default call. Thresholds above ten are impossible because there are only ten replacement digits. For thresholds nine and ten, termination retains the general existence condition. The Lean statement uses zero for absence in its mathematical minimum and makes no universal existence assumption.
+
+Problem 61 shares the largest required polygonal type, searching types three through that argument. Both implementations return the greatest cyclic sum, including zero when there is no cycle. Family generation stops at the four-digit value boundary; its finite proof window follows from polygonal growth. A structural model proof equates prefix indexing with scanning arbitrary complete family tables. Source arithmetic, family generation, endpoint closure, and prefix-map construction are proved; generalized recursive source equivalence and termination remain pending.
 
 == Remaining implementation and proof restrictions
 

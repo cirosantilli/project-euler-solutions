@@ -1,40 +1,4 @@
 #!/usr/bin/env python
-"""
-@formalsw: theorem generate_4digit_polygonals_source_result
-  (s : Int) (heap : FormalSW.PyAst.Mutable.Heap)
-  (globals : FormalSW.PyAst.Mutable.Globals) :
-  3 ≤ s → FormalSW.PyAst.HeapCalls.ReturnsValue Solvers.P61Ast.module "generate_4digit_polygonals"
-    [.scalar (.int s)] heap (.ref heap.length)
-    (heap ++ [.list ((solvers.«61».generate_4digit_polygonals.answer s).map
-      (fun value => .scalar (.int value)))]) globals
-
-@formalsw: theorem build_prefix_map_source_result
-  (values : List Int) (heap : FormalSW.PyAst.Mutable.Heap) (input : Nat)
-  (globals : FormalSW.PyAst.Mutable.Globals) :
-  heap[input]? = some (.list (values.map (fun value => .scalar (.int value)))) →
-  ∃ finalHeap, Nonempty (solvers.«61».build_prefix_map.Store heap finalHeap values) ∧
-    FormalSW.PyAst.HeapCalls.ReturnsValue Solvers.P61Ast.module "build_prefix_map"
-      [.ref input] heap (.ref heap.length) finalHeap globals
-
-@formalsw: theorem candidate_setup_source_result
-  (caller : FormalSW.PyAst.Mutable.Heap) (env : FormalSW.PyAst.HeapCalls.Env)
-  (globals : FormalSW.PyAst.Mutable.Globals) :
-  FormalSW.PyAst.HeapCalls.BlockContinues Solvers.P61Ast.module env
-    ((FormalSW.PyAst.executableBody
-      ((FormalSW.PyAst.findFunctionIn Solvers.P61Ast.module.body "solve").getD ([], [])).2).take 2)
-    caller (solvers.«61».solve_setup.generatedEnv env caller)
-    (solvers.«61».solve_setup.generatedHeap caller) globals
-
-@formalsw: theorem prefix_setup_source_result
-  (caller : FormalSW.PyAst.Mutable.Heap) (env : FormalSW.PyAst.HeapCalls.Env)
-  (globals : FormalSW.PyAst.Mutable.Globals) :
-  solvers.«61».solve_setup.Prepared caller env globals
-
-@formalsw: theorem solve_source_result
-  (caller : FormalSW.PyAst.Mutable.Heap) (globals : FormalSW.PyAst.Mutable.Globals) :
-  ∃ extra, FormalSW.PyAst.HeapCalls.ReturnsValue Solvers.P61Ast.module "solve" [] caller
-    (.scalar (.int ProjectEulerSolutions.PolygonalCycle.answer)) (caller ++ extra) globals
-"""
 from __future__ import annotations
 
 
@@ -55,10 +19,8 @@ def generate_4digit_polygonals(s: int) -> list[int]:
         val = polygonal(s, n)
         if val >= 10000:
             break
-        if 1000 <= val <= 9999:
-            # last two digits must be a valid next "prefix" (10..99) for a 4-digit number
-            if val % 100 >= 10:
-                nums.append(val)
+        if val >= 1000:
+            nums.append(val)
         n += 1
     return nums
 
@@ -71,49 +33,39 @@ def build_prefix_map(nums: list[int]) -> dict[int, list[int]]:
     return mp
 
 
-def solve() -> int:
+def solve(max_sides: int = 8) -> int:
     """
+    Find the largest cycle sum using one distinct four-digit number of each type 3..max_sides.
+
     @formalsw: Returns
-    @formalsw: Py from project_euler_statements.p61 import naive_default
-    @formalsw: Equiv(naive_default)
+    @formalsw: Py from project_euler_statements.p61 import naive
+    @formalsw: Equiv(naive)
     """
-    types = [3, 4, 5, 6, 7, 8]
-    nums_by_type: dict[int, list[int]] = {
-        t: generate_4digit_polygonals(t) for t in types
-    }
-    pref_map: dict[int, dict[int, list[int]]] = {
-        t: build_prefix_map(nums_by_type[t]) for t in types
-    }
+    if max_sides < 3:
+        return 0
+    types = list(range(3, max_sides + 1))
+    nums_by_type = {t: generate_4digit_polygonals(t) for t in types}
+    pref_map = {t: build_prefix_map(nums_by_type[t]) for t in types}
 
-    def dfs(
-        path: list[tuple[int, int]], used_types: set[int], used_nums: set[int]
-    ) -> list[tuple[int, int]] | None:
-        if len(path) == 6:
-            last_num = path[-1][0]
-            first_num = path[0][0]
-            if last_num % 100 == first_num // 100:
-                return path
-            return None
-
-        suffix = path[-1][0] % 100
-        for t in types:
-            if t in used_types:
-                continue
+    def dfs(path: list[int], remaining: list[int]) -> int:
+        if not remaining:
+            if path[-1] % 100 == path[0] // 100:
+                return sum(path)
+            return 0
+        best = 0
+        suffix = path[-1] % 100
+        for t in remaining:
+            unused = [other for other in remaining if other != t]
             for nxt in pref_map[t].get(suffix, []):
-                if nxt in used_nums:
+                if nxt in path:
                     continue
-                res = dfs(path + [(nxt, t)], used_types | {t}, used_nums | {nxt})
-                if res is not None:
-                    return res
-        return None
+                best = max(best, dfs(path + [nxt], unused))
+        return best
 
-    # Fix the start type to 8 (octagonal) to break rotational symmetry of the cycle.
-    for start in nums_by_type[8]:
-        res = dfs([(start, 8)], {8}, {start})
-        if res is not None:
-            return sum(x for x, _t in res)
-
-    raise RuntimeError("No cycle found")
+    best = 0
+    for start in nums_by_type[3]:
+        best = max(best, dfs([start], list(range(4, max_sides + 1))))
+    return best
 
 
 if __name__ == "__main__":
