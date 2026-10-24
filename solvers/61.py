@@ -33,7 +33,7 @@
 @formalsw: theorem solve_source_result
   (caller : FormalSW.PyAst.Mutable.Heap) (globals : FormalSW.PyAst.Mutable.Globals) :
   ∃ extra, FormalSW.PyAst.HeapCalls.ReturnsValue Solvers.P61Ast.module "solve" [] caller
-    (.scalar (.int 28684)) (caller ++ extra) globals
+    (.scalar (.int ProjectEulerSolutions.PolygonalCycle.answer)) (caller ++ extra) globals
 """
 from __future__ import annotations
 
@@ -74,6 +74,8 @@ def build_prefix_map(nums: list[int]) -> dict[int, list[int]]:
 def solve() -> int:
     """
     @formalsw: Returns
+    @formalsw: Py from project_euler_statements.p61 import naive_default
+    @formalsw: Equiv(naive_default)
     """
     types = [3, 4, 5, 6, 7, 8]
     nums_by_type: dict[int, list[int]] = {

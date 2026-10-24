@@ -2550,8 +2550,39 @@ theorem «Returns» : (SetCalls.call program "solve" [] []).Returns := by
   obtain ⟨extra, returned⟩ := heap_result []
   exact SetCalls.returns_of_heap returned.returns
 
-theorem «Supported» : (SetCalls.call program "solve" [] []).Supported :=
-  fun choices => («Returns» choices).supported
+/-- Both actual source calls return the checked value under every independent choice schedule. -/
+theorem «Equiv(naive_default)» :
+    (SetCalls.call program "solve" [] []).Equiv (SetCalls.call P61Ast.module "naive_default" [] []) := by
+  obtain ⟨leftExtra, leftReturned⟩ := heap_result []
+  obtain ⟨rightExtra, rightReturned⟩ :=
+    data.«project-euler-statements».data.py.project_euler_statements.p61.naive_default.heap_result []
+  intro leftChoices rightChoices
+  have leftRun : ((SetCalls.call program "solve" [] []).run leftChoices).Finishes
+      ⟨.ok (number 28684), [], [] ++ leftExtra, 0⟩ :=
+    SetCalls.finishes_of_heap leftReturned.finishes leftChoices 0
+  have rightRun : ((SetCalls.call P61Ast.module "naive_default" [] []).run rightChoices).Finishes
+      ⟨.ok (number 28684), [], [] ++ rightExtra, 0⟩ :=
+    SetCalls.finishes_of_heap rightReturned.finishes rightChoices 0
+  constructor
+  · intro outcome finished
+    refine ⟨_, rightRun, ?_⟩
+    rw [Mutable.Call.unique finished leftRun]
+    exact Mutable.Completion.equivalent_allocations [] leftExtra rightExtra (number 28684) []
+      (by simp [Mutable.Heap.Valid]) (by trivial) (by simp)
+  · intro outcome finished
+    refine ⟨_, leftRun, ?_⟩
+    rw [Mutable.Call.unique finished rightRun]
+    exact Mutable.Completion.equivalent_allocations [] leftExtra rightExtra (number 28684) []
+      (by simp [Mutable.Heap.Valid]) (by trivial) (by simp)
+
+theorem «Supported» : (SetCalls.call program "solve" [] []).Supported ∧
+    (SetCalls.call P61Ast.module "naive_default" [] []).Supported := by
+  refine ⟨fun choices => («Returns» choices).supported, ?_⟩
+  have reference : (SetCalls.call P61Ast.module "naive_default" [] []).Returns := by
+    obtain ⟨extra, returned⟩ :=
+      data.«project-euler-statements».data.py.project_euler_statements.p61.naive_default.heap_result []
+    exact SetCalls.returns_of_heap returned.returns
+  exact fun choices => (reference choices).supported
 
 end solvers.«61».solve
 
@@ -2559,6 +2590,8 @@ namespace solvers.«61»
 
 theorem solve_source_result (caller : FormalSW.PyAst.Mutable.Heap) (globals : FormalSW.PyAst.Mutable.Globals) :
     ∃ extra, FormalSW.PyAst.HeapCalls.ReturnsValue Solvers.P61Ast.module "solve" [] caller
-      (.scalar (.int 28684)) (caller ++ extra) globals := solve.heap_result caller globals
+      (.scalar (.int ProjectEulerSolutions.PolygonalCycle.answer)) (caller ++ extra) globals := by
+  rw [ProjectEulerSolutions.PolygonalCycle.answer_checked]
+  exact solve.heap_result caller globals
 
 end solvers.«61»

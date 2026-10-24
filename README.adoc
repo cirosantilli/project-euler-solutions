@@ -582,7 +582,7 @@ Reproduce the prime lists and exact cache with `python3 generate_prime_pair_cert
 
 New rows use a proved natural-number evaluator; possible-edge certificates may also check only excluded edges, with the selected result verified separately. The larger certificate can omit explicit rejection checks for pairs outside its seeded sum budget. A proved search equality lets that certificate use sparse adjacency lookup directly, preserving the selected list and strict tie behavior. Small divisors checked by the actual source scan provide shorter rejection certificates.
 
-Problem 61’s reference considers every polygonal-type order and requires distinct numbers. The polygonal helper has a source-level equivalence proof for every pair of signed integers. Prefix-map construction is proved for arbitrary integer lists, preserving bucket order and the caller’s heap prefix. The complete optimized solver has a terminating source proof returning 28684 and preserving caller objects; its public Returns and Supported contracts cover every set-choice schedule. Reference family setup is proved for every integer limit, and the complete recursive maximum search has a terminating source-to-model proof covering both folds and all heap effects. Both search models have kernel-checked results of 28684. The outer reference start loop and final source-equivalence binding remain unfinished, so problem 61 is not marked proven.
+Problem 61’s source-level equivalence proof connects the complete optimized solver to the exhaustive reference, which considers every polygonal-type order and requires distinct numbers. It covers polygonal arithmetic, ordered prefix buckets, recursive searches, the reference’s outer start loop, and all heap allocations while preserving caller objects. The reference terminates for every signed limit; its default window and the optimized search have kernel-checked results of 28684. The public equivalence, Returns, and Supported contracts cover every independent set-choice schedule. The proofs use only standard Lean axioms. Reproduce the bounded certificate sources with `python3 generate_polygonal_cycle_certificates.py`, or compare them without writing using `--check`; generation itself is not proof verification.
 
 ====== Problem 14: Collatz termination
 
@@ -724,7 +724,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/58.py[58.py] | link:solvers/58.md[58.md] | link:solvers/58.py.lean[58.py.lean] | 0.097 | 26241 |
 | link:solvers/59.py[59.py] | link:solvers/59.md[59.md] | link:solvers/59.py.lean[59.py.lean] | 0.086 | 129448 |
 | link:solvers/60.py[60.py] | link:solvers/60.md[60.md] |  | 0.511 | 26033 |
-| link:solvers/61.py[61.py] | link:solvers/61.md[61.md] |  | 0.084 | 28684 |
+| link:solvers/61.py[61.py] | link:solvers/61.md[61.md] | link:solvers/61.py.lean[61.py.lean] | 0.057 | 28684 |
 | link:solvers/62.py[62.py] | link:solvers/62.md[62.md] |  | 0.145 | 127035954683 |
 | link:solvers/63.py[63.py] | link:solvers/63.md[63.md] |  | 0.070 | 49 |
 | link:solvers/64.py[64.py] | link:solvers/64.md[64.md] |  | 0.132 | 1322 |
@@ -2057,7 +2057,7 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/eulersolve/60.cpp[]: 0.141
 ** link:solvers/60.lean[]: 0.429
 * 61
-** link:solvers/61.py[]: 0.084
+** link:solvers/61.py[]: 0.057
 ** link:solvers/eulersolve/61.py[]: 0.072
 ** link:solvers/eulersolve/61.cpp[]: 0.002
 ** link:solvers/61.lean[]: 0.131
