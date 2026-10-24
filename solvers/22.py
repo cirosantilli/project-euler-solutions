@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 from __future__ import annotations
 
-from typing import List
-
 
 def name_value(name: str) -> int:
-    """Alphabetical value: A=1, ..., Z=26."""
+    """
+    Alphabetical value: A=1, ..., Z=26.
+    """
     return sum((ord(c) - ord("A") + 1) for c in name)
 
 
-def load_names() -> List[str]:
+def load_names() -> list[str]:
     path = "0022_names.txt"
     with open(path, "r", encoding="utf-8") as f:
         raw = f.read().strip()
@@ -18,7 +18,23 @@ def load_names() -> List[str]:
     return [p.strip().strip('"') for p in parts if p.strip()]
 
 
-def total_name_scores(names: List[str]) -> int:
+def names_are_uppercase(names: list[str]) -> bool:
+    """
+    Check the A–Z input domain, allowing empty names and an empty list.
+    """
+    for name in names:
+        for c in name:
+            if not 65 <= ord(c) <= 90:
+                return False
+    return True
+
+
+def total_name_scores(names: list[str]) -> int:
+    """
+    @formalsw: Py from project_euler_statements.p22 import naive
+    @formalsw: Requires(names_are_uppercase(names))
+    @formalsw: Equiv(naive)
+    """
     names_sorted = sorted(names)
     total = 0
     for i, nm in enumerate(names_sorted, start=1):

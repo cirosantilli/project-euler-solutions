@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 from __future__ import annotations
 
-from typing import List
 
-
-def proper_divisor_sums_sieve(n_max: int) -> List[int]:
+def proper_divisor_sums_sieve(n_max: int) -> list[int]:
     """
     Returns s where s[n] = sum of proper divisors of n, for 0 <= n <= n_max.
     """
@@ -57,6 +55,10 @@ def proper_divisor_sum_factorization(n: int) -> int:
 
 
 def amicable_sum_under(limit: int) -> int:
+    """
+    @formalsw: Py from project_euler_statements.p21 import naive
+    @formalsw: Equiv(naive)
+    """
     divsum = proper_divisor_sums_sieve(limit - 1)
 
     def d(x: int) -> int:

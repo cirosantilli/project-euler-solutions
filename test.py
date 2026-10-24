@@ -25,6 +25,7 @@ LINE_RE = re.compile(r"^(\d+)\.\s+(.*)$")
 NUMERIC_RE = re.compile(r"^\d+(?:\.\d+)?$")
 EXPECTED_GOT_RE = re.compile(r"expected (.+), got (.+)")
 LANG_HINT_RE = re.compile(r"^(\d+)\.(py|c|cpp|lean)$")
+PRIMARY_RESULTS_HEADER = "| ID | Explanation | Proof | Runtime (s) | Output | Error"
 MISSING_REFERENCE_MESSAGE = "missing reference answer"
 MISSING_REFERENCE_ERROR = f"error: {MISSING_REFERENCE_MESSAGE}"
 TestId = int | str
@@ -104,7 +105,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--autoupdate-links",
         action="store_true",
-        help="Update README.adoc to add missing .md links (no runs).",
+        help="Update README.adoc explanation and proof links (no runs).",
     )
     parser.add_argument(
         "-l",
@@ -680,8 +681,12 @@ def row_has_statement(cells: list[str]) -> bool:
 
 
 def normalize_row_fields(
-    pid: TestId, cells: list[str]
+    pid: TestId, cells: list[str], *, proof_column: bool = False
 ) -> tuple[str, str, str, str, str] | None:
+    if proof_column:
+        if len(cells) < 6:
+            return None
+        cells = [*cells[:2], *cells[3:]]
     if (
         len(cells) >= 7
         and cells[1].startswith("link:")
@@ -793,6 +798,17 @@ def format_output_cell(res: Result) -> str:
     return res.output
 
 
+def proof_link(id_cell: str) -> str:
+    target = link_target_from_cell(id_cell)
+    source = ROOT / target if target is not None else SOLVERS_DIR / id_cell.strip()
+    if source.suffix != ".py":
+        return ""
+    proof = source.with_suffix(".py.lean")
+    if not proof.is_file():
+        return ""
+    return f"link:{relative_readme_path(proof)}[{proof.name}]"
+
+
 def format_row_fields(
     id_cell: str,
     statement_cell: str,
@@ -801,7 +817,7 @@ def format_row_fields(
     error_cell: str,
 ) -> str:
     return (
-        f"| {id_cell} | {statement_cell} | {time_cell} | "
+        f"| {id_cell} | {statement_cell} | {proof_link(id_cell)} | {time_cell} | "
         f"{output_cell} | {error_cell}"
     ).rstrip()
 
@@ -868,6 +884,7 @@ def parse_id_cell(cell: str) -> int | None:
 
 def parse_primary_python_row_map(lines: list[str]) -> dict[tuple[TestId, str], str]:
     start, end = readme_tables.find_table_block(lines, "// RESULTS TABLE")
+    proof_column = "Proof" in readme_tables.split_table_row(lines[start + 1])
     row_re = re.compile(r"^\|\s+link:([^\[]+)\[")
     plain_re = re.compile(r"^\|\s+(\d+)\.py\s+\|")
     row_map: dict[tuple[TestId, str], str] = {}
@@ -890,7 +907,7 @@ def parse_primary_python_row_map(lines: list[str]) -> dict[tuple[TestId, str], s
             pid = int(plain_match.group(1))
             language = "py"
         cells = trim_trailing_empty_cells(readme_tables.split_table_row(line))
-        normalized = normalize_row_fields(pid, cells)
+        normalized = normalize_row_fields(pid, cells, proof_column=proof_column)
         if normalized is None:
             continue
         (
@@ -1171,7 +1188,7 @@ def primary_row_other_result_entry(pid: TestId, row: str) -> tuple[str, str] | N
     if not isinstance(pid, int):
         return None
     cells = trim_trailing_empty_cells(readme_tables.split_table_row(row))
-    normalized = normalize_row_fields(pid, cells)
+    normalized = normalize_row_fields(pid, cells, proof_column=True)
     if normalized is None:
         return None
     (
@@ -1232,8 +1249,9 @@ def update_readme(results: list[Result]) -> None:
     readme_path = ROOT / "README.adoc"
     lines = readme_path.read_text().splitlines()
     start, end = readme_tables.find_table_block(lines, "// RESULTS TABLE")
+    proof_column = "Proof" in readme_tables.split_table_row(lines[start + 1])
 
-    header_line = "| ID | Explanation | Runtime (s) | Output | Error"
+    header_line = PRIMARY_RESULTS_HEADER
     row_re = re.compile(r"^\|\s+link:([^\[]+)\[")
     plain_re = re.compile(r"^\|\s+(\d+)\.py\s+\|")
     result_map: dict[tuple[TestId, str], str] = {}
@@ -1259,7 +1277,7 @@ def update_readme(results: list[Result]) -> None:
                 pid = int(id_match.group(1))
             language = detect_language(path) or ""
             cells = trim_trailing_empty_cells(readme_tables.split_table_row(line))
-            normalized = normalize_row_fields(pid, cells)
+            normalized = normalize_row_fields(pid, cells, proof_column=proof_column)
             if normalized is None:
                 continue
             (
@@ -1285,7 +1303,7 @@ def update_readme(results: list[Result]) -> None:
             continue
         pid = int(pid_text)
         cells = trim_trailing_empty_cells(readme_tables.split_table_row(line))
-        normalized = normalize_row_fields(pid, cells)
+        normalized = normalize_row_fields(pid, cells, proof_column=proof_column)
         if normalized is None:
             continue
         (
@@ -1328,8 +1346,9 @@ def update_readme_links() -> None:
     readme_path = ROOT / "README.adoc"
     lines = readme_path.read_text().splitlines()
     start, end = readme_tables.find_table_block(lines, "// RESULTS TABLE")
+    proof_column = "Proof" in readme_tables.split_table_row(lines[start + 1])
 
-    header_line = "| ID | Explanation | Runtime (s) | Output | Error"
+    header_line = PRIMARY_RESULTS_HEADER
     row_re = re.compile(r"^\|\s+link:([^\[]+)\[")
     plain_re = re.compile(r"^\|\s+(\d+)\.py\s+\|")
     row_map: dict[tuple[TestId, str], str] = {}
@@ -1357,7 +1376,7 @@ def update_readme_links() -> None:
             language = "py"
 
         cells = trim_trailing_empty_cells(readme_tables.split_table_row(line))
-        normalized = normalize_row_fields(pid, cells)
+        normalized = normalize_row_fields(pid, cells, proof_column=proof_column)
         if normalized is None:
             continue
         (
@@ -1389,6 +1408,7 @@ def update_readme_not_found() -> None:
     readme_path = ROOT / "README.adoc"
     lines = readme_path.read_text().splitlines()
     start, end = readme_tables.find_table_block(lines, "// RESULTS TABLE")
+    proof_column = "Proof" in readme_tables.split_table_row(lines[start + 1])
     existing_other_rows = load_benchmark_results(lines)
     existing_other_paths = {
         path for path_values in existing_other_rows.values() for path in path_values
@@ -1427,7 +1447,7 @@ def update_readme_not_found() -> None:
         if isinstance(pid, int):
             seen_ids.add(pid)
         cells = trim_trailing_empty_cells(readme_tables.split_table_row(line))
-        normalized = normalize_row_fields(pid, cells)
+        normalized = normalize_row_fields(pid, cells, proof_column=proof_column)
         if normalized is None:
             continue
         (
@@ -1523,7 +1543,7 @@ def update_readme_not_found() -> None:
 
     sorted_rows = [row_map[key] for key in sorted(row_map, key=row_sort_key)]
     lines[start + 1 : end] = [
-        "| ID | Explanation | Runtime (s) | Output | Error",
+        PRIMARY_RESULTS_HEADER,
         *sorted_rows,
     ]
 
@@ -1812,7 +1832,7 @@ def main() -> None:
                 )
             )
         print("\n|===")
-        print("| ID | Explanation | Runtime (s) | Output | Error")
+        print(PRIMARY_RESULTS_HEADER)
         for res in sorted(lint_results, key=result_sort_key):
             print(format_row(res))
         print("|===")
@@ -1978,7 +1998,7 @@ def main() -> None:
 
     if py_results:
         print("\n|===")
-        print("| ID | Explanation | Runtime (s) | Output | Error")
+        print(PRIMARY_RESULTS_HEADER)
         for res in sorted(py_results, key=result_sort_key):
             print(format_row(res))
         print("|===")

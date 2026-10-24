@@ -11,6 +11,10 @@ def digit_fifth_power_sum(n: int, fifth: List[int]) -> int:
 
 
 def solve() -> int:
+    """
+    @formalsw: Py from project_euler_statements.p30 import naive_default
+    @formalsw: Equiv(naive_default)
+    """
     # Precompute fifth powers of digits 0..9
     fifth = [d**5 for d in range(10)]
 

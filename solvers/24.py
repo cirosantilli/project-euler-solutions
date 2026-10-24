@@ -1,10 +1,26 @@
 #!/usr/bin/env python
-from typing import List
 
 
-def nth_lexicographic_permutation(digits: List[int], n: int) -> str:
+def valid_permutation_input(digits: list[int], n: int) -> bool:
+    """
+    Check the strictly increasing input order and the one-based rank bounds.
+    """
+    for i in range(1, len(digits)):
+        if digits[i - 1] >= digits[i]:
+            return False
+    count = 1
+    for i in range(2, len(digits) + 1):
+        count *= i
+    return 1 <= n <= count
+
+
+def nth_lexicographic_permutation(digits: list[int], n: int) -> str:
     """
     Returns the n-th lexicographic permutation (1-indexed) of the given digits.
+
+    @formalsw: Py from project_euler_statements.p24 import naive_text as naive
+    @formalsw: Requires(valid_permutation_input(digits, n))
+    @formalsw: Equiv(naive)
     """
     k = len(digits)
 
@@ -17,7 +33,7 @@ def nth_lexicographic_permutation(digits: List[int], n: int) -> str:
     n -= 1
 
     available = digits[:]
-    out: List[str] = []
+    out: list[str] = []
     for i in range(k, 0, -1):
         block = fact[i - 1]
         idx = n // block

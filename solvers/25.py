@@ -4,6 +4,10 @@ from typing import Tuple
 
 def first_fib_index_with_digits(digits: int) -> int:
     """
+    @formalsw: Py from project_euler_statements.p25 import naive
+    @formalsw: Requires(digits >= 1)
+    @formalsw: Equiv(naive)
+
     Returns the smallest n such that Fibonacci number F_n has at least `digits` decimal digits.
     Fibonacci is defined as: F_1 = 1, F_2 = 1, F_n = F_{n-1} + F_{n-2}.
     """

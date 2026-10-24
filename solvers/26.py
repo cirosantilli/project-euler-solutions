@@ -4,6 +4,9 @@ from typing import Tuple
 
 def recurring_cycle_length(d: int) -> int:
     """
+    @formalsw: Requires(d >= 1)
+    @formalsw: Returns
+
     Length of the recurring cycle in the decimal expansion of 1/d.
     """
     # Remove factors of 2 and 5 (they only affect the terminating part)
@@ -26,6 +29,11 @@ def recurring_cycle_length(d: int) -> int:
 
 
 def solve(limit: int = 1000) -> int:
+    """
+    @formalsw: Py from project_euler_statements.p26 import naive
+    @formalsw: Requires(limit >= 4)
+    @formalsw: Equiv(naive)
+    """
     best_d = 0
     best_len = -1
     for d in range(2, limit):

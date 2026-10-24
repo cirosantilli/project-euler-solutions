@@ -59,6 +59,11 @@ def consecutive_prime_length(
 
 
 def solve() -> int:
+    """
+    @formalsw: Py from project_euler_statements.p27 import naive_default as naive
+    @formalsw: Returns
+    @formalsw: Equiv(naive)
+    """
     # Enough for trial division up to sqrt(max quadratic value) in this search.
     trial_primes = sieve_primes(100_000)
 

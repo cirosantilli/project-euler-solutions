@@ -5,6 +5,10 @@ from typing import Final
 def spiral_diagonals_sum(n: int) -> int:
     """
     Sum of the numbers on both diagonals in an n x n number spiral (n odd).
+
+    @formalsw: Py from project_euler_statements.p28 import naive
+    @formalsw: Requires(n >= 1 and n % 2 == 1)
+    @formalsw: Equiv(naive)
     """
     assert n >= 1 and n % 2 == 1
     m = (n - 1) // 2  # number of "layers" around the center

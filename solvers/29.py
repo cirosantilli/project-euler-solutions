@@ -3,6 +3,10 @@ from typing import Set
 
 
 def count_distinct_powers(max_a: int, max_b: int) -> int:
+    """
+    @formalsw: Py from project_euler_statements.p29 import naive
+    @formalsw: Equiv(naive)
+    """
     vals: Set[int] = set()
     for a in range(2, max_a + 1):
         for b in range(2, max_b + 1):

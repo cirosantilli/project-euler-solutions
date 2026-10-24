@@ -1,18 +1,16 @@
 #!/usr/bin/env python
 from __future__ import annotations
 
-from typing import Dict, List, Tuple
-
 
 def collatz_length(
-    n: int, limit: int, cache_small: List[int], cache_big: Dict[int, int]
+    n: int, limit: int, cache_small: list[int], cache_big: dict[int, int]
 ) -> int:
     """
     Returns the number of terms in the Collatz chain starting at n and ending at 1 (inclusive).
     Uses memoization in cache_small for values <= limit and cache_big for values > limit.
     """
     m = n
-    path: List[int] = []
+    path: list[int] = []
 
     while True:
         if m <= limit:
@@ -45,13 +43,13 @@ def collatz_length(
     return cache_big[n]
 
 
-def longest_collatz_under(limit: int) -> Tuple[int, int]:
+def longest_collatz_under(limit: int) -> tuple[int, int]:
     """
     Returns (starting_number, chain_length) for the longest Collatz chain with start < limit.
     """
     cache_small = [0] * (limit + 1)
     cache_small[1] = 1
-    cache_big: Dict[int, int] = {}
+    cache_big: dict[int, int] = {}
 
     best_n = 1
     best_len = 1
@@ -65,12 +63,22 @@ def longest_collatz_under(limit: int) -> Tuple[int, int]:
     return best_n, best_len
 
 
+def solve(limit: int) -> int:
+    """
+    @formalsw: Py from project_euler_statements.p14 import naive
+    @formalsw: Equiv(naive)
+    """
+    if limit <= 0:
+        return 0
+    return longest_collatz_under(limit + 1)[0]
+
+
 def main() -> None:
     # Problem statement example: 13 produces a chain of 10 terms.
     limit = 1_000_000
     cache_small = [0] * (limit + 1)
     cache_small[1] = 1
-    cache_big: Dict[int, int] = {}
+    cache_big: dict[int, int] = {}
     assert collatz_length(1, limit, cache_small, cache_big) == 1
     assert collatz_length(13, limit, cache_small, cache_big) == 10
 

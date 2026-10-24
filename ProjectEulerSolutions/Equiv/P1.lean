@@ -1,5 +1,8 @@
 import ProjectEulerSolutions.P1
-import Mathlib.Tactic
+import Mathlib.Tactic.Ring
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.NormNum.GCD
 import Mathlib.Data.Nat.Choose.Basic
 import Mathlib.Algebra.Ring.Parity
 namespace ProjectEulerSolutions.P1

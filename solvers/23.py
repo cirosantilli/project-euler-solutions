@@ -1,8 +1,6 @@
 #!/usr/bin/env python
-from typing import List
 
-
-def sum_proper_divisors_sieve(limit: int) -> List[int]:
+def sum_proper_divisors_sieve(limit: int) -> list[int]:
     """
     sums[n] = sum of proper divisors of n, for 0 <= n <= limit
     """
@@ -15,6 +13,11 @@ def sum_proper_divisors_sieve(limit: int) -> List[int]:
 
 
 def non_abundant_sums(limit: int = 28123) -> int:
+    """
+    @formalsw: Py from project_euler_statements.p23 import naive
+    @formalsw: Requires(limit >= 28)
+    @formalsw: Equiv(naive)
+    """
     sums = sum_proper_divisors_sieve(limit)
 
     # Checks derived from the statement
