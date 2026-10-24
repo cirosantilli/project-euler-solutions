@@ -1,37 +1,56 @@
 import ProjectEulerStatements.P71
-import ProjectEulerSolutions.Termination.P71
+
+set_option linter.style.header false
+
+/-! The denominator scan tests the greatest numerator below the target at each step. -/
 namespace ProjectEulerSolutions.P71
+open ProjectEulerStatements.FractionSearch
+set_option Elab.async false
 
-def gcd (a b : Nat) : Nat :=
-  if b == 0 then a else gcd b (a % b)
+abbrev gcd := Nat.gcd
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def bestFractionLeftOf (targetN targetD maxD : Nat) : Nat × Nat :=
-  let rec loop (d : Nat) (bestN bestD : Nat) : Nat × Nat :=
-    if d > maxD then
-      (bestN, bestD)
-    else
-      let n := (targetN * d - 1) / targetD
-      if n == 0 then
-        loop (d + 1) bestN bestD
-      else if gcd n d != 1 then
-        loop (d + 1) bestN bestD
-      else if n * bestD > bestN * d then
-        loop (d + 1) n d
-      else
-        loop (d + 1) bestN bestD
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  loop 1 0 1
+def bestFractionLeftOf (targetN targetD maxD : Nat) : Pair :=
+  loop 1 (0, 1)
+where
+  loop (d : Nat) (best : Pair) : Pair :=
+    if d ≤ maxD then
+      loop (d + 1) (optimizedStep targetN targetD d best)
+    else best
+  termination_by maxD + 1 - d
 
+/-- The scan advances through precisely the remaining denominator interval. -/
+theorem loop_correct (a b limit first count : Nat) (positive : 0 < first)
+    (length : first + count = limit + 1) :
+    bestFractionLeftOf.loop a b limit first (optimizedUpTo a b (first - 1)) =
+      optimizedUpTo a b limit := by
+  induction count generalizing first with
+  | zero =>
+      rw [bestFractionLeftOf.loop, if_neg (by omega)]
+      congr 1
+      omega
+  | succ count ih =>
+      rw [bestFractionLeftOf.loop, if_pos (by omega)]
+      have step : optimizedStep a b first (optimizedUpTo a b (first - 1)) =
+          optimizedUpTo a b first := by
+        have same : first - 1 + 1 = first := by omega
+        conv_rhs => rw [← same, optimizedUpTo]
+        rw [same]
+      rw [step]
+      have next := ih (first + 1) (by omega) (by omega)
+      simpa only [Nat.add_sub_cancel] using next
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-example : bestFractionLeftOf 3 7 8 = (2, 5) := by
-  native_decide
+theorem bestFractionLeftOf_correct (a b limit : Nat) :
+    bestFractionLeftOf a b limit = optimizedUpTo a b limit :=
+  loop_correct a b limit 1 limit (by decide) (by omega)
 
+def solve (limit : Int) (num : Int := 3) (den : Int := 7) : Nat :=
+  (bestFractionLeftOf num.toNat den.toNat limit.toNat).1
 
-def solve (_n : Nat) :=
-  (bestFractionLeftOf 3 7 1000000).1
+/-- The public signed interface agrees with the exhaustive reference for every proper target. -/
+theorem solve_eq_reference (limit num den : Int) (positive : 0 < num) (proper : num < den) :
+    solve limit num den = ProjectEulerStatements.P71.naive limit num den := by
+  unfold solve ProjectEulerStatements.P71.naive ProjectEulerStatements.P71.leftOf
+  rw [bestFractionLeftOf_correct, optimized_eq_exhaustive num.toNat den.toNat limit.toNat
+    (by omega) (by omega)]
+
 end ProjectEulerSolutions.P71

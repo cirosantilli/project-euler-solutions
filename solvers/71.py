@@ -2,13 +2,14 @@
 from __future__ import annotations
 
 from math import gcd
-from typing import Tuple
 
 
-def best_fraction_left_of(target_n: int, target_d: int, max_d: int) -> Tuple[int, int]:
+def best_fraction_left_of(target_n: int, target_d: int, max_d: int) -> tuple[int, int]:
     """
     Returns (n, d) = reduced proper fraction with d <= max_d, n/d < target_n/target_d,
     and n/d as large as possible.
+
+    Requires 0 < target_n < target_d. Return (0, 1) if there is no positive candidate.
     """
     best_n, best_d = 0, 1
 
@@ -28,9 +29,15 @@ def best_fraction_left_of(target_n: int, target_d: int, max_d: int) -> Tuple[int
     return best_n, best_d
 
 
-def solve(max_d: int) -> int:
-    n, d = best_fraction_left_of(3, 7, max_d)
-    return n
+def solve(limit: int, num: int = 3, den: int = 7) -> int:
+    """
+    @formalsw: Py from project_euler_statements.p71 import naive
+    @formalsw: Requires(0 < num)
+    @formalsw: Requires(num < den)
+    @formalsw: Returns
+    @formalsw: Equiv(naive)
+    """
+    return best_fraction_left_of(num, den, limit)[0]
 
 
 if __name__ == "__main__":

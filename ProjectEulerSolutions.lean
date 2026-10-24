@@ -477,9 +477,15 @@ example : ProjectEulerStatements.P70.naive = ProjectEulerSolutions.P70.solve := 
   apply (funext_iff).2
   simpa [funext_iff] using ProjectEulerSolutions.P70.equiv
 
-example : ProjectEulerStatements.P71.naive = ProjectEulerSolutions.P71.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P71.equiv
+example :
+    (fun limit : Int => ProjectEulerStatements.P71.naive limit) =
+      (fun limit : Int => ProjectEulerSolutions.P71.solve limit) :=
+  funext (fun limit => ProjectEulerSolutions.P71.equiv limit 3 7 (by decide) (by decide))
+
+example (num den : Int) (positive : 0 < num) (proper : num < den) :
+    (fun limit : Int => ProjectEulerStatements.P71.naive limit num den) =
+      (fun limit : Int => ProjectEulerSolutions.P71.solve limit num den) :=
+  funext (fun limit => ProjectEulerSolutions.P71.equiv limit num den positive proper)
 
 example : ProjectEulerStatements.P72.naive = ProjectEulerSolutions.P72.solve := by
   apply (funext_iff).2
