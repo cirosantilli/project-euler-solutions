@@ -540,7 +540,7 @@ Problem 35’s source-level equivalence proof covers the prime sieve, decimal ro
 
 Problem 36’s source-level equivalence and termination proofs cover every nonnegative limit. The proofs establish complete, duplicate-free decimal mirroring, justify the early stop for growing prefixes and the skipped even binary candidates, and connect the resulting sum to the exhaustive reference. There is no fixed prefix or input cutoff and no whole-program evaluation; the proofs use only standard Lean axioms.
 
-Problem 37’s reference exhausts the right-truncatable-prime tree without a numeric cutoff, and the optimized sieve expands until finding the problem’s eleven primes. The previous bounded-reference proof is retained as an attempt pending a new `Equiv` proof.
+Problem 37 accepts a numeral base at least two in both implementations. Both exhaust the right-truncatable-prime tree, without a prescribed depth or success count. The optimized solver inherits right-truncation checks from the tree and tests left suffixes arithmetically; the reference checks digit-list truncations. The arbitrary-base mathematical model proves frontier completeness, uniqueness, and agreement of the two truncation predicates. A separate decimal certificate proves exhaustion and the globally complete eleven-value sum. Source-level `Equiv` and support proofs remain pending, and the archived source proofs are not counted as current proofs.
 
 Problem 38’s previous source proof is archived after removing the reference-only base-search limit. The four-digit base bound follows from fitting at least two products into nine digits. Structural `Equiv` checking remains pending.
 

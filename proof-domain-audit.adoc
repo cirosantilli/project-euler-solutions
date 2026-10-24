@@ -11,7 +11,7 @@ Prefer a meaningful argument shared by both implementations. A reference-only se
 | Problem | Former reference restriction | Current reference
 | 32 | Supplied factor limits 99 and 9999 | Split every permutation of the actual nine digits into factors and product.
 | 34 | Supplied inclusive limit 2540160 | Accept the same numeral base as the optimized solver and derive a complete bound from `d * (base - 1)!` and `base**(d-1)`.
-| 37 | Scan below a million | Exhaust the right-truncatable-prime tree until its frontier is empty.
+| 37 | Scan below a million | Accept the same numeral base as the optimized solver and exhaust its right-truncatable-prime tree until the frontier is empty.
 | 38 | Supplied base limit 9999 | Share the target width and derive the seed endpoint and product-count bound from that width.
 | 40 | Supplied decimal-stream construction limit | Accept the same requested digit positions as the optimized solver and extend the stream until they exist.
 | 45 | Scan 100001 triangular indices | Accept the same `after` threshold as the optimized solver and merge the three increasing polygonal sequences without a cutoff.
@@ -46,7 +46,7 @@ Problem 51 has structural equivalence and support proofs for every signed family
 | 11 | The proof fixes the grid to the original 20 by 20 shape. | Consider general rectangular grids; the current theorem is restricted.
 | 17 | Number spelling and its proof stop at 1000. | This is the original problem's range, not an exhaustion bound. A broader naming convention would be a new parameterized problem.
 | 19 | The solver starts its calendar at 1900 and the proof excludes earlier years. | Extend the implementation before claiming arbitrary year ranges.
-| 37 | Fixed: the optimized sieve doubles until it finds the eleven primes specified by the problem. | Restore equivalence to the unbounded reference; there is no fixed sieve cutoff.
+| 37 | Both implementations exhaust the prime tree in the requested base. The general mathematical model proves completeness and uniqueness; termination is equivalent to bounded right-truncatable primes in that base. A separate decimal certificate proves exhaustion and the complete sum. | Prove source-level equivalence and support for the arbitrary-base searches; do not assume exhaustion for every base.
 | 44 | Both implementations accept the same finite pentagonal-index bound. | This is a valid bounded parameterization, but equivalence alone does not prove that the default answer is the global minimum over all indices.
 | 62 | Unbounded equivalence and a termination characterization hold for every signed class size. | A separate `Returns` theorem for the default target still needs a verified existence witness.
 |===

@@ -1,64 +1,53 @@
 #!/usr/bin/env python
-from __future__ import annotations
-
-from typing import List
+from math import isqrt
 
 
-def sieve(limit: int) -> bytearray:
-    """
-    Returns a bytearray is_prime where is_prime[n] is 1 if n is prime else 0,
-    for 0 <= n <= limit.
-    """
-    if limit < 1:
-        return bytearray(b"\x00") * (limit + 1)
-
-    is_prime = bytearray(b"\x01") * (limit + 1)
-    is_prime[0:2] = b"\x00\x00"
-    # Even numbers > 2 are not prime
-    for i in range(4, limit + 1, 2):
-        is_prime[i] = 0
-
-    p = 3
-    while p * p <= limit:
-        if is_prime[p]:
-            step = 2 * p
-            start = p * p
-            for x in range(start, limit + 1, step):
-                is_prime[x] = 0
-        p += 2
-    return is_prime
-
-
-def is_truncatable_prime(n: int, is_prime: bytearray) -> bool:
-    # Single-digit primes are explicitly excluded
-    if n < 10:
+def is_prime(n: int) -> bool:
+    if n < 2:
         return False
-    s = str(n)
-    # Truncate from left and from right; all intermediates must be prime
-    for i in range(1, len(s)):
-        if not is_prime[int(s[i:])]:
-            return False
-        if not is_prime[int(s[: len(s) - i])]:
+    if n == 2:
+        return True
+    if n % 2 == 0:
+        return False
+    for divisor in range(3, isqrt(n) + 1, 2):
+        if n % divisor == 0:
             return False
     return True
 
 
-def solve() -> int:
+def is_left_truncatable(n: int, base: int) -> bool:
+    power = base
+    while power <= n:
+        if not is_prime(n % power):
+            return False
+        power *= base
+    return True
+
+
+def solve(base: int = 10) -> int:
     """
-    @formalsw: Py from project_euler_statements.p37 import naive_default
-    @formalsw: Equiv(naive_default)
+    Sum primes with at least two digits that remain prime under either truncation.
+
+    @formalsw: Requires(base >= 2)
+    @formalsw: Py from project_euler_statements.p37 import naive
+    @formalsw: Equiv(naive)
     """
-    limit = 1000
-    while True:
-        is_prime = sieve(limit)
-        truncatable = []
-        for n in range(11, limit + 1, 2):
-            if is_prime[n] and is_truncatable_prime(n, is_prime):
-                truncatable.append(n)
-                if len(truncatable) == 11:
-                    return sum(truncatable)
-        limit *= 2
+    frontier = [n for n in range(2, base) if is_prime(n)]
+    total = 0
+    while frontier:
+        following = []
+        for prefix in frontier:
+            for digit in range(1, base):
+                candidate = base * prefix + digit
+                if is_prime(candidate):
+                    following.append(candidate)
+                    # All right truncations are prime by construction.
+                    if is_left_truncatable(candidate, base):
+                        total += candidate
+        frontier = following
+    return total
 
 
 if __name__ == "__main__":
+    assert is_left_truncatable(3797, 10)
     print(solve())
