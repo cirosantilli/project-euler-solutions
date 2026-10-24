@@ -7,6 +7,8 @@ import ProjectEulerSolutions.Lib.IntPairCache
 import ProjectEulerSolutions.Lib.HeapCollection
 import ProjectEulerSolutions.Lib.CliqueSearch
 import ProjectEulerSolutions.Lib.CliqueSearchCorrectness
+import ProjectEulerSolutions.Lib.CliqueSearchAgreement
+import ProjectEulerSolutions.Lib.TrialPrimeCertificate
 import data.«project-euler-statements».data.py.project_euler_statements.«p60.py»
 import Mathlib.Data.List.Sort
 import lang.py.FormalSW.ComprehensionCalls
@@ -4751,3 +4753,284 @@ theorem model_eq_math_search (limit : Int) :
   simpa only [vertices_eq] using answerModel_eq_search limit
 
 end solvers.«60».reference
+
+
+namespace solvers.«60».competitive
+open ProjectEulerSolutions
+private abbrev MathRef := data.«project-euler-statements».data.py.project_euler_statements.p60.naive.relation
+
+def witness : List Nat := [13, 5197, 5701, 6733, 8389]
+theorem witness_sum : witness.sum = 26033 := by decide
+theorem witness_increasing : witness.Pairwise (· < ·) := by decide
+
+private theorem prime_13 : Nat.Prime 13 :=
+  TrialPrimeCertificate.prime 13 2 (by decide) (Nat.sqrt_lt.mpr (by decide)) (by decide)
+private theorem prime_5197 : Nat.Prime 5197 :=
+  TrialPrimeCertificate.prime 5197 7 (by decide) (Nat.sqrt_lt.mpr (by decide)) (by decide)
+private theorem prime_5701 : Nat.Prime 5701 :=
+  TrialPrimeCertificate.prime 5701 7 (by decide) (Nat.sqrt_lt.mpr (by decide)) (by decide)
+private theorem prime_6733 : Nat.Prime 6733 :=
+  TrialPrimeCertificate.prime 6733 7 (by decide) (Nat.sqrt_lt.mpr (by decide)) (by decide)
+private theorem prime_8389 : Nat.Prime 8389 :=
+  TrialPrimeCertificate.prime 8389 7 (by decide) (Nat.sqrt_lt.mpr (by decide)) (by decide)
+private theorem prime_135197 : Nat.Prime 135197 :=
+  TrialPrimeCertificate.prime 135197 9 (by decide) (Nat.sqrt_lt.mpr (by decide)) (by decide)
+private theorem prime_135701 : Nat.Prime 135701 :=
+  TrialPrimeCertificate.prime 135701 9 (by decide) (Nat.sqrt_lt.mpr (by decide)) (by decide)
+private theorem prime_136733 : Nat.Prime 136733 :=
+  TrialPrimeCertificate.prime 136733 9 (by decide) (Nat.sqrt_lt.mpr (by decide)) (by decide)
+private theorem prime_138389 : Nat.Prime 138389 :=
+  TrialPrimeCertificate.prime 138389 9 (by decide) (Nat.sqrt_lt.mpr (by decide)) (by decide)
+private theorem prime_519713 : Nat.Prime 519713 :=
+  TrialPrimeCertificate.prime 519713 10 (by decide) (Nat.sqrt_lt.mpr (by decide)) (by decide)
+private theorem prime_570113 : Nat.Prime 570113 :=
+  TrialPrimeCertificate.prime 570113 10 (by decide) (Nat.sqrt_lt.mpr (by decide)) (by decide)
+private theorem prime_673313 : Nat.Prime 673313 :=
+  TrialPrimeCertificate.prime 673313 10 (by decide) (Nat.sqrt_lt.mpr (by decide)) (by decide)
+private theorem prime_838913 : Nat.Prime 838913 :=
+  TrialPrimeCertificate.prime 838913 10 (by decide) (Nat.sqrt_lt.mpr (by decide)) (by decide)
+private theorem prime_51975701 : Nat.Prime 51975701 :=
+  TrialPrimeCertificate.prime 51975701 13 (by decide) (Nat.sqrt_lt.mpr (by decide)) (by decide)
+private theorem prime_51976733 : Nat.Prime 51976733 :=
+  TrialPrimeCertificate.prime 51976733 13 (by decide) (Nat.sqrt_lt.mpr (by decide)) (by decide)
+private theorem prime_51978389 : Nat.Prime 51978389 :=
+  TrialPrimeCertificate.prime 51978389 13 (by decide) (Nat.sqrt_lt.mpr (by decide)) (by decide)
+private theorem prime_57015197 : Nat.Prime 57015197 :=
+  TrialPrimeCertificate.prime 57015197 13 (by decide) (Nat.sqrt_lt.mpr (by decide)) (by decide)
+private theorem prime_57016733 : Nat.Prime 57016733 :=
+  TrialPrimeCertificate.prime 57016733 13 (by decide) (Nat.sqrt_lt.mpr (by decide)) (by decide)
+private theorem prime_57018389 : Nat.Prime 57018389 :=
+  TrialPrimeCertificate.prime 57018389 13 (by decide) (Nat.sqrt_lt.mpr (by decide)) (by decide)
+private theorem prime_67335197 : Nat.Prime 67335197 :=
+  TrialPrimeCertificate.prime 67335197 14 (by decide) (Nat.sqrt_lt.mpr (by decide)) (by decide)
+private theorem prime_67335701 : Nat.Prime 67335701 :=
+  TrialPrimeCertificate.prime 67335701 14 (by decide) (Nat.sqrt_lt.mpr (by decide)) (by decide)
+private theorem prime_67338389 : Nat.Prime 67338389 :=
+  TrialPrimeCertificate.prime 67338389 14 (by decide) (Nat.sqrt_lt.mpr (by decide)) (by decide)
+private theorem prime_83895197 : Nat.Prime 83895197 :=
+  TrialPrimeCertificate.prime 83895197 14 (by decide) (Nat.sqrt_lt.mpr (by decide)) (by decide)
+private theorem prime_83895701 : Nat.Prime 83895701 :=
+  TrialPrimeCertificate.prime 83895701 14 (by decide) (Nat.sqrt_lt.mpr (by decide)) (by decide)
+private theorem prime_83896733 : Nat.Prime 83896733 :=
+  TrialPrimeCertificate.prime 83896733 14 (by decide) (Nat.sqrt_lt.mpr (by decide)) (by decide)
+
+theorem witness_primes : ∀ p ∈ witness, Nat.Prime p := by
+  intro p member
+  simp only [witness, List.mem_cons, List.not_mem_nil, or_false] at member
+  rcases member with rfl | rfl | rfl | rfl | rfl
+  · exact prime_13
+  · exact prime_5197
+  · exact prime_5701
+  · exact prime_6733
+  · exact prime_8389
+private theorem mr_13_5197 : pair_ok.answer 13 5197 = true := by
+  simp only [pair_ok.answer, pair_ok.concatenated]
+  simp [DecimalShift.decimalShift, DecimalShift.decimalShiftFrom]
+  decide
+private theorem mr_13_5701 : pair_ok.answer 13 5701 = true := by
+  simp only [pair_ok.answer, pair_ok.concatenated]
+  simp [DecimalShift.decimalShift, DecimalShift.decimalShiftFrom]
+  decide
+private theorem mr_13_6733 : pair_ok.answer 13 6733 = true := by
+  simp only [pair_ok.answer, pair_ok.concatenated]
+  simp [DecimalShift.decimalShift, DecimalShift.decimalShiftFrom]
+  decide
+private theorem mr_13_8389 : pair_ok.answer 13 8389 = true := by
+  simp only [pair_ok.answer, pair_ok.concatenated]
+  simp [DecimalShift.decimalShift, DecimalShift.decimalShiftFrom]
+  decide
+private theorem mr_5197_5701 : pair_ok.answer 5197 5701 = true := by
+  simp only [pair_ok.answer, pair_ok.concatenated]
+  simp [DecimalShift.decimalShift, DecimalShift.decimalShiftFrom]
+  decide
+private theorem mr_5197_6733 : pair_ok.answer 5197 6733 = true := by
+  simp only [pair_ok.answer, pair_ok.concatenated]
+  simp [DecimalShift.decimalShift, DecimalShift.decimalShiftFrom]
+  decide
+private theorem mr_5197_8389 : pair_ok.answer 5197 8389 = true := by
+  simp only [pair_ok.answer, pair_ok.concatenated]
+  simp [DecimalShift.decimalShift, DecimalShift.decimalShiftFrom]
+  decide
+private theorem mr_5701_6733 : pair_ok.answer 5701 6733 = true := by
+  simp only [pair_ok.answer, pair_ok.concatenated]
+  simp [DecimalShift.decimalShift, DecimalShift.decimalShiftFrom]
+  decide
+private theorem mr_5701_8389 : pair_ok.answer 5701 8389 = true := by
+  simp only [pair_ok.answer, pair_ok.concatenated]
+  simp [DecimalShift.decimalShift, DecimalShift.decimalShiftFrom]
+  decide
+private theorem mr_6733_8389 : pair_ok.answer 6733 8389 = true := by
+  simp only [pair_ok.answer, pair_ok.concatenated]
+  simp [DecimalShift.decimalShift, DecimalShift.decimalShiftFrom]
+  decide
+
+theorem witness_math_pairs : witness.Pairwise (fun p q => MathRef p q = true) := by
+  apply List.Pairwise.cons
+  · intro q member
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at member
+    rcases member with rfl | rfl | rfl | rfl
+    · apply (data.«project-euler-statements».data.py.project_euler_statements.p60.compatible_iff 13 5197).mpr
+      constructor
+      · simpa [data.«project-euler-statements».data.py.project_euler_statements.p60.concatenated, DecimalShift.decimalShift, DecimalShift.decimalShiftFrom] using prime_135197
+      · simpa [data.«project-euler-statements».data.py.project_euler_statements.p60.concatenated, DecimalShift.decimalShift, DecimalShift.decimalShiftFrom] using prime_519713
+    · apply (data.«project-euler-statements».data.py.project_euler_statements.p60.compatible_iff 13 5701).mpr
+      constructor
+      · simpa [data.«project-euler-statements».data.py.project_euler_statements.p60.concatenated, DecimalShift.decimalShift, DecimalShift.decimalShiftFrom] using prime_135701
+      · simpa [data.«project-euler-statements».data.py.project_euler_statements.p60.concatenated, DecimalShift.decimalShift, DecimalShift.decimalShiftFrom] using prime_570113
+    · apply (data.«project-euler-statements».data.py.project_euler_statements.p60.compatible_iff 13 6733).mpr
+      constructor
+      · simpa [data.«project-euler-statements».data.py.project_euler_statements.p60.concatenated, DecimalShift.decimalShift, DecimalShift.decimalShiftFrom] using prime_136733
+      · simpa [data.«project-euler-statements».data.py.project_euler_statements.p60.concatenated, DecimalShift.decimalShift, DecimalShift.decimalShiftFrom] using prime_673313
+    · apply (data.«project-euler-statements».data.py.project_euler_statements.p60.compatible_iff 13 8389).mpr
+      constructor
+      · simpa [data.«project-euler-statements».data.py.project_euler_statements.p60.concatenated, DecimalShift.decimalShift, DecimalShift.decimalShiftFrom] using prime_138389
+      · simpa [data.«project-euler-statements».data.py.project_euler_statements.p60.concatenated, DecimalShift.decimalShift, DecimalShift.decimalShiftFrom] using prime_838913
+  ·
+    apply List.Pairwise.cons
+    · intro q member
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at member
+      rcases member with rfl | rfl | rfl
+      · apply (data.«project-euler-statements».data.py.project_euler_statements.p60.compatible_iff 5197 5701).mpr
+        constructor
+        · simpa [data.«project-euler-statements».data.py.project_euler_statements.p60.concatenated, DecimalShift.decimalShift, DecimalShift.decimalShiftFrom] using prime_51975701
+        · simpa [data.«project-euler-statements».data.py.project_euler_statements.p60.concatenated, DecimalShift.decimalShift, DecimalShift.decimalShiftFrom] using prime_57015197
+      · apply (data.«project-euler-statements».data.py.project_euler_statements.p60.compatible_iff 5197 6733).mpr
+        constructor
+        · simpa [data.«project-euler-statements».data.py.project_euler_statements.p60.concatenated, DecimalShift.decimalShift, DecimalShift.decimalShiftFrom] using prime_51976733
+        · simpa [data.«project-euler-statements».data.py.project_euler_statements.p60.concatenated, DecimalShift.decimalShift, DecimalShift.decimalShiftFrom] using prime_67335197
+      · apply (data.«project-euler-statements».data.py.project_euler_statements.p60.compatible_iff 5197 8389).mpr
+        constructor
+        · simpa [data.«project-euler-statements».data.py.project_euler_statements.p60.concatenated, DecimalShift.decimalShift, DecimalShift.decimalShiftFrom] using prime_51978389
+        · simpa [data.«project-euler-statements».data.py.project_euler_statements.p60.concatenated, DecimalShift.decimalShift, DecimalShift.decimalShiftFrom] using prime_83895197
+    ·
+      apply List.Pairwise.cons
+      · intro q member
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at member
+        rcases member with rfl | rfl
+        · apply (data.«project-euler-statements».data.py.project_euler_statements.p60.compatible_iff 5701 6733).mpr
+          constructor
+          · simpa [data.«project-euler-statements».data.py.project_euler_statements.p60.concatenated, DecimalShift.decimalShift, DecimalShift.decimalShiftFrom] using prime_57016733
+          · simpa [data.«project-euler-statements».data.py.project_euler_statements.p60.concatenated, DecimalShift.decimalShift, DecimalShift.decimalShiftFrom] using prime_67335701
+        · apply (data.«project-euler-statements».data.py.project_euler_statements.p60.compatible_iff 5701 8389).mpr
+          constructor
+          · simpa [data.«project-euler-statements».data.py.project_euler_statements.p60.concatenated, DecimalShift.decimalShift, DecimalShift.decimalShiftFrom] using prime_57018389
+          · simpa [data.«project-euler-statements».data.py.project_euler_statements.p60.concatenated, DecimalShift.decimalShift, DecimalShift.decimalShiftFrom] using prime_83895701
+      ·
+        apply List.Pairwise.cons
+        · intro q member
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at member
+          rcases member with rfl
+          · apply (data.«project-euler-statements».data.py.project_euler_statements.p60.compatible_iff 6733 8389).mpr
+            constructor
+            · simpa [data.«project-euler-statements».data.py.project_euler_statements.p60.concatenated, DecimalShift.decimalShift, DecimalShift.decimalShiftFrom] using prime_67338389
+            · simpa [data.«project-euler-statements».data.py.project_euler_statements.p60.concatenated, DecimalShift.decimalShift, DecimalShift.decimalShiftFrom] using prime_83896733
+        ·
+          simp
+
+theorem witness_mr_pairs : witness.Pairwise (fun (p q : Nat) => pair_ok.answer p q = true) := by
+
+  apply List.Pairwise.cons
+  · intro q member
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at member
+    rcases member with rfl | rfl | rfl | rfl
+    · exact mr_13_5197
+    · exact mr_13_5701
+    · exact mr_13_6733
+    · exact mr_13_8389
+  ·
+    apply List.Pairwise.cons
+    · intro q member
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at member
+      rcases member with rfl | rfl | rfl
+      · exact mr_5197_5701
+      · exact mr_5197_6733
+      · exact mr_5197_8389
+    ·
+      apply List.Pairwise.cons
+      · intro q member
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at member
+        rcases member with rfl | rfl
+        · exact mr_5701_6733
+        · exact mr_5701_8389
+      ·
+        apply List.Pairwise.cons
+        · intro q member
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at member
+          rcases member with rfl
+          · exact mr_6733_8389
+        ·
+          simp
+
+
+theorem witness_bounds : ∀ p ∈ witness, 3 ≤ p ∧ p ≤ 8389 ∧ p ≠ 5 := by
+  intro p member
+  simp only [witness, List.mem_cons, List.not_mem_nil, or_false] at member
+  rcases member with rfl | rfl | rfl | rfl | rfl <;> decide
+
+theorem witness_vertices (limit : Int) (large : 8389 ≤ limit) :
+    witness.Sublist (solve_setup.vertices limit) := by
+  apply List.sublist_of_subperm_of_pairwise (r := (· ≤ ·))
+  · apply List.subperm_of_subset witness_increasing.nodup
+    intro p member
+    obtain ⟨lower, upper, notFive⟩ := witness_bounds p member
+    exact (solve_setup.mem_vertices limit p).mpr ⟨witness_primes p member, lower, by omega, notFive⟩
+  · exact witness_increasing.imp (fun less => Nat.le_of_lt less)
+  · exact (solve_setup.vertices_increasing limit).imp (fun less => Nat.le_of_lt less)
+
+theorem witness_mr_completion (limit : Int) (large : 8389 ≤ limit) :
+    CliqueSearch.Completion (fun p q => pair_ok.answer p q) 5 (solve_setup.vertices limit) witness :=
+  ⟨by decide, witness_vertices limit large, witness_mr_pairs⟩
+
+theorem witness_math_completion (limit : Int) (large : 8389 ≤ limit) :
+    CliqueSearch.Completion MathRef 5 (solve_setup.vertices limit) witness :=
+  ⟨by decide, witness_vertices limit large, witness_math_pairs⟩
+
+theorem optimized_bound (limit : Int) (large : 8389 ≤ limit) :
+    (solve_search.answerModel limit).bound ≤ 26033 := by
+  have bound := solve_search.answerModel_minimal limit witness (witness_mr_completion limit large)
+  simpa only [witness_sum] using bound
+
+theorem selected_bounded (limit : Int) (p : Nat)
+    (member : p ∈ (solve_search.answerModel limit).chosen) : p ≤ 26033 := by
+  by_cases large : 8389 ≤ limit
+  · have bound := optimized_bound limit large
+    rcases solve_search.answerModel_completion limit with same | ⟨_, total, _⟩
+    · rw [same] at member
+      simp at member
+    · have lower := CliqueSearch.member_le_sum (solve_search.answerModel limit).chosen p member
+      omega
+  · have upper := (solve_search.answerModel_prime_members limit p member).2.2.1
+    omega
+
+/-- The remaining arithmetic obligation is finite. The reduction below
+retains every signed source input and the exact selected list, including ties. -/
+def FiniteAgreement : Prop :=
+  ∀ p q : Nat, Nat.Prime p → Nat.Prime q → 3 ≤ p → p < q → q ≤ 26033 →
+    p ≠ 5 → q ≠ 5 → pair_ok.answer p q = MathRef p q
+
+theorem agree_below_of_finite_agreement (agreement : FiniteAgreement) (limit : Int) :
+    CliqueSearch.AgreeBelow (fun p q => pair_ok.answer p q) MathRef (solve_setup.vertices limit) 26033 := by
+  intro p memberP q memberQ order bounded
+  obtain ⟨primeP, lowerP, _, notFiveP⟩ := (solve_setup.mem_vertices limit p).mp memberP
+  obtain ⟨primeQ, _, _, notFiveQ⟩ := (solve_setup.mem_vertices limit q).mp memberQ
+  exact agreement p q primeP primeQ lowerP order bounded notFiveP notFiveQ
+
+theorem models_eq_of_finite_agreement (agreement : FiniteAgreement) (limit : Int) :
+    solve_search.answerModel limit =
+      data.«project-euler-statements».data.py.project_euler_statements.p60.naive.answerModel limit := by
+  have agree := agree_below_of_finite_agreement agreement limit
+  have transferred : CliqueSearch.Optimal MathRef 5 [] (solve_setup.vertices limit) 0
+      ⟨solve_setup.sentinel, []⟩ (solve_search.answerModel limit) := by
+    by_cases large : 8389 ≤ limit
+    · exact (solve_search.answerModel_optimal limit).change_relation_below
+        (solve_setup.vertices_increasing limit) agree (optimized_bound limit large)
+    · apply (solve_search.answerModel_optimal limit).change_relation_on
+        (solve_setup.vertices_increasing limit) agree
+      intro p member
+      have upper := ((solve_setup.mem_vertices limit p).mp member).2.2.1
+      omega
+  have mathematical := data.«project-euler-statements».data.py.project_euler_statements.p60.naive.answerModel_optimal limit
+  rw [reference.vertices_eq] at mathematical
+  exact transferred.unique mathematical
+
+end solvers.«60».competitive
