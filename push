@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
-git -C "$PWD/data/project-euler-statements/formalsw" push
-git -C "$PWD/data/project-euler-statements/.git" push
-git -C "$PWD/.git" push
+set -eux
+git -C "data/project-euler-statements/formalsw" push
+git -C "data/project-euler-statements/.git" push
+git push
