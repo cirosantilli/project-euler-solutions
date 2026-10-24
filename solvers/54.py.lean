@@ -1,6 +1,12 @@
 import «.formalsw».solvers.«54.py.ast»
 import lang.py.FormalSW.DictionaryCalls
+import lang.py.FormalSW.DictionaryItemsCalls
+import lang.py.FormalSW.ReverseSortingCalls
 import lang.py.FormalSW.TupleComparisons
+import ProjectEulerSolutions.Lib.HeapCollection
+import ProjectEulerSolutions.Lib.PokerGroupOrder
+import ProjectEulerSolutions.Lib.TupleSorting
+import Mathlib.Data.List.Forall2
 
 /-! Source proofs for poker-card parsing and hand evaluation. -/
 set_option Elab.async false
@@ -53,7 +59,10 @@ private theorem lookup_fold (values : List Int) (table : List (Int × Int)) (que
   | nil => simp
   | cons value rest ih =>
       rw [List.foldl_cons, ih, lookup_bump]
-      by_cases same : query = value <;> simp [same, Ne.symm] <;> omega
+      by_cases same : query = value
+      · simp [same]
+        omega
+      · simp [same, Ne.symm]
 
 /-- The dictionary lookup, defaulting to zero, equals the exact number of occurrences. -/
 theorem lookup_counts (values : List Int) (query : Int) :
@@ -169,7 +178,476 @@ theorem «Supported» (heap : Mutable.Heap) (address : Nat) (valid : heap.Valid)
     (typed : Mutable.Value.HasType heap (.ref address) "list[int]") :
     (HeapCalls.call program "count_values" [.ref address] heap).Supported := («Returns» heap address valid typed).supported
 
+
+/-- Updating the first matching key changes the stored mass by its replacement difference. -/
+theorem sum_put (table : List (Int × Int)) (key value : Int) :
+    ((put table key value).map Prod.snd).sum = (table.map Prod.snd).sum + value - lookup table key := by
+  induction table with
+  | nil => simp [put, lookup]
+  | cons pair rest ih =>
+      obtain ⟨stored, previous⟩ := pair
+      by_cases same : stored = key
+      · rw [put, if_pos same, lookup, if_pos same]
+        simp only [List.map_cons, List.sum_cons]
+        omega
+      · rw [put, if_neg same, lookup, if_neg same]
+        simp only [List.map_cons, List.sum_cons]
+        rw [ih]
+        omega
+
+theorem sum_bump (table : List (Int × Int)) (key : Int) :
+    ((bump table key).map Prod.snd).sum = (table.map Prod.snd).sum + 1 := by
+  rw [bump, sum_put]
+  omega
+
+private theorem sum_fold (values : List Int) (table : List (Int × Int)) :
+    ((values.foldl bump table).map Prod.snd).sum = (table.map Prod.snd).sum + (values.length : Int) := by
+  induction values generalizing table with
+  | nil => simp
+  | cons value rest ih =>
+      rw [List.foldl_cons, ih, sum_bump]
+      simp only [List.length_cons]
+      omega
+
+/-- Stored frequencies account for every processed value exactly once. -/
+theorem counts_sum (values : List Int) :
+    ((counts values).map Prod.snd).sum = (values.length : Int) := by
+  simpa [counts] using sum_fold values []
+
+theorem lookup_nonnegative (table : List (Int × Int)) (key : Int)
+    (positive : ∀ entry ∈ table, 0 < entry.2) : 0 ≤ lookup table key := by
+  revert positive
+  induction table with
+  | nil => intro _; simp [lookup]
+  | cons pair rest ih =>
+      obtain ⟨stored, previous⟩ := pair
+      intro positive
+      have first := positive (stored, previous) List.mem_cons_self
+      have tail := ih (fun entry member => positive entry (List.mem_cons_of_mem _ member))
+      by_cases same : stored = key
+      · rw [lookup, if_pos same]
+        omega
+      · rw [lookup, if_neg same]
+        exact tail
+
+theorem put_positive (table : List (Int × Int)) (key value : Int) (newPositive : 0 < value)
+    (positive : ∀ entry ∈ table, 0 < entry.2) :
+    ∀ entry ∈ put table key value, 0 < entry.2 := by
+  revert positive
+  induction table with
+  | nil => intro _; simpa [put] using newPositive
+  | cons pair rest ih =>
+      obtain ⟨stored, previous⟩ := pair
+      intro positive
+      have first := positive (stored, previous) List.mem_cons_self
+      have tail : ∀ entry ∈ rest, 0 < entry.2 :=
+        fun entry member => positive entry (List.mem_cons_of_mem _ member)
+      by_cases same : stored = key
+      · rw [put, if_pos same]
+        exact List.forall_mem_cons.mpr ⟨newPositive, tail⟩
+      · rw [put, if_neg same]
+        exact List.forall_mem_cons.mpr ⟨first, ih tail⟩
+
+theorem bump_positive (table : List (Int × Int)) (key : Int)
+    (positive : ∀ entry ∈ table, 0 < entry.2) :
+    ∀ entry ∈ bump table key, 0 < entry.2 := by
+  apply put_positive table key (lookup table key + 1) (by
+    have nonnegative := lookup_nonnegative table key positive
+    omega) positive
+
+private theorem positive_fold (values : List Int) (table : List (Int × Int))
+    (positive : ∀ entry ∈ table, 0 < entry.2) :
+    ∀ entry ∈ values.foldl bump table, 0 < entry.2 := by
+  induction values generalizing table with
+  | nil => exact positive
+  | cons value rest ih =>
+      rw [List.foldl_cons]
+      exact ih (bump table value) (bump_positive table value positive)
+
+/-- Every stored frequency is strictly positive; unseen keys are absent. -/
+theorem counts_positive (values : List Int) : ∀ entry ∈ counts values, 0 < entry.2 :=
+  positive_fold values [] (by intro entry impossible; cases impossible)
+
+theorem mem_keys_put (table : List (Int × Int)) (key value query : Int) :
+    query ∈ (put table key value).map Prod.fst ↔ query = key ∨ query ∈ table.map Prod.fst := by
+  induction table with
+  | nil => simp [put]
+  | cons pair rest ih =>
+      obtain ⟨stored, previous⟩ := pair
+      by_cases same : stored = key
+      · subst stored
+        simp [put]
+      · rw [put, if_neg same]
+        simp only [List.map_cons, List.mem_cons, ih, or_left_comm]
+
+theorem keys_nodup_put (table : List (Int × Int)) (key value : Int)
+    (unique : (table.map Prod.fst).Nodup) : ((put table key value).map Prod.fst).Nodup := by
+  revert unique
+  induction table with
+  | nil => intro _; simp [put]
+  | cons pair rest ih =>
+      obtain ⟨stored, previous⟩ := pair
+      intro unique
+      have both : stored ∉ rest.map Prod.fst ∧ (rest.map Prod.fst).Nodup := by
+        simpa only [List.map_cons, List.nodup_cons] using unique
+      by_cases same : stored = key
+      · rw [put, if_pos same]
+        simpa only [List.map_cons] using unique
+      · rw [put, if_neg same]
+        apply List.nodup_cons.mpr
+        refine ⟨?_, ih both.2⟩
+        intro member
+        exact ((mem_keys_put rest key value stored).mp member).elim same both.1
+
+private theorem unique_fold (values : List Int) (table : List (Int × Int))
+    (unique : (table.map Prod.fst).Nodup) : ((values.foldl bump table).map Prod.fst).Nodup := by
+  induction values generalizing table with
+  | nil => exact unique
+  | cons value rest ih =>
+      rw [List.foldl_cons]
+      exact ih (bump table value) (keys_nodup_put table value _ unique)
+
+theorem counts_keys_nodup (values : List Int) : ((counts values).map Prod.fst).Nodup :=
+  unique_fold values [] (by simp)
+
+private theorem mem_keys_fold (values : List Int) (table : List (Int × Int)) (query : Int) :
+    query ∈ (values.foldl bump table).map Prod.fst ↔ query ∈ values ∨ query ∈ table.map Prod.fst := by
+  induction values generalizing table with
+  | nil => simp
+  | cons value rest ih =>
+      rw [List.foldl_cons, ih, bump, mem_keys_put]
+      simp only [List.mem_cons, or_assoc, or_left_comm]
+
+/-- The dictionary stores exactly the ranks encountered in the input. -/
+theorem mem_counts_keys (values : List Int) (query : Int) :
+    query ∈ (counts values).map Prod.fst ↔ query ∈ values := by
+  simpa [counts] using mem_keys_fold values [] query
+
 end count_values
+
+namespace rank_groups
+
+private abbrev working := ProjectEulerSolutions.HeapCollection.working
+private abbrev fields (table : List (Int × Int)) : List (Mutable.Value × Mutable.Value) :=
+  (count_values.entries table).map fun entry => (.scalar entry.1, entry.2)
+private abbrev keys (table : List (Int × Int)) : List SequenceSource :=
+  (fields table).map fun entry => sequenceSource entry.1
+
+def itemTuple (pair : Int × Int) : Mutable.Object := .tuple [number pair.1, number pair.2]
+def groupTuple (pair : Int × Int) : Mutable.Object := .tuple [number pair.2, number pair.1]
+
+/-- Each items iteration retains its original pair and its reversed ranking pair. -/
+def scratch : List (Int × Int) → Mutable.Heap
+  | [] => []
+  | pair :: rest => itemTuple pair :: groupTuple pair :: scratch rest
+
+def references (next : Nat) : List (Int × Int) → List Mutable.Value
+  | [] => []
+  | _ :: rest => .ref (next+1) :: references (next+2) rest
+
+/-- Collector references have the same order as the dictionary's original entries. -/
+def Represents (heap : Mutable.Heap) (groups : List Mutable.Value) (table : List (Int × Int)) : Prop :=
+  List.Forall₂ (fun group pair => ∃ address : Nat, group = .ref address ∧ heap[address]? = some (groupTuple pair)) groups table
+
+private theorem Represents.preserve (heap other : Mutable.Heap) (groups : List Mutable.Value)
+    (table : List (Int × Int)) (rows : Represents heap groups table)
+    (preserved : ∀ (address : Nat) (pair : Int × Int),
+      heap[address]? = some (groupTuple pair) → other[address]? = some (groupTuple pair)) :
+    Represents other groups table := by
+  induction rows with
+  | nil => exact .nil
+  | @cons group pair groups table first rest ih =>
+      obtain ⟨address, equal, found⟩ := first
+      exact .cons ⟨address, equal, preserved address pair found⟩ ih
+
+theorem Represents.typed (heap : Mutable.Heap) (groups : List Mutable.Value) (table : List (Int × Int))
+    (rows : Represents heap groups table) :
+    ∀ group ∈ groups, ∃ address : Nat, ∃ values : List Int,
+      group = .ref address ∧ heap[address]? = some (.tuple (values.map number)) := by
+  induction rows with
+  | nil => intro group member; cases member
+  | @cons group pair groups table first rest ih =>
+      intro value member
+      rcases List.mem_cons.mp member with equal | member
+      · subst value
+        obtain ⟨address, equal, found⟩ := first
+        exact ⟨address, [pair.2, pair.1], equal, found⟩
+      · exact ih value member
+
+/-- Decoding the actual tuple references recovers each frequency/rank row in order. -/
+theorem Represents.readInts (heap : Mutable.Heap) (groups : List Mutable.Value) (table : List (Int × Int))
+    (rows : Represents heap groups table) :
+    groups.map (ProjectEulerSolutions.TupleSorting.readInts heap) = table.map (fun pair => [pair.2, pair.1]) := by
+  induction rows with
+  | nil => rfl
+  | @cons group pair groups table first rest ih =>
+      obtain ⟨address, rfl, found⟩ := first
+      simp only [List.map_cons, ih]
+      congr 1
+      simp [ProjectEulerSolutions.TupleSorting.readInts, found, groupTuple]
+
+private theorem input_found (heap : Mutable.Heap) (address : Nat) (table : List (Int × Int))
+    (found : heap[address]? = some (.dict (count_values.entries table))) (groups : List Mutable.Value) (garbage : Mutable.Heap) :
+    (working heap groups garbage)[address]? = some (.dict (count_values.entries table)) :=
+  ProjectEulerSolutions.HeapCollection.prefix_found heap (.list groups :: garbage) address _ found
+
+private theorem rows_step (heap : Mutable.Heap) (groups : List Mutable.Value) (garbage : Mutable.Heap)
+    (before : List (Int × Int)) (pair : Int × Int) (rows : Represents (working heap groups garbage) groups before) :
+    Represents (working heap (groups ++ [.ref ((working heap groups garbage).length+1)])
+      (garbage ++ [itemTuple pair, groupTuple pair]))
+      (groups ++ [.ref ((working heap groups garbage).length+1)]) (before ++ [pair]) := by
+  let extra := [itemTuple pair, groupTuple pair]
+  let replacement := groups ++ [Mutable.Value.ref ((working heap groups garbage).length+1)]
+  have kept : Represents (working heap replacement (garbage ++ extra)) groups before := by
+    apply Represents.preserve (rows := rows)
+    intro address row found
+    have different : heap.length ≠ address := by
+      intro same
+      rw [← same, ProjectEulerSolutions.HeapCollection.found] at found
+      cases found
+    exact ProjectEulerSolutions.HeapCollection.other_found heap groups replacement garbage extra address _ different found
+  have raw : (working heap groups (garbage ++ extra))[(working heap groups garbage).length+1]? = some (groupTuple pair) := by
+    unfold working
+    rw [← ProjectEulerSolutions.HeapCollection.append heap groups garbage extra]
+    simp [extra]
+  have different : heap.length ≠ (working heap groups garbage).length+1 := by
+    simp only [ProjectEulerSolutions.HeapCollection.working, List.length_append, List.length_cons]
+    omega
+  have retained := ProjectEulerSolutions.HeapCollection.other_found heap groups replacement (garbage ++ extra) []
+    ((working heap groups garbage).length+1) (groupTuple pair) different raw
+  apply List.rel_append kept
+  exact .cons ⟨_, rfl, by simpa only [List.append_nil] using retained⟩ .nil
+
+private def target : Expr := .tuple [.name "value", .name "count"]
+private def sourceBody : List Stmt :=
+  [.expr (.call (.attribute (.name "groups") "append") [.tuple [.name "count", .name "value"]])]
+private def loopBody : List Stmt := comprehensionTargetBody target sourceBody
+
+private theorem emit (heap : Mutable.Heap) (groups : List Mutable.Value) (garbage : Mutable.Heap)
+    (pair : Int × Int) (env : HeapCalls.Env) (globals : Mutable.Globals)
+    (getGroups : env "groups" = some (.ref heap.length))
+    (getPair : env "$formalsw.unpack" = some (.ref (working heap groups garbage).length)) :
+    BlockContinues program env loopBody (working heap groups garbage ++ [itemTuple pair])
+      (assignNames env ["value", "count"] [number pair.1, number pair.2])
+      (working heap (groups ++ [.ref ((working heap groups garbage).length+1)])
+        (garbage ++ [itemTuple pair, groupTuple pair])) globals := by
+  let current := working heap groups garbage
+  let ready := assignNames env ["value", "count"] [number pair.1, number pair.2]
+  have unpacked := BlockContinues.unpack (module := program) (env := env) (globals := globals)
+    (heap := current ++ [itemTuple pair]) (names := ["value", "count"]) (items := [number pair.1, number pair.2])
+    (expressions := [.name "value", .name "count"])
+    (value := .ref current.length) (finalHeap := current ++ [itemTuple pair])
+    rfl (Evaluates.lookup getPair) (by simp [Mutable.sequence, itemTuple]) rfl
+  apply BlockContinues.append unpacked
+  apply BlockContinues.discard
+  have getCount : ready "count" = some (number pair.2) := by simp [ready, assignNames, setLocal]
+  have getValue : ready "value" = some (number pair.1) := by simp [ready, assignNames, setLocal]
+  have getReady : ready "groups" = some (.ref heap.length) := by simpa [ready, assignNames, setLocal] using getGroups
+  have tuple := Evaluates.tuple (module := program) (env := ready) (globals := globals)
+    (heap := current ++ [itemTuple pair])
+    (.cons (Evaluates.lookup getCount) (.cons (Evaluates.lookup getValue) .nil)) (by simp)
+  have tupleEval : Evaluates program ready (.tuple [.name "count", .name "value"])
+      (current ++ [itemTuple pair]) (.ref (current.length+1))
+      (current ++ [itemTuple pair, groupTuple pair]) globals := by
+    simpa only [groupTuple, List.length_append, List.length_singleton, List.append_assoc] using tuple
+  have collector := ProjectEulerSolutions.HeapCollection.found heap groups garbage
+  have beforeFound := ProjectEulerSolutions.HeapCollection.prefix_found current [itemTuple pair] heap.length _ collector
+  have afterFound := ProjectEulerSolutions.HeapCollection.prefix_found current [itemTuple pair, groupTuple pair] heap.length _ collector
+  have appended := Evaluates.append (module := program) (env := ready) (globals := globals)
+    (Evaluates.lookup getReady) beforeFound tupleEval afterFound
+  simpa only [current, ProjectEulerSolutions.HeapCollection.append, ProjectEulerSolutions.HeapCollection.store] using appended
+
+private theorem scan (heap : Mutable.Heap) (address : Nat) (table : List (Int × Int))
+    (found : heap[address]? = some (.dict (count_values.entries table)))
+    (remaining before : List (Int × Int)) (decomposition : table = before ++ remaining)
+    (groups : List Mutable.Value) (garbage : Mutable.Heap) (env : HeapCalls.Env) (globals : Mutable.Globals)
+    (getGroups : env "groups" = some (.ref heap.length)) (rows : Represents (working heap groups garbage) groups before) :
+    ∃ finalEnv, finalEnv "groups" = some (.ref heap.length) ∧
+      BlockContinues program env [.dictionaryItemsStepLoop "$formalsw.unpack" address (keys table) before.length loopBody []]
+        (working heap groups garbage) finalEnv
+        (working heap (groups ++ references (working heap groups garbage).length remaining) (garbage ++ scratch remaining)) globals ∧
+      Represents (working heap (groups ++ references (working heap groups garbage).length remaining) (garbage ++ scratch remaining))
+        (groups ++ references (working heap groups garbage).length remaining) (before ++ remaining) := by
+  induction remaining generalizing before groups garbage env with
+  | nil =>
+      refine ⟨env, getGroups, ?_, ?_⟩
+      · apply BlockContinues.dictionary_items_done (middle := working heap groups garbage)
+        · have fetched := dictionaryItemsNext_fields (position := before.length)
+            (input_found heap address table found groups garbage) (rfl : dictionaryItemFields (.dict (count_values.entries table)) = some (fields table))
+          simpa [keys, fields, count_values.entries, decomposition] using fetched
+        · simpa only [references, scratch, List.append_nil] using
+            (BlockContinues.nil (module := program) (env := env) (heap := working heap groups garbage) (globals := globals))
+      · simpa only [references, scratch, List.append_nil] using rows
+  | cons pair rest ih =>
+      let current := working heap groups garbage
+      let pairedEnv := setLocal env "$formalsw.unpack" (.ref current.length)
+      let ready := assignNames pairedEnv ["value", "count"] [number pair.1, number pair.2]
+      let newGroups := groups ++ [Mutable.Value.ref (current.length+1)]
+      let newGarbage := garbage ++ [itemTuple pair, groupTuple pair]
+      have nextDecomposition : table = (before ++ [pair]) ++ rest := by
+        simpa only [List.append_assoc, List.singleton_append] using decomposition
+      have nextGet : ready "groups" = some (.ref heap.length) := by
+        simpa [ready, pairedEnv, assignNames, setLocal] using getGroups
+      have nextRows := rows_step heap groups garbage before pair rows
+      obtain ⟨finalEnv, finalGet, continued, finalRows⟩ :=
+        ih (before ++ [pair]) nextDecomposition newGroups newGarbage ready nextGet nextRows
+      have size : (working heap newGroups newGarbage).length = current.length+2 := by
+        simp only [current, newGarbage, ProjectEulerSolutions.HeapCollection.working, List.length_append, List.length_cons, List.length_nil]
+        omega
+      have referenceEq : newGroups ++ references (working heap newGroups newGarbage).length rest =
+          groups ++ references current.length (pair :: rest) := by
+        rw [size]
+        simp only [newGroups, references, List.append_assoc, List.singleton_append]
+      have garbageEq : newGarbage ++ scratch rest = garbage ++ scratch (pair :: rest) := by
+        simp only [newGarbage, scratch, List.append_assoc, List.cons_append, List.nil_append]
+      rw [referenceEq, garbageEq] at continued finalRows
+      refine ⟨finalEnv, finalGet, ?_, ?_⟩
+      · apply BlockContinues.dictionary_items_step (middle := current) (pair := .ref current.length)
+          (key := number pair.1) (value := number pair.2) (afterTuple := current ++ [itemTuple pair])
+        · have fetched := dictionaryItemsNext_fields (position := before.length)
+            (input_found heap address table found groups garbage) (rfl : dictionaryItemFields (.dict (count_values.entries table)) = some (fields table))
+          simpa [keys, fields, count_values.entries, decomposition] using fetched
+        · simp [Mutable.allocateTuple, itemTuple, Except.map]
+        · apply BlockContinues.append (emit heap groups garbage pair pairedEnv globals
+            (by simpa [pairedEnv, setLocal] using getGroups) rfl)
+          change BlockContinues program ready
+            [.dictionaryItemsStepLoop "$formalsw.unpack" address (keys table) (before.length+1) loopBody []]
+            (working heap newGroups newGarbage) finalEnv
+            (working heap (groups ++ references current.length (pair :: rest)) (garbage ++ scratch (pair :: rest))) globals
+          simpa only [List.length_append, List.length_singleton] using continued
+      · simpa only [List.append_assoc, List.singleton_append] using finalRows
+
+/-- Collector, item pairs, and ranking pairs occupy a fresh suffix of the caller's heap. -/
+def collected (heap : Mutable.Heap) (table : List (Int × Int)) : Mutable.Heap :=
+  working heap (references (heap.length+1) table) (scratch table)
+
+def resultGroups (heap : Mutable.Heap) (table : List (Int × Int)) : List Mutable.Value :=
+  ProjectEulerSolutions.TupleSorting.sorted (collected heap table) true (references (heap.length+1) table)
+
+/-- The checked source loop establishes the row invariant for the complete collector. -/
+theorem collected_represents (heap : Mutable.Heap) (address : Nat) (table : List (Int × Int))
+    (found : heap[address]? = some (.dict (count_values.entries table))) :
+    Represents (collected heap table) (references (heap.length+1) table) table := by
+  let env : HeapCalls.Env := fun name => if name = "groups" then some (.ref heap.length) else none
+  have executed := scan heap address table found table [] (by simp) [] [] env [] rfl .nil
+  simp only [List.nil_append, ProjectEulerSolutions.HeapCollection.working,
+    List.length_append, List.length_cons, List.length_nil, Nat.zero_add] at executed
+  obtain ⟨_, _, _, rows⟩ := executed
+  exact rows
+
+/-- Sorting source references and decoding them agrees with sorting the numerical rows. -/
+theorem resultGroups_readInts (heap : Mutable.Heap) (address : Nat) (table : List (Int × Int))
+    (found : heap[address]? = some (.dict (count_values.entries table))) :
+    (resultGroups heap table).map (ProjectEulerSolutions.TupleSorting.readInts (collected heap table)) =
+      ProjectEulerSolutions.TupleSorting.sortedRows true (table.map (fun pair => [pair.2, pair.1])) := by
+  rw [resultGroups, ProjectEulerSolutions.TupleSorting.sorted_readInts,
+    Represents.readInts _ _ _ (collected_represents heap address table found)]
+
+/-- Every tuple in the sorted result retains its contents after any further allocation. -/
+theorem resultGroups_readInts_append (heap : Mutable.Heap) (address : Nat) (table : List (Int × Int))
+    (found : heap[address]? = some (.dict (count_values.entries table))) (extra : Mutable.Heap) :
+    (resultGroups heap table).map (ProjectEulerSolutions.TupleSorting.readInts (collected heap table ++ extra)) =
+      (resultGroups heap table).map (ProjectEulerSolutions.TupleSorting.readInts (collected heap table)) := by
+  apply List.map_congr_left
+  intro group member
+  have original := (ProjectEulerSolutions.TupleSorting.sorted_perm (collected heap table) true
+    (references (heap.length+1) table)).mem_iff.mp member
+  obtain ⟨location, values, rfl, tupleFound⟩ := Represents.typed _ _ _
+    (collected_represents heap address table found) group original
+  exact ProjectEulerSolutions.TupleSorting.readInts_append (collected heap table) extra location _ tupleFound
+
+/-- The source's sorted group frequencies exhaust the possible five-card count profiles. -/
+theorem resultGroups_profile (heap : Mutable.Heap) (address : Nat) (values : List Int)
+    (found : heap[address]? = some (.dict (count_values.entries (count_values.counts values))))
+    (five : values.length = 5) :
+    ((resultGroups heap (count_values.counts values)).map
+      (ProjectEulerSolutions.TupleSorting.readInts (collected heap (count_values.counts values)))).map
+        (fun row => row.headD 0) ∈ ProjectEulerSolutions.PokerCountPatterns.profiles := by
+  let pairs := (count_values.counts values).map fun pair => (pair.2, pair.1)
+  have positive : ∀ pair ∈ pairs, 0 < pair.1 := by
+    intro pair member
+    obtain ⟨entry, entryMember, rfl⟩ := List.mem_map.mp member
+    exact count_values.counts_positive values entry entryMember
+  have total : (pairs.map Prod.fst).sum = 5 := by
+    have mass := count_values.counts_sum values
+    rw [five] at mass
+    simpa only [pairs, List.map_map, Function.comp_def] using mass
+  rw [resultGroups_readInts heap address (count_values.counts values) found]
+  simpa only [pairs, ProjectEulerSolutions.PokerGroupOrder.row, List.map_map, Function.comp_def] using
+    ProjectEulerSolutions.PokerGroupOrder.rows_profile pairs positive total
+
+/-- The frequency profile remains valid in the final heap returned by rank_groups. -/
+theorem resultGroups_profile_returned (heap : Mutable.Heap) (address : Nat) (values : List Int)
+    (found : heap[address]? = some (.dict (count_values.entries (count_values.counts values))))
+    (five : values.length = 5) :
+    ((resultGroups heap (count_values.counts values)).map (ProjectEulerSolutions.TupleSorting.readInts
+      (collected heap (count_values.counts values) ++ [.list (resultGroups heap (count_values.counts values))]))).map
+        (fun row => row.headD 0) ∈ ProjectEulerSolutions.PokerCountPatterns.profiles := by
+  rw [resultGroups_readInts_append heap address (count_values.counts values) found]
+  exact resultGroups_profile heap address values found five
+
+/-- The source builds and sorts every frequency group while retaining all caller objects. -/
+theorem result (heap : Mutable.Heap) (address : Nat) (table : List (Int × Int)) (globals : Mutable.Globals)
+    (found : heap[address]? = some (.dict (count_values.entries table))) :
+    ReturnsValue program "rank_groups" [.ref address] heap (.ref (collected heap table).length)
+      (collected heap table ++ [.list (resultGroups heap table)]) globals := by
+  let entry := functionEnv ((findFunctionIn program.body "rank_groups").getD ([], [])).1
+    ((findFunctionIn program.body "rank_groups").getD ([], [])).2 [.ref address] globals
+  let ready := setLocal entry "groups" (.ref heap.length)
+  have getCounts : ready "counts" = some (.ref address) := by cases globals <;> rfl
+  have executed := scan heap address table found table [] (by simp) [] [] ready globals rfl .nil
+  simp only [List.nil_append, ProjectEulerSolutions.HeapCollection.working,
+    List.length_append, List.length_cons, List.length_nil, Nat.zero_add] at executed
+  obtain ⟨finalEnv, getGroups, loopDone, rows⟩ := executed
+  apply BlockReturns.function rfl rfl
+  apply (BlockContinues.annAssign (Evaluates.list .nil)).returns
+  apply (BlockContinues.for_dictionary_items (target := target) (body := sourceBody)
+    (object := .dict (count_values.entries table)) (entries := fields table)
+    (Evaluates.lookup getCounts) (input_found heap address table found [] []) rfl loopDone).returns
+  apply BlockReturns.return_value
+  apply Evaluates.builtin (.cons (Evaluates.lookup getGroups) (.cons Evaluates.constant .nil))
+  have typed := Represents.typed (collected heap table) (references (heap.length+1) table) table rows
+  have ordered := ProjectEulerSolutions.TupleSorting.sortWithReverse (collected heap table) true _ typed
+  have collector : (collected heap table)[heap.length]? = some (.list (references (heap.length+1) table)) :=
+    ProjectEulerSolutions.HeapCollection.found heap _ _
+  exact primitive_sorted_reverse_list (collected heap table) heap.length _ _ true collector ordered
+
+private theorem typed_entries (heap : Mutable.Heap) (address : Nat)
+    (typed : Mutable.Value.HasType heap (.ref address) "dict[int,int]") :
+    ∃ table : List (Int × Int), heap[address]? = some (.dict (count_values.entries table)) := by
+  obtain ⟨entries, found, types⟩ := Mutable.Value.dictionary_of_hasType typed rfl
+  have elements : ∀ entry ∈ entries, ∃ key value : Int, entry = (.int key, number value) := by
+    intro entry member
+    obtain ⟨keyType, scalar, valueEq, valueType⟩ := types entry member
+    have keyInt : ∃ key : Int, entry.1 = .int key := by
+      cases key : entry.1 <;> simp_all [Mutable.scalarKind, Data.typeName]
+    have valueInt : ∃ value : Int, scalar = .int value := by
+      cases scalar <;> simp_all [Mutable.scalarKind, Data.typeName]
+    obtain ⟨key, keyEq⟩ := keyInt
+    obtain ⟨value, valueEq'⟩ := valueInt
+    exact ⟨key, value, Prod.ext keyEq (by simpa only [valueEq'] using valueEq)⟩
+  have encoded : ∃ table : List (Int × Int), entries = count_values.entries table := by
+    clear found types
+    induction entries with
+    | nil => exact ⟨[], rfl⟩
+    | cons first rest ih =>
+        obtain ⟨key, value, rfl⟩ := elements first (by simp)
+        obtain ⟨table, rfl⟩ := ih (fun entry member => elements entry (List.mem_cons_of_mem _ member))
+        exact ⟨(key, value) :: table, rfl⟩
+  obtain ⟨table, rfl⟩ := encoded
+  exact ⟨table, found⟩
+
+theorem «Returns» (heap : Mutable.Heap) (address : Nat) (_valid : heap.Valid)
+    (typed : Mutable.Value.HasType heap (.ref address) "dict[int,int]") :
+    (HeapCalls.call program "rank_groups" [.ref address] heap).Returns := by
+  obtain ⟨table, found⟩ := typed_entries heap address typed
+  exact (result heap address table [] found).returns
+
+theorem «Supported» (heap : Mutable.Heap) (address : Nat) (valid : heap.Valid)
+    (typed : Mutable.Value.HasType heap (.ref address) "dict[int,int]") :
+    (HeapCalls.call program "rank_groups" [.ref address] heap).Supported := («Returns» heap address valid typed).supported
+
+end rank_groups
 
 namespace parse_card
 private theorem first_item (token : String) (rank suit : Char) (rest : List Char)

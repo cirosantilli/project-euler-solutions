@@ -43,6 +43,16 @@ def count_values(values: list[int]) -> dict[int, int]:
     return counts
 
 
+def rank_groups(counts: dict[int, int]) -> list[tuple[int, int]]:
+    """
+    @formalsw: Returns
+    """
+    groups: list[tuple[int, int]] = []
+    for value, count in counts.items():
+        groups.append((count, value))
+    return sorted(groups, reverse=True)
+
+
 def hand_rank(cards: Sequence[str]) -> Tuple:
     """
     Return a tuple comparable lexicographically; higher is better.
@@ -85,11 +95,11 @@ def hand_rank(cards: Sequence[str]) -> Tuple:
 
     cnt = count_values(values)
     # sort primarily by frequency desc, then value desc
-    groups = sorted(((c, v) for v, c in cnt.items()), reverse=True)
+    groups = rank_groups(cnt)
 
     if groups[0][0] == 4:
         four_val = groups[0][1]
-        kicker = max(v for v in values if v != four_val)
+        kicker = max([v for v in values if v != four_val])
         return (7, four_val, kicker)
 
     if groups[0][0] == 3 and groups[1][0] == 2:
@@ -111,7 +121,7 @@ def hand_rank(cards: Sequence[str]) -> Tuple:
     if groups[0][0] == 2 and groups[1][0] == 2:
         pair_high = max(groups[0][1], groups[1][1])
         pair_low = min(groups[0][1], groups[1][1])
-        kicker = max(v for v in values if v != pair_high and v != pair_low)
+        kicker = max([v for v in values if v != pair_high and v != pair_low])
         return (2, pair_high, pair_low, kicker)
 
     if groups[0][0] == 2:
