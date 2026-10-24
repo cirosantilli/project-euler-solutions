@@ -7,6 +7,17 @@
     (heap ++ [.list [.scalar (.int 0)],
       .list ((ProjectEulerSolutions.CubicPermutations.signature n).map (fun (value : Nat) => .scalar (.int value))),
       .tuple ((ProjectEulerSolutions.CubicPermutations.signature n).map (fun (value : Nat) => .scalar (.int value)))])
+
+@formalsw: theorem candidates_source_result
+  (k : Int) (heap : FormalSW.PyAst.Mutable.Heap) (env : FormalSW.PyAst.HeapCalls.Env)
+  (dictionary : Nat) (rows : List solvers.«62».candidates.Row)
+  (view : solvers.«62».candidates.View heap dictionary rows) :
+  env "groups" = some (.ref dictionary) → env "k" = some (.scalar (.int k)) →
+  ∃ extra, FormalSW.PyAst.HeapCalls.BlockContinues Solvers.P62Ast.module env
+    (solvers.«62».groups.widthBody.take 1) heap
+    (FormalSW.PyAst.HeapCalls.setLocal env "candidates" (.ref heap.length))
+    (ProjectEulerSolutions.HeapCollection.working heap
+      ((solvers.«62».candidates.selected k rows).map (fun (value : Int) => .scalar (.int value))) extra)
 """
 from __future__ import annotations
 

@@ -1,6 +1,7 @@
 import «.formalsw».solvers.«62.py.ast»
 import lang.py.FormalSW.HeapCalls
 import lang.py.FormalSW.KeyDictionaryCalls
+import lang.py.FormalSW.DictionaryValuesCalls
 import ProjectEulerSolutions.Lib.CubicPermutations
 import ProjectEulerSolutions.Lib.HeapCollection
 
@@ -483,6 +484,177 @@ theorem grouping_initial (cube : Nat) (heap : Mutable.Heap) (env : HeapCalls.Env
     (by simpa [ready, setLocal] using getGroups) rfl (by simpa [ready, setLocal] using getCube) dictionaryAfter signatureFound
   exact prepared.append updated
 end groups
+
+namespace candidates
+structure Row where
+  originalKey : Mutable.Value
+  bucket : Nat
+  count : Int
+  minimum : Int
+
+def Row.fields (row : Row) : Mutable.Value × Mutable.Value := (row.originalKey, .ref row.bucket)
+def keys (rows : List Row) : List SequenceSource := (rows.map Row.fields).map (fun entry => sequenceSource entry.1)
+def selected (k : Int) (rows : List Row) : List Int :=
+  rows.filterMap (fun row => if row.count = k then some row.minimum else none)
+private def ints (values : List Int) : List Mutable.Value := values.map number
+private def working (base : Mutable.Heap) (values : List Int) (garbage : Mutable.Heap) : Mutable.Heap :=
+  ProjectEulerSolutions.HeapCollection.working base (ints values) garbage
+def target : Expr := .tuple [.name "count", .name "min_cube"]
+def test : Expr := .compare (.name "count") [(.eq, .name "k")]
+def body (collector : Nat) : List Stmt := comprehensionFilters [test] [.comprehensionAppend collector (.name "min_cube")]
+def expression : Expr := .listCompTargets (.name "min_cube") [(target, .dictionaryValuesIterable (.name "groups"), [test])]
+theorem source : groups.widthBody[0]? = some (.assign [.name "candidates"] expression) := rfl
+
+structure View (heap : Mutable.Heap) (dictionary : Nat) (rows : List Row) where
+  object : Mutable.Object
+  found : heap[dictionary]? = some object
+  fields : dictionaryItemFields object = some (rows.map Row.fields)
+  buckets : ∀ row ∈ rows, heap[row.bucket]? = some (.list [number row.count, number row.minimum])
+
+def View.append {heap : Mutable.Heap} {dictionary : Nat} {rows : List Row}
+    (view : View heap dictionary rows) (extra : Mutable.Heap) : View (heap ++ extra) dictionary rows where
+  object := view.object
+  found := ProjectEulerSolutions.HeapCollection.prefix_found heap extra dictionary _ view.found
+  fields := view.fields
+  buckets := fun row member => ProjectEulerSolutions.HeapCollection.prefix_found heap extra row.bucket _ (view.buckets row member)
+
+theorem View.next {heap : Mutable.Heap} {dictionary : Nat} {rows : List Row}
+    (view : View heap dictionary rows) (position : Nat) :
+    dictionaryItemsNext dictionary (keys rows) position heap =
+      some (.ok ((rows.map Row.fields)[position]?), heap) :=
+  dictionaryItemsNext_fields view.found view.fields
+
+theorem selected_cons (k : Int) (row : Row) (rows : List Row) :
+    selected k (row :: rows) = (if row.count = k then [row.minimum] else []) ++ selected k rows := by
+  by_cases equal : row.count = k <;> simp [selected, equal]
+
+theorem test_evaluate (count k : Int) (heap : Mutable.Heap) (env : HeapCalls.Env)
+    (getCount : env "count" = some (number count)) (getK : env "k" = some (number k)) :
+    Evaluates program env test heap (flag (decide (count = k))) heap := by
+  apply Evaluates.compare (av := number count) (bv := number k) (middle := heap) (afterRight := heap)
+    (Evaluates.lookup getCount) (Evaluates.lookup getK)
+  simp [HeapCalls.compare, scalarCompare, evalCmpOp]
+
+theorem collect (k count minimum : Int) (base : Mutable.Heap) (before : List Int) (garbage : Mutable.Heap)
+    (env : HeapCalls.Env) (getCount : env "count" = some (number count))
+    (getMinimum : env "min_cube" = some (number minimum)) (getK : env "k" = some (number k)) :
+    BlockContinues program env (body base.length) (working base before garbage) env
+      (working base (before ++ if count = k then [minimum] else []) garbage) := by
+  have tested := test_evaluate count k (working base before garbage) env getCount getK
+  by_cases equal : count = k
+  · simp only [if_pos equal]
+    apply BlockContinues.branch (flag := true) (by simpa only [equal, decide_true] using tested) rfl
+    have emitted := ProjectEulerSolutions.HeapCollection.emit (program := program) base (ints before) garbage [] (number minimum)
+      (by simpa only [List.append_nil] using
+        (Evaluates.lookup getMinimum : Evaluates program env (.name "min_cube") (working base before garbage)
+          (number minimum) (working base before garbage)))
+    simpa only [working, ints, List.map_append, List.map_cons, List.map_nil, List.append_nil] using emitted
+  · simp only [if_neg equal, List.append_nil]
+    exact BlockContinues.branch (flag := false) (by simpa only [equal, decide_false] using tested) rfl .nil
+
+/-- Live bucket reads and both unpackings precede filtering; the collector alone changes in the input prefix. -/
+theorem loop (base : Mutable.Heap) (dictionary : Nat) (rows : List Row) (view : View base dictionary rows)
+    (k : Int) (remaining : List Row) (position : Nat) (suffix : rows.drop position = remaining)
+    (before : List Int) (garbage : Mutable.Heap) (env : HeapCalls.Env) (getK : env "k" = some (number k)) :
+    ∃ finalEnv finalGarbage, BlockContinues program env
+      [.dictionaryItemsStepLoop "$formalsw.values.pair" dictionary (keys rows) position
+        (dictionaryValuesBody target (body base.length)) []]
+      (working base before garbage) finalEnv (working base (before ++ selected k remaining) finalGarbage) ∧
+      finalEnv "k" = some (number k) := by
+  induction remaining generalizing position before garbage env with
+  | nil =>
+      refine ⟨env, garbage, ?_, getK⟩
+      simp only [selected, List.filterMap_nil, List.append_nil]
+      apply BlockContinues.dictionary_items_done
+      · have missing : rows[position]? = none := by
+          simpa [suffix] using (List.head?_drop (l := rows) (i := position)).symm
+        simpa only [List.getElem?_map, missing, Option.map_none] using
+          (view.append (.list (ints before) :: garbage)).next position
+      · exact BlockContinues.nil
+  | cons row rest ih =>
+      have item : rows[position]? = some row := by
+        simpa [suffix] using (List.head?_drop (l := rows) (i := position)).symm
+      have member := List.mem_of_getElem? item
+      let current := working base before garbage
+      let extra : Mutable.Heap := [.tuple [row.originalKey, .ref row.bucket]]
+      let nextGarbage := garbage ++ extra
+      let pairHeap := working base before nextGarbage
+      let paired := setLocal env "$formalsw.values.pair" (.ref current.length)
+      let named := assignNames paired ["$formalsw.values.key", "$formalsw.values.value"] [row.originalKey, .ref row.bucket]
+      let ready := assignNames named ["count", "min_cube"] [number row.count, number row.minimum]
+      have layout : current ++ extra = pairHeap := ProjectEulerSolutions.HeapCollection.append base (ints before) garbage extra
+      have pairFound : pairHeap[current.length]? = some (.tuple [row.originalKey, .ref row.bucket]) := by
+        rw [← layout]
+        simp [extra]
+      have bucketFound : pairHeap[row.bucket]? = some (.list [number row.count, number row.minimum]) :=
+        (view.append (.list (ints before) :: nextGarbage)).buckets row member
+      have first : BlockContinues program paired
+          [.assign [.tuple [.name "$formalsw.values.key", .name "$formalsw.values.value"]] (.name "$formalsw.values.pair")]
+          pairHeap named pairHeap := by
+        apply BlockContinues.unpack (names := ["$formalsw.values.key", "$formalsw.values.value"])
+          (items := [row.originalKey, .ref row.bucket]) (value := .ref current.length)
+          (middle := pairHeap) (finalHeap := pairHeap) rfl (Evaluates.lookup (by simp [paired, setLocal]))
+          (by simp [Mutable.sequence, pairFound]) rfl
+      have second : BlockContinues program named [.assign [target] (.name "$formalsw.values.value")]
+          pairHeap ready pairHeap := by
+        apply BlockContinues.unpack (names := ["count", "min_cube"])
+          (items := [number row.count, number row.minimum]) (value := .ref row.bucket)
+          (middle := pairHeap) (finalHeap := pairHeap) rfl
+          (Evaluates.lookup (by simp [named, assignNames, setLocal]))
+          (by simp [Mutable.sequence, bucketFound]) rfl
+      have readyK : ready "k" = some (number k) := by
+        simpa [ready, named, paired, assignNames, setLocal] using getK
+      have filtered := collect k row.count row.minimum base before nextGarbage ready
+        (by simp [ready, assignNames, setLocal]) (by simp [ready, assignNames, setLocal]) readyK
+      have unpackedAll : BlockContinues program paired (dictionaryValuesBody target (body base.length)) pairHeap ready
+          (working base (before ++ if row.count = k then [row.minimum] else []) nextGarbage) :=
+        first.append (second.append filtered)
+      have tailSuffix : rows.drop (position + 1) = rest := by
+        simpa [List.drop_drop, Nat.add_comm] using congrArg (List.drop 1) suffix
+      obtain ⟨finalEnv, finalGarbage, continued, finalK⟩ := ih (position + 1) tailSuffix
+        (before ++ if row.count = k then [row.minimum] else []) nextGarbage ready readyK
+      refine ⟨finalEnv, finalGarbage, ?_, finalK⟩
+      apply BlockContinues.dictionary_items_step
+      · simpa only [List.getElem?_map, item, Option.map_some, Row.fields] using
+          (view.append (.list (ints before) :: garbage)).next position
+      · have allocated : Mutable.allocateTuple [row.originalKey, .ref row.bucket] current =
+            some (.ok (.ref current.length), current ++ extra) := by simp [Mutable.allocateTuple, extra, Except.map]
+        simpa only [layout] using allocated
+      · have complete := unpackedAll.append continued
+        simpa only [Calls.loopContinuation,
+          show Calls.loopControl (dictionaryValuesBody target (body base.length)) = false from rfl,
+          Bool.false_eq_true, if_false, selected_cons, List.append_assoc] using complete
+
+/-- The actual values comprehension returns all and only matching bucket minima in insertion order. -/
+theorem evaluate (k : Int) (heap : Mutable.Heap) (env : HeapCalls.Env) (dictionary : Nat) (rows : List Row)
+    (view : View heap dictionary rows) (getGroups : env "groups" = some (.ref dictionary))
+    (getK : env "k" = some (number k)) :
+    ∃ extra, Evaluates program env expression heap (.ref heap.length)
+      (working heap (selected k rows) extra) := by
+  let inner := comprehensionTargetsEnv env [(target, .dictionaryValuesIterable (.name "groups"), [test])]
+  have innerK : inner "k" = some (number k) := by
+    simpa [inner, comprehensionTargetsEnv, target, targetLocals] using getK
+  obtain ⟨finalEnv, garbage, executed, finalK⟩ := loop heap dictionary rows view k rows 0 (by simp) [] [] inner innerK
+  refine ⟨garbage, ?_⟩
+  apply Evaluates.list_comp_dictionary_values (finalEnv := finalEnv) (Evaluates.lookup getGroups) view.found view.fields
+  simpa only [inner, body, comprehensionTargetsBody, List.nil_append, working, ints, List.map_nil] using executed
+
+theorem source_result (k : Int) (heap : Mutable.Heap) (env : HeapCalls.Env) (dictionary : Nat) (rows : List Row)
+    (view : View heap dictionary rows) (getGroups : env "groups" = some (.ref dictionary))
+    (getK : env "k" = some (number k)) :
+    ∃ extra, BlockContinues program env (groups.widthBody.take 1) heap
+      (setLocal env "candidates" (.ref heap.length)) (working heap (selected k rows) extra) := by
+  obtain ⟨extra, evaluated⟩ := evaluate k heap env dictionary rows view getGroups getK
+  exact ⟨extra, BlockContinues.assign evaluated⟩
+end candidates
+
+theorem candidates_source_result (k : Int) (heap : Mutable.Heap) (env : HeapCalls.Env)
+    (dictionary : Nat) (rows : List candidates.Row) (view : candidates.View heap dictionary rows)
+    (getGroups : env "groups" = some (.ref dictionary)) (getK : env "k" = some (number k)) :
+    ∃ extra, BlockContinues program env (groups.widthBody.take 1) heap
+      (setLocal env "candidates" (.ref heap.length))
+      (ProjectEulerSolutions.HeapCollection.working heap ((candidates.selected k rows).map number) extra) :=
+  candidates.source_result k heap env dictionary rows view getGroups getK
 
 theorem digit_signature_source_result (n : Nat) (heap : Mutable.Heap) :
     ReturnsValue program "digit_signature" [number n] heap (.ref (heap.length + 2))
