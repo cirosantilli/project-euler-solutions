@@ -48,6 +48,10 @@ def solve(limit: int = 9_999_999) -> int:
     """
     Return the least totient-permutation ratio minimizer up to the inclusive bound.
     Return zero if there is no candidate.
+
+    @formalsw: Py from project_euler_statements.p70 import naive
+    @formalsw: Returns
+    @formalsw: Equiv(naive)
     """
     if limit < 2:
         return 0
