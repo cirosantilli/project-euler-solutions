@@ -370,7 +370,7 @@ private theorem scan_result (digits : List Int) (heap : Mutable.Heap) (address s
     · rfl
     · apply HeapCalls.BlockContinues.append (middleEnv := HeapCalls.setLocal env name (.scalar (.int (start + 1 : Nat))))
         (middleHeap := heap)
-      · have increment := HeapCalls.BlockContinues.augAssign (module := program)
+      · have increment := HeapCalls.BlockContinues.augAssign (globals := []) (module := program)
           (env := HeapCalls.setLocal env name (.scalar (.int start))) (name := name)
           (heap := heap) (middle := heap) (finalHeap := heap) (op := .add)
           (left := .scalar (.int start)) (right := .scalar (.int 1))

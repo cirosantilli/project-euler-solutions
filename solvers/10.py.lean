@@ -582,7 +582,7 @@ private def setupHeap (heap : Mutable.Heap) (limit : Nat) : Mutable.Heap :=
   heap ++ [.bytearray [1]] ++ [.bytearray (List.replicate (sieveSize limit) 1)]
 
 theorem sieve.initialize (limit : Nat) (large : 4 ≤ limit) (env : HeapCalls.Env) (heap : Mutable.Heap)
-    (getLimit : env "limit" = some (.scalar (.int limit))) :
+    (getLimit : env "limit" = some (.scalar (.int limit))) (mathUnbound : env "math" = none) :
     HeapCalls.BlockContinues program env ((solveBody.drop 2).take 4) heap
       (setupEnv env (heap.length + 1) limit) (setupHeap heap limit) := by
   let e1 := HeapCalls.setLocal env "size" (.scalar (.int (sieveSize limit)))
@@ -616,7 +616,7 @@ theorem sieve.initialize (limit : Nat) (large : 4 ≤ limit) (env : HeapCalls.En
         (HeapCalls.Evaluates.lookup (by simpa [e2, e1, HeapCalls.setLocal] using getLimit))
         HeapCalls.Evaluates.constant
       simp [Mutable.binary, scalarBinary, Int.natCast_sub (show 1 ≤ limit by omega)]
-    apply HeapCalls.Evaluates.qualified_call (by decide) (.cons argument .nil)
+    apply HeapCalls.Evaluates.qualified_call (unbound := by simpa [e2, e1, HeapCalls.setLocal] using mathUnbound) (by decide) (.cons argument .nil)
     intro anchors stack
     apply HeapCalls.Reaches.next (following := ⟨.value (.scalar (.int (Nat.sqrt (limit - 1)))), stack, heap2⟩)
     · change HeapCalls.result anchors heap2
@@ -633,7 +633,7 @@ theorem sieve.initialize (limit : Nat) (large : 4 ≤ limit) (env : HeapCalls.En
   exact first.append (second.append (third.append fourth))
 
 theorem sieve.prepare (limit : Nat) (large : 4 ≤ limit) (env : HeapCalls.Env) (heap : Mutable.Heap)
-    (getLimit : env "limit" = some (.scalar (.int limit))) :
+    (getLimit : env "limit" = some (.scalar (.int limit))) (mathUnbound : env "math" = none) :
     ∃ finalEnv finalHeap finalBytes,
       HeapCalls.BlockContinues program env ((solveBody.drop 2).take 5) heap finalEnv finalHeap ∧
       finalEnv "sieve" = some (.ref (heap.length + 1)) ∧
@@ -663,7 +663,7 @@ theorem sieve.prepare (limit : Nat) (large : 4 ≤ limit) (env : HeapCalls.Env) 
       · exact .nil
     · rfl
     · exact loop
-  exact ⟨finalEnv, finalHeap, finalBytes, (sieve.initialize limit large env heap getLimit).append ranged,
+  exact ⟨finalEnv, finalHeap, finalBytes, (sieve.initialize limit large env heap getLimit mathUnbound).append ranged,
     (stable "sieve" (by simp)).trans getSieve, finalFound, finalSieved⟩
 
 theorem sum.result (limit : Nat) (large : 3 ≤ limit) (bytes : List UInt8)
@@ -717,7 +717,7 @@ theorem solve.naturals (limit : Nat) (heap : Mutable.Heap) :
         · rw [equal, ProjectEulerSolutions.P10.naive_three]
           exact HeapCalls.BlockReturns.return_value HeapCalls.Evaluates.constant
     · obtain ⟨finalEnv, finalHeap, bytes, prepare, getSieve, found, sieved⟩ :=
-        sieve.prepare limit (by omega) env heap rfl
+        sieve.prepare limit (by omega) env heap rfl rfl
       refine ⟨finalHeap, ?_⟩
       apply HeapCalls.BlockReturns.function rfl rfl
       apply HeapCalls.BlockReturns.branch (flag := false) (value := .scalar (.bool false)) (middle := heap) (by simpa [small] using guard 2)

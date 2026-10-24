@@ -1,13 +1,17 @@
 #!/usr/bin/env python
-from typing import *
 
 
 def digit_sum(n: int) -> int:
     return sum(int(ch) for ch in str(n))
 
 
-def solve() -> int:
-    return digit_sum(2**1000)
+def solve(n: int = 1000) -> int:
+    """
+    @formalsw: Requires(n >= 0)
+    @formalsw: Py from project_euler_statements.p16 import naive
+    @formalsw: Equiv(naive)
+    """
+    return digit_sum(2**n)
 
 
 def _tests() -> None:

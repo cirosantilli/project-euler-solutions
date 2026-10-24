@@ -362,7 +362,7 @@ theorem sieve.iteration (env : HeapCalls.Env) (heap : Mutable.Heap) (address i :
 
 /-- The marking loop preserves the inputs and the buffer reference needed afterwards. -/
 private def SieveStable (before after : HeapCalls.Env) : Prop :=
-  ∀ name ∈ ["n", "limit", "size", "is_prime"], after name = before name
+  ∀ name ∈ ["n", "limit", "size", "is_prime", "math"], after name = before name
 
 private theorem SieveStable.refl (env : HeapCalls.Env) : SieveStable env env := by
   intro name member; rfl
@@ -376,13 +376,13 @@ private theorem SieveStable.index (env : HeapCalls.Env) (i : Nat) :
     SieveStable env (HeapCalls.setLocal env "i" (.scalar (.int i))) := by
   intro name member
   simp only [List.mem_cons, List.not_mem_nil, or_false] at member
-  rcases member with rfl | rfl | rfl | rfl <;> rfl
+  rcases member with rfl | rfl | rfl | rfl | rfl <;> rfl
 
 private theorem SieveStable.mark (env : HeapCalls.Env) (i size : Nat) :
     SieveStable env (markEnv env i size) := by
   intro name member
   simp only [List.mem_cons, List.not_mem_nil, or_false] at member
-  rcases member with rfl | rfl | rfl | rfl <;> rfl
+  rcases member with rfl | rfl | rfl | rfl | rfl <;> rfl
 
 private theorem heap_set_same (heap : Mutable.Heap) (address : Nat) (object : Mutable.Object)
     (found : heap[address]? = some object) : heap.set address object = heap := by
@@ -579,7 +579,7 @@ private theorem SieveStable.counter (env : HeapCalls.Env) (count : Nat) :
     SieveStable env (HeapCalls.setLocal env "count_primes" (.scalar (.int count))) := by
   intro name member
   simp only [List.mem_cons, List.not_mem_nil, or_false] at member
-  rcases member with rfl | rfl | rfl | rfl <;> rfl
+  rcases member with rfl | rfl | rfl | rfl | rfl <;> rfl
 
 /-- An exhausted source scan preserves the inputs needed to retry with a larger limit. -/
 theorem scan.continues (k i count : Nat) (sieve : Array Bool) :
@@ -706,7 +706,8 @@ theorem scan.source_continues (k : Nat) (sieve : Array Bool) (env : HeapCalls.En
 
 /-- The source computes its loop bound from the exact integer square root. -/
 theorem sieve.rootSetup (limit : Nat) (env : HeapCalls.Env) (heap : Mutable.Heap)
-    (bound : env "limit" = some (.scalar (.int limit))) :
+    (bound : env "limit" = some (.scalar (.int limit)))
+    (mathUnbound : env "math" = none) :
     HeapCalls.BlockContinues program env ((sieveBody.drop 3).take 2) heap
       (HeapCalls.setLocal (HeapCalls.setLocal env "root" (.scalar (.int (Nat.sqrt limit))))
         "max_i" (.scalar (.int (Nat.sqrt limit / 2 : Nat)))) heap := by
@@ -717,7 +718,7 @@ theorem sieve.rootSetup (limit : Nat) (env : HeapCalls.Env) (heap : Mutable.Heap
   · apply HeapCalls.BlockContinues.assign
     apply HeapCalls.Evaluates.builtin (values := [.scalar (.int (Nat.sqrt limit))]) (middle := heap)
     · apply HeapCalls.Evaluates.Arguments.cons
-      · apply HeapCalls.Evaluates.qualified_call (by decide) (.cons (HeapCalls.Evaluates.lookup bound) .nil)
+      · apply HeapCalls.Evaluates.qualified_call (unbound := mathUnbound) (by decide) (.cons (HeapCalls.Evaluates.lookup bound) .nil)
         intro anchors stack
         apply HeapCalls.Reaches.next (following := ⟨.value (.scalar (.int (Nat.sqrt limit))), stack, heap⟩)
         · change HeapCalls.result anchors heap
@@ -736,12 +737,13 @@ private def sieveHeap (heap : Mutable.Heap) (limit : Nat) : Mutable.Heap :=
 
 /-- One source attempt constructs the same sieve as the existing Lean implementation. -/
 theorem sieve.prepare (limit : Nat) (env : HeapCalls.Env) (heap : Mutable.Heap)
-    (bound : env "limit" = some (.scalar (.int limit))) :
+    (bound : env "limit" = some (.scalar (.int limit)))
+    (mathUnbound : env "math" = none) :
     ∃ finalEnv,
       HeapCalls.BlockContinues program env (sieveBody.take 6) heap finalEnv (sieveHeap heap limit) ∧
       finalEnv "n" = env "n" ∧ finalEnv "limit" = env "limit" ∧
       finalEnv "size" = some (.scalar (.int (sieveSize limit))) ∧
-      finalEnv "is_prime" = some (.ref (heap.length + 1)) := by
+      finalEnv "is_prime" = some (.ref (heap.length + 1)) ∧ finalEnv "math" = none := by
   let address := heap.length + 1
   let initialized := HeapCalls.setLocal (HeapCalls.setLocal env "size" (.scalar (.int (sieveSize limit))))
     "is_prime" (.ref address)
@@ -754,10 +756,11 @@ theorem sieve.prepare (limit : Nat) (env : HeapCalls.Env) (heap : Mutable.Heap)
     (by simp [bounded, initialized, HeapCalls.setLocal, initialSieve_size])
     (by simp [bounded, initialized, HeapCalls.setLocal])
     (by simp [initialHeap, address])
-  refine ⟨finalEnv, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨finalEnv, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · have initialization := solvers.«7».sieve.initialize limit env heap bound
     have root := solvers.«7».sieve.rootSetup limit initialized initialHeap
       (by simpa [initialized, HeapCalls.setLocal] using bound)
+      (by simpa [initialized, HeapCalls.setLocal] using mathUnbound)
     have execution := initialization.append (root.append marking)
     simpa [initialHeap, address, sieveHeap, oddsOnlySieveImpl] using execution
   · simpa [bounded, initialized, HeapCalls.setLocal] using stable "n" (by simp)
@@ -765,16 +768,21 @@ theorem sieve.prepare (limit : Nat) (env : HeapCalls.Env) (heap : Mutable.Heap)
   · simpa [bounded, initialized, HeapCalls.setLocal] using stable "size" (by simp)
   · simpa [bounded, initialized, address, HeapCalls.setLocal] using stable "is_prime" (by simp)
 
+  · have preserved : finalEnv "math" = env "math" := by
+      simpa [bounded, initialized, HeapCalls.setLocal] using stable "math" (by simp)
+    exact preserved.trans mathUnbound
+
 /-- A successful source attempt returns the existing Lean model's candidate. -/
 theorem sieve.attempt_returns (k limit prime : Nat) (env : HeapCalls.Env) (heap : Mutable.Heap)
     (following : List Stmt)
     (target : env "n" = some (.scalar (.int (k + 2 : Nat))))
     (bound : env "limit" = some (.scalar (.int limit)))
+    (mathUnbound : env "math" = none)
     (result : nthPrimeWithLimit (k + 1) limit = some prime) :
     HeapCalls.BlockReturns program env (sieveBody ++ following) heap (.scalar (.int prime))
       (sieveHeap heap limit) := by
-  obtain ⟨ready, prepare, targetReady, limitReady, size, buffer⟩ :=
-    solvers.«7».sieve.prepare limit env heap bound
+  obtain ⟨ready, prepare, targetReady, limitReady, size, buffer, mathReady⟩ :=
+    solvers.«7».sieve.prepare limit env heap bound mathUnbound
   have found : (sieveHeap heap limit)[heap.length + 1]? =
       some (Mutable.Object.bytearray (sieveBytes (oddsOnlySieveImpl limit))) := by simp [sieveHeap]
   have scanning := scan.source_returns (k + 1) prime (oddsOnlySieveImpl limit) ready
@@ -786,13 +794,14 @@ theorem sieve.attempt_returns (k limit prime : Nat) (env : HeapCalls.Env) (heap 
 theorem sieve.attempt_continues (k limit : Nat) (env : HeapCalls.Env) (heap : Mutable.Heap)
     (target : env "n" = some (.scalar (.int (k + 2 : Nat))))
     (bound : env "limit" = some (.scalar (.int limit)))
+    (mathUnbound : env "math" = none)
     (result : nthPrimeWithLimit (k + 1) limit = none) :
     ∃ finalEnv,
       HeapCalls.BlockContinues program env sieveBody heap finalEnv (sieveHeap heap limit) ∧
       finalEnv "n" = some (.scalar (.int (k + 2 : Nat))) ∧
-      finalEnv "limit" = some (.scalar (.int (limit * 2 : Nat))) := by
-  obtain ⟨ready, prepare, targetReady, limitReady, size, buffer⟩ :=
-    solvers.«7».sieve.prepare limit env heap bound
+      finalEnv "limit" = some (.scalar (.int (limit * 2 : Nat))) ∧ finalEnv "math" = none := by
+  obtain ⟨ready, prepare, targetReady, limitReady, size, buffer, mathReady⟩ :=
+    solvers.«7».sieve.prepare limit env heap bound mathUnbound
   have found : (sieveHeap heap limit)[heap.length + 1]? =
       some (Mutable.Object.bytearray (sieveBytes (oddsOnlySieveImpl limit))) := by simp [sieveHeap]
   obtain ⟨scanned, scanRun, stable⟩ := scan.source_continues (k + 1) (oddsOnlySieveImpl limit) ready
@@ -804,8 +813,9 @@ theorem sieve.attempt_continues (k limit : Nat) (env : HeapCalls.Env) (heap : Mu
     exact HeapCalls.BlockContinues.augAssign (left := .scalar (.int limit))
       ((stable "limit" (by simp)).trans (limitReady.trans bound)) HeapCalls.Evaluates.constant
       (by simp [HeapCalls.inplace, Mutable.binary, scalarBinary])
-  refine ⟨finalEnv, prepare.append (scanRun.append grow), ?_, rfl⟩
-  simpa [finalEnv, HeapCalls.setLocal] using (stable "n" (by simp)).trans (targetReady.trans target)
+  refine ⟨finalEnv, prepare.append (scanRun.append grow), ?_, rfl, ?_⟩
+  · simpa [finalEnv, HeapCalls.setLocal] using (stable "n" (by simp)).trans (targetReady.trans target)
+  · simpa [finalEnv, HeapCalls.setLocal] using (stable "math" (by simp)).trans mathReady
 
 /-- Bertrand's bound supplies finite fuel for the source's otherwise unbounded retry loop. -/
 theorem sieve.retry (k fuel limit : Nat)
@@ -813,20 +823,21 @@ theorem sieve.retry (k fuel limit : Nat)
     ∀ (env : HeapCalls.Env) (heap : Mutable.Heap),
     env "n" = some (.scalar (.int (k + 2 : Nat))) →
     env "limit" = some (.scalar (.int limit)) →
+    env "math" = none →
     ∃ finalHeap,
       HeapCalls.BlockReturns program env [.whileDo (.constant (.bool true)) sieveBody []] heap
         (.scalar (.int (Nat.nth Nat.Prime (k + 1)))) finalHeap := by
   induction fuel generalizing limit with
   | zero =>
-      intro env heap target bound
+      intro env heap target bound mathUnbound
       have result := nthPrimeWithLimit_eq_nth (k + 1) limit (by simpa using enough)
       refine ⟨sieveHeap heap limit, ?_⟩
       apply HeapCalls.BlockReturns.while_loop (value := .scalar (.bool true)) (flag := true) (middle := heap)
       · exact HeapCalls.Evaluates.constant
       · rfl
-      · exact solvers.«7».sieve.attempt_returns k limit _ env heap _ target bound result
+      · exact solvers.«7».sieve.attempt_returns k limit _ env heap _ target bound mathUnbound result
   | succ fuel ih =>
-      intro env heap target bound
+      intro env heap target bound mathUnbound
       cases result : nthPrimeWithLimit (k + 1) limit with
       | some prime =>
           have correct := nthPrimeWithLimit_sound result
@@ -835,13 +846,13 @@ theorem sieve.retry (k fuel limit : Nat)
           apply HeapCalls.BlockReturns.while_loop (value := .scalar (.bool true)) (flag := true) (middle := heap)
           · exact HeapCalls.Evaluates.constant
           · rfl
-          · exact solvers.«7».sieve.attempt_returns k limit _ env heap _ target bound result
+          · exact solvers.«7».sieve.attempt_returns k limit _ env heap _ target bound mathUnbound result
       | none =>
-          obtain ⟨advanced, attempt, targetNext, boundNext⟩ :=
-            solvers.«7».sieve.attempt_continues k limit env heap target bound result
+          obtain ⟨advanced, attempt, targetNext, boundNext, mathNext⟩ :=
+            solvers.«7».sieve.attempt_continues k limit env heap target bound mathUnbound result
           have enoughNext : Nat.nth Nat.Prime (k + 1) ≤ (limit * 2) * 2 ^ fuel := by
             simpa [pow_succ, Nat.mul_assoc, Nat.mul_comm, Nat.mul_left_comm] using enough
-          obtain ⟨finalHeap, rest⟩ := ih (limit * 2) enoughNext advanced (sieveHeap heap limit) targetNext boundNext
+          obtain ⟨finalHeap, rest⟩ := ih (limit * 2) enoughNext advanced (sieveHeap heap limit) targetNext boundNext mathNext
           refine ⟨finalHeap, ?_⟩
           apply HeapCalls.BlockReturns.while_loop (value := .scalar (.bool true)) (flag := true) (middle := heap)
           · exact HeapCalls.Evaluates.constant
@@ -922,7 +933,7 @@ theorem solve.result (n : Nat) (positive : 1 ≤ n) :
     let env := HeapCalls.argumentEnv [{name := "n", annotation := some (.name "int")}]
       [.scalar (.int (k + 2 : Nat))]
     let ready := HeapCalls.setLocal env "limit" (.scalar (.int (initialLimit (k + 2))))
-    obtain ⟨heap, retry⟩ := solvers.«7».sieve.retry k (k + 2) (initialLimit (k + 2)) enough ready [] rfl rfl
+    obtain ⟨heap, retry⟩ := solvers.«7».sieve.retry k (k + 2) (initialLimit (k + 2)) enough ready [] rfl rfl rfl
     refine ⟨heap, ?_⟩
     apply HeapCalls.BlockReturns.function rfl rfl
     apply HeapCalls.BlockReturns.assertion (value := .scalar (.bool true)) (middle := [])

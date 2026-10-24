@@ -47,6 +47,22 @@ def main() -> int:
         n = stem[1:]
         lhs_expr = f"ProjectEulerStatements.P{n}.naive"
         rhs_expr = f"ProjectEulerSolutions.P{n}.solve"
+        # These equivalences apply only on the domains proved by their modules.
+        if n == "17":
+            lines.append(f"example (n : Nat) (bound : n ≤ 1000) : {lhs_expr} n = {rhs_expr} n :=")
+            lines.append("  ProjectEulerSolutions.P17.equiv n bound")
+            lines.append("")
+            continue
+        if n == "19":
+            lines.append("example (startYear endYear : Nat) (epoch : 1900 ≤ startYear)")
+            lines.append("    (ordered : startYear ≤ endYear) :")
+            start = "(ProjectEulerStatements.P19.firstOfYear startYear)"
+            end = "(ProjectEulerStatements.P19.lastOfYear endYear)"
+            lines.append(f"    {lhs_expr} {start} {end} =")
+            lines.append(f"      {rhs_expr} {start} {end} :=")
+            lines.append("  ProjectEulerSolutions.P19.equiv startYear endYear epoch ordered")
+            lines.append("")
+            continue
         lines.append(f"example : {lhs_expr} = {rhs_expr} := by")
         if n in CONST_EQUIV:
             lines.append(f"  exact ProjectEulerSolutions.P{n}.equiv")

@@ -264,17 +264,18 @@ example : ProjectEulerStatements.P16.naive = ProjectEulerSolutions.P16.solve := 
   apply (funext_iff).2
   simpa [funext_iff] using ProjectEulerSolutions.P16.equiv
 
-example : ProjectEulerStatements.P17.naive = ProjectEulerSolutions.P17.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P17.equiv
+example (n : Nat) (bound : n ≤ 1000) : ProjectEulerStatements.P17.naive n = ProjectEulerSolutions.P17.solve n :=
+  ProjectEulerSolutions.P17.equiv n bound
 
 example : ProjectEulerStatements.P18.naive = ProjectEulerSolutions.P18.solve := by
   apply (funext_iff).2
   simpa [funext_iff] using ProjectEulerSolutions.P18.equiv
 
-example : ProjectEulerStatements.P19.naive = ProjectEulerSolutions.P19.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P19.equiv
+example (startYear endYear : Nat) (epoch : 1900 ≤ startYear)
+    (ordered : startYear ≤ endYear) :
+    ProjectEulerStatements.P19.naive (ProjectEulerStatements.P19.firstOfYear startYear) (ProjectEulerStatements.P19.lastOfYear endYear) =
+      ProjectEulerSolutions.P19.solve (ProjectEulerStatements.P19.firstOfYear startYear) (ProjectEulerStatements.P19.lastOfYear endYear) :=
+  ProjectEulerSolutions.P19.equiv startYear endYear epoch ordered
 
 example : ProjectEulerStatements.P20.naive = ProjectEulerSolutions.P20.solve := by
   apply (funext_iff).2

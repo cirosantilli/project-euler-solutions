@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from typing import List, Tuple
 
 
 GRID_STR = """\
@@ -26,19 +25,40 @@ GRID_STR = """\
 """
 
 
-def parse_grid(s: str) -> List[List[int]]:
-    grid: List[List[int]] = []
+def parse_grid(s: str) -> list[list[int]]:
+    grid: list[list[int]] = []
     for line in s.strip().splitlines():
         row = [int(x) for x in line.split()]
         grid.append(row)
     return grid
 
 
-def max_adjacent_product(grid: List[List[int]], k: int = 4) -> int:
+def is_euler_grid(grid: list[list[int]]) -> bool:
+    """
+    Check the reference implementation's grid domain.
+    """
+    if len(grid) != 20:
+        return False
+    for row in grid:
+        if len(row) != 20:
+            return False
+        for value in row:
+            if value < 0:
+                return False
+    return True
+
+
+def max_adjacent_product(grid: list[list[int]], k: int = 4) -> int:
+    """
+    @formalsw: Py from project_euler_statements.p11 import naive
+    @formalsw: Requires(k >= 0)
+    @formalsw: Requires(is_euler_grid(grid))
+    @formalsw: Equiv(naive)
+    """
     n = len(grid)
     m = len(grid[0]) if n else 0
 
-    directions: List[Tuple[int, int]] = [
+    directions: list[tuple[int, int]] = [
         (0, 1),  # right
         (1, 0),  # down
         (1, 1),  # down-right

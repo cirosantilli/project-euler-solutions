@@ -1,9 +1,25 @@
 #!/usr/bin/env python
-from typing import List
+
+def is_triangle(triangle: list[list[int]]) -> bool:
+    """
+    Check that the triangle is nonempty and row lengths increase from one.
+    """
+    if not triangle:
+        return False
+    size = 1
+    for row in triangle:
+        if len(row) != size:
+            return False
+        size += 1
+    return True
 
 
-def max_path_sum(triangle: List[List[int]]) -> int:
-    """Compute maximum path sum from top to bottom in a triangle."""
+def max_path_sum(triangle: list[list[int]]) -> int:
+    """
+    @formalsw: Py from project_euler_statements.p18 import naive
+    @formalsw: Requires(is_triangle(triangle))
+    @formalsw: Equiv(naive)
+    """
     dp = triangle[-1][:]  # best sums from current row to bottom
     for r in range(len(triangle) - 2, -1, -1):
         row = triangle[r]

@@ -1,96 +1,12 @@
 import ProjectEulerSolutions.P13
-import Init.Data.Nat.ToString
-import Batteries.Data.String.Lemmas
-import Mathlib.Data.Nat.Digits.Defs
-import Mathlib.Tactic
+import ProjectEulerStatements.Lib.DecimalDigits
+
+/-! Leading decimal digits agree with positional notation. -/
 namespace ProjectEulerSolutions.P13
 
-lemma digitChar_val (d : Nat) (h : d < 10) : (Nat.digitChar d).toNat - '0'.toNat = d := by
-  interval_cases d <;> native_decide
-
-lemma foldl_digitChars_aux (xs : List Nat) (acc : Nat) (hxs : ∀ d ∈ xs, d < 10) :
-    (xs.map Nat.digitChar).foldl (fun n c => n * 10 + (c.toNat - '0'.toNat)) acc =
-      acc * 10 ^ xs.length + Nat.ofDigits 10 xs.reverse := by
-  induction xs generalizing acc with
-  | nil => simp
-  | cons x xs ih =>
-      have hx : x < 10 := hxs x (by simp)
-      have htail : ∀ d ∈ xs, d < 10 := by intro d hd; exact hxs d (by simp [hd])
-      rw [List.map_cons, List.foldl_cons,
-        ih (acc * 10 + ((Nat.digitChar x).toNat - '0'.toNat)) htail]
-      rw [digitChar_val x hx]
-      rw [List.reverse_cons, Nat.ofDigits_append]
-      simp [Nat.ofDigits]
-      ring
-
-lemma foldl_digitChars (xs : List Nat) (hxs : ∀ d ∈ xs, d < 10) :
-    (xs.map Nat.digitChar).foldl (fun n c => n * 10 + (c.toNat - '0'.toNat)) 0 =
-      Nat.ofDigits 10 xs.reverse := by
-  simpa using foldl_digitChars_aux xs 0 hxs
-
-lemma parseNat_digitChars (xs : List Nat) (hxs : ∀ d ∈ xs, d < 10) :
-    parseNat (String.ofList (xs.map Nat.digitChar)) = Nat.ofDigits 10 xs.reverse := by
-  simpa [parseNat] using foldl_digitChars xs hxs
-
-lemma toDigits_eq_digitChars (n : Nat) (hn : 0 < n) :
-    Nat.toDigits 10 n = (Nat.digits 10 n).reverse.map Nat.digitChar := by
-  induction n using Nat.strong_induction_on with
-  | h n ih =>
-      by_cases hlt : n < 10
-      · rw [Nat.toDigits_of_lt_base hlt, Nat.digits_of_lt 10 n (Nat.ne_of_gt hn) hlt]
-        simp
-      · have hn10 : 10 ≤ n := le_of_not_gt hlt
-        have hdivpos : 0 < n / 10 := Nat.div_pos hn10 (by norm_num)
-        have hdivlt : n / 10 < n := Nat.div_lt_self hn (by norm_num)
-        have hmodlt : n % 10 < 10 := Nat.mod_lt n (by norm_num)
-        have hn_eq : n = 10 * (n / 10) + n % 10 := by
-          conv_lhs => rw [← Nat.div_add_mod n 10]
-        calc
-          Nat.toDigits 10 n = Nat.toDigits 10 (10 * (n / 10) + n % 10) := by
-            exact congrArg (Nat.toDigits 10) hn_eq
-          _ = Nat.toDigits 10 (n / 10) ++ Nat.toDigits 10 (n % 10) := by
-            exact (Nat.toDigits_append_toDigits (b := 10) (n := n / 10) (d := n % 10)
-              (by norm_num) hdivpos hmodlt).symm
-          _ = (Nat.digits 10 (n / 10)).reverse.map Nat.digitChar ++
-                [Nat.digitChar (n % 10)] := by
-            rw [ih (n / 10) hdivlt hdivpos, Nat.toDigits_of_lt_base hmodlt]
-          _ = (Nat.digits 10 n).reverse.map Nat.digitChar := by
-            rw [Nat.digits_of_two_le_of_pos (b := 10) (n := n) (by norm_num) hn]
-            simp [List.map_append]
-
-lemma firstDigits_nat (n k : Nat) :
-    parseNat (String.ofList ((toString n).toList.take k)) =
-      Nat.ofDigits 10 (((Nat.digits 10 n).reverse.take k).reverse) := by
-  by_cases hn : n = 0
-  · subst n
-    rw [show (toString 0).toList = Nat.toDigits 10 0 by simp, Nat.toDigits_zero]
-    cases k with
-    | zero => simp [parseNat]
-    | succ k =>
-        rw [List.take_succ_cons]
-        simp
-        native_decide
-  · have hnpos : 0 < n := Nat.pos_of_ne_zero hn
-    have hdigits : ∀ d ∈ (Nat.digits 10 n).reverse.take k, d < 10 := by
-      intro d hd
-      have hdrev : d ∈ (Nat.digits 10 n).reverse := List.mem_of_mem_take hd
-      simpa using (Nat.digits_lt_base (b := 10) (m := n) (d := d) (by norm_num)
-        (by simpa using hdrev))
-    rw [show (toString n).toList = Nat.toDigits 10 n by simp]
-    rw [toDigits_eq_digitChars n hnpos]
-    rw [← List.map_take]
-    exact parseNat_digitChars ((Nat.digits 10 n).reverse.take k) hdigits
-
-lemma foldl_add_eq_sum_aux (nums : List Nat) (acc : Nat) :
-    nums.foldl (fun acc n => acc + n) acc = acc + nums.sum := by
-  induction nums generalizing acc with
-  | nil => simp
-  | cons x xs ih =>
-      rw [List.foldl_cons, ih (acc + x)]
-      simp [Nat.add_assoc, Nat.add_comm, Nat.add_left_comm]
-
-lemma foldl_add_eq_sum (nums : List Nat) : nums.foldl (fun acc n => acc + n) 0 = nums.sum := by
-  simpa using foldl_add_eq_sum_aux nums 0
+export ProjectEulerStatements.DecimalDigits
+  (digitChar_val foldl_digitChars_aux foldl_digitChars parseNat_digitChars toDigits_eq_digitChars
+    firstDigits_nat foldl_add_eq_sum_aux foldl_add_eq_sum)
 
 theorem equiv (nums : List Nat) (k : Nat) :
     ProjectEulerStatements.P13.naive nums k = solve nums k := by

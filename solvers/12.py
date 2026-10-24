@@ -2,12 +2,11 @@
 from __future__ import annotations
 
 from math import isqrt
-from typing import List
 
 
 class PrimeTable:
     def __init__(self) -> None:
-        self.primes: List[int] = [2]
+        self.primes: list[int] = [2]
 
     def _is_prime(self, x: int) -> bool:
         r = isqrt(x)
@@ -53,6 +52,10 @@ class PrimeTable:
 
 def first_triangular_with_over(k: int) -> int:
     """
+    @formalsw: Py from project_euler_statements.p12 import naive
+    @formalsw: Requires(k >= 0)
+    @formalsw: Equiv(naive)
+
     Find the first triangular number T_n = n(n+1)/2 having > k divisors.
     Uses gcd(n, n+1)=1 so divisor_count(T_n)=div(a)*div(b) where (a,b) are
     the split parts after dividing one of them by 2.

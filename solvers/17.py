@@ -1,7 +1,6 @@
 #!/usr/bin/env python
-from typing import Dict
 
-ONES: Dict[int, str] = {
+ONES: dict[int, str] = {
     0: "",
     1: "one",
     2: "two",
@@ -14,7 +13,7 @@ ONES: Dict[int, str] = {
     9: "nine",
 }
 
-TEENS: Dict[int, str] = {
+TEENS: dict[int, str] = {
     10: "ten",
     11: "eleven",
     12: "twelve",
@@ -27,7 +26,7 @@ TEENS: Dict[int, str] = {
     19: "nineteen",
 }
 
-TENS: Dict[int, str] = {
+TENS: dict[int, str] = {
     2: "twenty",
     3: "thirty",
     4: "forty",
@@ -67,13 +66,25 @@ def letters_in_number(n: int) -> int:
     return total
 
 
+def solve(n: int = 1000) -> int:
+    """
+    @formalsw: Requires(0 <= n <= 1000)
+    @formalsw: Requires({0: "", 1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine"} == ONES)
+    @formalsw: Requires({10: "ten", 11: "eleven", 12: "twelve", 13: "thirteen", 14: "fourteen", 15: "fifteen", 16: "sixteen", 17: "seventeen", 18: "eighteen", 19: "nineteen"} == TEENS)
+    @formalsw: Requires({2: "twenty", 3: "thirty", 4: "forty", 5: "fifty", 6: "sixty", 7: "seventy", 8: "eighty", 9: "ninety"} == TENS)
+    @formalsw: Py from project_euler_statements.p17 import naive
+    @formalsw: Equiv(naive)
+    """
+    return sum(letters_in_number(i) for i in range(1, n + 1))
+
+
 def main() -> None:
     # Given examples / checks
     assert sum(letters_in_number(i) for i in range(1, 6)) == 19
     assert letters_in_number(342) == 23
     assert letters_in_number(115) == 20
 
-    ans = sum(letters_in_number(i) for i in range(1, 1001))
+    ans = solve()
     print(ans)
 
 

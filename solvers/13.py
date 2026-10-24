@@ -1,8 +1,7 @@
 #!/usr/bin/env python
-from typing import List
 
 
-NUMBERS_TEXT = """\
+NUMBERS_TEXT = """
 37107287533902102798797998220837590246510135740250
 46376937677490009712648124896970078050417018260538
 74324986199524741059474233309513058123726617309629
@@ -106,9 +105,24 @@ NUMBERS_TEXT = """\
 """
 
 
-def first_ten_digits(nums: List[str]) -> str:
+def first_digits(nums: list[str], k: int) -> str:
     total = sum(int(s) for s in nums)
-    return str(total)[:10]
+    return str(total)[:k]
+
+
+def first_ten_digits(nums: list[str]) -> str:
+    return first_digits(nums, 10)
+
+
+def solve(nums: list[int], k: int) -> int:
+    """
+    @formalsw: Requires(sum(nums) >= 0)
+    @formalsw: Requires(k >= 0)
+    @formalsw: Py from project_euler_statements.p13 import naive
+    @formalsw: Equiv(naive)
+    """
+    leading = first_digits([str(n) for n in nums], k)
+    return int(leading) if leading else 0
 
 
 def main() -> None:

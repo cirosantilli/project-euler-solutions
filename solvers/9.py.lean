@@ -16,8 +16,9 @@ private abbrev nonnegative (total : Int) :=
 private abbrev hasTriplet (total : Int) :=
   HeapCalls.Condition program (heapEnv total) Solvers.P9Ast.requires_solve_1 []
 
-private theorem extends_naive : Calls.Extends program P9Ast.module := by
-  change Calls.Extends ⟨program.body.take 4 ++ P9Ast.module.body⟩ P9Ast.module
+private theorem extends_naive : HeapCalls.Extends program P9Ast.module := by
+  apply HeapCalls.Extends.of_classless (classless := rfl)
+  change Calls.Extends { body := program.body.take 4 ++ P9Ast.module.body } P9Ast.module
   apply Calls.Extends.prepend
   · intro name member
     change name ∈ ["solve", "_formalsw_requires_target"] at member
@@ -165,7 +166,7 @@ theorem sortedExpression.result (env : HeapCalls.Env) (heap : Mutable.Heap) (a b
     (hc : env "c" = some (.scalar (.int c))) (ac : a ≤ c) (bc : b ≤ c) :
     HeapCalls.Evaluates program env sortedExpression heap (.ref (heap.length + 1))
       (sortedHeap heap a b c) := by
-  have tupleRun := HeapCalls.Evaluates.tuple (module := program) (heap := heap)
+  have tupleRun := HeapCalls.Evaluates.tuple (globals := []) (module := program) (heap := heap)
     (.cons (HeapCalls.Evaluates.lookup ha) (.cons (HeapCalls.Evaluates.lookup hb)
       (.cons (HeapCalls.Evaluates.lookup hc) .nil))) (by simp)
   apply HeapCalls.Evaluates.builtin (.cons tupleRun .nil)

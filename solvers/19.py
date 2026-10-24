@@ -3,6 +3,10 @@ from typing import Dict
 
 
 def is_leap_year(year: int) -> bool:
+    """
+    @formalsw: Py from project_euler_statements.p19 import is_leap
+    @formalsw: Equiv(is_leap)
+    """
     if year % 400 == 0:
         return True
     if year % 100 == 0:
@@ -20,6 +24,11 @@ def days_in_month(year: int, month: int) -> int:
 
 
 def count_sundays_on_first(start_year: int, end_year: int) -> int:
+    """
+    @formalsw: Py from project_euler_statements.p19 import naive_years
+    @formalsw: Requires(1900 <= start_year <= end_year)
+    @formalsw: Equiv(naive_years)
+    """
     # Day of week encoding: 0=Mon, 1=Tue, ..., 6=Sun
     dow_first_of_month = 0  # 1 Jan 1900 was Monday
 

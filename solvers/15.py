@@ -3,7 +3,9 @@ from typing import Final
 
 
 def binom(n: int, k: int) -> int:
-    """Compute C(n, k) exactly using an integer multiplicative formula."""
+    """
+    Compute C(n, k) exactly using an integer multiplicative formula.
+    """
     if k < 0 or k > n:
         return 0
     k = min(k, n - k)
@@ -19,6 +21,15 @@ def lattice_paths(grid_n: int, grid_m: int) -> int:
     moving only right and down.
     """
     return binom(grid_n + grid_m, grid_n)
+
+
+def solve(n: int) -> int:
+    """
+    @formalsw: Requires(n >= 0)
+    @formalsw: Py from project_euler_statements.p15 import naive
+    @formalsw: Equiv(naive)
+    """
+    return lattice_paths(n, n)
 
 
 def main() -> None:

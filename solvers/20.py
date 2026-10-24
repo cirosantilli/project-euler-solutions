@@ -1,8 +1,12 @@
 #!/usr/bin/env python
-from typing import *
 
 
 def factorial_digit_sum(n: int) -> int:
+    """
+    @formalsw: Py from project_euler_statements.p20 import naive
+    @formalsw: Requires(n >= 0)
+    @formalsw: Equiv(naive)
+    """
     fact = 1
     for k in range(2, n + 1):
         fact *= k

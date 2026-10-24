@@ -42,7 +42,7 @@ def prodRight (g : Array (Array Nat)) (i j k : Nat) : Nat :=
     if t >= k then
       acc
     else
-      loop (t + 1) (acc * g[i]![j + t]!)
+      loop (t + 1) (acc * (g[i]!)[j + t]!)
   termination_by k - t
   decreasing_by
     simp_wf
@@ -54,7 +54,7 @@ def prodDown (g : Array (Array Nat)) (i j k : Nat) : Nat :=
     if t >= k then
       acc
     else
-      loop (t + 1) (acc * g[i + t]![j]!)
+      loop (t + 1) (acc * (g[i + t]!)[j]!)
   termination_by k - t
   decreasing_by
     simp_wf
@@ -66,7 +66,7 @@ def prodDownRight (g : Array (Array Nat)) (i j k : Nat) : Nat :=
     if t >= k then
       acc
     else
-      loop (t + 1) (acc * g[i + t]![j + t]!)
+      loop (t + 1) (acc * (g[i + t]!)[j + t]!)
   termination_by k - t
   decreasing_by
     simp_wf
@@ -78,7 +78,7 @@ def prodDownLeft (g : Array (Array Nat)) (i j k : Nat) : Nat :=
     if t >= k then
       acc
     else
-      loop (t + 1) (acc * g[i + t]![j - t]!)
+      loop (t + 1) (acc * (g[i + t]!)[j - t]!)
   termination_by k - t
   decreasing_by
     simp_wf
