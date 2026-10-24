@@ -1,6 +1,6 @@
 = Python proof-domain audit
 
-This audit covers the Python solver and reference interfaces for problems 1 through 68, their `Requires` annotations, default adapters, and the documented proof claims.
+This audit covers the Python solver and reference interfaces for problems 1 through 69, their `Requires` annotations, default adapters, and the documented proof claims.
 
 Prefer a meaningful argument shared by both implementations. A reference-only search limit changes an unbounded problem into a bounded one and is not an acceptable substitute. A mathematical bound derived from the inputs or the problem definition is acceptable. For a fixed problem without a useful parameter, retain `Equiv` and prefer structural proofs through shared mathematical models. A completed interpreter observation can establish termination; running out of observation fuel cannot.
 
@@ -60,6 +60,8 @@ Problem 67 has structural source termination and equivalence proofs for every fi
 Problem 68 has structural source termination and equivalence proofs for every signed ring size and requested decimal length. Both omitted-argument defaults and the one-argument calls are covered. Canonical rotation, complete positional selections, line-sum identities, and representation lengths connect both algorithms to the same finite mathematical maximum. The source proofs cover initialization, both nested scans, width and divisibility pruning, signed forced-label construction and early rejection, set subtraction and cardinality checks, keyed minimum selection, serialization, and record updates. Heap prefixes and stable search locals are preserved. The equivalence quantifies over independent set-iteration schedules; neither implementation actually iterates a set.
 
 The standalone Lean statement and optimized solver for problem 68 accept the same signed arguments and return text. Their pointwise and function equivalence follow from the universal search identities. All recursion uses finite lists and ranges, and the public Python result is also connected to this Lean solver model. No fixed-instance search computation or extra termination assumption is used.
+
+Problem 69 has structural source termination and equivalence proofs for every signed inclusive bound. Both searches return one below one and otherwise retain the least positive maximizer of n/phi(n). The optimized search grows an ordered prime cache as needed and stops when its product times the next candidate exceeds the bound. The proof shows that a least maximizer is squarefree and cannot omit a smaller prime in favor of a larger one; these properties identify the stopping product uniquely. The reference's gcd generator counts the mathematical totient, and its strict cross-multiplication scan preserves the smallest winner on ties. Source proofs cover the cached trial loop's two early exits, cache append, product and candidate updates, and initialized outer-loop termination. The standalone Lean models share the signed bound and the same proved result. No fixed prime count, input upper limit, or whole-program computation is used.
 
 == Remaining implementation and proof restrictions
 

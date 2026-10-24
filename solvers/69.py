@@ -1,45 +1,35 @@
 #!/usr/bin/env python
-from __future__ import annotations
-
-from typing import List
-
-
-def primes_up_to_needed() -> List[int]:
-    # For limit 1e6 we only need small primes (product grows fast),
-    # but generate a modest list safely.
-    primes: List[int] = []
-    candidate = 2
-    while len(primes) < 1000:  # far more than needed
-        is_p = True
-        for p in primes:
-            if p * p > candidate:
-                break
-            if candidate % p == 0:
-                is_p = False
-                break
-        if is_p:
-            primes.append(candidate)
-        candidate += 1 if candidate == 2 else 2  # after 2, only odd
-    return primes
 
 
 def solve(limit: int) -> int:
     """
-    Returns n <= limit maximizing n/phi(n).
-    The maximum is achieved by multiplying consecutive smallest primes
-    until the product would exceed limit.
+    Return the least positive maximizer of n/phi(n) up to the inclusive bound.
+    Return one for bounds below one.
+
+    @formalsw: Py from project_euler_statements.p69 import naive
+    @formalsw: Returns
+    @formalsw: Equiv(naive)
     """
-    n = 1
-    for p in primes_up_to_needed():
-        if n * p > limit:
-            break
-        n *= p
-    return n
+    if limit < 2:
+        return 1
+    product = 2
+    primes: list[int] = [2]
+    candidate = 3
+    while product * candidate <= limit:
+        is_prime = True
+        for divisor in primes:
+            if divisor * divisor > candidate:
+                break
+            if candidate % divisor == 0:
+                is_prime = False
+                break
+        if is_prime:
+            product *= candidate
+            primes.append(candidate)
+        candidate += 2
+    return product
 
 
 if __name__ == "__main__":
-    # Given example: for n <= 10, maximum n/phi(n) occurs at n = 6
     assert solve(10) == 6
-
-    limit = 1_000_000
-    print(solve(limit))
+    print(solve(1_000_000))
