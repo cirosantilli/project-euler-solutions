@@ -1,10 +1,11 @@
-import solvers.«70.sieve.loop.source»
+import ProjectEulerSolutions.Lib.TotientSieveLoopCalls
 import ProjectEulerStatements.Lib.TotientLinearCache
 
 /-! Primality detection, cache append, and prime-cell initialization in the source sieve. -/
-namespace solvers.«70».sieve
+namespace ProjectEulerSolutions.TotientSieveCalls
 open FormalSW.PyAst HeapCalls ProjectEulerStatements.TotientLinearSieve
 set_option Elab.async false
+variable {program : Module}
 
 abbrev primeCondition : Expr := .unaryOp .not (.subscript (.name "is_comp") (.name "i"))
 abbrev cacheAppend : Stmt :=
@@ -12,6 +13,9 @@ abbrev cacheAppend : Stmt :=
 abbrev initializeExpression : Expr := .binOp (.name "i") .sub (.constant (.int 1))
 abbrev initializeCode : Stmt :=
   .assign [.subscript (.name "phi") (.name "i")] initializeExpression
+
+abbrev outerBody : List Stmt :=
+  [.ifThen primeCondition [cacheAppend, initializeCode] [], innerLoop]
 
 theorem outer_source : outerBody =
     [.ifThen primeCondition [cacheAppend, initializeCode] [], innerLoop] := rfl
@@ -58,7 +62,8 @@ theorem prepare_result (limit i : Nat) (table : Table) (cache : List Nat)
       (realize base (limit + 1) (prepare i table) (nextCache i cache)) := by
   have flag := congrArg Prod.snd current
   rw [expected_mark i large] at flag
-  have tested := prime_condition_result limit i table base cache env within ready
+  have tested := prime_condition_result (program := program)
+    limit i table base cache env within ready
   by_cases prime : Nat.Prime i
   · have falseFlag : (table i).2 = false := by
       simpa only [prime, decide_true, Bool.not_true] using flag
@@ -72,9 +77,10 @@ theorem prepare_result (limit i : Nat) (table : Table) (cache : List Nat)
         (Evaluates.lookup ready.getCache) found (Evaluates.lookup ready.getI) found
       have encoded : cache.map number ++ [number i] = (cache ++ [i]).map number := by simp
       simpa only [encoded, store_cache] using executed
-    have initialized := set_phi base (limit + 1) i (i - 1) (fun n => (table n).1)
+    have initialized := set_phi (program := program)
+      base (limit + 1) i (i - 1) (fun n => (table n).1)
       (fun n => (table n).2) (cache ++ [i]) env "i" initializeExpression (by omega)
-      ready.getPhi ready.getI (initialize_result i large _ env ready.getI)
+      ready.getPhi ready.getI (initialize_result (program := program) i large _ env ready.getI)
     rw [prepare_heap base (limit + 1) i table (cache ++ [i]) falseFlag] at initialized
     simp only [nextCache, if_pos prime]
     apply BlockContinues.branch_next (flag := true)
@@ -87,4 +93,4 @@ theorem prepare_result (limit i : Nat) (table : Table) (cache : List Nat)
       (by simpa only [trueFlag, Bool.not_true] using tested) rfl
     exact .nil
 
-end solvers.«70».sieve
+end ProjectEulerSolutions.TotientSieveCalls

@@ -1,13 +1,12 @@
-import «.formalsw».solvers.«70.py.ast»
 import lang.py.FormalSW.HeapCalls
 import ProjectEulerStatements.Lib.TotientLinearSieve
 
 /-! The live lists and alias-preserving writes of the linear totient sieve. -/
-namespace solvers.«70».sieve
+namespace ProjectEulerSolutions.TotientSieveCalls
 open FormalSW.PyAst HeapCalls ProjectEulerStatements.TotientLinearSieve
 set_option Elab.async false
+variable {program : Module}
 
-abbrev program := Solvers.P70Ast.module
 abbrev number (n : Nat) : Mutable.Value := .scalar (.int n)
 
 def entries (size : Nat) (value : Nat → Mutable.Value) : List Mutable.Value :=
@@ -164,4 +163,4 @@ theorem realize_congr (base : Mutable.Heap) (size : Nat) (left right : Table) (c
     rw [same n (List.mem_range.mp member)]
   simp only [realize, working, values, marks]
 
-end solvers.«70».sieve
+end ProjectEulerSolutions.TotientSieveCalls

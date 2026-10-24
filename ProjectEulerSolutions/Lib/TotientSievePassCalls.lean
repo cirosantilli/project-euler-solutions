@@ -1,22 +1,12 @@
-import solvers.«70.sieve.heap»
+import ProjectEulerSolutions.Lib.TotientSieveHeap
 import lang.py.FormalSW.LoopCalls
 
 /-! The inner source loop implements the bounded mathematical prime-product pass. -/
-namespace solvers.«70».sieve
+namespace ProjectEulerSolutions.TotientSieveCalls
 open FormalSW.PyAst HeapCalls ProjectEulerStatements.TotientLinearSieve
 set_option Elab.async false
+variable {program : Module}
 
-abbrev sieveBody : List Stmt :=
-  ((findFunctionIn program.body "compute_phi_linear").getD ([], [])).2
-abbrev sieveCode : List Stmt := executableBody sieveBody
-abbrev outerBody : List Stmt :=
-  match (sieveCode[5]? : Option Stmt) with
-  | some (.forIn _ _ body _) => body
-  | _ => []
-abbrev innerBody : List Stmt :=
-  match (outerBody[1]? : Option Stmt) with
-  | some (.forIn _ _ body _) => body
-  | _ => []
 abbrev productExpression : Expr := .binOp (.name "i") .mult (.name "p")
 abbrev boundCondition : Expr := .compare (.name "ip") [(.gt, .name "limit")]
 abbrev dividesCondition : Expr :=
@@ -31,13 +21,14 @@ abbrev repeatedCode : Stmt :=
   .assign [.subscript (.name "phi") (.name "ip")] repeatedExpression
 abbrev freshCode : Stmt :=
   .assign [.subscript (.name "phi") (.name "ip")] freshExpression
+abbrev innerBody : List Stmt :=
+  [.assign [.name "ip"] productExpression, .ifThen boundCondition [.breakLoop] [],
+    markCode, .ifThen dividesCondition [repeatedCode, .breakLoop] [], freshCode]
 abbrev innerLoop : Stmt := .forIn (.name "p") (.name "primes") innerBody []
 
 theorem inner_source : innerBody =
     [.assign [.name "ip"] productExpression, .ifThen boundCondition [.breakLoop] [],
       markCode, .ifThen dividesCondition [repeatedCode, .breakLoop] [], freshCode] := rfl
-
-theorem inner_loop_source : outerBody[1]? = some innerLoop := rfl
 
 structure Ready (limit i address : Nat) (env : HeapCalls.Env) : Prop where
   getLimit : env "limit" = some (number limit)
@@ -98,7 +89,8 @@ theorem repeated_result (limit i p : Nat) (table : Table) (base : Mutable.Heap)
       (number ((table i).1 * p))
       (working base (limit + 1) (fun n => (table n).1) marked cache) := by
   exact Evaluates.binary
-    (read_phi base (limit + 1) i _ marked cache env "i" (by omega) ready.getPhi ready.getI)
+    (read_phi (program := program)
+      base (limit + 1) i _ marked cache env "i" (by omega) ready.getPhi ready.getI)
     (Evaluates.lookup getP) (by simp [Mutable.binary, scalarBinary])
 
 theorem fresh_result (limit i p : Nat) (prime : Nat.Prime p) (table : Table)
@@ -112,7 +104,8 @@ theorem fresh_result (limit i p : Nat) (prime : Nat.Prime p) (table : Table)
   apply Evaluates.binary (av := number ((table i).1)) (bv := number (p - 1))
     (middle := working base (limit + 1) (fun n => (table n).1) marked cache)
     (afterRight := working base (limit + 1) (fun n => (table n).1) marked cache)
-    (read_phi base (limit + 1) i _ marked cache env "i" (by omega) ready.getPhi ready.getI)
+    (read_phi (program := program)
+      base (limit + 1) i _ marked cache env "i" (by omega) ready.getPhi ready.getI)
   · exact Evaluates.binary (Evaluates.lookup getP) Evaluates.constant
       (by simp [Mutable.binary, scalarBinary, number, Nat.cast_sub prime.one_lt.le])
   · simp [Mutable.binary, scalarBinary]
@@ -142,4 +135,4 @@ theorem write_heap (base : Mutable.Heap) (size i p : Nat) (table : Table) (cache
     · simp [write, Function.update_of_ne same]
   rw [first, second]
 
-end solvers.«70».sieve
+end ProjectEulerSolutions.TotientSieveCalls

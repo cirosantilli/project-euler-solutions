@@ -1,6 +1,6 @@
 = Python proof-domain audit
 
-This audit covers the Python solver and reference interfaces for problems 1 through 71, their `Requires` annotations, default adapters, and the documented proof claims.
+This audit covers the Python solver and reference interfaces for problems 1 through 72, their `Requires` annotations, default adapters, and the documented proof claims.
 
 Prefer a meaningful argument shared by both implementations. A reference-only search limit changes an unbounded problem into a bounded one and is not an acceptable substitute. A mathematical bound derived from the inputs or the problem definition is acceptable. For a fixed problem without a useful parameter, retain `Equiv` and prefer structural proofs through shared mathematical models. A completed interpreter observation can establish termination; running out of observation fuel cannot.
 
@@ -67,6 +67,8 @@ Problem 70 has structural source termination and equivalence proofs for every si
 
 
 Problem 71 has structural source termination and equivalence proofs for every signed denominator bound and every target with 0 < num < den. The target need not be reduced. The optimized source checks the greatest numerator strictly below the target at each denominator; reducing a skipped noncoprime candidate preserves its value at an earlier denominator. This proves completeness against the exhaustive descending-denominator reference. Reduced-fraction uniqueness makes the different traversal orders agree. The proof covers both continue transfers, tuple unpacking allocations, the returned pair and numerator subscription, and both trailing-default adapters. The standalone Lean models share the signed interface and proved finite searches; their loop measures decrease with the remaining denominator interval. No whole-program computation is used in the proofs.
+
+Problem 72 has structural source termination and equivalence proofs for every signed denominator bound. The reference counts coprime residues in each finite numerator range and sums only denominators greater than one. Its residue count is the mathematical totient, and excluding the first two table entries gives exactly the same sum. The optimized proof covers the initialized linear sieve, both early breaks, shared list updates, fresh suffix allocation, and integer summation. Problems 70 and 72 instantiate the same module-independent sieve source proof by checking their executable helper bodies. Both source interfaces use unbounded integer lists. The standalone solver uses the proved array sieve and an indexed tail loop with a decreasing remaining-length measure; it accepts the same signed bound and returns the same count. No fixed-instance computation is used in the proofs.
 
 == Remaining implementation and proof restrictions
 

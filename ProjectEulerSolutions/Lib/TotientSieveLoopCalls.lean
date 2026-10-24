@@ -1,9 +1,10 @@
-import solvers.«70.sieve.pass.source»
+import ProjectEulerSolutions.Lib.TotientSievePassCalls
 
 /-! Both early breaks and every live-list iteration of the inner linear sieve. -/
-namespace solvers.«70».sieve
+namespace ProjectEulerSolutions.TotientSieveCalls
 open FormalSW.PyAst HeapCalls ProjectEulerStatements.TotientLinearSieve
 set_option Elab.async false
+variable {program : Module}
 
 /-- Every remaining prime follows the exact source trace of the mathematical pass. -/
 theorem pass_loop_result (limit i : Nat) (cache remaining : List Nat) (table : Table)
@@ -44,8 +45,10 @@ theorem pass_loop_result (limit i : Nat) (cache remaining : List Nat) (table : T
       have assigned : BlockContinues program indexed [.assign [.name "ip"] productExpression]
           (realize base (limit + 1) table cache) multiplied
           (realize base (limit + 1) table cache) :=
-        BlockContinues.assign (product_result i p _ indexed indexedReady.getI rfl)
-      have compared := bound_result limit (i * p) (realize base (limit + 1) table cache)
+        BlockContinues.assign (product_result (program := program)
+          i p _ indexed indexedReady.getI rfl)
+      have compared := bound_result (program := program)
+        limit (i * p) (realize base (limit + 1) table cache)
         multiplied multipliedReady.getLimit getIP
       by_cases outside : limit < i * p
       · refine ⟨multiplied, ?_, multipliedReady⟩
@@ -61,16 +64,18 @@ theorem pass_loop_result (limit i : Nat) (cache remaining : List Nat) (table : T
         exact BlockContinues.break_loop rfl .nil
       · have productBound : i * p < limit + 1 := by omega
         let marked := Function.update (fun n => (table n).2) (i * p) true
-        have markedSource := set_mark base (limit + 1) (i * p) (fun n => (table n).1)
+        have markedSource := set_mark (program := program)
+          base (limit + 1) (i * p) (fun n => (table n).1)
           (fun n => (table n).2) cache multiplied productBound multipliedReady.getMarks getIP
-        have dividesTest := divides_result i p prime
+        have dividesTest := divides_result (program := program) i p prime
           (working base (limit + 1) (fun n => (table n).1) marked cache)
           multiplied multipliedReady.getI getP
         by_cases divides : i % p = 0
-        · have stored := set_phi base (limit + 1) (i * p) ((table i).1 * p)
+        · have stored := set_phi (program := program) base (limit + 1) (i * p) ((table i).1 * p)
             (fun n => (table n).1) marked cache multiplied "ip" repeatedExpression productBound
             multipliedReady.getPhi getIP
-            (repeated_result limit i p table base marked cache multiplied within
+            (repeated_result (program := program)
+              limit i p table base marked cache multiplied within
               multipliedReady getP)
           have written : working base (limit + 1)
               (Function.update (fun n => (table n).1) (i * p) ((table i).1 * p)) marked cache =
@@ -93,10 +98,12 @@ theorem pass_loop_result (limit i : Nat) (cache remaining : List Nat) (table : T
             (by simpa only [divides, decide_true] using dividesTest) rfl
           apply stored.append
           exact BlockContinues.break_loop rfl .nil
-        · have stored := set_phi base (limit + 1) (i * p) ((table i).1 * (p - 1))
+        · have stored := set_phi (program := program)
+            base (limit + 1) (i * p) ((table i).1 * (p - 1))
             (fun n => (table n).1) marked cache multiplied "ip" freshExpression productBound
             multipliedReady.getPhi getIP
-            (fresh_result limit i p prime table base marked cache multiplied within
+            (fresh_result (program := program)
+              limit i p prime table base marked cache multiplied within
               multipliedReady getP)
           have written : working base (limit + 1)
               (Function.update (fun n => (table n).1) (i * p) ((table i).1 * (p - 1)))
@@ -132,10 +139,11 @@ theorem pass_result (limit i : Nat) (cache : List Nat) (table : Table)
       (realize base (limit + 1) (pass limit i cache table) cache) ∧
       Ready limit i base.length finalEnv := by
   obtain ⟨finalEnv, continued, finalReady⟩ :=
-    pass_loop_result limit i cache cache table 0 rfl primes within base env ready
+    pass_loop_result (program := program)
+      limit i cache cache table 0 rfl primes within base env ready
   refine ⟨finalEnv, ?_, finalReady⟩
   apply BlockContinues.for_sequence (items := cache.map number)
     (by intro expressions impossible; cases impossible) (Evaluates.lookup ready.getCache)
     (by simp [Mutable.sequence, cache_found]) continued
 
-end solvers.«70».sieve
+end ProjectEulerSolutions.TotientSieveCalls

@@ -1,55 +1,52 @@
 #!/usr/bin/env python
 from __future__ import annotations
 
-from array import array
-from typing import List
 
-
-def totients_up_to(n: int) -> array:
+def totients_up_to(limit: int) -> list[int]:
     """
-    Compute phi(k) for all 0 <= k <= n using a linear sieve.
-    Returns an array('I') where phi[k] is Euler's totient function.
+    Linear sieve computing phi[0..limit] in O(limit).
+
+    @formalsw: Returns
     """
-    phi = array("I", [0]) * (n + 1)
-    if n >= 1:
-        phi[1] = 1
+    phi = [0] * (limit + 1)
+    if limit < 1:
+        return phi
+    is_comp = [False] * (limit + 1)
+    primes: list[int] = []
 
-    is_comp = bytearray(n + 1)
-    primes: List[int] = []
-
-    for i in range(2, n + 1):
+    phi[1] = 1
+    for i in range(2, limit + 1):
         if not is_comp[i]:
             primes.append(i)
             phi[i] = i - 1
         for p in primes:
             ip = i * p
-            if ip > n:
+            if ip > limit:
                 break
             is_comp[ip] = 1
             if i % p == 0:
                 phi[ip] = phi[i] * p
                 break
-            else:
-                phi[ip] = phi[i] * (p - 1)
-
+            phi[ip] = phi[i] * (p - 1)
     return phi
 
 
-def solve(max_d: int) -> int:
+def solve(limit: int) -> int:
     """
-    Count reduced proper fractions n/d with 1 <= n < d <= max_d and gcd(n,d)=1.
-    This equals sum_{d=2..max_d} phi(d).
+    Count reduced proper fractions with positive denominator at most limit.
+
+    @formalsw: Py from project_euler_statements.p72 import naive
+    @formalsw: Returns
+    @formalsw: Equiv(naive)
     """
-    if max_d < 2:
+    if limit < 2:
         return 0
-    phi = totients_up_to(max_d)
-    return int(sum(phi[2:]))
+    phi = totients_up_to(limit)
+    return sum(phi[2:])
 
 
 if __name__ == "__main__":
-    # From the statement: for d <= 8 there are 21 reduced proper fractions.
     assert solve(8) == 21
     assert solve(1) == 0
-    assert solve(2) == 1  # only 1/2
-    n = 1_000_000
-    print(solve(n))
+    assert solve(2) == 1
+    print(solve(1_000_000))

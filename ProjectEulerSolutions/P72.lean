@@ -1,75 +1,65 @@
 import ProjectEulerStatements.P72
-import ProjectEulerSolutions.Termination.P72
+import ProjectEulerSolutions.Lib.TotientArraySieveCorrect
+
+set_option linter.style.header false
+
+/-! The linear array sieve supplies every term of the reduced-fraction count. -/
 namespace ProjectEulerSolutions.P72
+open ProjectEulerStatements
+set_option Elab.async false
 
-def computePhiLinear (limit : Nat) : Array Nat :=
-  let phi0 := Array.replicate (limit + 1) 0
-  let comp0 := Array.replicate (limit + 1) false
-  let phi0 := if limit >= 1 then phi0.set! 1 1 else phi0
-  let rec loop (i : Nat) (phi : Array Nat) (isComp : Array Bool) (primes : Array Nat)
-      : Array Nat :=
-    if i > limit then
-      phi
-    else
-      let (phi, isComp, primes) :=
-        if isComp[i]! then
-          (phi, isComp, primes)
-        else
-          (phi.set! i (i - 1), isComp, primes.push i)
-      let rec loopP (j : Nat) (phi : Array Nat) (isComp : Array Bool)
-          : Array Nat × Array Bool :=
-        if j >= primes.size then
-          (phi, isComp)
-        else
-          let p := primes[j]!
-          let ip := i * p
-          if ip > limit then
-            (phi, isComp)
-          else
-            let isComp := isComp.set! ip true
-            if i % p == 0 then
-              let phi := phi.set! ip (phi[i]! * p)
-              (phi, isComp)
-            else
-              let phi := phi.set! ip (phi[i]! * (p - 1))
-              loopP (j + 1) phi isComp
-      termination_by 0
-      decreasing_by all_goals exact Termination.decreases
-      let (phi, isComp) := loopP 0 phi isComp
-      loop (i + 1) phi isComp primes
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  loop 2 phi0 comp0 #[]
+abbrev computePhiLinear := TotientArraySieve.computePhiLinear
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def countReducedProperFractions (maxD : Nat) : Nat :=
-  if maxD < 2 then
-    0
-  else
-    let phi := computePhiLinear maxD
-    let rec loop (d : Nat) (acc : Nat) : Nat :=
-      if d > maxD then
-        acc
-      else
-        loop (d + 1) (acc + phi[d]!)
-    termination_by 0
-    decreasing_by all_goals exact Termination.decreases
-    loop 2 0
+def sumFrom (phi : Array Nat) (index total : Nat) : Nat :=
+  if index < phi.size then sumFrom phi (index + 1) (total + phi[index]!) else total
+termination_by phi.size - index
 
+/-- The indexed loop sums exactly the unvisited array suffix. -/
+theorem sumFrom_correct (phi : Array Nat) (index total : Nat) (remaining : List Nat)
+    (suffix : phi.toList.drop index = remaining) :
+    sumFrom phi index total = total + remaining.sum := by
+  induction remaining generalizing index total with
+  | nil =>
+      have missing : phi[index]? = none := by
+        simpa only [suffix, List.head?_nil, Array.getElem?_toList] using
+          (List.head?_drop (l := phi.toList) (i := index)).symm
+      have exhausted : phi.size ≤ index := Array.getElem?_eq_none_iff.mp missing
+      rw [sumFrom, if_neg (by omega), List.sum_nil, Nat.add_zero]
+  | cons head tail ih =>
+      have item : phi[index]? = some head := by
+        simpa only [suffix, List.head?_cons, Array.getElem?_toList] using
+          (List.head?_drop (l := phi.toList) (i := index)).symm
+      obtain ⟨bounded, value⟩ := Array.getElem?_eq_some_iff.mp item
+      have read : phi[index]! = head := by simp [getElem!_pos, bounded, value]
+      rw [sumFrom, if_pos bounded, read,
+        ih (index + 1) (total + head) (by simp [List.drop_add_one_eq_tail_drop, suffix])]
+      simp [Nat.add_assoc]
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-example : countReducedProperFractions 8 = 21 := by
-  native_decide
+def countReducedProperFractions (limit : Nat) : Nat :=
+  if limit < 2 then 0 else sumFrom (computePhiLinear limit) 2 0
 
-example : countReducedProperFractions 1 = 0 := by
-  native_decide
+def solve (limit : Int) : Nat :=
+  if limit < 2 then 0 else countReducedProperFractions limit.toNat
 
-example : countReducedProperFractions 2 = 1 := by
-  native_decide
+theorem solve_eq_result (limit : Int) : solve limit = ReducedFractionCount.result limit := by
+  by_cases small : limit < 2
+  · rw [solve, if_pos small, ReducedFractionCount.result_small limit small]
+  · have large : ¬ limit.toNat < 2 := by omega
+    rw [solve, if_neg small, countReducedProperFractions, if_neg large]
+    have table : (computePhiLinear limit.toNat).toList =
+        (List.range (limit.toNat + 1)).map Nat.totient := by
+      apply List.ext_getElem
+      · simp [TotientArraySieve.computePhiLinear_size]
+      · intro n leftBound rightBound
+        have bound : n ≤ limit.toNat := by
+          simpa [TotientArraySieve.computePhiLinear_size] using leftBound
+        have arrayBound : n < (computePhiLinear limit.toNat).size := by simpa using leftBound
+        have read := TotientArraySieve.computePhiLinear_correct limit.toNat n bound
+        rw [getElem!_pos (TotientArraySieve.computePhiLinear limit.toNat) n arrayBound] at read
+        simpa only [Array.getElem_toList, List.getElem_map, List.getElem_range] using read
+    rw [sumFrom_correct _ 2 0 _ rfl, Nat.zero_add, table, ← List.map_drop]
+    rw [ReducedFractionCount.tail_sum]
+    have size : (limit + 1).toNat = limit.toNat + 1 := by omega
+    rw [ReducedFractionCount.result, size]
 
-
-def solve (_n : Nat) :=
-  countReducedProperFractions 1000000
 end ProjectEulerSolutions.P72
