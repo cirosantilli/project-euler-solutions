@@ -710,7 +710,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/56.py[56.py] | link:solvers/56.md[56.md] | link:solvers/56.py.lean[56.py.lean] | 0.088 | 972 |
 | link:solvers/57.py[57.py] | link:solvers/57.md[57.md] | link:solvers/57.py.lean[57.py.lean] | 0.076 | 153 |
 | link:solvers/58.py[58.py] | link:solvers/58.md[58.md] | link:solvers/58.py.lean[58.py.lean] | 0.097 | 26241 |
-| link:solvers/59.py[59.py] | link:solvers/59.md[59.md] |  | 0.169 | 129448 |
+| link:solvers/59.py[59.py] | link:solvers/59.md[59.md] |  | 0.075 | 129448 |
 | link:solvers/60.py[60.py] | link:solvers/60.md[60.md] |  | 0.511 | 26033 |
 | link:solvers/61.py[61.py] | link:solvers/61.md[61.md] |  | 0.084 | 28684 |
 | link:solvers/62.py[62.py] | link:solvers/62.md[62.md] |  | 0.145 | 127035954683 |
@@ -2035,7 +2035,7 @@ Some of the Python implementations are missing for eulersolve, often for the har
 ** link:solvers/eulersolve/58.cpp[]: 0.169
 ** link:solvers/58.lean[]: 0.152
 * 59
-** link:solvers/59.py[]: 0.169
+** link:solvers/59.py[]: 0.075
 ** link:solvers/eulersolve/59.py[]: 0.535
 ** link:solvers/eulersolve/59.cpp[]: 0.062
 ** link:solvers/59.lean[]: 0.171

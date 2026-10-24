@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import List, Tuple, Optional
 
 
 def load_cipher() -> bytes:
@@ -11,7 +10,7 @@ def load_cipher() -> bytes:
     return bytes(nums)
 
 
-def build_scoring_tables() -> Tuple[List[bool], List[int]]:
+def build_scoring_tables() -> tuple[list[bool], list[int]]:
     printable = [False] * 256
     for v in range(32, 127):
         printable[v] = True
@@ -66,11 +65,11 @@ def build_scoring_tables() -> Tuple[List[bool], List[int]]:
     return printable, w
 
 
-def best_key_and_sum(cipher: bytes) -> Tuple[bytes, int]:
+def best_key_and_sum(cipher: bytes) -> tuple[bytes, int]:
     printable, weights = build_scoring_tables()
 
-    best_score: Optional[int] = None
-    best_key: Optional[Tuple[int, int, int]] = None
+    best_score: int | None = None
+    best_key: tuple[int, int, int] | None = None
     best_sum: int = 0
 
     n = len(cipher)
@@ -81,6 +80,7 @@ def best_key_and_sum(cipher: bytes) -> Tuple[bytes, int]:
                 key0, key1, key2 = k0, k1, k2
                 score = 0
                 s = 0
+                valid = True
                 # Decrypt + score; early reject if not printable
                 for i in range(n):
                     c = cipher[i]
@@ -92,17 +92,18 @@ def best_key_and_sum(cipher: bytes) -> Tuple[bytes, int]:
                         p = c ^ key2
 
                     if not printable[p]:
-                        score = -(10**18)
+                        valid = False
                         break
                     s += p
                     score += weights[p]
 
-                if best_score is None or score > best_score:
+                if valid and (best_score is None or score > best_score):
                     best_score = score
                     best_key = (key0, key1, key2)
                     best_sum = s
 
-    assert best_key is not None
+    if best_key is None:
+        return b"", 0
     return bytes(best_key), best_sum
 
 
@@ -114,8 +115,8 @@ if __name__ == "__main__":
     # Small sanity check from statement: 65 XOR 42 = 107
     assert (65 ^ 42) == 107
     assert (107 ^ 42) == 65
-
-    cipher = load_cipher()
+    assert best_key_and_sum(b"") == (b"aaa", 0)
+    assert best_key_and_sum(bytes([0, 255])) == (b"", 0)
 
     # Print the required answer: sum of ASCII values in the decrypted text
-    print(solve(cipher))
+    print(solve(load_cipher()))
