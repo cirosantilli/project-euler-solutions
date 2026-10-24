@@ -2,6 +2,7 @@ import Mathlib.Data.Nat.Prime.Basic
 import Mathlib.Data.Nat.Sqrt
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.IntervalCases
 import Lean.Elab.Tactic.Omega
 
 /-! Correctness of trial division through the residue classes 5 and 1 modulo 6. -/
@@ -93,5 +94,29 @@ theorem initial (n : Nat) (even : n % 2 ≠ 0) (third : n % 3 ≠ 0) : Checked n
   rcases possibilities with rfl | rfl
   · exact fun divides => even (Nat.mod_eq_zero_of_dvd divides)
   · exact fun divides => third (Nat.mod_eq_zero_of_dvd divides)
+
+/-- A complete primality test whose small trial loop also reduces efficiently in the kernel. -/
+def isPrime (n : Nat) : Bool :=
+  if n ≤ 3 then decide (2 ≤ n)
+  else if n % 2 = 0 ∨ n % 3 = 0 then false
+  else trial n 5
+
+theorem isPrime_correct (n : Nat) : isPrime n = decide (Nat.Prime n) := by
+  unfold isPrime
+  by_cases small : n ≤ 3
+  · rw [if_pos small]
+    interval_cases n <;> decide
+  · rw [if_neg small]
+    by_cases divides : n % 2 = 0 ∨ n % 3 = 0
+    · rw [if_pos divides]
+      have composite : ¬ Nat.Prime n := by
+        intro prime
+        rcases divides with even | third
+        · rcases (Nat.dvd_prime prime).mp (Nat.dvd_of_mod_eq_zero even) with one | same <;> omega
+        · rcases (Nat.dvd_prime prime).mp (Nat.dvd_of_mod_eq_zero third) with one | same <;> omega
+      simp only [composite, decide_false]
+    · rw [if_neg divides]
+      exact trial_correct n 5 (by omega) (by decide) (by decide)
+        (initial n (fun h => divides (Or.inl h)) (fun h => divides (Or.inr h)))
 
 end ProjectEulerSolutions.SixStepPrimality
