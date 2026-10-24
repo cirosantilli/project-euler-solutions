@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 from __future__ import annotations
 
-from typing import Dict, List, Tuple
+from math import isqrt
 
 
-def primes_up_to(limit: int) -> List[int]:
+def primes_up_to(limit: int) -> list[int]:
     if limit < 2:
         return []
     sieve = bytearray(b"\x01") * (limit + 1)
     sieve[0:2] = b"\x00\x00"
-    r = int(limit**0.5)
+    r = isqrt(limit)
     for i in range(2, r + 1):
         if sieve[i]:
             start = i * i
@@ -59,11 +59,11 @@ def pow10_for(n: int) -> int:
     return p
 
 
-def solve(limit: int = 10000) -> Tuple[int, List[int]]:
+def solve(limit: int = 10000) -> tuple[int, list[int]]:
     primes = [p for p in primes_up_to(limit) if p not in (2, 5)]
-    pow10_map: Dict[int, int] = {p: pow10_for(p) for p in primes}
+    pow10_map: dict[int, int] = {p: pow10_for(p) for p in primes}
 
-    pair_cache: Dict[Tuple[int, int], bool] = {}
+    pair_cache: dict[tuple[int, int], bool] = {}
 
     is_prime_local = is_prime
     pow10_local = pow10_map
@@ -93,9 +93,9 @@ def solve(limit: int = 10000) -> Tuple[int, List[int]]:
         return ok
 
     best_sum = 10**30
-    best_set: List[int] = []
+    best_set: list[int] = []
 
-    def dfs(clique: List[int], candidates: List[int], curr_sum: int) -> None:
+    def dfs(clique: list[int], candidates: list[int], curr_sum: int) -> None:
         nonlocal best_sum, best_set
 
         k = len(clique)
@@ -115,7 +115,7 @@ def solve(limit: int = 10000) -> Tuple[int, List[int]]:
             if curr_sum + q * need >= best_sum:
                 break
 
-            new_candidates: List[int] = []
+            new_candidates: list[int] = []
             for j in range(idx + 1, len(candidates)):
                 r = candidates[j]
                 # Lower bound after choosing q, with r the smallest possible next pick
@@ -133,7 +133,7 @@ def solve(limit: int = 10000) -> Tuple[int, List[int]]:
         if p * 5 >= best_sum:
             break
 
-        candidates: List[int] = []
+        candidates: list[int] = []
         for j in range(i + 1, n):
             q = primes[j]
             if p + q * 4 >= best_sum:
