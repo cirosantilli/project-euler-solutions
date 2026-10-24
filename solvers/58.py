@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 from __future__ import annotations
 
-from typing import List
-
 
 def is_prime(n: int) -> bool:
     if n < 2:
         return False
-    small_primes: List[int] = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37]
+    small_primes: list[int] = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37]
     for p in small_primes:
         if n == p:
             return True
@@ -81,11 +79,9 @@ def _prime_ratio_counts_for_side(side: int) -> tuple[int, int]:
 
 if __name__ == "__main__":
     # Problem statement check: for side length 7, ratio is 8/13
-    p, t = _prime_ratio_counts_for_side(7)
-    assert (p, t) == (8, 13)
+    assert _prime_ratio_counts_for_side(7) == (8, 13)
 
     # Another small sanity check: side length 3 has primes 3,5,7 on diagonals => 3/5
-    p, t = _prime_ratio_counts_for_side(3)
-    assert (p, t) == (3, 5)
+    assert _prime_ratio_counts_for_side(3) == (3, 5)
 
     print(solve())
