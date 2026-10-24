@@ -85,13 +85,13 @@ def group (target n original : Nat) : List Nat :=
   (List.range (if 8 ≤ target then (Nat.digits 10 n).length - 1 else (Nat.digits 10 n).length)).filter
     (fun index => decide ((Nat.digits 10 n).reverse[index]? = some original))
 
-private theorem group_bounded (target n original : Nat) :
+theorem group_bounded (target n original : Nat) :
     ∀ index ∈ group target n original, index < (Nat.digits 10 n).length := by
   intro index member
   have inside := List.mem_range.mp (List.mem_filter.mp member).1
   split_ifs at inside <;> omega
 
-private theorem group_same (target n original : Nat) :
+theorem group_same (target n original : Nat) :
     SameDigit (Nat.digits 10 n).reverse (group target n original) original := by
   intro index value found member
   have equal := of_decide_eq_true (List.mem_filter.mp member).2
@@ -169,5 +169,78 @@ theorem hasPrimeFamily_iff_mask (target n : Nat) : hasPrimeFamily target n = tru
     exact ⟨accepted.2, mask_of_family target n family⟩
   · rintro ⟨prime, original, _, bits, positive, bounded, _, large⟩
     exact family_of_mask target n original bits prime (by omega) bounded large
+
+theorem group_nodup (target n original : Nat) : (group target n original).Nodup := List.nodup_range.filter _
+
+/-- The mathematical test performed by a single mask iteration. -/
+def accepts (target n : Nat) (items : List Nat) (bits : Nat) : Bool :=
+  if 8 ≤ target ∧ FormalSW.Py.Builtin.Int.bitCount bits % 3 ≠ 0 then false
+  else decide (target ≤ primeFamilySize n (reflected (Nat.digits 10 n).length (BitSubsets.select items bits)))
+
+/-- Whether any mask in one digit group passes the source's tests. -/
+def query (target n original : Nat) : Bool :=
+  (List.range' 1 (2 ^ (group target n original).length - 1)).any (accepts target n (group target n original))
+
+theorem mem_masks (width bits : Nat) : bits ∈ List.range' 1 (2 ^ width - 1) ↔ 1 ≤ bits ∧ bits < 2 ^ width := by
+  have positive := Nat.two_pow_pos width
+  rw [List.mem_range']
+  constructor
+  · rintro ⟨offset, bound, rfl⟩
+    omega
+  · rintro ⟨lower, upper⟩
+    exact ⟨bits-1, by omega, by omega⟩
+
+theorem accepts_eq_true (target n : Nat) (items : List Nat) (bits : Nat) : accepts target n items bits = true ↔
+    ¬ (8 ≤ target ∧ FormalSW.Py.Builtin.Int.bitCount bits % 3 ≠ 0) ∧
+      target ≤ primeFamilySize n (reflected (Nat.digits 10 n).length (BitSubsets.select items bits)) := by
+  by_cases excluded : 8 ≤ target ∧ FormalSW.Py.Builtin.Int.bitCount bits % 3 ≠ 0 <;> simp [accepts, excluded]
+
+/-- A surviving nonzero mask for eight primes requires at least three available positions. -/
+theorem accepts_min_group (target n : Nat) (items : List Nat) (bits : Nat) (threshold : 8 ≤ target)
+    (positive : 1 ≤ bits) (bounded : bits < 2 ^ items.length) (accepted : accepts target n items bits = true) :
+    3 ≤ items.length := by
+  have allowed := (accepts_eq_true target n items bits).mp accepted |>.1
+  have multiple : FormalSW.Py.Builtin.Int.bitCount bits % 3 = 0 := by
+    by_contra nonzero
+    exact allowed ⟨threshold, nonzero⟩
+  have nonempty := (BitSubsets.positions_nonempty bits items.length bounded).mpr (by omega)
+  have nonzero := List.length_pos_iff.mpr nonempty
+  have sizeBound : (BitSubsets.positions bits items.length).length ≤ items.length :=
+    (List.length_filter_le _ _).trans_eq List.length_range
+  rw [BitSubsets.bitCount_positions bits items.length bounded] at multiple
+  omega
+
+/-- The source may skip small groups without changing the result of its mask search. -/
+theorem query_false_of_small (target n original : Nat) (threshold : 8 ≤ target) (small : (group target n original).length < 3) :
+    query target n original = false := by
+  cases answer : query target n original with
+  | false => rfl
+  | true =>
+      obtain ⟨bits, member, accepted⟩ := List.any_eq_true.mp answer
+      have bounds := (mem_masks _ _).mp member
+      have minimum := accepts_min_group target n (group target n original) bits threshold bounds.1 bounds.2 accepted
+      omega
+
+/-- Searching the ten digit groups with the actual finite mask bounds gives the reference predicate. -/
+theorem hasPrimeFamily_iff_query (target n : Nat) : hasPrimeFamily target n = true ↔
+    Nat.Prime n ∧ (List.range 10).any (query target n) = true := by
+  rw [hasPrimeFamily_iff_mask]
+  constructor
+  · rintro ⟨prime, original, digitBound, bits, positive, bounded, pruning, score⟩
+    refine ⟨prime, List.any_eq_true.mpr ⟨original, List.mem_range.mpr digitBound, ?_⟩⟩
+    apply List.any_eq_true.mpr
+    refine ⟨bits, (mem_masks _ _).mpr ⟨positive, bounded⟩, (accepts_eq_true _ _ _ _).mpr ⟨?_, score⟩⟩
+    rintro ⟨threshold, nonzero⟩
+    exact nonzero (pruning threshold).2
+  · rintro ⟨prime, found⟩
+    obtain ⟨original, member, masks⟩ := List.any_eq_true.mp found
+    obtain ⟨bits, present, accepted⟩ := List.any_eq_true.mp masks
+    have bounds := (mem_masks _ _).mp present
+    have conditions := (accepts_eq_true _ _ _ _).mp accepted
+    refine ⟨prime, original, List.mem_range.mp member, bits, bounds.1, bounds.2, ?_, conditions.2⟩
+    intro threshold
+    refine ⟨accepts_min_group target n (group target n original) bits threshold bounds.1 bounds.2 accepted, ?_⟩
+    by_contra nonzero
+    exact conditions.1 ⟨threshold, nonzero⟩
 
 end ProjectEulerSolutions.PrimeReplacementSearch
