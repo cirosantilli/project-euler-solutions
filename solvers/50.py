@@ -62,7 +62,8 @@ def longest_consecutive_prime_sum(limit: int) -> tuple[int, int]:
 
 def solve(limit: int) -> int:
     """
-    @formalsw: Returns
+    @formalsw: Py from project_euler_statements.p50 import naive
+    @formalsw: Equiv(naive)
     """
     return longest_consecutive_prime_sum(limit)[0]
 

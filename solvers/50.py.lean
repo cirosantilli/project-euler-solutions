@@ -372,6 +372,12 @@ theorem primes_ordered (limit : Nat) (large : 2 ≤ limit) : (primes limit).Pair
   rw [primes_reference limit large]
   exact List.pairwise_le_range.filter _
 
+theorem primes_reference_all (limit : Nat) : primes limit = Reference limit := by
+  by_cases large : 2 ≤ limit
+  · exact primes_reference limit large
+  · have small : limit = 0 ∨ limit = 1 := by omega
+    rcases small with rfl | rfl <;> rfl
+
 theorem primes_member (limit value : Nat) (large : 2 ≤ limit) :
     value ∈ primes limit ↔ value < limit ∧ Nat.Prime value := by
   rw [primes_reference limit large]
@@ -1127,6 +1133,38 @@ theorem «Returns» (limit : Int) : (HeapCalls.scalarFunction program "solve" [.
   obtain ⟨extra, returned⟩ := result limit []
   exact returned.scalar_returns
 
-theorem «Supported» (limit : Int) : (HeapCalls.scalarFunction program "solve" [.int limit]).Supported := («Returns» limit).supported
+private theorem answer_equal (limit : Int) :
+    (longest_consecutive_prime_sum.answerPair limit.toNat).1 =
+      data.«project-euler-statements».data.py.project_euler_statements.p50.naive.answer limit := by
+  simp only [longest_consecutive_prime_sum.answerPair, longest_consecutive_prime_sum.primes_reference_all,
+    data.«project-euler-statements».data.py.project_euler_statements.p50.naive.answer,
+    data.«project-euler-statements».data.py.project_euler_statements.p50.naive.selectedValue,
+    ProjectEulerSolutions.ConsecutivePrimeSums.reference]
+  cases (ProjectEulerSolutions.ConsecutivePrimeSums.candidates
+    (data.«project-euler-statements».data.py.project_euler_statements.p50.primes_below.values limit.toNat) limit.toNat).argmax
+      ProjectEulerSolutions.ConsecutivePrimeSums.Window.length <;> rfl
+
+theorem «Equiv(naive)» (limit : Int) :
+    (HeapCalls.scalarFunction program "solve" [.int limit]).Equiv
+      (HeapCalls.scalarFunction P50Ast.module "naive" [.int limit]) := by
+  obtain ⟨extra, returned⟩ := result limit []
+  obtain ⟨referenceExtra, reference⟩ := data.«project-euler-statements».data.py.project_euler_statements.p50.naive.result limit []
+  rw [answer_equal limit] at returned
+  have optimized := returned.scalar_finishes (values := [.int limit])
+  have original := reference.scalar_finishes (values := [.int limit])
+  intro outcome
+  constructor
+  · intro finished
+    rw [finished.unique optimized]
+    exact original
+  · intro finished
+    rw [finished.unique original]
+    exact optimized
+
+theorem «Supported» :
+    (∀ limit : Int, (HeapCalls.scalarFunction program "solve" [.int limit]).Supported) ∧
+      (∀ limit : Int, (HeapCalls.scalarFunction P50Ast.module "naive" [.int limit]).Supported) :=
+  ⟨fun limit => («Returns» limit).supported,
+    data.«project-euler-statements».data.py.project_euler_statements.p50.naive.«Supported»⟩
 end solve
 end solvers.«50»
