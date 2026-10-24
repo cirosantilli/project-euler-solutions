@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 def solve(limit_n: int, threshold: int) -> int:
+    """
+    @formalsw: Returns
+    @formalsw: Py from project_euler_statements.p53 import naive
+    @formalsw: Equiv(naive)
+    """
     if threshold < 1:
         return limit_n * (limit_n + 3) // 2 if limit_n > 0 else 0
     total = 0

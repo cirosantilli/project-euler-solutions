@@ -566,6 +566,8 @@ Problem 51’s source-level equivalence proof covers the signed bytearray sieve,
 
 Problem 52’s source-level equivalence proof covers decimal digit counters, tuple comparison, early breaks, positive candidate windows, and the complete width search for targets two through six. A kernel-checked `142857` witness bounds both searches and establishes a least positive answer. The reference search starts at one to exclude zero; the proofs use only standard Lean axioms.
 
+Problem 53’s source-level equivalence proof covers every integer bound and threshold. Exact binomial updates, symmetry, and monotonicity justify the early break; the reference’s nested generator sum terminates for all inputs. The nonpositive-threshold shortcut counts both row endpoints. The proofs use only standard Lean axioms.
+
 ====== Problem 14: Collatz termination
 
 Research checked on 2026-10-25. The existing `ProjectEulerStatements.P14.collatzConjecture` assumes that each positive natural number eventually reaches 1. The reference source proofs are conditional on that exact assumption; they do not establish the conjecture. Zero is handled separately by the implementation. Negative starting values are outside the termination claim.
@@ -698,7 +700,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/50.py[50.py] | link:solvers/50.md[50.md] | link:solvers/50.py.lean[50.py.lean] | 0.150 | 997651 |
 | link:solvers/51.py[51.py] | link:solvers/51.md[51.md] | link:solvers/51.py.lean[51.py.lean] | 0.149 | 121313 |
 | link:solvers/52.py[52.py] | link:solvers/52.md[52.md] | link:solvers/52.py.lean[52.py.lean] | 0.123 | 142857 |
-| link:solvers/53.py[53.py] | link:solvers/53.md[53.md] |  | 0.106 | 4075 |
+| link:solvers/53.py[53.py] | link:solvers/53.md[53.md] | link:solvers/53.py.lean[53.py.lean] | 0.106 | 4075 |
 | link:solvers/54.py[54.py] | link:solvers/54.md[54.md] |  | 0.198 | 376 |
 | link:solvers/55.py[55.py] | link:solvers/55.md[55.md] |  | 0.166 | 249 |
 | link:solvers/56.py[56.py] | link:solvers/56.md[56.md] |  | 0.088 | 972 |
