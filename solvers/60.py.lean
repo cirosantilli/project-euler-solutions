@@ -1,4 +1,5 @@
 import ProjectEulerSolutions.Lib.MillerRabin
+import ProjectEulerSolutions.Lib.MillerRabinPrimes
 import «.formalsw».solvers.«60.py.ast»
 import lang.py.FormalSW.HeapCalls
 import ProjectEulerSolutions.Lib.DecimalShift
@@ -5032,5 +5033,152 @@ theorem models_eq_of_finite_agreement (agreement : FiniteAgreement) (limit : Int
   have mathematical := data.«project-euler-statements».data.py.project_euler_statements.p60.naive.answerModel_optimal limit
   rw [reference.vertices_eq] at mathematical
   exact transferred.unique mathematical
+
+end solvers.«60».competitive
+
+
+namespace solvers.«60».competitive
+open ProjectEulerSolutions
+private abbrev mathPair := data.«project-euler-statements».data.py.project_euler_statements.p60.naive.relation
+private abbrev mathConcat := data.«project-euler-statements».data.py.project_euler_statements.p60.concatenated
+
+private def joined (p q : Nat) : Nat := p * DecimalShift.decimalShift q + q
+
+private theorem mathConcat_nat (p q : Nat) : mathConcat p q = (joined p q : Int) := by
+  simp [data.«project-euler-statements».data.py.project_euler_statements.p60.concatenated, joined]
+
+private theorem optimizedConcat_nat (p q : Nat) : pair_ok.concatenated p q = (joined p q : Int) := by
+  simp [pair_ok.concatenated, joined]
+
+private theorem shift_mod_three (q : Nat) : DecimalShift.decimalShift q % 3 = 1 := by
+  obtain ⟨width, attained, _, _⟩ := DecimalShift.decimalShift_spec q
+  rw [attained, Nat.pow_mod]
+  simp
+
+/-- The divisibility-by-three shortcut cannot reject a compatible prime pair. -/
+theorem compatible_implies_accepted (p q : Nat) (lowerP : 3 ≤ p) (lowerQ : 3 ≤ q)
+    (compatible : mathPair p q = true) : pair_ok.answer p q = true := by
+  have primes := (data.«project-euler-statements».data.py.project_euler_statements.p60.compatible_iff p q).mp compatible
+  have forward : Nat.Prime (joined p q) := by simpa only [mathConcat_nat, Int.toNat_natCast] using primes.1
+  have backward : Nat.Prime (joined q p) := by simpa only [mathConcat_nat, Int.toNat_natCast] using primes.2
+  have notThree : ((p : Int) + (q : Int)) % 3 ≠ 0 := by
+    intro divisible
+    have reduced : (joined p q) % 3 = 0 := by
+      have sumMod : (p + q) % 3 = 0 := by omega
+      simpa [joined, Nat.add_mod, Nat.mul_mod, shift_mod_three] using sumMod
+    have divides : 3 ∣ joined p q := Nat.dvd_of_mod_eq_zero reduced
+    rcases (Nat.dvd_prime forward).mp divides with one | same
+    · omega
+    · have shiftPositive := DecimalShift.decimalShift_positive (q : Int)
+      have bound : 6 ≤ joined p q := by unfold joined; nlinarith
+      omega
+  simp only [pair_ok.answer, notThree, ↓reduceIte, optimizedConcat_nat, Int.toNat_natCast,
+    MillerRabin.isPrimeModel_of_prime _ forward, MillerRabin.isPrimeModel_of_prime _ backward, Bool.and_self]
+
+
+private theorem completion_on_limit {relation : Nat → Nat → Bool} (limit cap : Int) (chosen : List Nat)
+    (completion : CliqueSearch.Completion relation 5 (solve_setup.vertices limit) chosen)
+    (bounded : ∀ p ∈ chosen, (p : Int) ≤ cap) :
+    CliqueSearch.Completion relation 5 (solve_setup.vertices cap) chosen := by
+  refine ⟨completion.size, ?_, completion.compatible⟩
+  have ordered := List.Pairwise.sublist completion.sublist (solve_setup.vertices_increasing limit)
+  apply List.sublist_of_subperm_of_pairwise (r := (· ≤ ·))
+  · apply List.subperm_of_subset ordered.nodup
+    intro p member
+    obtain ⟨prime, lower, _, notFive⟩ := (solve_setup.mem_vertices limit p).mp (completion.sublist.mem member)
+    exact (solve_setup.mem_vertices cap p).mpr ⟨prime, lower, bounded p member, notFive⟩
+  · exact ordered.imp (fun less => Nat.le_of_lt less)
+  · exact (solve_setup.vertices_increasing cap).imp (fun less => Nat.le_of_lt less)
+
+private theorem math_completion_accepted (limit : Int) (chosen : List Nat)
+    (completion : CliqueSearch.Completion mathPair 5 (solve_setup.vertices limit) chosen) :
+    CliqueSearch.Completion (fun p q => pair_ok.answer p q) 5 (solve_setup.vertices limit) chosen := by
+  refine ⟨completion.size, completion.sublist, ?_⟩
+  apply completion.compatible.imp_of_mem
+  intro p q memberP memberQ compatible
+  have lowerP := ((solve_setup.mem_vertices limit p).mp (completion.sublist.mem memberP)).2.1
+  have lowerQ := ((solve_setup.mem_vertices limit q).mp (completion.sublist.mem memberQ)).2.1
+  exact compatible_implies_accepted p q lowerP lowerQ compatible
+
+/-- A check of the largest witness-free prefix covers every smaller signed
+limit. The premise is an exact search equality, not an assumed primality fact. -/
+theorem small_result_of_search_certificate
+    (checked : solve_search.answerModel 8388 = ⟨solve_setup.sentinel, []⟩)
+    (limit : Int) (small : limit < 8389) :
+    solve_search.answerModel limit = ⟨solve_setup.sentinel, []⟩ := by
+  rcases solve_search.answerModel_completion limit with same | ⟨completion, total, improves⟩
+  · exact same
+  · have capped := completion_on_limit limit 8388 (solve_search.answerModel limit).chosen completion (by
+      intro p member
+      have upper := (solve_search.answerModel_prime_members limit p member).2.2.1
+      omega)
+    have lower := solve_search.answerModel_minimal 8388 _ capped
+    rw [checked] at lower
+    change solve_setup.sentinel ≤ _ at lower
+    omega
+
+/-- Once the witness is available, a single bounded optimum determines every
+larger source result. Sum bounds exclude vertices outside the checked domain. -/
+theorem large_result_of_search_certificate
+    (checked : solve_search.answerModel 26033 = ⟨26033, witness⟩)
+    (limit : Int) (large : 8389 ≤ limit) :
+    solve_search.answerModel limit = ⟨26033, witness⟩ := by
+  have upper := optimized_bound limit large
+  have capOptimal := solve_search.answerModel_optimal 26033
+  rw [checked] at capOptimal
+  rcases solve_search.answerModel_completion limit with same | ⟨completion, total, improves⟩
+  · rw [same] at upper
+    have sentinel : (26033 : Int) < solve_setup.sentinel := by decide
+    change solve_setup.sentinel ≤ 26033 at upper
+    omega
+  · have capped := completion_on_limit limit 26033 (solve_search.answerModel limit).chosen completion (by
+      intro p member
+      have lower := CliqueSearch.member_le_sum (solve_search.answerModel limit).chosen p member
+      omega)
+    have lower := capOptimal.minimal _ capped
+    have boundEq : (solve_search.answerModel limit).bound = 26033 := by
+      change (26033 : Int) ≤ 0 + _ at lower
+      omega
+    have first : CliqueSearch.Precedes (solve_search.answerModel limit).chosen witness := by
+      simpa only [List.nil_append] using
+        (solve_search.answerModel_optimal limit).first witness (witness_mr_completion limit large)
+          (by simp only [boundEq, witness_sum]; decide) improves
+    have second : CliqueSearch.Precedes witness (solve_search.answerModel limit).chosen := by
+      simpa only [List.nil_append] using capOptimal.first _ capped (by change 0 + _ = (26033 : Int); omega)
+        (by decide : (26033 : Int) < solve_setup.sentinel)
+    have chosenEq := first.antisymm second
+    change CliqueSearch.Best.mk (solve_search.answerModel limit).bound
+      (solve_search.answerModel limit).chosen = _
+    rw [boundEq, chosenEq]
+
+/-- Two finite algorithm checks suffice: absence of an improving clique
+through 8,388, and the exact optimum through 26,033. Genuine prime pairs
+always pass the source predicate, so no exhaustive pair-agreement certificate
+is required along this proof route. Both checks are still separate obligations. -/
+theorem models_eq_of_search_certificates
+    (smallChecked : solve_search.answerModel 8388 = ⟨solve_setup.sentinel, []⟩)
+    (largeChecked : solve_search.answerModel 26033 = ⟨26033, witness⟩) (limit : Int) :
+    solve_search.answerModel limit =
+      data.«project-euler-statements».data.py.project_euler_statements.p60.naive.answerModel limit := by
+  have optimized := solve_search.answerModel_optimal limit
+  have mathematical : CliqueSearch.Optimal mathPair 5 [] (solve_setup.vertices limit) 0
+      ⟨solve_setup.sentinel, []⟩ (solve_search.answerModel limit) := by
+    constructor
+    · by_cases large : 8389 ≤ limit
+      · have resultEq := large_result_of_search_certificate largeChecked limit large
+        refine Or.inr ⟨witness, witness_math_completion limit large, ?_, ?_, ?_⟩
+        · simp only [resultEq, witness_sum]
+          decide
+        · simp only [resultEq, List.nil_append]
+        · simp only [resultEq]
+          decide
+      · exact Or.inl (small_result_of_search_certificate smallChecked limit (by omega))
+    · intro chosen completion
+      exact optimized.minimal chosen (math_completion_accepted limit chosen completion)
+    · intro chosen completion total improves
+      exact optimized.first chosen (math_completion_accepted limit chosen completion) total improves
+  have referenceOptimal := data.«project-euler-statements».data.py.project_euler_statements.p60.naive.answerModel_optimal limit
+  rw [reference.vertices_eq] at referenceOptimal
+  exact mathematical.unique referenceOptimal
 
 end solvers.«60».competitive
