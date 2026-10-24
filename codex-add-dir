@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+codex --add-dir "$PWD/data/project-euler-statements/formalsw/.git" \
+  --add-dir "$PWD/data/project-euler-statements/.git" \
+  --add-dir "$PWD/.git" \
+  "$@"
