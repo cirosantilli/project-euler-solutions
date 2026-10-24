@@ -7,6 +7,14 @@
     [.scalar (.int s)] heap (.ref heap.length)
     (heap ++ [.list ((solvers.«61».generate_4digit_polygonals.answer s).map
       (fun value => .scalar (.int value)))]) globals
+
+@formalsw: theorem build_prefix_map_source_result
+  (values : List Int) (heap : FormalSW.PyAst.Mutable.Heap) (input : Nat)
+  (globals : FormalSW.PyAst.Mutable.Globals) :
+  heap[input]? = some (.list (values.map (fun value => .scalar (.int value)))) →
+  ∃ finalHeap, Nonempty (solvers.«61».build_prefix_map.Store heap finalHeap values) ∧
+    FormalSW.PyAst.HeapCalls.ReturnsValue Solvers.P61Ast.module "build_prefix_map"
+      [.ref input] heap (.ref heap.length) finalHeap globals
 """
 from __future__ import annotations
 
