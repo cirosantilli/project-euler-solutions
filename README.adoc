@@ -552,7 +552,7 @@ Problem 44’s source-level equivalence proof covers pentagonal-table allocation
 
 Problem 45’s source-level equivalence proof connects exhaustive triangular enumeration with the optimized unbounded hexagonal search. It covers both membership loops, the integer-square-root test, early returns, and termination. Small kernel certificates exclude earlier matches and prove that the reference window contains the least common value beyond the given example. The reference also terminates for every integer start and bound, including negative and empty ranges. The proofs use only standard Lean axioms.
 
-Problem 46’s mathematical foundations prove correctness of increasing prime prefixes and trial division, and equivalence of exhaustive and integer-square-root representation tests. Small kernel certificates establish the least counterexample and show that it lies inside the reference window. The source-level equivalence proof is still in progress.
+Problem 46’s mathematical foundations prove correctness of increasing prime prefixes and trial division, and equivalence of exhaustive and integer-square-root representation tests. Small kernel certificates establish the least counterexample and show that it lies inside the reference window. The reference source proof covers both lazy generators and termination for every integer limit. The optimized source equivalence proof is still in progress.
 
 ====== Problem 14: Collatz termination
 
