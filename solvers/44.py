@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from math import isqrt
-from typing import List
 
 
 def pentagonal(n: int) -> int:
@@ -19,7 +18,12 @@ def is_pentagonal(x: int) -> bool:
 
 
 def solve(limit: int = 10_000) -> int:
-    pent: List[int] = [0] * (limit + 1)
+    """
+    @formalsw: Py from project_euler_statements.p44 import naive
+    @formalsw: Requires(limit >= 0)
+    @formalsw: Equiv(naive)
+    """
+    pent: list[int] = [0] * (limit + 1)
     for n in range(1, limit + 1):
         pent[n] = pentagonal(n)
 
