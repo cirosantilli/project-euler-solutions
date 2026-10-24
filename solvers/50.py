@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from math import isqrt
-from typing import List, Tuple
 
 
 def sieve_is_prime(limit: int) -> bytearray:
@@ -25,7 +24,7 @@ def sieve_is_prime(limit: int) -> bytearray:
     return is_prime
 
 
-def longest_consecutive_prime_sum(limit: int) -> Tuple[int, int]:
+def longest_consecutive_prime_sum(limit: int) -> tuple[int, int]:
     """
     Returns (best_prime_sum, number_of_terms) for primes < limit.
     """
@@ -33,9 +32,9 @@ def longest_consecutive_prime_sum(limit: int) -> Tuple[int, int]:
         return (0, 0)
 
     is_prime = sieve_is_prime(limit - 1)
-    primes: List[int] = [i for i in range(2, limit) if is_prime[i]]
+    primes: list[int] = [i for i in range(2, limit) if is_prime[i]]
 
-    prefix: List[int] = [0]
+    prefix: list[int] = [0]
     s = 0
     for p in primes:
         s += p
