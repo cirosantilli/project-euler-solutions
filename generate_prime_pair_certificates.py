@@ -18,6 +18,8 @@ SMALL_END = 8389
 LARGE_END = 26034
 INTERVAL_SIZE = 128
 INTERVALS_PER_FILE = 16
+SMALL_CACHE_ROWS = 32
+CACHE_ROWS_PER_FILE = 8
 
 
 def prime_values(limit: int) -> list[int]:
@@ -180,6 +182,121 @@ def small_first_branch(primes: list[int]) -> dict[Path, str]:
     return output
 
 
+def vertex_tree_file(
+    intervals: list[tuple[int, int]], merges: list[tuple[str, str, str]],
+) -> str:
+    lines = [
+        "import ProjectEulerSolutions.Lib.PrimePairVertices.All",
+        "import ProjectEulerSolutions.Lib.PrimePairGraph",
+        "",
+        "/-! Balanced views of the already certified prime lists. -/",
+        f"namespace {NAMESPACE}",
+        "open PrimePairCertificate",
+        "",
+    ]
+    for start, _ in intervals:
+        lines.append(f"def tree_interval_{start} : VertexTree := .leaf interval_{start}")
+    for name, left, right in merges:
+        lines.append(f"def tree_{name} : VertexTree := .branch tree_{left} tree_{right}")
+    lines.extend([
+        "",
+        "def smallTree : VertexTree := tree_small",
+        "theorem smallTree_values : smallTree.values = small := rfl",
+        "def largeTree : VertexTree := tree_large",
+        "theorem largeTree_values : largeTree.values = large := rfl",
+        "",
+        f"end {NAMESPACE}",
+    ])
+    return "\n".join(lines) + "\n"
+
+
+def cached_small_rows(
+    primes: list[int], blocks: list[tuple[str, int, int]],
+    merges: list[tuple[str, str, str]],
+) -> dict[Path, str]:
+    """Certify each increasing row once, then assemble a binary lookup cache."""
+    domain = [p for p in primes if p < SMALL_END]
+    selected = domain[:SMALL_CACHE_ROWS]
+    output = {}
+    groups = [selected[i : i + CACHE_ROWS_PER_FILE] for i in range(0, len(selected), CACHE_ROWS_PER_FILE)]
+    for index, group in enumerate(groups):
+        lines = [
+            "import ProjectEulerSolutions.Lib.PrimePairVertices.Trees",
+            "",
+            "/-! Increasing adjacency rows, checked against the exact source predicate. -/",
+            "namespace ProjectEulerSolutions.PrimePairCache",
+            "open PrimePairCertificate",
+            "",
+        ]
+        for p in group:
+            for name, start, end in blocks:
+                neighbors = [q for q in domain if start <= q < end and p < q and source_pair_check(p, q)]
+                lines.extend([
+                    f"def smallRow{p}_{name} : List Nat := {neighbors}",
+                    "set_option maxRecDepth 2048 in",
+                    f"theorem smallRow{p}_{name}_checked : upperNeighbors PrimePairVertices.tree_{name} {p} = smallRow{p}_{name} := by decide",
+                    "",
+                ])
+            for name, left, right in merges:
+                lines.extend([
+                    f"def smallRow{p}_{name} : List Nat := smallRow{p}_{left} ++ smallRow{p}_{right}",
+                    f"theorem smallRow{p}_{name}_checked : upperNeighbors PrimePairVertices.tree_{name} {p} = smallRow{p}_{name} := by",
+                    f"  change upperNeighbors PrimePairVertices.tree_{left} {p} ++ upperNeighbors PrimePairVertices.tree_{right} {p} = _",
+                    f"  rw [smallRow{p}_{left}_checked, smallRow{p}_{right}_checked]",
+                    "  rfl",
+                    "",
+                ])
+            lines.extend([
+                f"def smallRow{p} : List Nat := smallRow{p}_small",
+                f"theorem smallRow{p}_checked : upperNeighbors PrimePairVertices.smallTree {p} = smallRow{p} := smallRow{p}_small_checked",
+                "",
+            ])
+        lines.append("end ProjectEulerSolutions.PrimePairCache")
+        output[ROOT / f"ProjectEulerSolutions/Lib/PrimePairCache/SmallRows{index:03}.lean"] = "\n".join(lines) + "\n"
+    lines = [
+        *(f"import ProjectEulerSolutions.Lib.PrimePairCache.SmallRows{i:03}" for i in range(len(groups))),
+        "",
+        "namespace ProjectEulerSolutions.PrimePairCache",
+        "open PrimePairCertificate",
+        "",
+        "def smallEmpty : Graph := .empty",
+        "theorem smallEmpty_agrees : Graph.Agrees PrimePairVertices.smallTree smallEmpty := Graph.empty_agrees _",
+        "",
+    ]
+
+    def assemble(values: list[int]) -> str:
+        if not values:
+            return "smallEmpty"
+        middle = len(values) // 2
+        p = values[middle]
+        left = assemble(values[:middle])
+        right = assemble(values[middle + 1 :])
+        name = f"smallNode{p}"
+        lines.extend([
+            f"def {name} : Graph := .node {p} smallRow{p} {left} {right}",
+            f"theorem {name}_agrees : Graph.Agrees PrimePairVertices.smallTree {name} :=",
+            f"  Graph.node_agrees _ {p} smallRow{p} {left} {right}",
+            f"    {left}_agrees {right}_agrees (by decide) (by decide) smallRow{p}_checked",
+            "",
+        ])
+        return name
+
+    name = assemble(selected)
+    lines.extend([
+        f"def smallPrefix : Graph := {name}",
+        f"theorem smallPrefix_agrees : Graph.Agrees PrimePairVertices.smallTree smallPrefix := {name}_agrees",
+        f"theorem smallPrefix_vertices : smallPrefix.vertices = PrimePairVertices.small.take {len(selected)} := rfl",
+        "",
+        "theorem smallPrefix_vertices_subset (p : Nat) (member : p ∈ smallPrefix.vertices) : p ∈ PrimePairVertices.small := by",
+        "  rw [smallPrefix_vertices] at member",
+        "  exact List.mem_of_mem_take member",
+        "",
+        "end ProjectEulerSolutions.PrimePairCache",
+    ])
+    output[ROOT / "ProjectEulerSolutions/Lib/PrimePairCache/SmallPrefix.lean"] = "\n".join(lines) + "\n"
+    return output
+
+
 def generated_files() -> dict[Path, str]:
     primes = prime_values(LARGE_END - 1)
     boundaries = sorted(set(range(2, LARGE_END, INTERVAL_SIZE)) | {SMALL_END, LARGE_END})
@@ -237,6 +354,11 @@ def generated_files() -> dict[Path, str]:
     output[DESTINATION / "All.lean"] = "\n".join(lines) + "\n"
     output[ROOT / "ProjectEulerSolutions/Lib/PrimePairRows/P3.lean"] = row_file(3, intervals, primes, merges)
     output.update(small_first_branch(primes))
+    output[DESTINATION / "Trees.lean"] = vertex_tree_file(intervals, merges)
+    output.update(cached_small_rows(
+        primes, [part for part in roots if part[2] <= SMALL_END],
+        [merge for merge in merges if merge[0] == "small" or merge[0].startswith("small_")],
+    ))
     return output
 
 
