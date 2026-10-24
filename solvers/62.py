@@ -18,6 +18,18 @@
     (FormalSW.PyAst.HeapCalls.setLocal env "candidates" (.ref heap.length))
     (ProjectEulerSolutions.HeapCollection.working heap
       ((solvers.«62».candidates.selected k rows).map (fun (value : Int) => .scalar (.int value))) extra)
+
+@formalsw: theorem width_source_result
+  (k : Int) (heap : FormalSW.PyAst.Mutable.Heap) (env : FormalSW.PyAst.HeapCalls.Env)
+  (dictionary : Nat) (rows : List solvers.«62».candidates.Row)
+  (view : solvers.«62».candidates.View heap dictionary rows)
+  (first : Int) (rest : List Int) :
+  env "groups" = some (.ref dictionary) → env "k" = some (.scalar (.int k)) →
+  solvers.«62».candidates.selected k rows = first :: rest →
+  ∃ extra, FormalSW.PyAst.HeapCalls.BlockReturns Solvers.P62Ast.module env
+    solvers.«62».groups.widthBody heap (.scalar (.int (rest.foldl min first)))
+    (ProjectEulerSolutions.HeapCollection.working heap
+      ((solvers.«62».candidates.selected k rows).map (fun (value : Int) => .scalar (.int value))) extra)
 """
 from __future__ import annotations
 

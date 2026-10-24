@@ -646,6 +646,100 @@ theorem source_result (k : Int) (heap : Mutable.Heap) (env : HeapCalls.Env) (dic
       (setLocal env "candidates" (.ref heap.length)) (working heap (selected k rows) extra) := by
   obtain ⟨extra, evaluated⟩ := evaluate k heap env dictionary rows view getGroups getK
   exact ⟨extra, BlockContinues.assign evaluated⟩
+
+def winnerCode : List Stmt := [.ifThen (.name "candidates") [.return (.builtinCall .min [.name "candidates"])] []]
+theorem winner_source : groups.widthBody = groups.widthBody.take 1 ++ winnerCode ++ groups.resetCode := rfl
+
+theorem minimumFrom_ints (values : List Int) (best : Int) :
+    Calls.minimumFrom (.int best) (values.map Constant.int) = .ok (.int (values.foldl min best)) := by
+  induction values generalizing best with
+  | nil => rfl
+  | cons head tail ih =>
+      by_cases smaller : head < best
+      · simp [Calls.minimumFrom, scalarCompare, evalCmpOp, smaller, ih,
+          Int.min_eq_right (Int.le_of_lt smaller)]
+      · simp [Calls.minimumFrom, scalarCompare, evalCmpOp, smaller, ih,
+          Int.min_eq_left (Int.le_of_not_gt smaller)]
+
+theorem minimum_evaluate (first : Int) (rest : List Int) (heap : Mutable.Heap)
+    (env : HeapCalls.Env) (address : Nat) (getCandidates : env "candidates" = some (.ref address))
+    (found : heap[address]? = some (.list (ints (first :: rest)))) :
+    Evaluates program env (.builtinCall .min [.name "candidates"]) heap
+      (number (rest.foldl min first)) heap := by
+  apply Evaluates.builtin (.cons (Evaluates.lookup getCandidates) .nil)
+  have converted (values : List Int) :
+      ((ints values).mapM (fun item => match item with
+        | .scalar value => pure value
+        | .ref _ => Mutable.unsupported) : Mutable.Eval (List Constant)) = pure (values.map Constant.int) := by
+    simp only [ints, List.mapM_map]
+    change (values.mapM (fun value => pure (Constant.int value)) : Mutable.Eval (List Constant)) = _
+    exact List.mapM_pure
+  have execution (items : List Mutable.Value) (present : heap[address]? = some (.list items)) :
+      primitive (.builtin .min) [.ref address] heap =
+        ((do
+          let scalars ← items.mapM (fun item => match item with
+            | .scalar value => pure value
+            | .ref _ => Mutable.unsupported)
+          scalarResult (some (ScalarSet.minimum scalars))) : Mutable.Eval Mutable.Value) heap := by
+    simp [primitive, Mutable.sequence, present]
+    rfl
+  rw [execution (ints (first :: rest)) found, converted]
+  change scalarResult (some (ScalarSet.minimum ((first :: rest).map Constant.int))) heap = _
+  rw [show ScalarSet.minimum ((first :: rest).map Constant.int) =
+    .ok (.int (rest.foldl min first)) from minimumFrom_ints rest first]
+  rfl
+
+/-- A nonempty candidate list returns its actual minimum, with no further heap changes. -/
+theorem winner (first : Int) (rest : List Int) (heap : Mutable.Heap) (env : HeapCalls.Env)
+    (address : Nat) (getCandidates : env "candidates" = some (.ref address))
+    (found : heap[address]? = some (.list (ints (first :: rest)))) (following : List Stmt) :
+    BlockReturns program env (winnerCode ++ following) heap (number (rest.foldl min first)) heap := by
+  apply BlockReturns.branch (flag := true) (Evaluates.lookup getCandidates)
+  · simp [Mutable.truth, found, ints]
+  · exact BlockReturns.return_value (minimum_evaluate first rest heap env address getCandidates found)
+
+/-- The empty case falls through to the source's in-place table reset. -/
+theorem no_winner (heap : Mutable.Heap) (env : HeapCalls.Env) (address : Nat)
+    (getCandidates : env "candidates" = some (.ref address))
+    (found : heap[address]? = some (.list [])) :
+    BlockContinues program env winnerCode heap env heap := by
+  apply BlockContinues.branch (flag := false) (Evaluates.lookup getCandidates)
+  · simp [Mutable.truth, found]
+  · exact .nil
+
+/-- The complete successful digit-width transition collects and returns the smallest matching cube. -/
+theorem width_returns (k : Int) (heap : Mutable.Heap) (env : HeapCalls.Env) (dictionary : Nat)
+    (rows : List Row) (view : View heap dictionary rows)
+    (getGroups : env "groups" = some (.ref dictionary)) (getK : env "k" = some (number k))
+    (first : Int) (rest : List Int) (selectedEq : selected k rows = first :: rest) :
+    ∃ extra, BlockReturns program env groups.widthBody heap (number (rest.foldl min first))
+      (working heap (selected k rows) extra) := by
+  obtain ⟨extra, collected⟩ := source_result k heap env dictionary rows view getGroups getK
+  refine ⟨extra, ?_⟩
+  rw [winner_source]
+  apply collected.returns
+  apply winner first rest _ _ heap.length (by simp [setLocal])
+  simpa only [working, selectedEq] using ProjectEulerSolutions.HeapCollection.found heap (ints (first :: rest)) extra
+
+/-- With no matching bucket, the complete transition clears the same table and records the new width. -/
+theorem width_continues (k length : Int) (heap : Mutable.Heap) (env : HeapCalls.Env)
+    (dictionary : Nat) (entries : List (HashDict.Entry Mutable.Value)) (rows : List Row)
+    (view : View heap dictionary rows) (found : heap[dictionary]? = some (.keyDict entries))
+    (getGroups : env "groups" = some (.ref dictionary)) (getK : env "k" = some (number k))
+    (getLength : env "length" = some (number length)) (empty : selected k rows = []) :
+    ∃ extra, BlockContinues program env groups.widthBody heap
+      (setLocal (setLocal env "candidates" (.ref heap.length)) "current_len" (number length))
+      ((working heap [] extra).set dictionary (.keyDict [])) := by
+  obtain ⟨extra, collected⟩ := source_result k heap env dictionary rows view getGroups getK
+  rw [empty] at collected
+  have passed := no_winner (working heap [] extra) (setLocal env "candidates" (.ref heap.length))
+    heap.length (by simp [setLocal]) (by simp [working, ints])
+  have cleared := groups.reset_keyed (working heap [] extra) (setLocal env "candidates" (.ref heap.length))
+    dictionary length entries (by simpa [setLocal] using getGroups) (by simpa [setLocal] using getLength)
+    (ProjectEulerSolutions.HeapCollection.prefix_found heap (.list [] :: extra) dictionary _ found)
+  refine ⟨extra, ?_⟩
+  rw [winner_source]
+  simpa only [List.append_assoc] using (collected.append passed).append cleared
 end candidates
 
 theorem candidates_source_result (k : Int) (heap : Mutable.Heap) (env : HeapCalls.Env)
@@ -655,6 +749,16 @@ theorem candidates_source_result (k : Int) (heap : Mutable.Heap) (env : HeapCall
       (setLocal env "candidates" (.ref heap.length))
       (ProjectEulerSolutions.HeapCollection.working heap ((candidates.selected k rows).map number) extra) :=
   candidates.source_result k heap env dictionary rows view getGroups getK
+
+theorem width_source_result (k : Int) (heap : Mutable.Heap) (env : HeapCalls.Env)
+    (dictionary : Nat) (rows : List candidates.Row) (view : candidates.View heap dictionary rows)
+    (first : Int) (rest : List Int)
+    (getGroups : env "groups" = some (.ref dictionary)) (getK : env "k" = some (number k))
+    (selectedEq : candidates.selected k rows = first :: rest) :
+    ∃ extra, BlockReturns program env groups.widthBody heap (number (rest.foldl min first))
+      (ProjectEulerSolutions.HeapCollection.working heap
+        ((candidates.selected k rows).map number) extra) :=
+  candidates.width_returns k heap env dictionary rows view getGroups getK first rest selectedEq
 
 theorem digit_signature_source_result (n : Nat) (heap : Mutable.Heap) :
     ReturnsValue program "digit_signature" [number n] heap (.ref (heap.length + 2))
