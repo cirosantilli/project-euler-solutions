@@ -836,6 +836,200 @@ theorem family_counting_tail (p : Nat) (positive : 0 < p) (indices : List Nat) (
       exact .nil
     exact initialized.append (counted.append rejected)
 
+private def numbers (items : List Nat) : List Mutable.Value := items.map (fun (item : Nat) => number item)
+private def powers (width : Nat) : List Nat := (List.range width).map (fun index => 10 ^ (width - 1 - index))
+
+private theorem read_natural_list (env : HeapCalls.Env) (heap : Mutable.Heap) (arrayName indexName : String)
+    (address index : Nat) (items : List Nat) (inside : index < items.length)
+    (getArray : env arrayName = some (.ref address)) (getIndex : env indexName = some (number index))
+    (found : heap[address]? = some (.list (numbers items))) :
+    Evaluates program env (.subscript (.name arrayName) (.name indexName)) heap (number items[index]) heap := by
+  apply Evaluates.subscript (middle := heap) (afterIndex := heap)
+    (by intros; intro impossible; cases impossible) (Evaluates.lookup getArray) (Evaluates.lookup getIndex)
+  simpa only [numbers, List.getElem_map] using Mutable.getItem_list heap address index (numbers items) found
+    (by simpa only [numbers, List.length_map] using inside)
+
+private theorem mask_slot_truth (bits index : Nat) (heap : Mutable.Heap) :
+    Mutable.truth (number ((bits / 2 ^ index) % 2 : Nat)) heap = some (.ok (bits.testBit index), heap) := by
+  have parity : (bits / 2 ^ index) % 2 = 0 ∨ (bits / 2 ^ index) % 2 = 1 := by omega
+  rcases parity with zero | one
+  · simp [Mutable.truth, scalarTruth, Nat.testBit_eq_decide_div_mod_eq, zero]
+  · simp [Mutable.truth, scalarTruth, Nat.testBit_eq_decide_div_mod_eq, one]
+
+
+namespace slotWeights
+private def yesBody : List Stmt := match (slotBody[0]? : Option Stmt) with
+  | some (.ifThen _ yes _) => yes | _ => []
+private def weight (width index : Nat) : Nat := 10 ^ (width - 1 - index)
+private def selected (items : List Nat) (bits first remaining : Nat) : List Nat :=
+  ((List.range' first remaining).filter bits.testBit).map (fun index => items[index]!)
+private def total (width : Nat) (indices : List Nat) : Nat := (indices.map (weight width)).sum
+
+private structure Inputs (bits posAddress powerAddress : Nat) (env : HeapCalls.Env) : Prop where
+  getMask : env "mask" = some (number bits)
+  getPositions : env "pos" = some (.ref posAddress)
+  getPowers : env "pow10" = some (.ref powerAddress)
+
+private theorem inputs_set (bits posAddress powerAddress : Nat) (env : HeapCalls.Env)
+    (inputs : Inputs bits posAddress powerAddress env) (name : String) (value : Mutable.Value)
+    (different : name ≠ "mask" ∧ name ≠ "pos" ∧ name ≠ "pow10") :
+    Inputs bits posAddress powerAddress (setLocal env name value) := by
+  exact ⟨by simpa [setLocal, Ne.symm different.1] using inputs.getMask,
+    by simpa [setLocal, Ne.symm different.2.1] using inputs.getPositions,
+    by simpa [setLocal, Ne.symm different.2.2] using inputs.getPowers⟩
+
+private def Stable (before after : HeapCalls.Env) : Prop :=
+  ∀ name, name ≠ "j" → name ≠ "idx" → name ≠ "shift" → name ≠ "lead" → after name = before name
+
+private theorem stable_refl (env : HeapCalls.Env) : Stable env env := fun _ _ _ _ _ => rfl
+private theorem stable_trans (first : Stable before middle) (second : Stable middle after) : Stable before after :=
+  fun name hj hi hs hl => (second name hj hi hs hl).trans (first name hj hi hs hl)
+private theorem stable_set (env : HeapCalls.Env) (name : String) (value : Mutable.Value)
+    (written : name = "j" ∨ name = "idx" ∨ name = "shift" ∨ name = "lead") : Stable env (setLocal env name value) := by
+  intro key hj hi hs hl
+  rcases written with rfl | rfl | rfl | rfl
+  · simp only [setLocal, hj, if_false]
+  · simp only [setLocal, hi, if_false]
+  · simp only [setLocal, hs, if_false]
+  · simp only [setLocal, hl, if_false]
+
+private theorem iteration (width bits posAddress powerAddress first accumulated : Nat) (leading : Bool)
+    (items : List Nat) (inside : first < items.length) (bounded : ∀ index ∈ items, index < width)
+    (env : HeapCalls.Env) (heap : Mutable.Heap) (inputs : Inputs bits posAddress powerAddress env)
+    (getIndex : env "j" = some (number first)) (getShift : env "shift" = some (number accumulated))
+    (getLead : env "lead" = some (flag leading))
+    (positionsFound : heap[posAddress]? = some (.list (numbers items)))
+    (powersFound : heap[powerAddress]? = some (.list (numbers (powers width)))) :
+    ∃ finalEnv, BlockContinues program env yesBody heap finalEnv heap ∧
+      Inputs bits posAddress powerAddress finalEnv ∧
+      finalEnv "shift" = some (number (accumulated + weight width items[first] : Nat)) ∧
+      finalEnv "lead" = some (flag (leading || decide (items[first] = 0))) ∧ Stable env finalEnv := by
+  let index := items[first]
+  have indexBound : index < width := bounded index (List.getElem_mem inside)
+  let located := setLocal env "idx" (number index)
+  let weighted := setLocal located "shift" (number (accumulated + weight width index : Nat))
+  have locate : BlockContinues program env [yesBody[0]'(by decide)] heap located heap :=
+    BlockContinues.assign (read_natural_list env heap "pos" "j" posAddress first items inside inputs.getPositions getIndex positionsFound)
+  have getLocated : located "idx" = some (number index) := by simp [located, setLocal]
+  have readPower := read_natural_list located heap "pow10" "idx" powerAddress index (powers width)
+    (by simpa only [powers, List.length_map, List.length_range] using indexBound)
+    (by simpa [located, setLocal] using inputs.getPowers) getLocated powersFound
+  have add : BlockContinues program located [yesBody[1]'(by decide)] heap weighted heap := by
+    apply BlockContinues.augAssign (by simpa [located, setLocal] using getShift)
+      (by simpa only [powers, List.getElem_map, List.getElem_range] using readPower)
+    simp [HeapCalls.inplace, Mutable.binary, scalarBinary, number, weight]
+  have weightedInputs : Inputs bits posAddress powerAddress weighted :=
+    inputs_set _ _ _ _ (inputs_set _ _ _ _ inputs "idx" _ (by decide)) "shift" _ (by decide)
+  have prefixStable : Stable env weighted := stable_trans (stable_set env "idx" _ (by simp)) (stable_set located "shift" _ (by simp))
+  have test : Evaluates program weighted (.compare (.name "idx") [(.eq, .constant (.int 0))]) heap
+      (flag (decide (index = 0))) heap := by
+    apply Evaluates.compare (av := number index) (bv := number 0) (middle := heap) (afterRight := heap)
+      (Evaluates.lookup (by simp [weighted, located, setLocal])) Evaluates.constant
+    simp [HeapCalls.compare, scalarCompare, evalCmpOp]
+  by_cases zero : index = 0
+  · have actualZero : items[first] = 0 := zero
+    let marked := setLocal weighted "lead" (flag true)
+    have mark : BlockContinues program weighted [yesBody[2]'(by decide)] heap marked heap := by
+      apply BlockContinues.branch (value := flag true) (flag := true)
+        (by simpa only [zero, decide_true] using test) (by simp [Mutable.truth, scalarTruth])
+      exact BlockContinues.assign Evaluates.constant
+    refine ⟨marked, locate.append (add.append mark), inputs_set _ _ _ _ weightedInputs "lead" _ (by decide), ?_, ?_,
+      stable_trans prefixStable (stable_set weighted "lead" _ (by simp))⟩
+    · simp [marked, weighted, setLocal, index]
+    · simp [marked, setLocal, actualZero]
+  · have actualNonzero : items[first] ≠ 0 := zero
+    have keep : BlockContinues program weighted [yesBody[2]'(by decide)] heap weighted heap :=
+      BlockContinues.branch (flag := false) (by simpa only [zero, decide_false] using test)
+        (by simp [Mutable.truth, scalarTruth]) .nil
+    refine ⟨weighted, locate.append (add.append keep), weightedInputs, by simp [weighted, setLocal, index], ?_, prefixStable⟩
+    simpa [weighted, located, setLocal, actualNonzero] using getLead
+
+private theorem loop (width bits posAddress powerAddress first remaining accumulated : Nat) (leading : Bool)
+    (items : List Nat) (endpoint : first + remaining = items.length)
+    (bounded : ∀ index ∈ items, index < width) (env : HeapCalls.Env) (heap : Mutable.Heap)
+    (inputs : Inputs bits posAddress powerAddress env)
+    (getShift : env "shift" = some (number accumulated)) (getLead : env "lead" = some (flag leading))
+    (positionsFound : heap[posAddress]? = some (.list (numbers items)))
+    (powersFound : heap[powerAddress]? = some (.list (numbers (powers width)))) :
+    ∃ finalEnv, BlockContinues program env [.rangeStepLoop "j" first items.length 1 slotBody []] heap finalEnv heap ∧
+      Inputs bits posAddress powerAddress finalEnv ∧
+      finalEnv "shift" = some (number (accumulated + total width (selected items bits first remaining) : Nat)) ∧
+      finalEnv "lead" = some (flag (leading || decide (0 ∈ selected items bits first remaining))) ∧ Stable env finalEnv := by
+  induction remaining generalizing first accumulated leading env with
+  | zero =>
+      refine ⟨env, BlockContinues.range_done (by simp [Calls.rangeContinues]; omega) .nil, inputs, ?_, ?_, stable_refl env⟩
+      · simpa [selected, total] using getShift
+      · simpa [selected] using getLead
+  | succ remaining ih =>
+      have inside : first < items.length := by omega
+      let bound := setLocal env "j" (number first)
+      have boundInputs := inputs_set _ _ _ _ inputs "j" (number first) (by decide)
+      have boundShift : bound "shift" = some (number accumulated) := by simpa [bound, setLocal] using getShift
+      have boundLead : bound "lead" = some (flag leading) := by simpa [bound, setLocal] using getLead
+      have test := mask_slot_evaluates bits first bound heap boundInputs.getMask rfl
+      have truth := mask_slot_truth bits first heap
+      cases hit : bits.testBit first with
+      | false =>
+          obtain ⟨finalEnv, executed, finalInputs, finalShift, finalLead, saved⟩ :=
+            ih (first+1) accumulated leading (by omega) bound boundInputs boundShift boundLead
+          have skipped : BlockContinues program bound slotBody heap bound heap :=
+            BlockContinues.branch (flag := false) test (by simpa only [hit] using truth) .nil
+          refine ⟨finalEnv, ?_, finalInputs, ?_, ?_, stable_trans (stable_set env "j" _ (by simp)) saved⟩
+          · apply BlockContinues.range_step (by simp [Calls.rangeContinues]; omega)
+            exact skipped.append executed
+          · simpa only [selected, List.range'_succ, List.filter_cons, hit, Bool.false_eq_true, if_false] using finalShift
+          · simpa only [selected, List.range'_succ, List.filter_cons, hit, Bool.false_eq_true, if_false] using finalLead
+      | true =>
+          obtain ⟨middleEnv, iterated, middleInputs, middleShift, middleLead, middleStable⟩ :=
+            iteration width bits posAddress powerAddress first accumulated leading items inside bounded bound heap
+              boundInputs rfl boundShift boundLead positionsFound powersFound
+          obtain ⟨finalEnv, executed, finalInputs, finalShift, finalLead, saved⟩ :=
+            ih (first+1) (accumulated + weight width items[first]) (leading || decide (items[first] = 0)) (by omega)
+              middleEnv middleInputs middleShift middleLead
+          have entered : BlockContinues program bound slotBody heap middleEnv heap :=
+            BlockContinues.branch (flag := true) test (by simpa only [hit] using truth) iterated
+          have read : items[first]! = items[first] := List.getElem!_of_getElem? (List.getElem?_eq_getElem inside)
+          refine ⟨finalEnv, ?_, finalInputs, ?_, ?_,
+            stable_trans (stable_set env "j" _ (by simp)) (stable_trans middleStable saved)⟩
+          · apply BlockContinues.range_step (by simp [Calls.rangeContinues]; omega)
+            exact entered.append executed
+          · simpa only [selected, List.range'_succ, List.filter_cons, hit, Bool.true_eq, if_true, List.map_cons, total, List.sum_cons, read, Nat.add_assoc] using finalShift
+          · have zeroEq : (0 = items[first]) ↔ (items[first] = 0) := eq_comm
+            simpa only [selected, List.range'_succ, List.filter_cons, hit, Bool.true_eq, if_true, List.map_cons, read,
+              List.mem_cons, zeroEq, Bool.decide_or, Bool.or_assoc] using finalLead
+
+/-- The source's position loop sums exactly the selected decimal weights and detects leading replacement. -/
+theorem result (width bits posAddress powerAddress : Nat) (items : List Nat)
+    (bounded : ∀ index ∈ items, index < width) (env : HeapCalls.Env) (heap : Mutable.Heap)
+    (getMask : env "mask" = some (number bits)) (getPositions : env "pos" = some (.ref posAddress))
+    (getPowers : env "pow10" = some (.ref powerAddress)) (getLength : env "m" = some (number items.length))
+    (positionsFound : heap[posAddress]? = some (.list (numbers items)))
+    (powersFound : heap[powerAddress]? = some (.list (numbers (powers width)))) :
+    ∃ finalEnv, BlockContinues program env ((maskBody.drop 2).take 3) heap finalEnv heap ∧
+      finalEnv "shift" = some (number (((ProjectEulerSolutions.BitSubsets.select items bits).map (fun index => 10 ^ (width - 1 - index))).sum : Nat)) ∧
+      finalEnv "lead" = some (flag (decide (0 ∈ ProjectEulerSolutions.BitSubsets.select items bits))) ∧
+      (∀ name, name ≠ "j" → name ≠ "idx" → name ≠ "shift" → name ≠ "lead" → finalEnv name = env name) := by
+  let cleared := setLocal env "shift" (number 0)
+  let initialized := setLocal cleared "lead" (flag false)
+  have clear : BlockContinues program env [maskBody[2]'(by decide)] heap cleared heap := BlockContinues.assign Evaluates.constant
+  have initiallyFalse : BlockContinues program cleared [maskBody[3]'(by decide)] heap initialized heap := BlockContinues.assign Evaluates.constant
+  have inputs : Inputs bits posAddress powerAddress initialized := by
+    exact ⟨by simpa [initialized, cleared, setLocal] using getMask,
+      by simpa [initialized, cleared, setLocal] using getPositions,
+      by simpa [initialized, cleared, setLocal] using getPowers⟩
+  obtain ⟨finalEnv, executed, _, finalShift, finalLead, saved⟩ := loop width bits posAddress powerAddress 0 items.length 0 false items (by omega) bounded
+    initialized heap inputs (by simp [initialized, cleared, setLocal]) rfl positionsFound powersFound
+  have ranged : BlockContinues program initialized [maskBody[4]'(by decide)] heap finalEnv heap := by
+    apply BlockContinues.for_range (.cons (Evaluates.lookup (by simpa [initialized, cleared, setLocal] using getLength)) .nil) rfl executed
+  refine ⟨finalEnv, clear.append (initiallyFalse.append ranged), ?_, ?_, ?_⟩
+  · simpa only [Nat.zero_add, total, selected, ← List.range_eq_range', ProjectEulerSolutions.BitSubsets.select,
+      ProjectEulerSolutions.BitSubsets.positions, weight] using finalShift
+  · simpa only [Bool.false_or, selected, ← List.range_eq_range', ProjectEulerSolutions.BitSubsets.select,
+      ProjectEulerSolutions.BitSubsets.positions] using finalLead
+  · exact stable_trans (stable_set env "shift" _ (by simp)) (stable_trans (stable_set cleared "lead" _ (by simp)) saved)
+
+end slotWeights
+
 end solve
 
 end solvers.«51»
