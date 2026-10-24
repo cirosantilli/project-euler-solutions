@@ -548,6 +548,8 @@ Problem 42’s source-level equivalence proof covers Unicode ordinal sums, filte
 
 Problem 43’s source-level equivalence proof covers the complete tuple-key table builder, seed states, mask-based leftward extension, missing-digit completion, and decimal sum. A general constrained-permutation proof connects the optimized search to the exhaustive reference, establishing completeness and exclusion of leading-zero solutions. Both source implementations terminate and preserve the input heap. The contract requires the initialized `PRIMES` list and preserves its shared identity. The proofs use only standard Lean axioms.
 
+Problem 44’s reference now searches positive indices and initializes its minimum to the optimized solver’s existing bound of `10**30`. Its complete source proof covers the exhaustive pentagonal test, pair collection, and capped minimum for every integer limit. The mathematical proofs establish the integer-square-root criterion, equivalence of ascending and descending row scans, and the early-break rule. They use only standard Lean axioms. The optimized source proof is in progress.
+
 ====== Problem 14: Collatz termination
 
 Research checked on 2026-10-25. The existing `ProjectEulerStatements.P14.collatzConjecture` assumes that each positive natural number eventually reaches 1. The reference source proofs are conditional on that exact assumption; they do not establish the conjecture. Zero is handled separately by the implementation. Negative starting values are outside the termination claim.
