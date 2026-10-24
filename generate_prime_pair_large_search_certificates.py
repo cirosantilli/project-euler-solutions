@@ -347,6 +347,7 @@ class Trace:
             ]
             for i, p, prior, after in reversed(group):
                 lines.extend([
+                    "set_option maxRecDepth 4096 in",
                     f"theorem outerScan{i} : scan edge (search edge 4) 5 [] 0 tail{i} {best_term(prior)} = winner := by",
                     f"  rw [tail{i}, scan, if_neg (by decide), root{i}Candidates_checked]",
                     f"  change scan edge (search edge 4) 5 [] 0 tail{i + 1}",

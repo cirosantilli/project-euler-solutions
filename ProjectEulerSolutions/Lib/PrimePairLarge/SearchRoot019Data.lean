@@ -1,0 +1,122 @@
+import ProjectEulerSolutions.Lib.PrimePairLarge.SearchSetup
+namespace ProjectEulerSolutions.PrimePairLarge.Search
+open CliqueSearch
+def root19Candidates : List Nat := Data.row79
+set_option maxRecDepth 8192 in
+theorem root19Candidates_checked : candidates edge 5 0 79 tail20 winner.bound = root19Candidates := by
+  apply candidates_eq_row edge 5 0 79 tail20 root19Candidates winner.bound tail20_ordered
+  · decide
+  · decide
+  · funext q
+    rfl
+def root19Tail109 : List Nat := []
+def root19Tail108 : List Nat := 25849 :: root19Tail109
+def root19Tail107 : List Nat := 25741 :: root19Tail108
+def root19Tail106 : List Nat := 25609 :: root19Tail107
+def root19Tail105 : List Nat := 25237 :: root19Tail106
+def root19Tail104 : List Nat := 24967 :: root19Tail105
+def root19Tail103 : List Nat := 24421 :: root19Tail104
+def root19Tail102 : List Nat := 23563 :: root19Tail103
+def root19Tail101 : List Nat := 23497 :: root19Tail102
+def root19Tail100 : List Nat := 22531 :: root19Tail101
+def root19Tail99 : List Nat := 22129 :: root19Tail100
+def root19Tail98 : List Nat := 22111 :: root19Tail99
+def root19Tail97 : List Nat := 21493 :: root19Tail98
+def root19Tail96 : List Nat := 20611 :: root19Tail97
+def root19Tail95 : List Nat := 20389 :: root19Tail96
+def root19Tail94 : List Nat := 20347 :: root19Tail95
+def root19Tail93 : List Nat := 20287 :: root19Tail94
+def root19Tail92 : List Nat := 20149 :: root19Tail93
+def root19Tail91 : List Nat := 19993 :: root19Tail92
+def root19Tail90 : List Nat := 19609 :: root19Tail91
+def root19Tail89 : List Nat := 19381 :: root19Tail90
+def root19Tail88 : List Nat := 18979 :: root19Tail89
+def root19Tail87 : List Nat := 18793 :: root19Tail88
+def root19Tail86 : List Nat := 18637 :: root19Tail87
+def root19Tail85 : List Nat := 18541 :: root19Tail86
+def root19Tail84 : List Nat := 18517 :: root19Tail85
+def root19Tail83 : List Nat := 17929 :: root19Tail84
+def root19Tail82 : List Nat := 17659 :: root19Tail83
+def root19Tail81 : List Nat := 17467 :: root19Tail82
+def root19Tail80 : List Nat := 17419 :: root19Tail81
+def root19Tail79 : List Nat := 17341 :: root19Tail80
+def root19Tail78 : List Nat := 17137 :: root19Tail79
+def root19Tail77 : List Nat := 17011 :: root19Tail78
+def root19Tail76 : List Nat := 15643 :: root19Tail77
+def root19Tail75 : List Nat := 14779 :: root19Tail76
+def root19Tail74 : List Nat := 14449 :: root19Tail75
+def root19Tail73 : List Nat := 13669 :: root19Tail74
+def root19Tail72 : List Nat := 13183 :: root19Tail73
+def root19Tail71 : List Nat := 12511 :: root19Tail72
+def root19Tail70 : List Nat := 12343 :: root19Tail71
+def root19Tail69 : List Nat := 11551 :: root19Tail70
+def root19Tail68 : List Nat := 11173 :: root19Tail69
+def root19Tail67 : List Nat := 10687 :: root19Tail68
+def root19Tail66 : List Nat := 9859 :: root19Tail67
+def root19Tail65 : List Nat := 9679 :: root19Tail66
+def root19Tail64 : List Nat := 8887 :: root19Tail65
+def root19Tail63 : List Nat := 8521 :: root19Tail64
+def root19Tail62 : List Nat := 8461 :: root19Tail63
+def root19Tail61 : List Nat := 8263 :: root19Tail62
+def root19Tail60 : List Nat := 8179 :: root19Tail61
+def root19Tail59 : List Nat := 7933 :: root19Tail60
+def root19Tail58 : List Nat := 7591 :: root19Tail59
+def root19Tail57 : List Nat := 7561 :: root19Tail58
+def root19Tail56 : List Nat := 7549 :: root19Tail57
+def root19Tail55 : List Nat := 7207 :: root19Tail56
+def root19Tail54 : List Nat := 7057 :: root19Tail55
+def root19Tail53 : List Nat := 6871 :: root19Tail54
+def root19Tail52 : List Nat := 6781 :: root19Tail53
+def root19Tail51 : List Nat := 6673 :: root19Tail52
+def root19Tail50 : List Nat := 6553 :: root19Tail51
+def root19Tail49 : List Nat := 6451 :: root19Tail50
+def root19Tail48 : List Nat := 6373 :: root19Tail49
+def root19Tail47 : List Nat := 6217 :: root19Tail48
+def root19Tail46 : List Nat := 6091 :: root19Tail47
+def root19Tail45 : List Nat := 5791 :: root19Tail46
+def root19Tail44 : List Nat := 5659 :: root19Tail45
+def root19Tail43 : List Nat := 5653 :: root19Tail44
+def root19Tail42 : List Nat := 5647 :: root19Tail43
+def root19Tail41 : List Nat := 5581 :: root19Tail42
+def root19Tail40 : List Nat := 5503 :: root19Tail41
+def root19Tail39 : List Nat := 5449 :: root19Tail40
+def root19Tail38 : List Nat := 5323 :: root19Tail39
+def root19Tail37 : List Nat := 5101 :: root19Tail38
+def root19Tail36 : List Nat := 5077 :: root19Tail37
+def root19Tail35 : List Nat := 4999 :: root19Tail36
+def root19Tail34 : List Nat := 4831 :: root19Tail35
+def root19Tail33 : List Nat := 4483 :: root19Tail34
+def root19Tail32 : List Nat := 4231 :: root19Tail33
+def root19Tail31 : List Nat := 4153 :: root19Tail32
+def root19Tail30 : List Nat := 3853 :: root19Tail31
+def root19Tail29 : List Nat := 3733 :: root19Tail30
+def root19Tail28 : List Nat := 3607 :: root19Tail29
+def root19Tail27 : List Nat := 3547 :: root19Tail28
+def root19Tail26 : List Nat := 3517 :: root19Tail27
+def root19Tail25 : List Nat := 3511 :: root19Tail26
+def root19Tail24 : List Nat := 3343 :: root19Tail25
+def root19Tail23 : List Nat := 3253 :: root19Tail24
+def root19Tail22 : List Nat := 3181 :: root19Tail23
+def root19Tail21 : List Nat := 2797 :: root19Tail22
+def root19Tail20 : List Nat := 2689 :: root19Tail21
+def root19Tail19 : List Nat := 2647 :: root19Tail20
+def root19Tail18 : List Nat := 2593 :: root19Tail19
+def root19Tail17 : List Nat := 2551 :: root19Tail18
+def root19Tail16 : List Nat := 2371 :: root19Tail17
+def root19Tail15 : List Nat := 2179 :: root19Tail16
+def root19Tail14 : List Nat := 1993 :: root19Tail15
+def root19Tail13 : List Nat := 1933 :: root19Tail14
+def root19Tail12 : List Nat := 1801 :: root19Tail13
+def root19Tail11 : List Nat := 1657 :: root19Tail12
+def root19Tail10 : List Nat := 1627 :: root19Tail11
+def root19Tail9 : List Nat := 1447 :: root19Tail10
+def root19Tail8 : List Nat := 1117 :: root19Tail9
+def root19Tail7 : List Nat := 1093 :: root19Tail8
+def root19Tail6 : List Nat := 967 :: root19Tail7
+def root19Tail5 : List Nat := 631 :: root19Tail6
+def root19Tail4 : List Nat := 613 :: root19Tail5
+def root19Tail3 : List Nat := 397 :: root19Tail4
+def root19Tail2 : List Nat := 367 :: root19Tail3
+def root19Tail1 : List Nat := 241 :: root19Tail2
+def root19Tail0 : List Nat := 193 :: root19Tail1
+end ProjectEulerSolutions.PrimePairLarge.Search

@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parent
 DESTINATION = ROOT / "ProjectEulerSolutions/Lib/PrimePairLarge"
 BUDGET = 26034
 ROWS_PER_FILE = 4
+GRAPH_NODES_PER_FILE = 64
 
 
 def layout() -> tuple[list[tuple[str, int, int]], list[tuple[str, str, str]], list[tuple[str, int, int]]]:
@@ -186,14 +187,12 @@ def data_file(keys: list[int], domain: list[int]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def graph_file(keys: list[int], module_count: int) -> str:
-    lines = [
+def graph_files(keys: list[int], module_count: int) -> dict[Path, str]:
+    imports = [
         "import ProjectEulerSolutions.Lib.PrimePairLarge.Data",
         *(f"import ProjectEulerSolutions.Lib.PrimePairLarge.Rows{i:03}" for i in range(module_count)),
-        "namespace ProjectEulerSolutions.PrimePairLarge",
-        "open PrimePairCertificate",
-        f"theorem empty_covers : Budget.Covers PrimePairVertices.largeTree {BUDGET} Graph.empty := Budget.empty_covers _ _",
     ]
+    blocks = []
 
     def assemble(values: list[int]) -> str:
         if not values:
@@ -204,28 +203,55 @@ def graph_file(keys: list[int], module_count: int) -> str:
         right = assemble(values[middle + 1 :])
         left_proof = "empty_covers" if left == "Graph.empty" else f"{left}_covers"
         right_proof = "empty_covers" if right == "Graph.empty" else f"{right}_covers"
+        left_data = left if left == "Graph.empty" else f"Data.{left}"
+        right_data = right if right == "Graph.empty" else f"Data.{right}"
+        left_equal = "rfl" if left == "Graph.empty" else f"{left}_eq_data"
+        right_equal = "rfl" if right == "Graph.empty" else f"{right}_eq_data"
         name = f"node{p}"
-        lines.extend([
+        blocks.append([
+            "set_option maxRecDepth 4096 in",
+            f"theorem row{p}_eq_data : row{p} = Data.row{p} := rfl",
             f"def {name} : Graph := .node {p} row{p} {left} {right}",
             "set_option maxRecDepth 4096 in",
             f"theorem {name}_covers : Budget.Covers PrimePairVertices.largeTree {BUDGET} {name} :=",
             f"  Budget.node_covers _ _ {p} row{p} {left} {right}",
             f"    {left_proof} {right_proof} (by decide) (by decide) row{p}_covers",
+            f"theorem {name}_eq_data : {name} = Data.{name} := by",
+            f"  have branches : ({left}, {right}) = ({left_data}, {right_data}) :=",
+            f"    congrArg₂ (fun (a b : Graph) => (a, b)) {left_equal} {right_equal}",
+            f"  exact congrArg₂ (fun (row : List Nat) (children : Graph × Graph) =>",
+            f"    Graph.node {p} row children.1 children.2) row{p}_eq_data branches",
         ])
         return name
 
     graph = assemble(keys)
-    lines.extend([
+    files = {}
+    for chunk, start in enumerate(range(0, len(blocks), GRAPH_NODES_PER_FILE)):
+        lines = [
+            *(imports if chunk == 0 else [f"import ProjectEulerSolutions.Lib.PrimePairLarge.Graph{chunk - 1:03}"]),
+            "namespace ProjectEulerSolutions.PrimePairLarge",
+            "open PrimePairCertificate",
+        ]
+        if chunk == 0:
+            lines.append(f"theorem empty_covers : Budget.Covers PrimePairVertices.largeTree {BUDGET} Graph.empty := Budget.empty_covers _ _")
+        for block in blocks[start : start + GRAPH_NODES_PER_FILE]:
+            lines.extend(block)
+        lines.append("end ProjectEulerSolutions.PrimePairLarge")
+        files[DESTINATION / f"Graph{chunk:03}.lean"] = "\n".join(lines) + "\n"
+    lines = [
+        f"import ProjectEulerSolutions.Lib.PrimePairLarge.Graph{chunk:03}",
+        "namespace ProjectEulerSolutions.PrimePairLarge",
+        "open PrimePairCertificate",
         f"def graph : Graph := {graph}",
         f"theorem graph_covers : Budget.Covers PrimePairVertices.largeTree {BUDGET} graph := {graph}_covers",
-        "set_option maxRecDepth 4096 in",
-        "theorem graph_eq_data : graph = Data.graph := rfl",
+        f"theorem graph_eq_data : graph = Data.graph := {graph}_eq_data",
         "theorem graph_coverage (p : Nat) (member : p ∈ PrimePairVertices.large) (competitive : 2 * p < 26034) : p ∈ graph.vertices := by",
         "  rw [graph_eq_data]",
         "  exact Data.coverage p member competitive",
         "end ProjectEulerSolutions.PrimePairLarge",
-    ])
-    return "\n".join(lines) + "\n"
+    ]
+    files[DESTINATION / "Graph.lean"] = "\n".join(lines) + "\n"
+    return files
 
 
 def search_model(
@@ -268,7 +294,7 @@ def generated_files() -> dict[Path, str]:
     groups = [keys[i : i + ROWS_PER_FILE] for i in range(0, len(keys), ROWS_PER_FILE)]
     files = {DESTINATION / "Bounds.lean": bounds_file(blocks), DESTINATION / "Data.lean": data_file(keys, domain)}
     files.update({DESTINATION / f"Rows{i:03}.lean": rows_file(group, domain, positions, parts, merges) for i, group in enumerate(groups)})
-    files[DESTINATION / "Graph.lean"] = graph_file(keys, len(groups))
+    files.update(graph_files(keys, len(groups)))
     return files
 
 
