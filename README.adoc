@@ -550,6 +550,8 @@ Problem 43’s source-level equivalence proof covers the complete tuple-key tabl
 
 Problem 44’s source-level equivalence proof covers pentagonal-table allocation and writes, the exhaustive and integer-square-root predicates, pair enumeration, the descending scan’s early break, and bounded minimum selection for every nonnegative limit. Both implementations terminate; the reference also handles negative limits. The contract uses positive indices and returns `10**30` when no qualifying pair improves that bound. The proofs use only standard Lean axioms.
 
+Problem 45’s source-level equivalence proof connects exhaustive triangular enumeration with the optimized unbounded hexagonal search. It covers both membership loops, the integer-square-root test, early returns, and termination. Small kernel certificates exclude earlier matches and prove that the reference window contains the least common value beyond the given example. The reference also terminates for every integer start and bound, including negative and empty ranges. The proofs use only standard Lean axioms.
+
 ====== Problem 14: Collatz termination
 
 Research checked on 2026-10-25. The existing `ProjectEulerStatements.P14.collatzConjecture` assumes that each positive natural number eventually reaches 1. The reference source proofs are conditional on that exact assumption; they do not establish the conjecture. Zero is handled separately by the implementation. Negative starting values are outside the termination claim.

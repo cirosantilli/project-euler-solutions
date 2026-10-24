@@ -27,6 +27,10 @@ def is_pentagonal(x: int) -> bool:
 
 
 def solve() -> int:
+    """
+    @formalsw: Py from project_euler_statements.p45 import naive_default
+    @formalsw: Equiv(naive_default)
+    """
     # Every hexagonal number is triangular, so we only need H_n that is pentagonal.
     n = 144  # next after H_143
     while True:
