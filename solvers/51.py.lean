@@ -1,5 +1,6 @@
 import «.formalsw».solvers.«51.py.ast»
 import lang.py.FormalSW.HeapCalls
+import lang.py.FormalSW.LoopCalls
 import ProjectEulerSolutions.Lib.PrimeSieve
 import ProjectEulerSolutions.Lib.PrimeReplacement
 import ProjectEulerSolutions.Lib.HeapCollection
@@ -502,6 +503,166 @@ theorem replacement_assignment (p : Nat) (indices : List Nat) (original digit : 
         (ProjectEulerSolutions.PrimeReplacement.reflected (Nat.digits 10 p).length indices) digit) : Nat))) heap := by
   apply BlockContinues.assign
   exact replacement_evaluates "d0" p indices original digit distinct bounded same heap env getP getDigit getOriginal getShift
+
+private abbrev candidate (p : Nat) (indices : List Nat) (digit : Nat) : Nat :=
+  Nat.ofDigits 10 (ProjectEulerStatements.P51.replaceAt (Nat.digits 10 p)
+    (ProjectEulerSolutions.PrimeReplacement.reflected (Nat.digits 10 p).length indices) digit)
+
+private def accepted (p : Nat) (indices : List Nat) (digit : Nat) : Bool :=
+  decide (digit ≠ 0 ∨ 0 ∉ indices) && ProjectEulerStatements.P51.isPrime (candidate p indices digit)
+
+private structure Inputs (p : Nat) (indices : List Nat) (original address : Nat) (env : HeapCalls.Env) : Prop where
+  getP : env "p" = some (number p)
+  getOriginal : env "d0" = some (number original)
+  getShift : env "shift" = some (number ((indices.map (fun index => 10 ^ ((Nat.digits 10 p).length - 1 - index))).sum : Nat))
+  getLead : env "lead" = some (flag (decide (0 ∈ indices)))
+  getBuffer : env "is_prime" = some (.ref address)
+
+private theorem inputs_set (p : Nat) (indices : List Nat) (original address : Nat)
+    (env : HeapCalls.Env) (inputs : Inputs p indices original address env) (name : String) (value : Mutable.Value)
+    (different : name ≠ "p" ∧ name ≠ "d0" ∧ name ≠ "shift" ∧ name ≠ "lead" ∧ name ≠ "is_prime") :
+    Inputs p indices original address (setLocal env name value) := by
+  rcases inputs with ⟨hp, hd, hs, hl, hb⟩
+  exact ⟨by simpa [setLocal, Ne.symm different.1] using hp,
+    by simpa [setLocal, Ne.symm different.2.1] using hd,
+    by simpa [setLocal, Ne.symm different.2.2.1] using hs,
+    by simpa [setLocal, Ne.symm different.2.2.2.1] using hl,
+    by simpa [setLocal, Ne.symm different.2.2.2.2] using hb⟩
+
+private theorem leading_test (p : Nat) (indices : List Nat) (original address digit : Nat)
+    (env : HeapCalls.Env) (heap : Mutable.Heap) (inputs : Inputs p indices original address env)
+    (getDigit : env "r" = some (number digit)) :
+    Evaluates program env (.boolOp .and [.name "lead", .compare (.name "r") [(.eq, .constant (.int 0))]])
+      heap (flag (decide (0 ∈ indices ∧ digit = 0))) heap := by
+  by_cases leading : 0 ∈ indices
+  · apply Evaluates.boolean_next (value := flag true) (flag := true)
+      (by simpa [leading] using Evaluates.lookup (module := program) (heap := heap) inputs.getLead)
+      (by simp [Mutable.truth, scalarTruth]) (by decide)
+    apply Evaluates.boolean_last (flag := decide (digit = 0))
+    · apply Evaluates.compare (av := number digit) (bv := number 0)
+        (middle := heap) (afterRight := heap) (Evaluates.lookup getDigit) Evaluates.constant
+      simp [HeapCalls.compare, compareScalars, scalarCompare, evalCmpOp, leading, flag]
+    · simp [Mutable.truth, scalarTruth, leading]
+  · simpa [leading] using Evaluates.boolean_stop (op := BoolOp.and)
+      (rest := [.compare (.name "r") [(.eq, .constant (.int 0))]])
+      (by simpa [leading] using Evaluates.lookup (module := program) (heap := heap) inputs.getLead)
+      (flag := false) (by simp [Mutable.truth, scalarTruth]) (by decide)
+
+private theorem count_branch (p : Nat) (indices : List Nat) (original address digit count : Nat)
+    (env : HeapCalls.Env) (heap : Mutable.Heap) (bytes : List UInt8)
+    (inputs : Inputs p indices original address env) (getCount : env "cnt" = some (number count))
+    (getNumber : env "num" = some (number (candidate p indices digit)))
+    (found : heap[address]? = some (.bytearray bytes))
+    (inside : candidate p indices digit < bytes.length)
+    (correct : ∀ i byte, bytes[i]? = some byte → (byte.toNat ≠ 0 ↔ Nat.Prime i)) :
+    ∃ finalEnv, BlockContinues program env [loopBody[2]'(by decide)] heap finalEnv heap ∧
+      Inputs p indices original address finalEnv ∧
+      finalEnv "cnt" = some (number (count + if ProjectEulerStatements.P51.isPrime (candidate p indices digit) then 1 else 0 : Nat)) := by
+  let value := candidate p indices digit
+  have read : Evaluates program env (.subscript (.name "is_prime") (.name "num")) heap (number bytes[value].toNat) heap := by
+    apply Evaluates.subscript (middle := heap) (afterIndex := heap)
+      (by intros; intro impossible; cases impossible) (Evaluates.lookup inputs.getBuffer) (Evaluates.lookup getNumber)
+    exact Mutable.getItem_buffer heap address value bytes found inside
+  have live := correct value bytes[value] (List.getElem?_eq_getElem inside)
+  by_cases prime : Nat.Prime value
+  · let updated := setLocal env "cnt" (number (count+1 : Nat))
+    refine ⟨updated, ?_, inputs_set _ _ _ _ _ inputs "cnt" _ (by decide), ?_⟩
+    · apply BlockContinues.branch read (flag := true)
+        (by simp [Mutable.truth, scalarTruth, (live.mpr prime)])
+      apply BlockContinues.augAssign getCount Evaluates.constant
+      simp [HeapCalls.inplace, Mutable.binary, scalarBinary, number]
+    · simp [updated, setLocal, ProjectEulerStatements.P51.isPrime, value, prime]
+  · refine ⟨env, ?_, inputs, ?_⟩
+    · have zero : bytes[value].toNat = 0 := by tauto
+      exact BlockContinues.branch read (flag := false) (by simp [Mutable.truth, scalarTruth, zero]) .nil
+    · simpa [ProjectEulerStatements.P51.isPrime, value, prime] using getCount
+
+
+private theorem count_range (p : Nat) (indices : List Nat) (original address first remaining count : Nat)
+    (distinct : indices.Nodup) (bounded : ∀ index ∈ indices, index < (Nat.digits 10 p).length)
+    (same : ProjectEulerSolutions.PrimeReplacement.SameDigit (Nat.digits 10 p).reverse indices original)
+    (endpoint : first + remaining = 10) (env : HeapCalls.Env) (heap : Mutable.Heap) (bytes : List UInt8)
+    (inputs : Inputs p indices original address env) (getCount : env "cnt" = some (number count))
+    (found : heap[address]? = some (.bytearray bytes)) (size : bytes.length = 10^(Nat.digits 10 p).length)
+    (correct : ∀ i byte, bytes[i]? = some byte → (byte.toNat ≠ 0 ↔ Nat.Prime i)) :
+    ∃ finalEnv, BlockContinues program env [.rangeStepLoop "r" first 10 1 loopBody []] heap finalEnv heap ∧
+      Inputs p indices original address finalEnv ∧
+      finalEnv "cnt" = some (number (count + ((List.range' first remaining).filter (accepted p indices)).length : Nat)) := by
+  induction remaining generalizing first count env with
+  | zero =>
+      refine ⟨env, BlockContinues.range_done (by simp [Calls.rangeContinues]; omega) .nil, inputs, ?_⟩
+      simpa using getCount
+  | succ remaining ih =>
+      let bound := setLocal env "r" (number first)
+      have boundInputs := inputs_set p indices original address env inputs "r" (number first) (by decide)
+      have boundCount : bound "cnt" = some (number count) := by simpa [bound, setLocal] using getCount
+      have test := leading_test p indices original address first bound heap boundInputs rfl
+      let next := Stmt.rangeStepLoop "r" (first+1) 10 1 loopBody []
+      by_cases skip : 0 ∈ indices ∧ first = 0
+      · obtain ⟨finalEnv, executed, finalInputs, finalCount⟩ := ih (first+1) count (by omega) bound boundInputs boundCount
+        refine ⟨finalEnv, ?_, finalInputs, ?_⟩
+        · apply BlockContinues.range_step (by simp [Calls.rangeContinues]; omega)
+          apply BlockContinues.branch_next (middle := heap) (value := flag true) (flag := true)
+            (by simpa [bound, skip] using test) (by simp [Mutable.truth, scalarTruth])
+          exact BlockContinues.continue_loop (next := next) (rest := []) (by rfl) executed
+        · have rejected : accepted p indices first = false := by simp [accepted, skip.1, skip.2]
+          simpa [List.range'_succ, List.filter_cons, rejected] using finalCount
+      · let assigned := setLocal bound "num" (number (candidate p indices first))
+        have replacement := replacement_assignment p indices original first distinct bounded same heap bound
+          boundInputs.getP rfl boundInputs.getOriginal boundInputs.getShift
+        have assignedInputs := inputs_set p indices original address bound boundInputs "num" (number (candidate p indices first)) (by decide)
+        have assignedCount : assigned "cnt" = some (number count) := by simpa [assigned, setLocal] using boundCount
+        have inside : candidate p indices first < bytes.length := by
+          rw [size]
+          exact ProjectEulerSolutions.PrimeReplacement.replacement_lt_pow p _ first (by omega)
+        obtain ⟨middleEnv, iterated, middleInputs, middleCount⟩ := count_branch p indices original address first count assigned heap bytes
+          assignedInputs assignedCount rfl found inside correct
+        obtain ⟨finalEnv, executed, finalInputs, finalCount⟩ := ih (first+1)
+          (count + if ProjectEulerStatements.P51.isPrime (candidate p indices first) then 1 else 0) (by omega) middleEnv
+          middleInputs middleCount
+        refine ⟨finalEnv, ?_, finalInputs, ?_⟩
+        · apply BlockContinues.range_step (by simp [Calls.rangeContinues]; omega)
+          apply BlockContinues.branch_next (middle := heap) (value := flag false) (flag := false)
+            (by simpa [bound, skip] using test) (by simp [Mutable.truth, scalarTruth])
+          have resume := BlockContinues.loop_resume executed
+          exact replacement.append (iterated.append resume)
+        · have allowed : first ≠ 0 ∨ 0 ∉ indices := by tauto
+          by_cases prime : ProjectEulerStatements.P51.isPrime (candidate p indices first) = true
+          · simpa [List.range'_succ, List.filter_cons, accepted, allowed, prime, Nat.add_assoc, Nat.add_comm, Nat.add_left_comm] using finalCount
+          · simpa [List.range'_succ, List.filter_cons, accepted, allowed, prime] using finalCount
+
+/-- The source's complete ten-digit counting loop preserves the sieve and counts the reference family. -/
+theorem counting_loop (p : Nat) (positive : 0 < p) (indices : List Nat) (original address count : Nat)
+    (distinct : indices.Nodup) (bounded : ∀ index ∈ indices, index < (Nat.digits 10 p).length)
+    (same : ProjectEulerSolutions.PrimeReplacement.SameDigit (Nat.digits 10 p).reverse indices original)
+    (env : HeapCalls.Env) (heap : Mutable.Heap) (bytes : List UInt8)
+    (getP : env "p" = some (number p)) (getOriginal : env "d0" = some (number original))
+    (getShift : env "shift" = some (number ((indices.map (fun index => 10 ^ ((Nat.digits 10 p).length - 1 - index))).sum : Nat)))
+    (getLead : env "lead" = some (flag (decide (0 ∈ indices))))
+    (getBuffer : env "is_prime" = some (.ref address)) (getCount : env "cnt" = some (number count))
+    (found : heap[address]? = some (.bytearray bytes)) (size : bytes.length = 10^(Nat.digits 10 p).length)
+    (correct : ∀ i byte, bytes[i]? = some byte → (byte.toNat ≠ 0 ↔ Nat.Prime i)) :
+    ∃ finalEnv, BlockContinues program env [code[11]'(by decide)] heap finalEnv heap ∧
+      finalEnv "cnt" = some (number (count + ProjectEulerStatements.P51.primeFamilySize p
+        (ProjectEulerSolutions.PrimeReplacement.reflected (Nat.digits 10 p).length indices) : Nat)) := by
+  obtain ⟨finalEnv, executed, _, finalCount⟩ := count_range p indices original address 0 10 count distinct bounded same rfl
+    env heap bytes ⟨getP, getOriginal, getShift, getLead, getBuffer⟩ getCount found size correct
+  refine ⟨finalEnv, BlockContinues.for_range (.cons Evaluates.constant .nil) rfl executed, ?_⟩
+  have family := ProjectEulerSolutions.PrimeReplacement.familySize_reflected p positive indices original distinct bounded same
+  have values (digit : Nat) :
+      (((p : Int) + ((digit : Int) - original) *
+        ((indices.map (fun index => 10 ^ ((Nat.digits 10 p).length - 1 - index))).sum : Nat)).toNat) = candidate p indices digit := by
+    have equal := ProjectEulerSolutions.PrimeReplacement.replacement_value_reflected (Nat.digits 10 p) indices original digit distinct bounded same
+    rw [Nat.ofDigits_digits] at equal
+    rw [← equal]
+    rfl
+  simp only [values, List.filter_filter] at family
+  have counted : ProjectEulerStatements.P51.primeFamilySize p
+      (ProjectEulerSolutions.PrimeReplacement.reflected (Nat.digits 10 p).length indices) =
+      ((List.range 10).filter (accepted p indices)).length := by
+    simpa only [accepted, Bool.and_comm] using family
+  simpa only [← List.range_eq_range', ← counted] using finalCount
+
 end count_prime_family_for_positions
 
 end solvers.«51»
