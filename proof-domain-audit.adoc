@@ -36,6 +36,8 @@ Problem 26 has structural termination and equivalence proofs for every signed up
 
 Problem 38 has structural termination and equivalence proofs for every signed target width. The reference collector and optimized running maximum implement the same complete candidate set. Seed and product-count bounds follow from the requested width. Both functions return zero for widths below two or above nine; two positive products need at least two digits, and decimal notation cannot supply digit ten. The default call inherits termination from the general proof.
 
+Problem 37 has structural source equivalence and support proofs for every numeral base at least two. Both searches terminate exactly when the right-truncatable-prime tree exhausts, returning the sum of all primes with at least two digits that remain prime under truncation from either end; otherwise both supported-diverge. The proof establishes complete, duplicate-free frontiers and agreement of arithmetic suffix checks with the reference's digit-list truncations. The decimal certificate proves global completeness and default-call termination without imposing a bound on the arbitrary-base theorem.
+
 Problem 51 has structural equivalence and support proofs for every signed family threshold. Both unbounded source searches return exactly when a qualifying family exists, returning its least prime; otherwise both diverge. The checked eight-member witness establishes termination for every threshold at most eight and for the default call. Thresholds above ten are impossible because there are only ten replacement digits. For thresholds nine and ten, termination retains the general existence condition. The Lean statement uses zero for absence in its mathematical minimum and makes no universal existence assumption.
 
 == Remaining implementation and proof restrictions
@@ -46,7 +48,6 @@ Problem 51 has structural equivalence and support proofs for every signed family
 | 11 | The proof fixes the grid to the original 20 by 20 shape. | Consider general rectangular grids; the current theorem is restricted.
 | 17 | Number spelling and its proof stop at 1000. | This is the original problem's range, not an exhaustion bound. A broader naming convention would be a new parameterized problem.
 | 19 | The solver starts its calendar at 1900 and the proof excludes earlier years. | Extend the implementation before claiming arbitrary year ranges.
-| 37 | Both implementations exhaust the prime tree in the requested base. The general mathematical model proves completeness and uniqueness; termination is equivalent to bounded right-truncatable primes in that base. A separate decimal certificate proves exhaustion and the complete sum. | Prove source-level equivalence and support for the arbitrary-base searches; do not assume exhaustion for every base.
 | 44 | Both implementations accept the same finite pentagonal-index bound. | This is a valid bounded parameterization, but equivalence alone does not prove that the default answer is the global minimum over all indices.
 | 62 | Unbounded equivalence and a termination characterization hold for every signed class size. | A separate `Returns` theorem for the default target still needs a verified existence witness.
 |===

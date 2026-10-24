@@ -540,7 +540,7 @@ Problem 35’s source-level equivalence proof covers the prime sieve, decimal ro
 
 Problem 36’s source-level equivalence and termination proofs cover every nonnegative limit. The proofs establish complete, duplicate-free decimal mirroring, justify the early stop for growing prefixes and the skipped even binary candidates, and connect the resulting sum to the exhaustive reference. There is no fixed prefix or input cutoff and no whole-program evaluation; the proofs use only standard Lean axioms.
 
-Problem 37 accepts a numeral base at least two in both implementations. Both exhaust the right-truncatable-prime tree, without a prescribed depth or success count. The optimized solver inherits right-truncation checks from the tree and tests left suffixes arithmetically; the reference checks digit-list truncations. The arbitrary-base mathematical model proves frontier completeness, uniqueness, and agreement of the two truncation predicates. A separate decimal certificate proves exhaustion and the globally complete eleven-value sum. Source-level `Equiv` and support proofs remain pending, and the archived source proofs are not counted as current proofs.
+Problem 37 has source-level equivalence and support proofs for every numeral base at least two. Both searches return the complete sum exactly when their right-truncatable-prime tree exhausts, and otherwise both supported-diverge. The proof covers the mutable frontier traversal, duplicate-free candidates, prime tests, arithmetic suffixes, and digit-list truncations. Neither implementation prescribes a depth or success count. A separate decimal certificate closes the full prime tree and proves default-call termination at 748317.
 
 Problem 38’s previous source proof is archived after removing the reference-only base-search limit. The four-digit base bound follows from fitting at least two products into nine digits. Structural `Equiv` checking remains pending.
 
@@ -708,7 +708,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/34.py[34.py] | link:solvers/34.md[34.md] | link:solvers/34.py.lean[34.py.lean] | 0.284 | 40730 |
 | link:solvers/35.py[35.py] | link:solvers/35.md[35.md] | link:solvers/35.py.lean[35.py.lean] | 0.161 | 55 |
 | link:solvers/36.py[36.py] | link:solvers/36.md[36.md] | link:solvers/36.py.lean[36.py.lean] | 0.127 | 872187 |
-| link:solvers/37.py[37.py] | link:solvers/37.md[37.md] |  | 0.140 | 748317 |
+| link:solvers/37.py[37.py] | link:solvers/37.md[37.md] | link:solvers/37.py.lean[37.py.lean] | 0.140 | 748317 |
 | link:solvers/38.py[38.py] | link:solvers/38.md[38.md] | link:solvers/38.py.lean[38.py.lean] | 0.141 | 932718654 |
 | link:solvers/39.py[39.py] | link:solvers/39.md[39.md] | link:solvers/39.py.lean[39.py.lean] | 0.118 | 840 |
 | link:solvers/40.py[40.py] | link:solvers/40.md[40.md] | link:solvers/40.py.lean[40.py.lean] | 0.118 | 210 |
