@@ -1,5 +1,6 @@
 import «.formalsw».solvers.«62.py.ast»
 import lang.py.FormalSW.HeapCalls
+import lang.py.FormalSW.KeyDictionaryCalls
 import ProjectEulerSolutions.Lib.CubicPermutations
 import ProjectEulerSolutions.Lib.HeapCollection
 
@@ -151,6 +152,35 @@ def fresh : List Stmt := [.assign [.subscript (.name "groups") (.name "sig")]
 private def sourceCode : List Stmt := executableBody ((findFunctionIn program.body "solve").getD ([], [])).2
 def iteration : List Stmt := match (sourceCode[3]? : Option Stmt) with | some (.whileDo _ body _) => body | _ => []
 theorem branch_source : iteration[4]? = some (.ifThen condition existing fresh) := rfl
+def widthBody : List Stmt := match (iteration[2]? : Option Stmt) with | some (.ifThen _ body _) => body | _ => []
+def clearExpression : Expr := .call (.attribute (.name "groups") "clear") []
+def resetCode : List Stmt := [.expr clearExpression, .assign [.name "current_len"] (.name "length")]
+theorem reset_source : widthBody.drop 2 = resetCode := rfl
+
+theorem clear_keyed (heap : Mutable.Heap) (env : HeapCalls.Env) (dictionary : Nat)
+    (entries : List (HashDict.Entry Mutable.Value)) (getGroups : env "groups" = some (.ref dictionary))
+    (found : heap[dictionary]? = some (.keyDict entries)) :
+    Evaluates program env clearExpression heap (.scalar .none) (heap.set dictionary (.keyDict [])) := by
+  apply Evaluates.dictionary_clear (by intro name equal; cases equal; simp [getGroups])
+    (Evaluates.lookup getGroups) (by simp [bindMethod, found])
+  exact HeapCalls.clearDictionary_keyed heap dictionary entries found
+
+theorem clear_scalar (heap : Mutable.Heap) (env : HeapCalls.Env) (dictionary : Nat)
+    (entries : List (Constant × Mutable.Value)) (getGroups : env "groups" = some (.ref dictionary))
+    (found : heap[dictionary]? = some (.dict entries)) :
+    Evaluates program env clearExpression heap (.scalar .none) (heap.set dictionary (.dict [])) := by
+  apply Evaluates.dictionary_clear (by intro name equal; cases equal; simp [getGroups])
+    (Evaluates.lookup getGroups) (by simp [bindMethod, found])
+  exact HeapCalls.clearDictionary_scalar heap dictionary entries found
+
+/-- The original width transition clears the shared table and records the newly observed digit length. -/
+theorem reset_keyed (heap : Mutable.Heap) (env : HeapCalls.Env) (dictionary : Nat) (length : Int)
+    (entries : List (HashDict.Entry Mutable.Value)) (getGroups : env "groups" = some (.ref dictionary))
+    (getLength : env "length" = some (number length)) (found : heap[dictionary]? = some (.keyDict entries)) :
+    BlockContinues program env resetCode heap (setLocal env "current_len" (number length))
+      (heap.set dictionary (.keyDict [])) := by
+  exact (BlockContinues.discard (clear_keyed heap env dictionary entries getGroups found)).append
+    (BlockContinues.assign (Evaluates.lookup getLength))
 
 theorem hash_signature (n : Nat) (heap : Mutable.Heap) (address : Nat)
     (found : heap[address]? = some (.tuple (numbers (ProjectEulerSolutions.CubicPermutations.signature n)))) :
