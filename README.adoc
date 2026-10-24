@@ -554,6 +554,8 @@ Problem 45’s source-level equivalence proof connects exhaustive triangular enu
 
 Problem 46’s source-level equivalence proof covers the shared mutable prime list, trial division, list growth, remainder checks, integer square roots, and both early returns. Prime infinitude proves that list extension terminates; small kernel certificates establish the least counterexample and show that it lies inside the reference window. The reference’s two lazy generators and bounded search terminate for every integer input. The proofs use only standard Lean axioms.
 
+Problem 47’s mathematical foundations prove the distinct-prime-factor sieve invariant and connect all-true windows to the streak counter. The least-run argument is conditional on the existing `ProjectEulerStatements.P47.exists_consecutive_with_n_factors` axiom; the sieve proof itself uses only standard Lean axioms. The source-level equivalence proof is in progress.
+
 ====== Problem 14: Collatz termination
 
 Research checked on 2026-10-25. The existing `ProjectEulerStatements.P14.collatzConjecture` assumes that each positive natural number eventually reaches 1. The reference source proofs are conditional on that exact assumption; they do not establish the conjecture. Zero is handled separately by the implementation. Negative starting values are outside the termination claim.
