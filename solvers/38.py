@@ -1,23 +1,11 @@
 #!/usr/bin/env python
-from __future__ import annotations
-
-from typing import Optional, Tuple
 
 
-TARGET_MASK = 0
-for d in range(1, 10):
-    TARGET_MASK |= 1 << d
-
-
-def concatenated_product(x: int) -> Tuple[str, int]:
-    """
-    Returns (concatenated_string, n) for the smallest n such that the concatenation
-    of x*1, x*2, ... x*n has length >= 9.
-    """
+def concatenated_product(x: int, width: int = 9) -> tuple[str, int]:
     parts = []
     n = 0
     total_len = 0
-    while total_len < 9:
+    while total_len < width:
         n += 1
         s = str(x * n)
         parts.append(s)
@@ -25,33 +13,37 @@ def concatenated_product(x: int) -> Tuple[str, int]:
     return "".join(parts), n
 
 
-def is_1_to_9_pandigital(s: str) -> bool:
-    if len(s) != 9:
+def is_pandigital(s: str, width: int = 9) -> bool:
+    if len(s) != width:
         return False
     mask = 0
     for ch in s:
-        d = ord(ch) - 48
-        if d == 0:
+        digit = ord(ch) - 48
+        if digit < 1:
             return False
-        bit = 1 << d
+        if digit > width:
+            return False
+        bit = 1 << digit
         if mask & bit:
             return False
         mask |= bit
-    return mask == TARGET_MASK
+    return True
 
 
-def solve() -> int:
+def solve(width: int = 9) -> int:
     """
-    @formalsw: Py from project_euler_statements.p38 import naive_default
-    @formalsw: Requires(TARGET_MASK == 1022)
-    @formalsw: Equiv(naive_default)
+    @formalsw: Py from project_euler_statements.p38 import naive
+    @formalsw: Returns
+    @formalsw: Equiv(naive)
     """
+    if width < 2:
+        return 0
+    if width > 9:
+        return 0
     best = 0
-    # x cannot exceed 9999; for x >= 10000, x*1 already has 5 digits and
-    # concatenating with x*2 gives at least 10 digits.
-    for x in range(1, 10000):
-        s, n = concatenated_product(x)
-        if n > 1 and is_1_to_9_pandigital(s):
+    for x in range(1, 10 ** (width // 2)):
+        s, n = concatenated_product(x, width)
+        if n > 1 and is_pandigital(s, width):
             val = int(s)
             if val > best:
                 best = val
@@ -63,10 +55,8 @@ def _concat_fixed(x: int, n: int) -> str:
 
 
 if __name__ == "__main__":
-    # Examples from the statement
     assert _concat_fixed(192, 3) == "192384576"
-    assert is_1_to_9_pandigital("192384576")
+    assert is_pandigital("192384576")
     assert _concat_fixed(9, 5) == "918273645"
-    assert is_1_to_9_pandigital("918273645")
-
+    assert is_pandigital("918273645")
     print(solve())

@@ -12,7 +12,7 @@ Prefer a meaningful argument shared by both implementations. A reference-only se
 | 32 | Supplied factor limits 99 and 9999 | Split every permutation of the actual nine digits into factors and product.
 | 34 | Supplied inclusive limit 2540160 | Accept the same numeral base as the optimized solver and derive a complete bound from `d * (base - 1)!` and `base**(d-1)`.
 | 37 | Scan below a million | Exhaust the right-truncatable-prime tree until its frontier is empty.
-| 38 | Supplied base limit 9999 | Derive the maximum base width from fitting at least two products into nine digits.
+| 38 | Supplied base limit 9999 | Share the target width and derive the seed endpoint and product-count bound from that width.
 | 40 | Supplied decimal-stream construction limit | Accept the same requested digit positions as the optimized solver and extend the stream until they exist.
 | 45 | Scan 100001 triangular indices | Accept the same `after` threshold as the optimized solver and merge the three increasing polygonal sequences without a cutoff.
 | 46 | Scan below 10000 | Accept the same `after` threshold as the optimized solver and search until the first counterexample, without a cutoff.
@@ -34,6 +34,8 @@ Problem 23 has structural termination and equivalence proofs for every signed up
 
 Problem 26 has structural termination and equivalence proofs for every signed upper bound. Both searches consider only positive denominators, keep the least denominator on equal cycle lengths, and return zero exactly when the candidate range is empty.
 
+Problem 38 accepts a shared target width. The mathematical model proves complete seed and product-count bounds, equivalence of the mask and permutation predicates, and uniqueness of a candidate at the first sufficient product count. Source proofs for positional concatenation and the optimized width loop are checked; source equivalence for the full generalized searches is pending.
+
 == Remaining implementation and proof restrictions
 
 [cols="1,3,3"]
@@ -50,6 +52,6 @@ Problem 26 has structural termination and equivalence proofs for every signed up
 
 Other explicit bounds were checked for their role: the quadratic coefficient ranges in problem 27, the fifth power in problem 30, the target decimal digits in problems 32 and 38, the four-digit progression in problem 49, the fifty reverse-and-add steps in problem 55, and the one-tenth spiral threshold in problem 58 come from their stated problem variants. Problem 60's bound is shared by both implementations and its theorem covers every signed bound; it is not a reference-only cutoff. Such shared parameters still deserve review when a more natural generalization is available.
 
-Further useful shared parameters include coefficient ranges in problem 27, the digit-power exponent in problem 30, the target digit set in problems 32 and 38, the substring divisors in problem 43, and the diagonal-prime ratio in problem 58. Existing fixed-input proofs do not replace these prospective generalized results. Problems 34, 40, 45, and 46 have shared base, position, and threshold parameters.
+Further useful shared parameters include coefficient ranges in problem 27, the digit-power exponent in problem 30, the target digit set in problem 32 and arbitrary digit subsets in problem 38, the substring divisors in problem 43, and the diagonal-prime ratio in problem 58. Existing fixed-input proofs do not replace these prospective generalized results. Problems 34, 40, 45, and 46 have shared base, position, and threshold parameters.
 
 The default root-partition certificate for problem 62 is numerical evidence toward a termination witness, not an execution cap. Its class batches were checked, but final assembly has not passed and is not a completed proof.
