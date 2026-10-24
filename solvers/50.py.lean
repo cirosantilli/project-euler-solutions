@@ -2,6 +2,9 @@ import «.formalsw».solvers.«50.py.ast»
 import lang.py.FormalSW.HeapCalls
 import ProjectEulerSolutions.Lib.PrimeSieve
 import ProjectEulerSolutions.Lib.BooleanPrimeSieve
+import ProjectEulerSolutions.Lib.ConsecutivePrimeSums
+import ProjectEulerSolutions.Lib.HeapCollection
+import data.«project-euler-statements».data.py.project_euler_statements.«p50.py»
 
 set_option Elab.async false
 
@@ -9,6 +12,7 @@ namespace solvers.«50»
 open FormalSW.PyAst FormalSW.PyAst.HeapCalls
 private abbrev program := Solvers.P50Ast.module
 private abbrev number (n : Int) : Mutable.Value := .scalar (.int n)
+private abbrev flag (b : Bool) : Mutable.Value := .scalar (.bool b)
 
 namespace sieve_is_prime
 open ProjectEulerSolutions.PrimeSieve
@@ -338,4 +342,378 @@ theorem «Supported» (limit : Int) : (HeapCalls.call program "sieve_is_prime" [
   («Returns» limit).supported
 
 end sieve_is_prime
+
+namespace longest_consecutive_prime_sum
+open ProjectEulerSolutions.HeapCollection
+open ProjectEulerSolutions.ConsecutivePrimeSums
+private abbrev Reference := data.«project-euler-statements».data.py.project_euler_statements.p50.primes_below.values
+private def code : List Stmt := executableBody ((findFunctionIn program.body "longest_consecutive_prime_sum").getD ([], [])).2
+private def numbers (items : List Nat) : List Mutable.Value := items.map (fun (n : Nat) => number n)
+private def primeBody (collector : Nat) : List Stmt :=
+  [.ifThen (.subscript (.name "is_prime") (.name "i")) [.comprehensionAppend collector (.name "i")] []]
+
+def primes (limit : Nat) : List Nat := (List.range' 2 (limit - 2)).filter fun n => decide (Nat.Prime n)
+
+theorem primes_reference (limit : Nat) (large : 2 ≤ limit) : primes limit = Reference limit := by
+  have split : List.range limit = [0, 1] ++ List.range' 2 (limit - 2) := by
+    calc
+      List.range limit = List.range' 0 (2 + (limit - 2)) := by
+        rw [List.range_eq_range']
+        congr 1
+        omega
+      _ = List.range' 0 2 ++ List.range' 2 (limit - 2) := by
+        simpa using (List.range'_append_1 (s := 0) (m := 2) (n := limit - 2)).symm
+      _ = [0, 1] ++ List.range' 2 (limit - 2) := rfl
+  change primes limit = (List.range limit).filter (fun n => decide (Nat.Prime n))
+  simp [primes, split, Nat.not_prime_zero, Nat.not_prime_one]
+
+theorem primes_ordered (limit : Nat) (large : 2 ≤ limit) : (primes limit).Pairwise (· ≤ ·) := by
+  rw [primes_reference limit large]
+  exact List.pairwise_le_range.filter _
+
+theorem primes_member (limit value : Nat) (large : 2 ≤ limit) :
+    value ∈ primes limit ↔ value < limit ∧ Nat.Prime value := by
+  rw [primes_reference limit large]
+  change value ∈ (List.range limit).filter (fun n => decide (Nat.Prime n)) ↔ _
+  simp
+
+private theorem read_prime (heap : Mutable.Heap) (env : HeapCalls.Env) (address p : Nat) (bytes : List UInt8)
+    (inside : p < bytes.length) (getP : env "i" = some (number p))
+    (getArray : env "is_prime" = some (.ref address)) (found : heap[address]? = some (.bytearray bytes)) :
+    Evaluates program env (.subscript (.name "is_prime") (.name "i")) heap (number bytes[p].toNat) heap := by
+  apply Evaluates.subscript (middle := heap) (afterIndex := heap)
+    (by intros; intro impossible; cases impossible) (Evaluates.lookup getArray) (Evaluates.lookup getP)
+  exact Mutable.getItem_buffer heap address p bytes found inside
+
+private theorem prime_loop (first count stop : Nat) (length : first + count = stop)
+    (base : Mutable.Heap) (address : Nat) (bytes : List UInt8) (size : bytes.length = stop)
+    (found : base[address]? = some (.bytearray bytes))
+    (correct : ∀ i byte, bytes[i]? = some byte → (byte.toNat ≠ 0 ↔ Nat.Prime i))
+    (items : List Nat) (env : HeapCalls.Env) (getArray : env "is_prime" = some (.ref address)) :
+    ∃ finalEnv, BlockContinues program env [.rangeStepLoop "i" first stop 1 (primeBody base.length) []]
+      (base ++ [.list (numbers items)]) finalEnv
+      (base ++ [.list (numbers (items ++ (List.range' first count).filter fun p => decide (Nat.Prime p)))]) := by
+  induction count generalizing first items env with
+  | zero =>
+      refine ⟨env, ?_⟩
+      simp only [List.range'_zero, List.filter_nil, List.append_nil]
+      exact BlockContinues.range_done (by simp [Calls.rangeContinues]; omega) .nil
+  | succ count ih =>
+      let bound := setLocal env "i" (number first)
+      have getArray' : bound "is_prime" = some (.ref address) := by simpa [bound, setLocal] using getArray
+      have inside : first < bytes.length := by omega
+      have tested := read_prime (base ++ [.list (numbers items)]) bound address first bytes inside
+        (by simp [bound, setLocal]) getArray' (prefix_found base _ address _ found)
+      have live := correct first bytes[first] (List.getElem?_eq_getElem inside)
+      by_cases prime : Nat.Prime first
+      · have emitted : BlockContinues program bound (primeBody base.length)
+            (base ++ [.list (numbers items)]) bound (base ++ [.list (numbers (items ++ [first]))]) := by
+          apply BlockContinues.branch (flag := true) tested (by simp [Mutable.truth, scalarTruth, live.mpr prime])
+          have looked : Evaluates program bound (.name "i") (working base (numbers items) [])
+              (number first) (working base (numbers items) []) := Evaluates.lookup (by simp [bound, setLocal])
+          simpa only [working, numbers, List.map_append, List.map_cons, List.map_nil, List.append_nil] using
+            emit base (numbers items) [] [] (number first) (by simpa only [List.append_nil] using looked)
+        obtain ⟨finalEnv, rest⟩ := ih (first + 1) (by omega) (items ++ [first]) bound getArray'
+        refine ⟨finalEnv, ?_⟩
+        apply BlockContinues.range_step (by simp [Calls.rangeContinues]; omega)
+        simpa only [Calls.loopContinuation, Calls.loopControl, Calls.loopControlStmt, primeBody,
+          Bool.false_or, Bool.false_eq_true, if_false, List.range'_succ, List.filter_cons,
+          show decide (Nat.Prime first) = true by simp [prime], if_true, Int.natCast_add,
+          Int.natCast_one, List.append_assoc, List.singleton_append] using emitted.append rest
+      · have skipped : BlockContinues program bound (primeBody base.length)
+            (base ++ [.list (numbers items)]) bound (base ++ [.list (numbers items)]) := by
+          have zero : bytes[first].toNat = 0 := by tauto
+          exact BlockContinues.branch (flag := false) tested (by simp [Mutable.truth, scalarTruth, zero]) .nil
+        obtain ⟨finalEnv, rest⟩ := ih (first + 1) (by omega) items bound getArray'
+        refine ⟨finalEnv, ?_⟩
+        apply BlockContinues.range_step (by simp [Calls.rangeContinues]; omega)
+        simpa only [Calls.loopContinuation, Calls.loopControl, Calls.loopControlStmt, primeBody,
+          Bool.false_or, Bool.false_eq_true, if_false, List.range'_succ, List.filter_cons,
+          show decide (Nat.Prime first) = false by simp [prime], Int.natCast_add,
+          Int.natCast_one] using skipped.append rest
+
+/-- Filtering visits each byte once and allocates one increasing prime list. -/
+theorem primes_result (limit : Nat) (large : 2 ≤ limit) (heap : Mutable.Heap) (env : HeapCalls.Env)
+    (address : Nat) (bytes : List UInt8) (size : bytes.length = limit)
+    (getLimit : env "limit" = some (number limit)) (getArray : env "is_prime" = some (.ref address))
+    (found : heap[address]? = some (.bytearray bytes))
+    (correct : ∀ i byte, bytes[i]? = some byte → (byte.toNat ≠ 0 ↔ Nat.Prime i)) :
+    Evaluates program env
+      (.listComp (.name "i") [("i", .call (.name "range") [.constant (.int 2), .name "limit"],
+        [.subscript (.name "is_prime") (.name "i")])]) heap (.ref heap.length)
+      (heap ++ [.list (numbers (primes limit))]) := by
+  let inner := comprehensionEnv env [("i", .call (.name "range") [.constant (.int 2), .name "limit"],
+    [.subscript (.name "is_prime") (.name "i")])]
+  obtain ⟨finalEnv, scanned⟩ := prime_loop 2 (limit - 2) limit (by omega) heap address bytes size found correct [] inner
+    (by simpa [inner, comprehensionEnv] using getArray)
+  apply Evaluates.list_comp_range (finalEnv := finalEnv) (.cons Evaluates.constant (.cons (Evaluates.lookup getLimit) .nil)) rfl
+  simpa only [numbers, List.map_nil, List.nil_append, primes] using scanned
+
+private def sievedHeap (heap : Mutable.Heap) (bytes : List UInt8) : Mutable.Heap :=
+  heap ++ [.bytearray [1], .bytearray bytes]
+private def primeEnv (env : HeapCalls.Env) (heap : Mutable.Heap) : HeapCalls.Env :=
+  setLocal (setLocal env "is_prime" (.ref (heap.length + 1))) "primes" (.ref (heap.length + 2))
+
+/-- The two source assignments retain the sieve and the exact reference prime prefix. -/
+theorem prime_setup (limit : Nat) (large : 3 ≤ limit) (heap : Mutable.Heap) (env : HeapCalls.Env)
+    (getLimit : env "limit" = some (number limit)) :
+    ∃ bytes, BlockContinues program env ((code.drop 1).take 2) heap (primeEnv env heap)
+        (sievedHeap heap bytes ++ [.list (numbers (primes limit))]) ∧ bytes.length = limit ∧
+      (∀ i byte, bytes[i]? = some byte → (byte.toNat ≠ 0 ↔ Nat.Prime i)) := by
+  obtain ⟨bytes, returned, size, correct⟩ := sieve_is_prime.positive_result (limit - 1) (by omega) heap
+  let firstEnv := setLocal env "is_prime" (.ref (heap.length + 1))
+  have first : BlockContinues program env [code[1]'(by decide)] heap firstEnv (sievedHeap heap bytes) := by
+    apply BlockContinues.assign
+    apply Evaluates.call (values := [number (limit - 1 : Nat)]) (middle := heap)
+      (.cons (Evaluates.binary (av := number limit) (bv := number 1) (middle := heap) (afterRight := heap)
+        (Evaluates.lookup getLimit) Evaluates.constant
+        (by simp [Mutable.binary, scalarBinary, Int.natCast_sub (by omega : 1 ≤ limit)])) .nil)
+    exact returned
+  have firstLimit : firstEnv "limit" = some (number limit) := by simpa [firstEnv, setLocal] using getLimit
+  have firstArray : firstEnv "is_prime" = some (.ref (heap.length + 1)) := by simp [firstEnv, setLocal]
+  have size' : bytes.length = limit := by omega
+  have second : BlockContinues program firstEnv [code[2]'(by decide)] (sievedHeap heap bytes) (primeEnv env heap)
+      (sievedHeap heap bytes ++ [.list (numbers (primes limit))]) := by
+    have filtered := primes_result limit (by omega) (sievedHeap heap bytes) firstEnv (heap.length + 1) bytes size'
+      firstLimit firstArray (by simp [sievedHeap]) correct
+    apply BlockContinues.annAssign
+    simpa only [sievedHeap, List.length_append, List.length_cons, List.length_nil, Nat.add_zero] using filtered
+  exact ⟨bytes, first.append second, size', correct⟩
+
+private def prefixBody : List Stmt := match (code[5]? : Option Stmt) with
+  | some (.forIn _ _ body _) => body | _ => []
+
+private theorem prefix_loop (items remaining : List Nat) (position : Nat) (suffix : items.drop position = remaining)
+    (base : Mutable.Heap) (address : Nat) (found : base[address]? = some (.list (numbers items)))
+    (collected : List Nat) (total : Nat) (env : HeapCalls.Env)
+    (getPrefix : env "prefix" = some (.ref base.length)) (getSum : env "s" = some (number total)) :
+    ∃ finalEnv, BlockContinues program env [.sequenceStepLoop "p" (.ref address) position prefixBody []]
+        (working base (numbers collected) []) finalEnv
+        (working base (numbers (collected ++ fromTotal total remaining)) []) ∧
+      finalEnv "s" = some (number (total + remaining.sum : Nat)) ∧
+      ∀ name, name ≠ "p" → name ≠ "s" → finalEnv name = env name := by
+  induction remaining generalizing position collected total env with
+  | nil =>
+      refine ⟨env, ?_, ?_, fun _ _ _ => rfl⟩
+      · simp only [fromTotal, List.append_nil]
+        apply BlockContinues.sequence_done (items := numbers items)
+          (by simp [sequenceValue, Mutable.sequence, working, prefix_found base _ address _ found])
+        · have missing : items[position]? = none := by
+            simpa [suffix] using (List.head?_drop (l := items) (i := position)).symm
+          simp [numbers, missing]
+        · exact .nil
+      · simpa only [List.sum_nil, Nat.add_zero] using getSum
+  | cons head tail ih =>
+      let bound := setLocal env "p" (number head)
+      let ready := setLocal bound "s" (number (total + head : Nat))
+      let heap := working base (numbers collected) []
+      have getPrefix' : ready "prefix" = some (.ref base.length) := by simpa [ready, bound, setLocal] using getPrefix
+      have getSum' : ready "s" = some (number (total + head : Nat)) := by simp [ready, setLocal]
+      have updated : BlockContinues program bound [prefixBody[0]'(by decide)] heap ready heap := by
+        apply BlockContinues.augAssign (left := number total) (right := number head)
+          (by simpa [bound, setLocal] using getSum) (Evaluates.lookup (by simp [bound, setLocal]))
+        simp [HeapCalls.inplace, Mutable.binary, scalarBinary]
+      have arrayFound : heap[base.length]? = some (.list (numbers collected)) := by simp [heap, ProjectEulerSolutions.HeapCollection.found]
+      have value : Evaluates program ready (.name "s") heap (number (total + head : Nat)) heap := Evaluates.lookup getSum'
+      have appended : BlockContinues program ready [prefixBody[1]'(by decide)] heap ready
+          (working base (numbers (collected ++ [total + head])) []) := by
+        have evaluated := Evaluates.append (Evaluates.lookup getPrefix') arrayFound value arrayFound
+        apply BlockContinues.discard
+        simpa only [heap, numbers, List.map_append, List.map_cons, List.map_nil, store] using evaluated
+      obtain ⟨finalEnv, scanned, finalSum, stable⟩ := ih (position + 1)
+        (by simp [List.drop_add_one_eq_tail_drop, suffix]) (collected ++ [total + head]) (total + head) ready getPrefix' getSum'
+      refine ⟨finalEnv, ?_, ?_, ?_⟩
+      · have selected : items[position]? = some head := by
+          simpa [suffix] using (List.head?_drop (l := items) (i := position)).symm
+        apply BlockContinues.sequence_step (source := .ref address) (items := numbers items) (value := number head)
+          (by simp [sequenceValue, Mutable.sequence, working, prefix_found base _ address _ found]) (by simp [numbers, selected])
+        simpa only [Calls.loopContinuation, show Calls.loopControl prefixBody = false from rfl,
+          Bool.false_eq_true, if_false, fromTotal, List.append_assoc, List.singleton_append, heap] using
+          (updated.append appended).append scanned
+      · simpa only [List.sum_cons, Nat.add_assoc] using finalSum
+      · intro name notP notS
+        exact (stable name notP notS).trans (by simp [ready, bound, setLocal, notP, notS])
+
+/-- The original loop constructs all prefix sums, retaining the prime list and other locals. -/
+theorem prefix_setup (items : List Nat) (heap : Mutable.Heap) (address : Nat) (env : HeapCalls.Env)
+    (getPrimes : env "primes" = some (.ref address)) (found : heap[address]? = some (.list (numbers items))) :
+    ∃ finalEnv, BlockContinues program env ((code.drop 3).take 3) heap finalEnv
+        (heap ++ [.list (numbers (prefixes items))]) ∧
+      finalEnv "prefix" = some (.ref heap.length) ∧ finalEnv "s" = some (number items.sum) ∧
+      ∀ name, name ≠ "prefix" → name ≠ "s" → name ≠ "p" → finalEnv name = env name := by
+  let allocated := setLocal env "prefix" (.ref heap.length)
+  let ready := setLocal allocated "s" (number 0)
+  have first : BlockContinues program env [code[3]'(by decide)] heap allocated (heap ++ [.list (numbers [0])]) :=
+    BlockContinues.annAssign (Evaluates.list (.cons Evaluates.constant .nil))
+  have second : BlockContinues program allocated [code[4]'(by decide)] (heap ++ [.list (numbers [0])]) ready
+      (heap ++ [.list (numbers [0])]) := BlockContinues.assign Evaluates.constant
+  obtain ⟨finalEnv, scanned, finalSum, stable⟩ := prefix_loop items items 0 rfl heap address found [0] 0 ready
+    (by simp [ready, allocated, setLocal]) (by simp [ready, setLocal])
+  have third : BlockContinues program ready [code[5]'(by decide)] (heap ++ [.list (numbers [0])]) finalEnv
+      (heap ++ [.list (numbers (prefixes items))]) := by
+    apply BlockContinues.for_sequence (value := .ref address) (items := numbers items)
+      (by intros; intro impossible; cases impossible)
+      (Evaluates.lookup (by simpa [ready, allocated, setLocal] using getPrimes))
+      (by simp [Mutable.sequence, prefix_found heap _ address _ found])
+    simpa only [working, prefixes, List.singleton_append] using scanned
+  refine ⟨finalEnv, first.append (second.append third), ?_, ?_, ?_⟩
+  · exact (stable "prefix" (by decide) (by decide)).trans (by simp [ready, allocated, setLocal])
+  · simpa only [Nat.zero_add] using finalSum
+  · intro name notPrefix notSum notP
+    exact (stable name notP notSum).trans (by simp [ready, allocated, setLocal, notPrefix, notSum])
+
+private theorem read_prefix (items : List Nat) (index address : Nat) (expression : Expr)
+    (heap : Mutable.Heap) (env : HeapCalls.Env) (inside : index ≤ items.length)
+    (getPrefix : env "prefix" = some (.ref address))
+    (found : heap[address]? = some (.list (numbers (prefixes items))))
+    (ordinary : ∀ a b c, expression ≠ .slice a b c)
+    (evaluated : Evaluates program env expression heap (number index) heap) :
+    Evaluates program env (.subscript (.name "prefix") expression) heap (number (items.take index).sum) heap := by
+  have mapped : (numbers (prefixes items))[index]? = some (number (items.take index).sum) := by
+    simp only [numbers, List.getElem?_map, prefix_get items index inside, Option.map_some]
+  have valid : index < (numbers (prefixes items)).length := by simp only [numbers, List.length_map, prefix_length]; omega
+  have value : (numbers (prefixes items))[index] = number (items.take index).sum :=
+    Option.some.inj ((List.getElem?_eq_getElem valid).symm.trans mapped)
+  apply Evaluates.subscript ordinary (Evaluates.lookup getPrefix) evaluated
+  simpa only [value] using Mutable.getItem_list heap address index (numbers (prefixes items)) found valid
+
+private def capacityCondition : Expr := match (code[7]? : Option Stmt) with
+  | some (.whileDo condition _ _) => condition | _ => .constant .none
+private def capacityBody : List Stmt := match (code[7]? : Option Stmt) with
+  | some (.whileDo _ body _) => body | _ => []
+private def nextIndex : Expr := .binOp (.name "max_len") .add (.constant (.int 1))
+
+/-- The length check prevents evaluating the next prefix entry past the array's end. -/
+private theorem capacity_guard (items : List Nat) (limit current address : Nat) (heap : Mutable.Heap) (env : HeapCalls.Env)
+    (getLimit : env "limit" = some (number limit)) (getMaximum : env "max_len" = some (number current))
+    (getPrefix : env "prefix" = some (.ref address))
+    (found : heap[address]? = some (.list (numbers (prefixes items)))) :
+    Evaluates program env capacityCondition heap
+      (flag (decide (current < items.length ∧ window items 0 (current + 1) < limit))) heap := by
+  have next : Evaluates program env nextIndex heap (number (current + 1 : Nat)) heap :=
+    Evaluates.binary (av := number current) (bv := number 1) (Evaluates.lookup getMaximum) Evaluates.constant
+      (by simp [Mutable.binary, scalarBinary])
+  have sized : Evaluates program env (.builtinCall .len [.name "prefix"]) heap (number (items.length + 1 : Nat)) heap := by
+    apply Evaluates.builtin (.cons (Evaluates.lookup getPrefix) .nil)
+    simp [primitive, Mutable.length, found, numbers]
+  have first : Evaluates program env (.compare nextIndex [(.lt, .builtinCall .len [.name "prefix"])]) heap
+      (flag (decide (current < items.length))) heap := by
+    apply Evaluates.compare next sized
+    simp [HeapCalls.compare, scalarCompare, evalCmpOp]
+  by_cases inside : current < items.length
+  · have looked := read_prefix items (current + 1) address nextIndex heap env (by omega) getPrefix found
+      (by intros; intro impossible; cases impossible) next
+    have second : Evaluates program env (.compare (.subscript (.name "prefix") nextIndex) [(.lt, .name "limit")]) heap
+        (flag (decide (window items 0 (current + 1) < limit))) heap := by
+      apply Evaluates.compare looked (Evaluates.lookup getLimit)
+      simp [window, HeapCalls.compare, scalarCompare, evalCmpOp]
+    simp only [inside, true_and]
+    apply Evaluates.boolean_next (by simpa only [inside, decide_true] using first) rfl rfl
+    exact Evaluates.boolean_last (flag := decide (window items 0 (current + 1) < limit)) second rfl
+  · simp only [inside, false_and, decide_false]
+    apply Evaluates.boolean_stop (by simpa only [inside, decide_false] using first) rfl rfl
+
+/-- Capacity discovery terminates, preserves both tables, and establishes the pruning bound. -/
+theorem capacity_result (items : List Nat) (limit current address : Nat) (heap : Mutable.Heap) (env : HeapCalls.Env)
+    (bounded : current ≤ items.length) (getLimit : env "limit" = some (number limit))
+    (getMaximum : env "max_len" = some (number current)) (getPrefix : env "prefix" = some (.ref address))
+    (found : heap[address]? = some (.list (numbers (prefixes items)))) :
+    ∃ maximum finalEnv, BlockContinues program env [code[7]'(by decide)] heap finalEnv heap ∧
+      maximum ≤ items.length ∧ finalEnv "max_len" = some (number maximum) ∧
+      (maximum = items.length ∨ limit ≤ window items 0 (maximum + 1)) ∧
+      ∀ name, name ≠ "max_len" → finalEnv name = env name := by
+  induction measure : items.length - current using Nat.strong_induction_on generalizing current env with
+  | h measure ih =>
+      have tested := capacity_guard items limit current address heap env getLimit getMaximum getPrefix found
+      by_cases active : current < items.length ∧ window items 0 (current + 1) < limit
+      · let ready := setLocal env "max_len" (number (current + 1 : Nat))
+        obtain ⟨maximum, finalEnv, scanned, finalBound, finalMaximum, stopped, stable⟩ :=
+          ih (items.length - (current + 1)) (by omega) (current + 1) ready (by omega)
+            (by simpa [ready, setLocal] using getLimit) (by simp [ready, setLocal])
+            (by simpa [ready, setLocal] using getPrefix) rfl
+        refine ⟨maximum, finalEnv, ?_, finalBound, finalMaximum, stopped, ?_⟩
+        · apply BlockContinues.while_loop (flag := true) tested (by simp [active, Mutable.truth, scalarTruth])
+          have incremented : BlockContinues program env capacityBody heap ready heap := by
+            apply BlockContinues.augAssign (left := number current) (right := number 1) getMaximum Evaluates.constant
+            simp [HeapCalls.inplace, Mutable.binary, scalarBinary]
+          simpa only [Calls.loopContinuation, show Calls.loopControl capacityBody = false from rfl,
+            Bool.false_eq_true, if_false] using incremented.append scanned
+        · intro name other
+          exact (stable name other).trans (by simp [ready, setLocal, other])
+      · refine ⟨current, env, ?_, bounded, getMaximum, ?_, fun _ _ => rfl⟩
+        · exact BlockContinues.while_loop (flag := false) tested (by simp [active, Mutable.truth, scalarTruth]) .nil
+        · by_cases full : current = items.length
+          · exact Or.inl full
+          · exact Or.inr (by omega)
+
+private structure SearchLocals (env : HeapCalls.Env) (limit maximum count sieveAddress prefixAddress : Nat) : Prop where
+  getLimit : env "limit" = some (number limit)
+  getMaximum : env "max_len" = some (number maximum)
+  getCount : env "n" = some (number count)
+  getSieve : env "is_prime" = some (.ref sieveAddress)
+  getPrefix : env "prefix" = some (.ref prefixAddress)
+
+def preparedHeap (heap : Mutable.Heap) (limit : Nat) (bytes : List UInt8) : Mutable.Heap :=
+  heap ++ [.bytearray [1], .bytearray bytes, .list (numbers (primes limit)), .list (numbers (prefixes (primes limit)))]
+
+/-- All original setup statements establish the native search's arrays, counters, and pruning premise. -/
+theorem prepared_result (limit : Nat) (large : 3 ≤ limit) (heap : Mutable.Heap) (env : HeapCalls.Env)
+    (getLimit : env "limit" = some (number limit)) :
+    ∃ bytes maximum finalEnv, BlockContinues program env (code.take 9) heap finalEnv (preparedHeap heap limit bytes) ∧
+      SearchLocals finalEnv limit maximum (primes limit).length (heap.length + 1) (heap.length + 3) ∧
+      bytes.length = limit ∧ (∀ i byte, bytes[i]? = some byte → (byte.toNat ≠ 0 ↔ Nat.Prime i)) ∧
+      maximum ≤ (primes limit).length ∧ (∀ candidate, Valid (primes limit) limit candidate → candidate.length ≤ maximum) := by
+  obtain ⟨bytes, allocated, size, correct⟩ := prime_setup limit large heap env getLimit
+  let base := sievedHeap heap bytes ++ [.list (numbers (primes limit))]
+  have primesFound : base[heap.length + 2]? = some (.list (numbers (primes limit))) := by
+    simp [base, sievedHeap, List.append_assoc]
+  obtain ⟨prefixEnv, prefixed, getPrefix, getSum, prefixStable⟩ := prefix_setup (primes limit) base
+    (heap.length + 2) (primeEnv env heap) (by simp [primeEnv, setLocal]) primesFound
+  let ready := setLocal prefixEnv "max_len" (number 0)
+  have readyLimit : ready "limit" = some (number limit) := by
+    rw [show ready "limit" = prefixEnv "limit" by simp [ready, setLocal],
+      prefixStable "limit" (by decide) (by decide) (by decide)]
+    simpa [primeEnv, setLocal] using getLimit
+  have readyPrefix : ready "prefix" = some (.ref base.length) := by simpa [ready, setLocal] using getPrefix
+  have readySieve : ready "is_prime" = some (.ref (heap.length + 1)) := by
+    rw [show ready "is_prime" = prefixEnv "is_prime" by simp [ready, setLocal],
+      prefixStable "is_prime" (by decide) (by decide) (by decide)]
+    simp [primeEnv, setLocal]
+  have readyPrimes : ready "primes" = some (.ref (heap.length + 2)) := by
+    rw [show ready "primes" = prefixEnv "primes" by simp [ready, setLocal],
+      prefixStable "primes" (by decide) (by decide) (by decide)]
+    simp [primeEnv, setLocal]
+  have bufferFound : (base ++ [.list (numbers (prefixes (primes limit)))])[base.length]? =
+      some (.list (numbers (prefixes (primes limit)))) := by simp
+  obtain ⟨maximum, capacityEnv, capacity, bounded, getMaximum, stopped, stable⟩ := capacity_result (primes limit) limit 0
+    base.length (base ++ [.list (numbers (prefixes (primes limit)))]) ready (by omega) readyLimit
+    (by simp [ready, setLocal]) readyPrefix bufferFound
+  let finalEnv := setLocal capacityEnv "n" (number (primes limit).length)
+  have counted : BlockContinues program capacityEnv [code[8]'(by decide)]
+      (base ++ [.list (numbers (prefixes (primes limit)))]) finalEnv
+      (base ++ [.list (numbers (prefixes (primes limit)))]) := by
+    apply BlockContinues.assign
+    apply Evaluates.builtin (.cons (Evaluates.lookup ((stable "primes" (by decide)).trans readyPrimes)) .nil)
+    simp [primitive, Mutable.length, prefix_found base _ _ _ primesFound, numbers]
+  have guard : BlockContinues program env [code[0]'(by decide)] heap env heap := by
+    apply BlockContinues.branch (flag := false) (value := flag false)
+      (Evaluates.compare (av := number limit) (bv := number 2) (Evaluates.lookup getLimit) Evaluates.constant
+        (by simp [HeapCalls.compare, scalarCompare, evalCmpOp]; omega)) rfl .nil
+  have initialized : BlockContinues program prefixEnv [code[6]'(by decide)]
+      (base ++ [.list (numbers (prefixes (primes limit)))]) ready
+      (base ++ [.list (numbers (prefixes (primes limit)))]) := BlockContinues.assign Evaluates.constant
+  refine ⟨bytes, maximum, finalEnv, ?_, ?_, size, correct, bounded, ?_⟩
+  · simpa only [base, sievedHeap, preparedHeap, List.append_assoc] using
+      guard.append (allocated.append (prefixed.append (initialized.append (capacity.append counted))))
+  · refine ⟨?_, ?_, by simp [finalEnv, setLocal], ?_, ?_⟩
+    · exact (show finalEnv "limit" = capacityEnv "limit" from by simp [finalEnv, setLocal]).trans
+        ((stable "limit" (by decide)).trans readyLimit)
+    · exact (show finalEnv "max_len" = capacityEnv "max_len" from by simp [finalEnv, setLocal]).trans getMaximum
+    · exact (show finalEnv "is_prime" = capacityEnv "is_prime" from by simp [finalEnv, setLocal]).trans
+        ((stable "is_prime" (by decide)).trans readySieve)
+    · have saved := (stable "prefix" (by decide)).trans readyPrefix
+      simpa [finalEnv, setLocal, base, sievedHeap] using saved
+  · exact maximum_length_bound (primes limit) (primes_ordered limit (by omega)) limit maximum stopped
+
+end longest_consecutive_prime_sum
 end solvers.«50»
