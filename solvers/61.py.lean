@@ -1295,3 +1295,182 @@ theorem build_prefix_map_source_result (values : List Int) (heap : FormalSW.PyAs
   exact ⟨finalHeap, ⟨store⟩, returned⟩
 
 end solvers.«61»
+
+namespace solvers.«61».dfs
+open FormalSW.PyAst FormalSW.PyAst.HeapCalls
+
+private def integerSet (items : List Int) : Mutable.Object := .set (items.map Constant.int)
+
+def extendedSet (setName itemName : String) : Expr :=
+  .binOp (.name setName) .bitOr (.builtinCall .setDisplay [.name itemName])
+
+/-- The recursive call's set-union argument preserves its parent set and allocates two objects. -/
+theorem grow_set (heap : Mutable.Heap) (address : Nat) (items : List Int) (value : Int)
+    (fresh : value ∉ items) (found : heap[address]? = some (integerSet items))
+    (setName itemName : String) (env : HeapCalls.Env)
+    (getSet : env setName = some (.ref address)) (getItem : env itemName = some (number value))
+    (globals : Mutable.Globals := []) :
+    Evaluates program env (extendedSet setName itemName) heap (.ref (heap.length + 1))
+      (heap ++ [.set [.int value], integerSet (items ++ [value])]) globals := by
+  have literal : Evaluates program env (.builtinCall .setDisplay [.name itemName]) heap (.ref heap.length)
+      (heap ++ [.set [.int value]]) globals := by
+    apply Evaluates.builtin (.cons (Evaluates.lookup getItem) .nil)
+    exact Mutable.allocateSetValues_singleton heap (.int value)
+  have left : (heap ++ [.set [.int value]])[address]? = some (integerSet items) :=
+    build_prefix_map.found_append _ _ _ _ found
+  apply Evaluates.binary (middle := heap) (afterRight := heap ++ [.set [.int value]])
+    (Evaluates.lookup getSet) literal
+  have operation := Mutable.binary_union_sets (heap ++ [.set [.int value]]) address heap.length
+    (items.map Constant.int) [.int value] left (by simp)
+  simpa only [ScalarSet.union_singleton_ints items value fresh, integerSet, List.length_append,
+    List.length_cons, List.length_nil, Nat.add_zero, List.append_assoc, List.singleton_append] using operation
+
+private abbrev Node := ProjectEulerSolutions.PolygonalCycle.Node
+
+def references (nodes : List (Nat × Node)) : List Mutable.Value := nodes.map (fun node => .ref node.1)
+
+/-- A path retains the actual tuple objects together with their numerical model. -/
+structure PathView (heap : Mutable.Heap) (address : Nat) (nodes : List (Nat × Node)) where
+  found : heap[address]? = some (.list (references nodes))
+  contents : ∀ target item, (target, item) ∈ nodes →
+    heap[target]? = some (.tuple [number item.1, number item.2])
+
+variable {heap : Mutable.Heap} {address : Nat} {nodes : List (Nat × Node)}
+
+def PathView.append (view : PathView heap address nodes) (extra : Mutable.Heap) :
+    PathView (heap ++ extra) address nodes where
+  found := build_prefix_map.found_append _ _ _ _ view.found
+  contents := by
+    intro target item member
+    exact build_prefix_map.found_append _ _ _ _ (view.contents target item member)
+
+def pathHeap (heap : Mutable.Heap) (nodes : List (Nat × Node)) (value kind : Int) : Mutable.Heap :=
+  heap ++ [.tuple [number value, number kind], .list [.ref heap.length],
+    .list (references nodes ++ [.ref heap.length])]
+
+def extendedPath : Expr :=
+  .binOp (.name "path") .add (.list [.tuple [.name "nxt", .name "t"]])
+
+/-- Python's concatenation creates a tuple, a temporary singleton list, and a new path list. -/
+theorem grow_path (view : PathView heap address nodes) (value kind : Int) (env : HeapCalls.Env)
+    (getPath : env "path" = some (.ref address)) (getValue : env "nxt" = some (number value))
+    (getKind : env "t" = some (number kind)) (globals : Mutable.Globals := []) :
+    Evaluates program env extendedPath heap (.ref (heap.length + 2)) (pathHeap heap nodes value kind) globals := by
+  have tuple : Evaluates program env (.tuple [.name "nxt", .name "t"]) heap (.ref heap.length)
+      (heap ++ [.tuple [number value, number kind]]) globals :=
+    Evaluates.tuple (.cons (Evaluates.lookup getValue) (.cons (Evaluates.lookup getKind) .nil)) (by simp)
+  have singleton : Evaluates program env (.list [.tuple [.name "nxt", .name "t"]]) heap (.ref (heap.length + 1))
+      (heap ++ [.tuple [number value, number kind], .list [.ref heap.length]]) globals := by
+    convert Evaluates.list (.cons tuple .nil) using 1 <;> simp [List.length_append, List.append_assoc]
+  have left : (heap ++ [.tuple [number value, number kind], .list [.ref heap.length]])[address]? =
+      some (.list (references nodes)) := by
+    exact build_prefix_map.found_append heap
+      [.tuple [number value, number kind], .list [.ref heap.length]] address _ view.found
+  have operation : Mutable.binary .add (.ref address) (.ref (heap.length + 1))
+      (heap ++ [.tuple [number value, number kind], .list [.ref heap.length]]) =
+      some (.ok (.ref (heap.length + 2)), pathHeap heap nodes value kind) := by
+    simp [Mutable.binary, show (BinOp.add == BinOp.add) = true from rfl, Mutable.array, left,
+      Mutable.allocate, Except.map, pathHeap, List.append_assoc]
+  apply Evaluates.binary (middle := heap)
+    (afterRight := heap ++ [.tuple [number value, number kind], .list [.ref heap.length]])
+    (Evaluates.lookup getPath) singleton
+  simpa only [pathHeap, List.length_append, List.length_cons, List.length_nil, Nat.add_zero,
+    List.append_assoc, List.singleton_append] using operation
+
+def PathView.grown (view : PathView heap address nodes) (value kind : Int) :
+    PathView (pathHeap heap nodes value kind) (heap.length + 2) (nodes ++ [(heap.length, (value, kind))]) where
+  found := by simp [pathHeap, references]
+  contents := by
+    intro target item member
+    rcases List.mem_append.mp member with old | fresh
+    · exact build_prefix_map.found_append _ _ _ _ (view.contents target item old)
+    · obtain ⟨rfl, rfl⟩ := Prod.mk.inj (List.mem_singleton.mp fresh)
+      simp [pathHeap]
+
+def usedKinds (nodes : List (Nat × Node)) : List Int := nodes.map (fun node => node.2.2)
+def usedNumbers (nodes : List (Nat × Node)) : List Int := nodes.map (fun node => node.2.1)
+
+def argumentHeap (heap : Mutable.Heap) (nodes : List (Nat × Node)) (value kind : Int) : Mutable.Heap :=
+  pathHeap heap nodes value kind ++
+    [.set [.int kind], integerSet (usedKinds nodes ++ [kind]),
+     .set [.int value], integerSet (usedNumbers nodes ++ [value])]
+
+def recursiveArguments : List Expr :=
+  [extendedPath, extendedSet "used_types" "t", extendedSet "used_nums" "nxt",
+   .name "__formalsw_cell_solve_pref_map", .name "__formalsw_cell_solve_types"]
+def recursiveCall : Expr := .call (.name "__formalsw_local_solve_dfs") recursiveArguments
+def resultCondition : Expr := .unaryOp .not (.builtinCall .identity [.name "res", .constant .none])
+def nextValues : Expr :=
+  .call (.attribute (.subscript
+    (.subscript (.name "__formalsw_cell_solve_pref_map") (.constant (.int 0))) (.name "t")) "get")
+    [.name "suffix", .list []]
+def innerBody : List Stmt :=
+  [.ifThen (.membership (.name "nxt") (.name "used_nums") false) [.continueLoop] [],
+   .assign [.name "res"] recursiveCall,
+   .ifThen resultCondition [.return (.name "res")] []]
+def outerBody : List Stmt :=
+  [.ifThen (.membership (.name "t") (.name "used_types") false) [.continueLoop] [],
+   .forIn (.name "nxt") nextValues innerBody []]
+def code : List Stmt :=
+  [.ifThen condition closedBody [],
+   .assign [.name "suffix"] (.binOp lastExpression .mod (.constant (.int 100))),
+   .forIn (.name "t") solve_setup.typeCell outerBody [], .return (.constant .none)]
+
+theorem code_source :
+    executableBody ((findFunctionIn program.body "__formalsw_local_solve_dfs").getD ([], [])).2 = code := rfl
+
+/-- The source prepares all five recursive arguments in order, preserving every parent object. -/
+theorem arguments_evaluate (view : PathView heap address nodes) (value kind : Int)
+    (typesAddress numbersAddress : Nat)
+    (typesFound : heap[typesAddress]? = some (integerSet (usedKinds nodes)))
+    (numbersFound : heap[numbersAddress]? = some (integerSet (usedNumbers nodes)))
+    (freshKind : kind ∉ usedKinds nodes) (freshValue : value ∉ usedNumbers nodes)
+    (env : HeapCalls.Env) (prefixCell typesCell : Mutable.Value)
+    (getPath : env "path" = some (.ref address))
+    (getTypes : env "used_types" = some (.ref typesAddress))
+    (getNumbers : env "used_nums" = some (.ref numbersAddress))
+    (getValue : env "nxt" = some (number value)) (getKind : env "t" = some (number kind))
+    (getPrefixCell : env "__formalsw_cell_solve_pref_map" = some prefixCell)
+    (getTypesCell : env "__formalsw_cell_solve_types" = some typesCell)
+    (globals : Mutable.Globals := []) :
+    Evaluates.Arguments program env recursiveArguments heap
+      [.ref (heap.length + 2), .ref (heap.length + 4), .ref (heap.length + 6), prefixCell, typesCell]
+      (argumentHeap heap nodes value kind) globals := by
+  let pathReady := pathHeap heap nodes value kind
+  let typesReady := pathReady ++ [.set [.int kind], integerSet (usedKinds nodes ++ [kind])]
+  have typesPreserved : pathReady[typesAddress]? = some (integerSet (usedKinds nodes)) :=
+    build_prefix_map.found_append _ _ _ _ typesFound
+  have numbersPreserved : typesReady[numbersAddress]? = some (integerSet (usedNumbers nodes)) := by
+    have first : pathReady[numbersAddress]? = some (integerSet (usedNumbers nodes)) :=
+      build_prefix_map.found_append _ _ _ _ numbersFound
+    exact build_prefix_map.found_append _ _ _ _ first
+  have typeRun : Evaluates program env (extendedSet "used_types" "t") pathReady (.ref (heap.length + 4))
+      typesReady globals := by
+    simpa [typesReady, pathReady, pathHeap, List.length_append, List.append_assoc, Nat.add_assoc] using
+      grow_set pathReady typesAddress (usedKinds nodes) kind freshKind typesPreserved "used_types" "t"
+        env getTypes getKind globals
+  have numberRun : Evaluates program env (extendedSet "used_nums" "nxt") typesReady (.ref (heap.length + 6))
+      (argumentHeap heap nodes value kind) globals := by
+    simpa [typesReady, pathReady, pathHeap, argumentHeap, List.length_append, List.append_assoc, Nat.add_assoc] using
+      grow_set typesReady numbersAddress (usedNumbers nodes) value freshValue numbersPreserved "used_nums" "nxt"
+        env getNumbers getValue globals
+  exact .cons (grow_path view value kind env getPath getValue getKind globals)
+    (.cons typeRun (.cons numberRun (.cons (Evaluates.lookup getPrefixCell) (.cons (Evaluates.lookup getTypesCell) .nil))))
+
+def PathView.arguments (view : PathView heap address nodes) (value kind : Int) :
+    PathView (argumentHeap heap nodes value kind) (heap.length + 2) (nodes ++ [(heap.length, (value, kind))]) :=
+  (view.grown value kind).append
+    [.set [.int kind], integerSet (usedKinds nodes ++ [kind]),
+     .set [.int value], integerSet (usedNumbers nodes ++ [value])]
+
+theorem argument_types (heap : Mutable.Heap) (nodes : List (Nat × Node)) (value kind : Int) :
+    (argumentHeap heap nodes value kind)[heap.length + 4]? =
+      some (integerSet (usedKinds (nodes ++ [(heap.length, (value, kind))]))) := by
+  simp [argumentHeap, pathHeap, usedKinds, List.append_assoc]
+
+theorem argument_numbers (heap : Mutable.Heap) (nodes : List (Nat × Node)) (value kind : Int) :
+    (argumentHeap heap nodes value kind)[heap.length + 6]? =
+      some (integerSet (usedNumbers (nodes ++ [(heap.length, (value, kind))]))) := by
+  simp [argumentHeap, pathHeap, usedNumbers, List.append_assoc]
+
+end solvers.«61».dfs
