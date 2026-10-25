@@ -1,6 +1,7 @@
 import «.formalsw».solvers.«49.py.ast»
 import lang.py.FormalSW.HeapCalls
 import ProjectEulerSolutions.Lib.BooleanPrimeSieve
+import ProjectEulerSolutions.Lib.HeapCollection
 
 set_option Elab.async false
 
@@ -336,5 +337,124 @@ theorem «Supported» (n : Int) : (HeapCalls.call program "sieve_primes_upto" [n
   («Returns» n).supported
 
 end sieve_primes_upto
+
+namespace find_prime_perm_arith_sequence
+open ProjectEulerSolutions.HeapCollection
+
+private def code : List Stmt :=
+  executableBody ((findFunctionIn program.body "find_prime_perm_arith_sequence").getD ([], [])).2
+private def numbers (items : List Nat) : List Mutable.Value := items.map (fun (n : Nat) => number n)
+private def primeBody (collector : Nat) : List Stmt :=
+  [.ifThen (.subscript (.name "is_prime") (.name "p")) [.comprehensionAppend collector (.name "p")] []]
+
+/-- The comprehension filters the sieve in increasing four-digit order. -/
+def primes4d : List Nat := (List.range' 1000 9000).filter (fun p => decide (Nat.Prime p))
+
+private theorem read_prime (heap : Mutable.Heap) (env : HeapCalls.Env) (address limit p : Nat)
+    (inside : p≤limit) (getP : env "p"=some (number p))
+    (getArray : env "is_prime"=some (.ref address))
+    (found : heap[address]?=some (.list (sieve_primes_upto.values (sieve_primes_upto.answer limit)))) :
+    Evaluates program env (.subscript (.name "is_prime") (.name "p")) heap
+      (flag (decide (Nat.Prime p))) heap := by
+  have entry := sieve_primes_upto.answer_get limit p inside
+  have mapped : (sieve_primes_upto.values (sieve_primes_upto.answer limit))[p]?=
+      some (flag (decide (Nat.Prime p))) := by
+    rw [sieve_primes_upto.values, List.getElem?_map, entry]
+    rfl
+  have size : (sieve_primes_upto.values (sieve_primes_upto.answer limit)).length=limit+1 := by
+    rw [sieve_primes_upto.values, List.length_map, sieve_primes_upto.answer_length]
+  have valid : p<(sieve_primes_upto.values (sieve_primes_upto.answer limit)).length := by omega
+  have live : (sieve_primes_upto.values (sieve_primes_upto.answer limit))[p]=flag (decide (Nat.Prime p)) :=
+    Option.some.inj ((List.getElem?_eq_getElem valid).symm.trans mapped)
+  apply Evaluates.subscript (middle := heap) (afterIndex := heap)
+    (by intros; intro equality; cases equality) (Evaluates.lookup getArray) (Evaluates.lookup getP)
+  simpa only [live] using Mutable.getItem_list heap address p _ found valid
+
+private theorem prime_loop (first count : Nat) (stop : first+count=10000)
+    (base : Mutable.Heap) (address : Nat)
+    (found : base[address]?=some (.list (sieve_primes_upto.values (sieve_primes_upto.answer 9999))))
+    (items : List Nat) (env : HeapCalls.Env) (getArray : env "is_prime"=some (.ref address)) :
+    ∃ finalEnv, BlockContinues program env
+      [.rangeStepLoop "p" first 10000 1 (primeBody base.length) []]
+      (base++[.list (numbers items)]) finalEnv
+      (base++[.list (numbers (items++(List.range' first count).filter (fun p => decide (Nat.Prime p))))]) := by
+  induction count generalizing first items env with
+  | zero =>
+      refine ⟨env, ?_⟩
+      simp only [List.range'_zero, List.filter_nil, List.append_nil]
+      exact BlockContinues.range_done (by simp [Calls.rangeContinues]; omega) .nil
+  | succ count ih =>
+      let bound := setLocal env "p" (number first)
+      have getArray' : bound "is_prime"=some (.ref address) := by simpa [bound, setLocal] using getArray
+      have tested := read_prime (base++[.list (numbers items)]) bound address 9999 first (by omega)
+        (by simp [bound, setLocal]) getArray' (prefix_found base _ address _ found)
+      have looked : Evaluates program bound (.name "p") (working base (numbers items) [])
+          (number first) (working base (numbers items) []) := Evaluates.lookup (by simp [bound, setLocal])
+      by_cases prime : Nat.Prime first
+      · have emitted : BlockContinues program bound (primeBody base.length)
+            (base++[.list (numbers items)]) bound (base++[.list (numbers (items++[first]))]) := by
+          apply BlockContinues.branch (flag := true) tested (by simp [prime, Mutable.truth, scalarTruth])
+          simpa only [working, numbers, List.map_append, List.map_cons, List.map_nil, List.append_nil] using
+            emit base (numbers items) [] [] (number first)
+              (by simpa only [List.append_nil] using looked)
+        obtain ⟨finalEnv, rest⟩ := ih (first+1) (by omega) (items++[first]) bound getArray'
+        refine ⟨finalEnv, ?_⟩
+        apply BlockContinues.range_step (by simp [Calls.rangeContinues]; omega)
+        simpa only [Calls.loopContinuation, Calls.loopControl, Calls.loopControlStmt, primeBody,
+          Bool.false_or, Bool.false_eq_true, if_false, List.range'_succ, List.filter_cons,
+          show decide (Nat.Prime first)=true by simp [prime], if_true, Int.natCast_add,
+          Int.natCast_one, List.append_assoc, List.singleton_append] using emitted.append rest
+      · have skipped : BlockContinues program bound (primeBody base.length)
+            (base++[.list (numbers items)]) bound (base++[.list (numbers items)]) := by
+          exact BlockContinues.branch (flag := false) tested (by simp [prime, Mutable.truth, scalarTruth]) .nil
+        obtain ⟨finalEnv, rest⟩ := ih (first+1) (by omega) items bound getArray'
+        refine ⟨finalEnv, ?_⟩
+        apply BlockContinues.range_step (by simp [Calls.rangeContinues]; omega)
+        simpa only [Calls.loopContinuation, Calls.loopControl, Calls.loopControlStmt, primeBody,
+          Bool.false_or, Bool.false_eq_true, if_false, List.range'_succ, List.filter_cons,
+          show decide (Nat.Prime first)=false by simp [prime], Int.natCast_add,
+          Int.natCast_one] using skipped.append rest
+
+/-- The actual filtered comprehension allocates one list and leaves the sieve intact. -/
+theorem primes_result (heap : Mutable.Heap) (env : HeapCalls.Env) (address : Nat)
+    (getArray : env "is_prime"=some (.ref address))
+    (found : heap[address]?=some (.list (sieve_primes_upto.values (sieve_primes_upto.answer 9999)))) :
+    Evaluates program env
+      (.listComp (.name "p") [("p", .call (.name "range") [.constant (.int 1000),.constant (.int 10000)],
+        [.subscript (.name "is_prime") (.name "p")])]) heap (.ref heap.length)
+      (heap++[.list (numbers primes4d)]) := by
+  obtain ⟨finalEnv, executed⟩ := prime_loop 1000 9000 rfl heap address found []
+    (comprehensionEnv env [("p", .call (.name "range") [.constant (.int 1000),.constant (.int 10000)],
+      [.subscript (.name "is_prime") (.name "p")])]) (by simpa [comprehensionEnv] using getArray)
+  apply Evaluates.list_comp_range (values := [number 1000,number 10000])
+    (start := 1000) (stop := 10000) (stride := 1) (.cons Evaluates.constant (.cons Evaluates.constant .nil)) rfl
+  simpa only [comprehensionFilters, comprehensionBody, primeBody, List.nil_append, primes4d] using executed
+
+def preparedHeap (heap : Mutable.Heap) : Mutable.Heap :=
+  sieve_primes_upto.tableHeap heap (sieve_primes_upto.answer 9999)++[.list (numbers primes4d)]
+
+def preparedEnv (env : HeapCalls.Env) (heap : Mutable.Heap) : HeapCalls.Env :=
+  setLocal (setLocal env "is_prime" (.ref (heap.length+1))) "primes_4d" (.ref (heap.length+2))
+
+/-- The first two original statements construct exactly the four-digit primes. -/
+theorem setup_result (heap : Mutable.Heap) (env : HeapCalls.Env) :
+    BlockContinues program env (code.take 2) heap (preparedEnv env heap) (preparedHeap heap) := by
+  let afterSieve := sieve_primes_upto.tableHeap heap (sieve_primes_upto.answer 9999)
+  let bound := setLocal env "is_prime" (.ref (heap.length+1))
+  have sieve : BlockContinues program env [code[0]'(by decide)] heap bound afterSieve := by
+    apply BlockContinues.assign
+    exact Evaluates.call (.cons Evaluates.constant .nil) (sieve_primes_upto.result 9999 heap)
+  have selected : BlockContinues program bound [code[1]'(by decide)] afterSieve
+      (preparedEnv env heap) (preparedHeap heap) := by
+    have evaluated := primes_result afterSieve bound (heap.length+1) (by simp [bound, setLocal])
+      (by simp [afterSieve, sieve_primes_upto.tableHeap])
+    simpa only [afterSieve, sieve_primes_upto.tableHeap, List.length_append, List.length_cons,
+      List.length_nil, Nat.add_zero, preparedHeap, preparedEnv, bound] using BlockContinues.assign evaluated
+  exact sieve.append selected
+
+theorem primes4d_mem (p : Nat) : p ∈ primes4d ↔ 1000≤p ∧ p<10000 ∧ Nat.Prime p := by
+  simp [primes4d, List.mem_range'_1, and_assoc]
+
+end find_prime_perm_arith_sequence
 end solvers.«49»
 
