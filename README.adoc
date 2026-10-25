@@ -586,7 +586,7 @@ Reproduce the prime lists and exact cache with `python3 generate_prime_pair_cert
 
 New rows use a proved natural-number evaluator; possible-edge certificates may also check only excluded edges, with the selected result verified separately. The larger certificate can omit explicit rejection checks for pairs outside its seeded sum budget. A proved search equality lets that certificate use sparse adjacency lookup directly, preserving the selected list and strict tie behavior. Small divisors checked by the actual source scan provide shorter rejection certificates.
 
-Problem 61 accepts the largest required polygonal type in both implementations, with eight as the default. Both return the greatest cycle sum, or zero when no cycle exists. Polygonal growth proves that the family generators omit no four-digit value, and a general mathematical theorem equates prefix lookup with scanning complete families. The complete reference source is proved to terminate for every integer type bound and return its exhaustive maximum-search model, including the default call. Source proofs also cover the optimized family generator and prefix-map builder. The optimized recursive source search and final `Equiv` binding remain pending.
+Problem 61 has structural source termination and equivalence proofs for every integer maximum polygonal type. Both searches return the greatest cycle sum, or zero if no cycle exists. Polygonal growth proves complete family generation; ordered prefix buckets cover the same candidates as full family scans. The proofs track dictionary construction, duplicate-number checks, decreasing remaining-type lists, recursive maxima, and omitted default arguments. No fixed index cutoff or whole-program evaluation is used; the proofs use only standard Lean axioms.
 
 Problem 62’s public reference now has the same single problem-level argument as the optimized solver: `naive(target)` corresponds to `solve(k)`. It expands complete digit widths without an externally supplied cutoff. The previous finite-window equivalence entry is archived as an attempt. The mathematical width invariants and root-partition certificates remain useful for proving the unbounded contract, but do not yet establish that contract.
 
@@ -732,7 +732,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/58.py[58.py] | link:solvers/58.md[58.md] | link:solvers/58.py.lean[58.py.lean] | 0.097 | 26241 |
 | link:solvers/59.py[59.py] | link:solvers/59.md[59.md] | link:solvers/59.py.lean[59.py.lean] | 0.086 | 129448 |
 | link:solvers/60.py[60.py] | link:solvers/60.md[60.md] | link:solvers/60.py.lean[60.py.lean] | 0.471 | 26033 |
-| link:solvers/61.py[61.py] | link:solvers/61.md[61.md] |  | 0.057 | 28684 |
+| link:solvers/61.py[61.py] | link:solvers/61.md[61.md] | link:solvers/61.py.lean[61.py.lean] | 0.057 | 28684 |
 | link:solvers/62.py[62.py] | link:solvers/62.md[62.md] | link:solvers/62.py.lean[62.py.lean] | 0.145 | 127035954683 |
 | link:solvers/63.py[63.py] | link:solvers/63.md[63.md] |  | 0.070 | 49 |
 | link:solvers/64.py[64.py] | link:solvers/64.md[64.md] |  | 0.132 | 1322 |

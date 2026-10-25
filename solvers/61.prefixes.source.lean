@@ -21,7 +21,7 @@ def lookup : List (Int × Nat) → Int → Option Nat
 private def encode (entries : List (Int × Nat)) : List (Constant × Mutable.Value) :=
   entries.map (fun (key, address) => (.int key, .ref address))
 
-private theorem lookup_encode (entries : List (Int × Nat)) (key : Int) :
+theorem lookup_encode (entries : List (Int × Nat)) (key : Int) :
     ScalarDict.lookup (encode entries) (.int key) = (lookup entries key).map Mutable.Value.ref := by
   induction entries with
   | nil => rfl
