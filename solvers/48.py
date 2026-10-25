@@ -1,8 +1,12 @@
 #!/usr/bin/env python
-from typing import Tuple
 
 
 def solve(n: int, k: int = 10) -> str:
+    """
+    @formalsw: Requires(k >= 0)
+    @formalsw: Py from project_euler_statements.p48 import naive_digits
+    @formalsw: Equiv(naive_digits)
+    """
     mod = 10**k
     s = 0
     for i in range(1, n + 1):

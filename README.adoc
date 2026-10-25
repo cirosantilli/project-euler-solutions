@@ -556,6 +556,8 @@ Problem 46’s source-level equivalence proof covers the shared mutable prime li
 
 Problem 47’s source-level equivalence proof covers guarded primality calls, filtered sums, mutable sieve allocation and updates, streak counting, early return, and repeated sieve rebuilding after doubling. The contract covers every positive factor count with an equal run length and every positive initial bound. Reference termination and the least-run argument are conditional on the existing `ProjectEulerStatements.P47.exists_consecutive_with_n_factors` axiom; the sieve proof itself uses only standard Lean axioms. No new axiom is introduced.
 
+Problem 48’s source-level equivalence proof connects repeated modular multiplication to the three-argument `pow` builtin and the exact self-power sum. It covers every integer bound and nonnegative decimal width, including empty ranges, width zero, string conversion, and leading-zero padding. The reference helpers also terminate for negative exponents and signed nonzero moduli. The proofs use only standard Lean axioms.
+
 ====== Problem 14: Collatz termination
 
 Research checked on 2026-10-25. The existing `ProjectEulerStatements.P14.collatzConjecture` assumes that each positive natural number eventually reaches 1. The reference source proofs are conditional on that exact assumption; they do not establish the conjecture. Zero is handled separately by the implementation. Negative starting values are outside the termination claim.
@@ -683,7 +685,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/45.py[45.py] | link:solvers/45.md[45.md] | link:solvers/45.py.lean[45.py.lean] | 0.075 | 1533776805 |
 | link:solvers/46.py[46.py] | link:solvers/46.md[46.md] | link:solvers/46.py.lean[46.py.lean] | 0.163 | 5777 |
 | link:solvers/47.py[47.py] | link:solvers/47.md[47.md] | link:solvers/47.py.lean[47.py.lean] | 0.116 | 134043 |
-| link:solvers/48.py[48.py] | link:solvers/48.md[48.md] |  | 0.114 | 9110846700 |
+| link:solvers/48.py[48.py] | link:solvers/48.md[48.md] | link:solvers/48.py.lean[48.py.lean] | 0.114 | 9110846700 |
 | link:solvers/49.py[49.py] | link:solvers/49.md[49.md] |  | 0.129 | 296962999629 |
 | link:solvers/50.py[50.py] | link:solvers/50.md[50.md] |  | 0.150 | 997651 |
 | link:solvers/51.py[51.py] | link:solvers/51.md[51.md] |  | 0.149 | 121313 |
