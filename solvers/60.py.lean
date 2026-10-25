@@ -5,6 +5,7 @@ import ProjectEulerSolutions.Lib.DecimalShift
 import ProjectEulerSolutions.Lib.PrimeSieve
 import ProjectEulerSolutions.Lib.IntPairCache
 import ProjectEulerSolutions.Lib.HeapCollection
+import ProjectEulerSolutions.Lib.CliqueSearch
 import lang.py.FormalSW.ComprehensionCalls
 import Mathlib.Data.Nat.Sqrt
 
@@ -2650,3 +2651,378 @@ def initializedIncumbent (heap buffers : Mutable.Heap) (limit : Int) :
   selectedFound := by simp [solve_setup.initializedHeap, solve_setup.searchHeap, primes_up_to.numbers]
 
 end solvers.«60»
+
+
+namespace solvers.«60».dfs
+open FormalSW.PyAst FormalSW.PyAst.HeapCalls
+open ProjectEulerSolutions
+private abbrev program := Solvers.P60Ast.module
+private abbrev number (value : Int) : Mutable.Value := .scalar (.int value)
+private abbrev flag (value : Bool) : Mutable.Value := .scalar (.bool value)
+private abbrev numbers := primes_up_to.numbers
+private abbrev nothing : Mutable.Value := .scalar .none
+variable {heap : Mutable.Heap} {sumCell setCell : Nat} {bound : Int} {selected : List Nat}
+  {globals : Mutable.Globals}
+
+def sumExpression : Expr := .subscript (.name "__formalsw_cell_solve_best_sum") (.constant (.int 0))
+def copyExpression : Expr := .subscript (.name "clique") (.slice none none none)
+def improveTest : Expr := .compare (.name "curr_sum") [(.lt, sumExpression)]
+def improveCode : List Stmt :=
+  [.assign [sumExpression] (.name "curr_sum"),
+   .assign [.subscript (.name "__formalsw_cell_solve_best_set") (.constant (.int 0))] copyExpression]
+def leafCode : List Stmt :=
+  [.ifThen improveTest improveCode [], .return (.constant .none)]
+def code : List Stmt :=
+  executableBody ((findFunctionIn program.body "__formalsw_local_solve_dfs").getD ([], [])).2
+
+theorem code_source : code =
+    .assign [.name "k"] (.builtinCall .len [.name "clique"]) ::
+    .ifThen (.compare (.name "k") [(.eq, .constant (.int 5))]) leafCode [] :: code.drop 2 := rfl
+
+theorem cells_distinct (incumbent : Incumbent heap sumCell setCell bound selected) : sumCell ≠ setCell := by
+  intro same
+  have impossible := incumbent.sumFound
+  rw [same, incumbent.setFound] at impossible
+  cases impossible
+
+private theorem clique_ne_sum (incumbent : Incumbent heap sumCell setCell bound selected)
+    (address : Nat) (clique : List Nat) (found : heap[address]? = some (.list (numbers clique)))
+    (size : clique.length = 5) : sumCell ≠ address := by
+  intro same
+  have impossible := incumbent.sumFound
+  rw [same, found] at impossible
+  have lengthEq := congrArg List.length (Mutable.Object.list.inj (Option.some.inj impossible))
+  simp only [numbers, primes_up_to.numbers, List.length_map, List.length_cons, List.length_nil] at lengthEq
+  omega
+
+def sumHeap (heap : Mutable.Heap) (sumCell : Nat) (sum : Int) : Mutable.Heap :=
+  heap.set sumCell (.list [number sum])
+
+def improvedHeap (heap : Mutable.Heap) (sumCell setCell : Nat) (sum : Int) (clique : List Nat) : Mutable.Heap :=
+  (sumHeap heap sumCell sum ++ [Mutable.Object.list (numbers clique)]).set setCell (.list [.ref heap.length])
+
+def leafHeap (heap : Mutable.Heap) (sumCell setCell : Nat) (sum bound : Int) (clique : List Nat) : Mutable.Heap :=
+  if sum < bound then improvedHeap heap sumCell setCell sum clique else heap
+
+private theorem read_cell (env : HeapCalls.Env) (name : String) (address : Nat) (value : Mutable.Value)
+    (getCell : env name = some (.ref address)) (found : heap[address]? = some (.list [value])) :
+    Evaluates program env (.subscript (.name name) (.constant (.int 0))) heap value heap globals := by
+  apply Evaluates.subscript (by intros; simp) (Evaluates.lookup getCell) Evaluates.constant
+  exact Mutable.getItem_list heap address 0 [value] found (by simp)
+
+theorem improve_executes (env : HeapCalls.Env) (heap : Mutable.Heap) (sumCell setCell : Nat)
+    (bound sum : Int) (selected clique : List Nat) (cliqueAddress : Nat)
+    (incumbent : Incumbent heap sumCell setCell bound selected)
+    (found : heap[cliqueAddress]? = some (.list (numbers clique))) (size : clique.length = 5)
+    (getSum : env "curr_sum" = some (number sum))
+    (getSumCell : env "__formalsw_cell_solve_best_sum" = some (.ref sumCell))
+    (getSetCell : env "__formalsw_cell_solve_best_set" = some (.ref setCell))
+    (getClique : env "clique" = some (.ref cliqueAddress)) :
+    BlockContinues program env improveCode heap env (improvedHeap heap sumCell setCell sum clique) globals := by
+  let written := sumHeap heap sumCell sum
+  let copied := written ++ [.list (numbers clique)]
+  have first : BlockContinues program env [improveCode[0]'(by decide)] heap env written globals := by
+    apply BlockContinues.setItem (by intros; simp) (Evaluates.lookup getSum)
+      (.cons (Evaluates.lookup getSumCell) (.cons Evaluates.constant .nil))
+    simp [Mutable.setItem, incumbent.sumFound, written, sumHeap, Mutable.index, Except.map, number]
+  have retained : written[cliqueAddress]? = some (.list (numbers clique)) := by
+    simpa only [written, sumHeap, List.getElem?_set_ne (clique_ne_sum incumbent cliqueAddress clique found size)] using found
+  have copiedEval : Evaluates program env copyExpression written (.ref heap.length) copied globals := by
+    apply Evaluates.slice (.cons (Evaluates.lookup getClique)
+      (.cons Evaluates.constant (.cons Evaluates.constant (.cons Evaluates.constant .nil))))
+    simpa [written, sumHeap] using Mutable.getSlice_list_copy written cliqueAddress (numbers clique) retained
+  have setRetained : written[setCell]? = some (.list [.ref incumbent.selectedAddress]) := by
+    simpa only [written, sumHeap, List.getElem?_set_ne (cells_distinct incumbent)] using incumbent.setFound
+  have setCopied : copied[setCell]? = some (.list [.ref incumbent.selectedAddress]) :=
+    HeapCollection.prefix_found written _ _ _ setRetained
+  have second : BlockContinues program env [improveCode[1]'(by decide)] written env
+      (improvedHeap heap sumCell setCell sum clique) globals := by
+    apply BlockContinues.setItem (by intros; simp) copiedEval
+      (.cons (Evaluates.lookup getSetCell) (.cons Evaluates.constant .nil))
+    simp [Mutable.setItem, setCopied, improvedHeap, copied, written, Mutable.index, Except.map]
+  simpa [improveCode] using first.append second
+
+theorem leaf_result (env : HeapCalls.Env) (heap : Mutable.Heap) (sumCell setCell : Nat)
+    (bound sum : Int) (selected clique : List Nat) (cliqueAddress : Nat)
+    (incumbent : Incumbent heap sumCell setCell bound selected)
+    (found : heap[cliqueAddress]? = some (.list (numbers clique))) (size : clique.length = 5)
+    (getSum : env "curr_sum" = some (number sum))
+    (getSumCell : env "__formalsw_cell_solve_best_sum" = some (.ref sumCell))
+    (getSetCell : env "__formalsw_cell_solve_best_set" = some (.ref setCell))
+    (getClique : env "clique" = some (.ref cliqueAddress)) (following : List Stmt) :
+    BlockReturns program env (leafCode ++ following) heap nothing
+      (leafHeap heap sumCell setCell sum bound clique) globals := by
+  have tested : Evaluates program env improveTest heap (flag (decide (sum < bound))) heap globals :=
+    Evaluates.compare (Evaluates.lookup getSum) (read_cell env _ _ _ getSumCell incumbent.sumFound)
+      (by simp [HeapCalls.compare, scalarCompare, evalCmpOp, flag])
+  by_cases improves : sum < bound
+  · rw [leafHeap, if_pos improves]
+    apply BlockReturns.branch (flag := true) (value := flag true) (middle := heap)
+      (by simpa only [improves, decide_true] using tested) rfl
+    exact (improve_executes env heap sumCell setCell bound sum selected clique cliqueAddress incumbent found size
+      getSum getSumCell getSetCell getClique).returns (BlockReturns.return_value Evaluates.constant)
+  · rw [leafHeap, if_neg improves]
+    apply BlockReturns.branch (flag := false) (value := flag false) (middle := heap)
+      (by simpa only [improves, decide_false] using tested) rfl
+    exact BlockReturns.return_value Evaluates.constant
+
+theorem complete_result (cliqueAddress : Nat) (candidates : Mutable.Value) (sum : Int)
+    (heap : Mutable.Heap) (sumCell setCell cacheCell powerCell : Nat) (bound : Int)
+    (selected clique : List Nat) (incumbent : Incumbent heap sumCell setCell bound selected)
+    (found : heap[cliqueAddress]? = some (.list (numbers clique))) (size : clique.length = 5) :
+    ReturnsValue program "__formalsw_local_solve_dfs"
+      [.ref cliqueAddress, candidates, number sum, .ref setCell, .ref sumCell, .ref cacheCell, .ref powerCell]
+      heap nothing (leafHeap heap sumCell setCell sum bound clique) globals := by
+  let params := ((findFunctionIn program.body "__formalsw_local_solve_dfs").getD ([], [])).1
+  let sourceBody := ((findFunctionIn program.body "__formalsw_local_solve_dfs").getD ([], [])).2
+  let env := functionEnv params sourceBody
+    [.ref cliqueAddress, candidates, number sum, .ref setCell, .ref sumCell, .ref cacheCell, .ref powerCell] globals
+  have getClique : env "clique" = some (.ref cliqueAddress) := by cases globals <;> rfl
+  have lengthEval : Evaluates program env (.builtinCall .len [.name "clique"]) heap (number 5) heap globals := by
+    apply Evaluates.builtin (.cons (Evaluates.lookup getClique) .nil)
+    simp [primitive, Mutable.length, found, numbers, primes_up_to.numbers, size]
+  let counted := setLocal env "k" (number 5)
+  have getK : counted "k" = some (number 5) := by simp [counted, setLocal]
+  apply BlockReturns.function rfl rfl
+  change BlockReturns program env code heap nothing (leafHeap heap sumCell setCell sum bound clique) globals
+  rw [code_source]
+  apply BlockReturns.assign lengthEval
+  apply BlockReturns.branch (flag := true) (value := flag true) (middle := heap)
+    (Evaluates.compare (Evaluates.lookup getK) Evaluates.constant rfl) rfl
+  apply leaf_result counted heap sumCell setCell bound sum selected clique cliqueAddress incumbent found size
+  · cases globals <;> rfl
+  · cases globals <;> rfl
+  · cases globals <;> rfl
+  · simpa [counted, setLocal] using getClique
+
+theorem insufficient_result (cliqueAddress candidateAddress : Nat) (sum : Int)
+    (heap : Mutable.Heap) (sumCell setCell cacheCell powerCell : Nat) (clique candidates : List Nat)
+    (cliqueFound : heap[cliqueAddress]? = some (.list (numbers clique)))
+    (candidateFound : heap[candidateAddress]? = some (.list (numbers candidates)))
+    (short : clique.length + candidates.length < 5) :
+    ReturnsValue program "__formalsw_local_solve_dfs"
+      [.ref cliqueAddress, .ref candidateAddress, number sum, .ref setCell, .ref sumCell, .ref cacheCell, .ref powerCell]
+      heap nothing heap globals := by
+  let params := ((findFunctionIn program.body "__formalsw_local_solve_dfs").getD ([], [])).1
+  let sourceBody := ((findFunctionIn program.body "__formalsw_local_solve_dfs").getD ([], [])).2
+  let env := functionEnv params sourceBody
+    [.ref cliqueAddress, .ref candidateAddress, number sum, .ref setCell, .ref sumCell, .ref cacheCell, .ref powerCell] globals
+  let counted := setLocal env "k" (number clique.length)
+  let ready := setLocal counted "need" (number (5 - (clique.length : Int)))
+  have getClique : env "clique" = some (.ref cliqueAddress) := by cases globals <;> rfl
+  have getK : counted "k" = some (number clique.length) := by simp [counted, setLocal]
+  have getCandidates : ready "candidates" = some (.ref candidateAddress) := by cases globals <;> rfl
+  have getNeed : ready "need" = some (number (5 - (clique.length : Int))) := by simp [ready, setLocal]
+  have candidateLength : Evaluates program ready (.builtinCall .len [.name "candidates"])
+      heap (number candidates.length) heap globals := by
+    apply Evaluates.builtin (.cons (Evaluates.lookup getCandidates) .nil)
+    simp [primitive, Mutable.length, candidateFound, numbers, primes_up_to.numbers]
+  apply BlockReturns.function rfl rfl
+  change BlockReturns program env code heap nothing heap globals
+  rw [code_source]
+  apply BlockReturns.assign (value := number clique.length) (middle := heap)
+  · apply Evaluates.builtin (.cons (Evaluates.lookup getClique) .nil)
+    simp [primitive, Mutable.length, cliqueFound, numbers, primes_up_to.numbers]
+  · apply BlockReturns.branch (flag := false) (value := flag false) (middle := heap)
+      (Evaluates.compare (Evaluates.lookup getK) Evaluates.constant
+        (by simp [HeapCalls.compare, scalarCompare, evalCmpOp]; omega)) rfl
+    apply BlockReturns.assign (value := number (5 - (clique.length : Int))) (middle := heap)
+      (Evaluates.binary Evaluates.constant (Evaluates.lookup getK) rfl)
+    apply BlockReturns.branch (flag := true) (value := flag true) (middle := heap)
+      (Evaluates.compare candidateLength (Evaluates.lookup getNeed)
+        (by simp [HeapCalls.compare, scalarCompare, evalCmpOp]; omega)) rfl
+    exact BlockReturns.return_value Evaluates.constant
+
+def outerBody : List Stmt := match (code[4]? : Option Stmt) with
+  | some (.forIn _ _ body _) => body
+  | _ => []
+
+private theorem fallthrough (env : HeapCalls.Env) (heap : Mutable.Heap) :
+    BlockReturns program env [] heap nothing heap globals := fun _ _ => .next rfl .refl
+
+theorem first_bound_result (cliqueAddress candidateAddress : Nat) (sum : Int)
+    (heap : Mutable.Heap) (sumCell setCell cacheCell powerCell : Nat) (bound : Int)
+    (selected clique : List Nat) (q : Nat) (remaining : List Nat)
+    (incumbent : Incumbent heap sumCell setCell bound selected)
+    (cliqueFound : heap[cliqueAddress]? = some (.list (numbers clique)))
+    (candidateFound : heap[candidateAddress]? = some (.list (numbers (q :: remaining))))
+    (incomplete : clique.length < 5) (enough : 5 ≤ clique.length + (q :: remaining).length)
+    (pruned : bound ≤ sum + (q : Int) * (5 - (clique.length : Int))) :
+    ReturnsValue program "__formalsw_local_solve_dfs"
+      [.ref cliqueAddress, .ref candidateAddress, number sum, .ref setCell, .ref sumCell, .ref cacheCell, .ref powerCell]
+      heap nothing heap globals := by
+  simp only [List.length_cons] at enough
+  let params := ((findFunctionIn program.body "__formalsw_local_solve_dfs").getD ([], [])).1
+  let sourceBody := ((findFunctionIn program.body "__formalsw_local_solve_dfs").getD ([], [])).2
+  let env := functionEnv params sourceBody
+    [.ref cliqueAddress, .ref candidateAddress, number sum, .ref setCell, .ref sumCell, .ref cacheCell, .ref powerCell] globals
+  let counted := setLocal env "k" (number clique.length)
+  let ready := setLocal counted "need" (number (5 - (clique.length : Int)))
+  let indexed := setLocal ready "idx" (number 0)
+  let chosen := setLocal indexed "q" (number q)
+  have getClique : env "clique" = some (.ref cliqueAddress) := by cases globals <;> rfl
+  have getK : counted "k" = some (number clique.length) := by simp [counted, setLocal]
+  have getCandidates : ready "candidates" = some (.ref candidateAddress) := by cases globals <;> rfl
+  have getNeed : ready "need" = some (number (5 - (clique.length : Int))) := by simp [ready, setLocal]
+  have candidateLength : Evaluates program ready (.builtinCall .len [.name "candidates"])
+      heap (number (q :: remaining).length) heap globals := by
+    apply Evaluates.builtin (.cons (Evaluates.lookup getCandidates) .nil)
+    simp [primitive, Mutable.length, candidateFound, numbers, primes_up_to.numbers]
+  have getIndex : indexed "idx" = some (number 0) := by simp [indexed, setLocal]
+  have getIndexedCandidates : indexed "candidates" = some (.ref candidateAddress) := by
+    simpa [indexed, setLocal] using getCandidates
+  have getQ : chosen "q" = some (number q) := by simp [chosen, setLocal]
+  have getChosenNeed : chosen "need" = some (number (5 - (clique.length : Int))) := by
+    simpa [chosen, indexed, setLocal] using getNeed
+  have getSum : chosen "curr_sum" = some (number sum) := by cases globals <;> rfl
+  have getSumCell : chosen "__formalsw_cell_solve_best_sum" = some (.ref sumCell) := by cases globals <;> rfl
+  have guard : Evaluates program chosen
+      (.compare (.binOp (.name "curr_sum") .add (.binOp (.name "q") .mult (.name "need"))) [(.gtE, sumExpression)])
+      heap (flag true) heap globals := by
+    apply Evaluates.compare
+      (Evaluates.binary (Evaluates.lookup getSum)
+        (Evaluates.binary (Evaluates.lookup getQ) (Evaluates.lookup getChosenNeed) rfl) rfl)
+      (read_cell chosen _ _ _ getSumCell incumbent.sumFound)
+    simp [HeapCalls.compare, scalarCompare, evalCmpOp, pruned]
+  apply BlockReturns.function rfl rfl
+  change BlockReturns program env code heap nothing heap globals
+  rw [code_source]
+  apply BlockReturns.assign (value := number clique.length) (middle := heap)
+  · apply Evaluates.builtin (.cons (Evaluates.lookup getClique) .nil)
+    simp [primitive, Mutable.length, cliqueFound, numbers, primes_up_to.numbers]
+  · apply BlockReturns.branch (flag := false) (value := flag false) (middle := heap)
+      (Evaluates.compare (Evaluates.lookup getK) Evaluates.constant
+        (by simp [HeapCalls.compare, scalarCompare, evalCmpOp]; omega)) rfl
+    apply BlockReturns.assign (value := number (5 - (clique.length : Int))) (middle := heap)
+      (Evaluates.binary Evaluates.constant (Evaluates.lookup getK) rfl)
+    apply BlockReturns.branch (flag := false) (value := flag false) (middle := heap)
+      (Evaluates.compare candidateLength (Evaluates.lookup getNeed)
+        (by simp [HeapCalls.compare, scalarCompare, evalCmpOp]; omega)) rfl
+    apply BlockReturns.for_range (.cons candidateLength .nil) rfl
+    apply BlockReturns.range_step (by simp [Calls.rangeContinues])
+    apply BlockReturns.assign (value := number q) (middle := heap)
+    · apply Evaluates.subscript (by intros; simp) (Evaluates.lookup getIndexedCandidates) (Evaluates.lookup getIndex)
+      exact Mutable.getItem_list heap candidateAddress 0 (numbers (q :: remaining)) candidateFound (by simp [numbers, primes_up_to.numbers])
+    · apply BlockReturns.branch (flag := true) (value := flag true) (middle := heap) guard rfl
+      apply BlockReturns.break_loop rfl
+      exact fallthrough chosen heap
+
+theorem improved_preserves (heap : Mutable.Heap) (sumCell setCell : Nat) (sum : Int) (clique : List Nat)
+    (address : Nat) (object : Mutable.Object) (found : heap[address]? = some object)
+    (notSum : sumCell ≠ address) (notSet : setCell ≠ address) :
+    (improvedHeap heap sumCell setCell sum clique)[address]? = some object := by
+  unfold improvedHeap
+  rw [List.getElem?_set_ne notSet]
+  apply HeapCollection.prefix_found (sumHeap heap sumCell sum) _ _ _
+  simpa only [sumHeap, List.getElem?_set_ne notSum] using found
+
+def improvedIncumbent (incumbent : Incumbent heap sumCell setCell bound selected) (sum : Int) (clique : List Nat) :
+    Incumbent (improvedHeap heap sumCell setCell sum clique) sumCell setCell sum clique where
+  selectedAddress := heap.length
+  sumFound := by
+    unfold improvedHeap
+    rw [List.getElem?_set_ne (Ne.symm (cells_distinct incumbent))]
+    apply HeapCollection.prefix_found (sumHeap heap sumCell sum) _ _ _
+    exact List.getElem?_set_self ((List.getElem?_eq_some_iff.mp incumbent.sumFound).1)
+  setFound := by
+    apply List.getElem?_set_self
+    have old := (List.getElem?_eq_some_iff.mp incumbent.setFound).1
+    simp only [sumHeap, List.length_append, List.length_set, List.length_cons, List.length_nil]
+    omega
+  selectedFound := by
+    have old := (List.getElem?_eq_some_iff.mp incumbent.setFound).1
+    unfold improvedHeap
+    rw [List.getElem?_set_ne (by omega : setCell ≠ heap.length)]
+    simp [sumHeap]
+
+def leafIncumbent (incumbent : Incumbent heap sumCell setCell bound selected) (sum : Int) (clique : List Nat) :
+    Incumbent (leafHeap heap sumCell setCell sum bound clique) sumCell setCell
+      (CliqueSearch.improve clique sum ⟨bound, selected⟩).bound
+      (CliqueSearch.improve clique sum ⟨bound, selected⟩).chosen := by
+  by_cases better : sum < bound
+  · simpa only [leafHeap, CliqueSearch.improve, if_pos better] using improvedIncumbent incumbent sum clique
+  · simpa only [leafHeap, CliqueSearch.improve, if_neg better] using incumbent
+
+/-- The source's strict update has exactly the value represented by the zero-
+remaining-picks case of the recursive search model. -/
+theorem complete_model (relation : Nat → Nat → Bool) (candidates clique : List Nat) (sum bound : Int)
+    (selected : List Nat) :
+    CliqueSearch.search relation 0 clique candidates sum ⟨bound, selected⟩ =
+      (if sum < bound then ⟨sum, clique⟩ else ⟨bound, selected⟩) := rfl
+
+theorem insufficient_model (relation : Nat → Nat → Bool) (clique candidates : List Nat)
+    (sum : Int) (best : CliqueSearch.Best) (short : clique.length + candidates.length < 5) :
+    CliqueSearch.search relation (5 - clique.length) clique candidates sum best = best :=
+  CliqueSearch.search_insufficient relation _ _ _ _ _ (by omega) (by omega)
+
+theorem first_bound_model (relation : Nat → Nat → Bool) (clique : List Nat) (q : Nat) (remaining : List Nat)
+    (sum : Int) (best : CliqueSearch.Best) (incomplete : clique.length < 5)
+    (enough : 5 ≤ clique.length + (q :: remaining).length)
+    (cut : best.bound ≤ sum + (q : Int) * (5 - (clique.length : Int))) :
+    CliqueSearch.search relation (5 - clique.length) clique (q :: remaining) sum best = best := by
+  apply CliqueSearch.search_head_pruned relation _ _ _ _ _ _ (by omega) (by omega)
+  have castNeed : ((5 - clique.length : Nat) : Int) = 5 - (clique.length : Int) := by omega
+  simpa only [castNeed] using cut
+
+variable {left right address target : Nat} {values tupleValues : List Mutable.Value}
+  {entries : List (Constant × Mutable.Value)}
+
+private theorem list_ne_dict (listFound : heap[left]? = some (.list values))
+    (dictFound : heap[right]? = some (.dict entries)) : left ≠ right := by
+  intro same
+  rw [same, dictFound] at listFound
+  cases listFound
+
+private theorem list_ne_tuple (listFound : heap[left]? = some (.list values))
+    (tupleFound : heap[right]? = some (.tuple tupleValues)) : left ≠ right := by
+  intro same
+  rw [same, tupleFound] at listFound
+  cases listFound
+
+private theorem sum_ne_ref_cell (incumbent : Incumbent heap sumCell setCell bound selected)
+    (found : heap[address]? = some (.list [.ref target])) : sumCell ≠ address := by
+  intro same
+  have impossible := incumbent.sumFound
+  rw [same, found] at impossible
+  cases impossible
+
+private theorem set_ne_ref_cell (incumbent : Incumbent heap sumCell setCell bound selected)
+    (found : heap[address]? = some (.list [.ref target]))
+    (different : target ≠ incumbent.selectedAddress) : setCell ≠ address := by
+  intro same
+  have observed : heap[setCell]? = some (.list [.ref target]) := by simpa only [same] using found
+  have refs := observed.symm.trans incumbent.setFound
+  exact different (by simpa using refs)
+
+def cache_after_improve (incumbent : Incumbent heap sumCell setCell bound selected)
+    (cacheCell powerCell : Nat) (entries : List IntPairCache.Entry)
+    (store : pair_ok.Store heap entries cacheCell powerCell) (sum : Int) (clique : List Nat) :
+    pair_ok.Store (improvedHeap heap sumCell setCell sum clique) entries cacheCell powerCell where
+  cacheAddress := store.cacheAddress
+  powerAddress := store.powerAddress
+  powers := store.powers
+  cacheCellFound := improved_preserves heap sumCell setCell sum clique _ _ store.cacheCellFound
+    (sum_ne_ref_cell incumbent store.cacheCellFound)
+    (set_ne_ref_cell incumbent store.cacheCellFound (store.cache_ne_list incumbent.selectedFound))
+  powerCellFound := improved_preserves heap sumCell setCell sum clique _ _ store.powerCellFound
+    (sum_ne_ref_cell incumbent store.powerCellFound)
+    (set_ne_ref_cell incumbent store.powerCellFound (Ne.symm (list_ne_dict incumbent.selectedFound store.powerFound)))
+  cacheFound := improved_preserves heap sumCell setCell sum clique _ _ store.cacheFound
+    (Ne.symm (store.cache_ne_list incumbent.sumFound)) (Ne.symm (store.cache_ne_list incumbent.setFound))
+  powerFound := improved_preserves heap sumCell setCell sum clique _ _ store.powerFound
+    (list_ne_dict incumbent.sumFound store.powerFound) (list_ne_dict incumbent.setFound store.powerFound)
+  separate := store.separate
+
+def globals_after_improve (incumbent : Incumbent heap sumCell setCell bound selected)
+    (context : is_prime.SourceGlobals heap globals) (sum : Int) (clique : List Nat) :
+    is_prime.SourceGlobals (improvedHeap heap sumCell setCell sum clique) globals where
+  smallAddress := context.smallAddress
+  basesAddress := context.basesAddress
+  smallBinding := context.smallBinding
+  basesBinding := context.basesBinding
+  smallTuple := improved_preserves heap sumCell setCell sum clique _ _ context.smallTuple
+    (list_ne_tuple incumbent.sumFound context.smallTuple) (list_ne_tuple incumbent.setFound context.smallTuple)
+  basesTuple := improved_preserves heap sumCell setCell sum clique _ _ context.basesTuple
+    (list_ne_tuple incumbent.sumFound context.basesTuple) (list_ne_tuple incumbent.setFound context.basesTuple)
+
+end solvers.«60».dfs
