@@ -1948,6 +1948,247 @@ theorem result (p powerAddress primeAddress : Nat) (target : Int) (prime : Nat.P
 
 end candidate
 
+namespace primeSearch
+private def writes : List String := "p" :: candidate.writes
+private def Stable (before after : HeapCalls.Env) : Prop := ∀ name, name ∉ writes → after name = before name
+private def HeapFrame (before after : Mutable.Heap) : Prop :=
+  ∀ (address : Nat) (object : Mutable.Object), before[address]? = some object → after[address]? = some object
+
+private theorem stable_refl (env : HeapCalls.Env) : Stable env env := fun _ _ => rfl
+private theorem stable_trans (first : Stable before middle) (second : Stable middle after) : Stable before after :=
+  fun name untouched => (second name untouched).trans (first name untouched)
+private theorem stable_set (env : HeapCalls.Env) (value : Mutable.Value) : Stable env (setLocal env "p" value) := by
+  intro name untouched
+  have different : name ≠ "p" := fun equal => untouched (by simp [writes, equal])
+  simp only [setLocal, different, if_false]
+private theorem stable_candidate (saved : candidate.Stable before after) : Stable before after :=
+  fun name untouched => saved name (fun member => untouched (List.mem_cons_of_mem _ member))
+private theorem heap_refl (heap : Mutable.Heap) : HeapFrame heap heap := fun _ _ found => found
+private theorem heap_trans (first : HeapFrame before middle) (second : HeapFrame middle after) : HeapFrame before after :=
+  fun address object found => second address object (first address object found)
+
+private structure Locals (target : Int) (lower arrayAddress powerAddress primeAddress : Nat) (env : HeapCalls.Env) : Prop where
+  getTarget : env "target" = some (number target)
+  getLower : env "lower" = some (number lower)
+  getArray : env "primes" = some (.ref arrayAddress)
+  getPowers : env "pow10" = some (.ref powerAddress)
+  getPrimes : env "is_prime" = some (.ref primeAddress)
+
+private theorem Locals.preserved (locals : Locals target lower arrayAddress powerAddress primeAddress before)
+    (saved : Stable before after) : Locals target lower arrayAddress powerAddress primeAddress after :=
+  ⟨(saved "target" (by decide)).trans locals.getTarget, (saved "lower" (by decide)).trans locals.getLower,
+    (saved "primes" (by decide)).trans locals.getArray, (saved "pow10" (by decide)).trans locals.getPowers,
+    (saved "is_prime" (by decide)).trans locals.getPrimes⟩
+
+private structure Snapshot (items : List Nat) (width arrayAddress powerAddress primeAddress : Nat)
+    (bytes : List UInt8) (heap : Mutable.Heap) : Prop where
+  array : heap[arrayAddress]? = some (.list (numbers items))
+  powers : heap[powerAddress]? = some (.list (numbers (powers width)))
+  primes : heap[primeAddress]? = some (.bytearray bytes)
+  size : bytes.length = 10 ^ width
+  correct : ∀ i byte, bytes[i]? = some byte → (byte.toNat ≠ 0 ↔ Nat.Prime i)
+
+private theorem Snapshot.preserved (snapshot : Snapshot items width arrayAddress powerAddress primeAddress bytes before)
+    (saved : HeapFrame before after) : Snapshot items width arrayAddress powerAddress primeAddress bytes after :=
+  ⟨saved _ _ snapshot.array, saved _ _ snapshot.powers, saved _ _ snapshot.primes, snapshot.size, snapshot.correct⟩
+
+private def Scan (env : HeapCalls.Env) (body : List Stmt) (heap : Mutable.Heap) : Option Nat → Prop
+  | none => ∃ finalEnv finalHeap, BlockContinues program env body heap finalEnv finalHeap ∧
+      Stable env finalEnv ∧ HeapFrame heap finalHeap
+  | some answer => ∃ finalHeap, (∀ following, BlockReturns program env (body ++ following) heap (number answer) finalHeap) ∧
+      HeapFrame heap finalHeap
+
+private theorem scan_prepend (continued : BlockContinues program env body heap middleEnv middleHeap)
+    (stable : Stable env middleEnv) (saved : HeapFrame heap middleHeap)
+    (executed : Scan middleEnv following middleHeap answer) : Scan env (body ++ following) heap answer := by
+  cases answer with
+  | none =>
+      obtain ⟨finalEnv, finalHeap, finished, preserved, framed⟩ := executed
+      exact ⟨finalEnv, finalHeap, continued.append finished, stable_trans stable preserved, heap_trans saved framed⟩
+  | some answer =>
+      obtain ⟨finalHeap, returned, framed⟩ := executed
+      refine ⟨finalHeap, ?_, heap_trans saved framed⟩
+      intro after
+      simpa only [List.append_assoc] using continued.returns (returned after)
+
+private theorem scan_branch {flag : Bool} (evaluated : Evaluates program env condition heap value heap)
+    (truth : Mutable.truth value heap = some (.ok flag, heap))
+    (executed : Scan env ((if flag then yes else no) ++ rest) heap answer) :
+    Scan env (.ifThen condition yes no :: rest) heap answer := by
+  cases answer with
+  | none =>
+      obtain ⟨finalEnv, finalHeap, finished, preserved, framed⟩ := executed
+      exact ⟨finalEnv, finalHeap, BlockContinues.branch_next evaluated truth finished, preserved, framed⟩
+  | some answer =>
+      obtain ⟨finalHeap, returned, framed⟩ := executed
+      refine ⟨finalHeap, ?_, framed⟩
+      intro after
+      exact BlockReturns.branch evaluated truth (by simpa only [List.append_assoc] using returned after)
+
+private theorem scan_continue (target : Calls.loopTarget body = some (next, rest))
+    (executed : Scan env (next :: rest) heap answer) : Scan env (.continueLoop :: body) heap answer := by
+  cases answer with
+  | none =>
+      obtain ⟨finalEnv, finalHeap, finished, preserved, framed⟩ := executed
+      exact ⟨finalEnv, finalHeap, BlockContinues.continue_loop target finished, preserved, framed⟩
+  | some answer =>
+      obtain ⟨finalHeap, returned, framed⟩ := executed
+      refine ⟨finalHeap, ?_, framed⟩
+      intro after
+      exact BlockReturns.continue_loop (Calls.loopTarget_append target after)
+        (by simpa only [List.cons_append] using returned after)
+
+private theorem scan_resume (executed : Scan env [next] heap answer) : Scan env [.loopResume next] heap answer := by
+  cases answer with
+  | none =>
+      obtain ⟨finalEnv, finalHeap, finished, preserved, framed⟩ := executed
+      exact ⟨finalEnv, finalHeap, BlockContinues.loop_resume finished, preserved, framed⟩
+  | some answer =>
+      obtain ⟨finalHeap, returned, framed⟩ := executed
+      exact ⟨finalHeap, fun after => BlockReturns.loop_resume (returned after), framed⟩
+
+private theorem scan_sequence_step (source : SequenceSource) (position : Nat) (value : Mutable.Value)
+    (sequence : Mutable.sequence (sequenceValue source) heap = some (.ok items, heap))
+    (item : items[position]? = some value)
+    (executed : Scan (setLocal env "p" value)
+      (body ++ [Calls.loopContinuation body (.sequenceStepLoop "p" source (position+1) body [])]) heap answer) :
+    Scan env [.sequenceStepLoop "p" source position body []] heap answer := by
+  cases answer with
+  | none =>
+      obtain ⟨finalEnv, finalHeap, finished, preserved, framed⟩ := executed
+      exact ⟨finalEnv, finalHeap, BlockContinues.sequence_step sequence item finished,
+        stable_trans (stable_set env value) preserved, framed⟩
+  | some answer =>
+      obtain ⟨finalHeap, returned, framed⟩ := executed
+      refine ⟨finalHeap, ?_, framed⟩
+      intro after
+      apply BlockReturns.sequence_step sequence item
+      simpa only [List.append_assoc] using returned after
+
+private def accepted (target : Int) (lower p : Nat) : Bool :=
+  decide (lower ≤ p) && ProjectEulerStatements.P51.hasPrimeFamily target.toNat p
+
+private theorem lower_test (p lower : Nat) (env : HeapCalls.Env) (heap : Mutable.Heap)
+    (getP : env "p" = some (number p)) (getLower : env "lower" = some (number lower)) :
+    Evaluates program env (.compare (.name "p") [(.lt, .name "lower")]) heap (flag (decide (p < lower))) heap := by
+  apply Evaluates.compare (av := number p) (bv := number lower) (middle := heap) (afterRight := heap)
+    (Evaluates.lookup getP) (Evaluates.lookup getLower)
+  simp [HeapCalls.compare, scalarCompare, evalCmpOp]
+
+/-- A decimal interval determines the candidate's width and the shared sieve/table dimensions. -/
+theorem digits_width (p width : Nat) (positive : 1 ≤ width) (lower : 10 ^ (width - 1) ≤ p) (upper : p < 10 ^ width) :
+    (Nat.digits 10 p).length = width := by
+  have atLeast := (Nat.lt_digits_length_iff (b := 10) (k := width-1) (by decide) p).mpr lower
+  have atMost := (Nat.digits_length_le_iff (b := 10) (k := width) (by decide) p).mpr upper
+  omega
+
+private theorem loop (items remaining : List Nat) (position width lower arrayAddress powerAddress primeAddress : Nat)
+    (target : Int) (primes : ∀ p ∈ items, Nat.Prime p)
+    (widths : ∀ p ∈ items, lower ≤ p → (Nat.digits 10 p).length = width)
+    (suffix : items.drop position = remaining) (env : HeapCalls.Env) (heap : Mutable.Heap) (bytes : List UInt8)
+    (locals : Locals target lower arrayAddress powerAddress primeAddress env)
+    (snapshot : Snapshot items width arrayAddress powerAddress primeAddress bytes heap) :
+    Scan env [.sequenceStepLoop "p" (.ref arrayAddress) position primeBody []] heap
+      (remaining.find? (accepted target lower)) := by
+  have sequence : Mutable.sequence (.ref arrayAddress) heap = some (.ok (numbers items), heap) := by
+    simp [Mutable.sequence, snapshot.array]
+  induction remaining generalizing position env heap with
+  | nil =>
+      refine ⟨env, heap, ?_, stable_refl env, heap_refl heap⟩
+      apply BlockContinues.sequence_done (source := .ref arrayAddress) sequence
+      · have missing : items[position]? = none := by
+          simpa [suffix] using (List.head?_drop (l := items) (i := position)).symm
+        simp [numbers, missing]
+      · exact .nil
+  | cons head tail ih =>
+      have item : items[position]? = some head := by
+        simpa [suffix] using (List.head?_drop (l := items) (i := position)).symm
+      have member := List.mem_of_getElem? item
+      have suffixTail : items.drop (position+1) = tail := by simp [List.drop_add_one_eq_tail_drop, suffix]
+      let bound := setLocal env "p" (number head)
+      let next := Stmt.sequenceStepLoop "p" (.ref arrayAddress) (position+1) primeBody []
+      have boundLocals := locals.preserved (stable_set env (number head))
+      have tested := lower_test head lower bound heap rfl boundLocals.getLower
+      by_cases skipped : head < lower
+      · have rejected : accepted target lower head = false := by
+          simp only [accepted, show ¬ lower ≤ head by omega, decide_false, Bool.false_and]
+        rw [List.find?_cons, rejected]
+        apply scan_sequence_step (.ref arrayAddress) position (number head) sequence (by simp [numbers, item])
+        change Scan bound (primeBody ++ [.loopResume next]) heap (tail.find? (accepted target lower))
+        apply scan_branch (flag := true) (value := flag true)
+          (by simpa only [skipped, decide_true] using tested) (by simp [Mutable.truth, scalarTruth])
+        exact scan_continue (next := next) (rest := []) rfl
+          (ih (position+1) suffixTail bound heap boundLocals snapshot sequence)
+      · have prime := primes head member
+        have width := widths head member (by omega)
+        obtain ⟨middleHeap, returned, continued, framed⟩ := candidate.result head powerAddress primeAddress target prime bound heap bytes
+          rfl boundLocals.getTarget boundLocals.getPowers boundLocals.getPrimes
+          (by simpa only [width] using snapshot.powers) snapshot.primes
+          (by simpa only [width] using snapshot.size) snapshot.correct
+        cases family : ProjectEulerStatements.P51.hasPrimeFamily target.toNat head with
+        | true =>
+            have matched : accepted target lower head = true := by
+              simp only [accepted, show lower ≤ head by omega, decide_true, Bool.true_and, family]
+            rw [List.find?_cons, matched]
+            apply scan_sequence_step (.ref arrayAddress) position (number head) sequence (by simp [numbers, item])
+            change Scan bound (primeBody ++ [.loopResume next]) heap (some head)
+            apply scan_branch (flag := false) (value := flag false)
+              (by simpa only [skipped, decide_false] using tested) (by simp [Mutable.truth, scalarTruth])
+            refine ⟨middleHeap, ?_, framed⟩
+            intro following
+            simpa only [List.append_assoc] using returned family ([.loopResume next] ++ following)
+        | false =>
+            have rejected : accepted target lower head = false := by
+              simp only [accepted, family, Bool.and_false]
+            obtain ⟨middleEnv, executed, preserved⟩ := continued family
+            have stable := stable_candidate preserved
+            have nextLocals := boundLocals.preserved stable
+            have nextSnapshot := snapshot.preserved framed
+            have nextSequence : Mutable.sequence (.ref arrayAddress) middleHeap = some (.ok (numbers items), middleHeap) := by
+              simp [Mutable.sequence, nextSnapshot.array]
+            have rest := ih (position+1) suffixTail middleEnv middleHeap nextLocals nextSnapshot nextSequence
+            rw [List.find?_cons, rejected]
+            apply scan_sequence_step (.ref arrayAddress) position (number head) sequence (by simp [numbers, item])
+            change Scan bound (primeBody ++ [.loopResume next]) heap (tail.find? (accepted target lower))
+            apply scan_branch (flag := false) (value := flag false)
+              (by simpa only [skipped, decide_false] using tested) (by simp [Mutable.truth, scalarTruth])
+            change Scan bound (primeBody.drop 1 ++ [.loopResume next]) heap _
+            exact scan_prepend executed stable framed (scan_resume rest)
+
+private theorem scan_for_sequence (ordinary : ∀ expressions, iterable ≠ .call (.name "range") expressions)
+    (evaluated : Evaluates program env iterable heap value heap)
+    (sequence : Mutable.sequence value heap = some (.ok items, heap))
+    (executed : Scan env [.sequenceStepLoop "p" (sequenceSource value) 0 body []] heap answer) :
+    Scan env [.forIn (.name "p") iterable body []] heap answer := by
+  cases answer with
+  | none =>
+      obtain ⟨finalEnv, finalHeap, finished, preserved, framed⟩ := executed
+      exact ⟨finalEnv, finalHeap, BlockContinues.for_sequence ordinary evaluated sequence finished, preserved, framed⟩
+  | some answer =>
+      obtain ⟨finalHeap, returned, framed⟩ := executed
+      exact ⟨finalHeap, fun after => BlockReturns.for_sequence ordinary evaluated sequence (returned after), framed⟩
+
+/-- The source prime loop returns the first qualifying in-range prime and preserves all previously allocated objects. -/
+theorem result (items : List Nat) (width lower arrayAddress powerAddress primeAddress : Nat) (target : Int)
+    (primes : ∀ p ∈ items, Nat.Prime p)
+    (widths : ∀ p ∈ items, lower ≤ p → (Nat.digits 10 p).length = width)
+    (env : HeapCalls.Env) (heap : Mutable.Heap) (bytes : List UInt8)
+    (getTarget : env "target" = some (number target)) (getLower : env "lower" = some (number lower))
+    (getArray : env "primes" = some (.ref arrayAddress)) (getPowers : env "pow10" = some (.ref powerAddress))
+    (getPrimes : env "is_prime" = some (.ref primeAddress))
+    (arrayFound : heap[arrayAddress]? = some (.list (numbers items)))
+    (powersFound : heap[powerAddress]? = some (.list (numbers (powers width))))
+    (primesFound : heap[primeAddress]? = some (.bytearray bytes)) (size : bytes.length = 10 ^ width)
+    (correct : ∀ i byte, bytes[i]? = some byte → (byte.toNat ≠ 0 ↔ Nat.Prime i)) :
+    Scan env [digitBody[4]'(by decide)] heap (items.find? (accepted target lower)) := by
+  have scanned := loop items items 0 width lower arrayAddress powerAddress primeAddress target primes widths rfl env heap bytes
+    ⟨getTarget, getLower, getArray, getPowers, getPrimes⟩ ⟨arrayFound, powersFound, primesFound, size, correct⟩
+  exact scan_for_sequence (value := .ref arrayAddress) (items := numbers items)
+    (by intros; intro impossible; cases impossible) (Evaluates.lookup getArray)
+    (by simp [Mutable.sequence, arrayFound]) scanned
+
+end primeSearch
+
 end solve
 
 end solvers.«51»
