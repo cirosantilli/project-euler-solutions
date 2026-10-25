@@ -14,6 +14,22 @@ import ProjectEulerSolutions.Lib.PrimePairCache.SmallRows012
 import ProjectEulerSolutions.Lib.PrimePairCache.SmallRows013
 import ProjectEulerSolutions.Lib.PrimePairCache.SmallRows014
 import ProjectEulerSolutions.Lib.PrimePairCache.SmallRows015
+import ProjectEulerSolutions.Lib.PrimePairCache.SmallRows016
+import ProjectEulerSolutions.Lib.PrimePairCache.SmallRows017
+import ProjectEulerSolutions.Lib.PrimePairCache.SmallRows018
+import ProjectEulerSolutions.Lib.PrimePairCache.SmallRows019
+import ProjectEulerSolutions.Lib.PrimePairCache.SmallRows020
+import ProjectEulerSolutions.Lib.PrimePairCache.SmallRows021
+import ProjectEulerSolutions.Lib.PrimePairCache.SmallRows022
+import ProjectEulerSolutions.Lib.PrimePairCache.SmallRows023
+import ProjectEulerSolutions.Lib.PrimePairCache.SmallRows024
+import ProjectEulerSolutions.Lib.PrimePairCache.SmallRows025
+import ProjectEulerSolutions.Lib.PrimePairCache.SmallRows026
+import ProjectEulerSolutions.Lib.PrimePairCache.SmallRows027
+import ProjectEulerSolutions.Lib.PrimePairCache.SmallRows028
+import ProjectEulerSolutions.Lib.PrimePairCache.SmallRows029
+import ProjectEulerSolutions.Lib.PrimePairCache.SmallRows030
+import ProjectEulerSolutions.Lib.PrimePairCache.SmallRows031
 
 namespace ProjectEulerSolutions.PrimePairCache
 open PrimePairCertificate
@@ -789,10 +805,778 @@ theorem smallNode331_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode
   Graph.node_agrees _ 331 smallRow331 smallNode149 smallNode523
     smallNode149_agrees smallNode523_agrees (by decide) (by decide) smallRow331_checked
 
-def smallPrefix : Graph := smallNode331
-theorem smallPrefix_agrees : Graph.Agrees PrimePairVertices.smallTree smallPrefix := smallNode331_agrees
+def smallNode743 : Graph := .node 743 smallRow743 smallEmpty smallEmpty
 set_option maxRecDepth 4096 in
-theorem smallPrefix_vertices : smallPrefix.vertices = PrimePairVertices.small.take 128 := rfl
+theorem smallNode743_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode743 :=
+  Graph.node_agrees _ 743 smallRow743 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow743_checked
+
+def smallNode757 : Graph := .node 757 smallRow757 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode757_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode757 :=
+  Graph.node_agrees _ 757 smallRow757 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow757_checked
+
+def smallNode751 : Graph := .node 751 smallRow751 smallNode743 smallNode757
+set_option maxRecDepth 4096 in
+theorem smallNode751_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode751 :=
+  Graph.node_agrees _ 751 smallRow751 smallNode743 smallNode757
+    smallNode743_agrees smallNode757_agrees (by decide) (by decide) smallRow751_checked
+
+def smallNode769 : Graph := .node 769 smallRow769 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode769_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode769 :=
+  Graph.node_agrees _ 769 smallRow769 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow769_checked
+
+def smallNode787 : Graph := .node 787 smallRow787 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode787_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode787 :=
+  Graph.node_agrees _ 787 smallRow787 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow787_checked
+
+def smallNode773 : Graph := .node 773 smallRow773 smallNode769 smallNode787
+set_option maxRecDepth 4096 in
+theorem smallNode773_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode773 :=
+  Graph.node_agrees _ 773 smallRow773 smallNode769 smallNode787
+    smallNode769_agrees smallNode787_agrees (by decide) (by decide) smallRow773_checked
+
+def smallNode761 : Graph := .node 761 smallRow761 smallNode751 smallNode773
+set_option maxRecDepth 4096 in
+theorem smallNode761_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode761 :=
+  Graph.node_agrees _ 761 smallRow761 smallNode751 smallNode773
+    smallNode751_agrees smallNode773_agrees (by decide) (by decide) smallRow761_checked
+
+def smallNode809 : Graph := .node 809 smallRow809 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode809_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode809 :=
+  Graph.node_agrees _ 809 smallRow809 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow809_checked
+
+def smallNode821 : Graph := .node 821 smallRow821 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode821_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode821 :=
+  Graph.node_agrees _ 821 smallRow821 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow821_checked
+
+def smallNode811 : Graph := .node 811 smallRow811 smallNode809 smallNode821
+set_option maxRecDepth 4096 in
+theorem smallNode811_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode811 :=
+  Graph.node_agrees _ 811 smallRow811 smallNode809 smallNode821
+    smallNode809_agrees smallNode821_agrees (by decide) (by decide) smallRow811_checked
+
+def smallNode827 : Graph := .node 827 smallRow827 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode827_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode827 :=
+  Graph.node_agrees _ 827 smallRow827 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow827_checked
+
+def smallNode839 : Graph := .node 839 smallRow839 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode839_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode839 :=
+  Graph.node_agrees _ 839 smallRow839 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow839_checked
+
+def smallNode829 : Graph := .node 829 smallRow829 smallNode827 smallNode839
+set_option maxRecDepth 4096 in
+theorem smallNode829_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode829 :=
+  Graph.node_agrees _ 829 smallRow829 smallNode827 smallNode839
+    smallNode827_agrees smallNode839_agrees (by decide) (by decide) smallRow829_checked
+
+def smallNode823 : Graph := .node 823 smallRow823 smallNode811 smallNode829
+set_option maxRecDepth 4096 in
+theorem smallNode823_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode823 :=
+  Graph.node_agrees _ 823 smallRow823 smallNode811 smallNode829
+    smallNode811_agrees smallNode829_agrees (by decide) (by decide) smallRow823_checked
+
+def smallNode797 : Graph := .node 797 smallRow797 smallNode761 smallNode823
+set_option maxRecDepth 4096 in
+theorem smallNode797_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode797 :=
+  Graph.node_agrees _ 797 smallRow797 smallNode761 smallNode823
+    smallNode761_agrees smallNode823_agrees (by decide) (by decide) smallRow797_checked
+
+def smallNode857 : Graph := .node 857 smallRow857 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode857_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode857 :=
+  Graph.node_agrees _ 857 smallRow857 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow857_checked
+
+def smallNode863 : Graph := .node 863 smallRow863 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode863_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode863 :=
+  Graph.node_agrees _ 863 smallRow863 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow863_checked
+
+def smallNode859 : Graph := .node 859 smallRow859 smallNode857 smallNode863
+set_option maxRecDepth 4096 in
+theorem smallNode859_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode859 :=
+  Graph.node_agrees _ 859 smallRow859 smallNode857 smallNode863
+    smallNode857_agrees smallNode863_agrees (by decide) (by decide) smallRow859_checked
+
+def smallNode881 : Graph := .node 881 smallRow881 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode881_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode881 :=
+  Graph.node_agrees _ 881 smallRow881 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow881_checked
+
+def smallNode887 : Graph := .node 887 smallRow887 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode887_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode887 :=
+  Graph.node_agrees _ 887 smallRow887 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow887_checked
+
+def smallNode883 : Graph := .node 883 smallRow883 smallNode881 smallNode887
+set_option maxRecDepth 4096 in
+theorem smallNode883_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode883 :=
+  Graph.node_agrees _ 883 smallRow883 smallNode881 smallNode887
+    smallNode881_agrees smallNode887_agrees (by decide) (by decide) smallRow883_checked
+
+def smallNode877 : Graph := .node 877 smallRow877 smallNode859 smallNode883
+set_option maxRecDepth 4096 in
+theorem smallNode877_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode877 :=
+  Graph.node_agrees _ 877 smallRow877 smallNode859 smallNode883
+    smallNode859_agrees smallNode883_agrees (by decide) (by decide) smallRow877_checked
+
+def smallNode911 : Graph := .node 911 smallRow911 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode911_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode911 :=
+  Graph.node_agrees _ 911 smallRow911 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow911_checked
+
+def smallNode929 : Graph := .node 929 smallRow929 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode929_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode929 :=
+  Graph.node_agrees _ 929 smallRow929 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow929_checked
+
+def smallNode919 : Graph := .node 919 smallRow919 smallNode911 smallNode929
+set_option maxRecDepth 4096 in
+theorem smallNode919_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode919 :=
+  Graph.node_agrees _ 919 smallRow919 smallNode911 smallNode929
+    smallNode911_agrees smallNode929_agrees (by decide) (by decide) smallRow919_checked
+
+def smallNode941 : Graph := .node 941 smallRow941 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode941_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode941 :=
+  Graph.node_agrees _ 941 smallRow941 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow941_checked
+
+def smallNode953 : Graph := .node 953 smallRow953 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode953_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode953 :=
+  Graph.node_agrees _ 953 smallRow953 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow953_checked
+
+def smallNode947 : Graph := .node 947 smallRow947 smallNode941 smallNode953
+set_option maxRecDepth 4096 in
+theorem smallNode947_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode947 :=
+  Graph.node_agrees _ 947 smallRow947 smallNode941 smallNode953
+    smallNode941_agrees smallNode953_agrees (by decide) (by decide) smallRow947_checked
+
+def smallNode937 : Graph := .node 937 smallRow937 smallNode919 smallNode947
+set_option maxRecDepth 4096 in
+theorem smallNode937_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode937 :=
+  Graph.node_agrees _ 937 smallRow937 smallNode919 smallNode947
+    smallNode919_agrees smallNode947_agrees (by decide) (by decide) smallRow937_checked
+
+def smallNode907 : Graph := .node 907 smallRow907 smallNode877 smallNode937
+set_option maxRecDepth 4096 in
+theorem smallNode907_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode907 :=
+  Graph.node_agrees _ 907 smallRow907 smallNode877 smallNode937
+    smallNode877_agrees smallNode937_agrees (by decide) (by decide) smallRow907_checked
+
+def smallNode853 : Graph := .node 853 smallRow853 smallNode797 smallNode907
+set_option maxRecDepth 4096 in
+theorem smallNode853_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode853 :=
+  Graph.node_agrees _ 853 smallRow853 smallNode797 smallNode907
+    smallNode797_agrees smallNode907_agrees (by decide) (by decide) smallRow853_checked
+
+def smallNode971 : Graph := .node 971 smallRow971 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode971_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode971 :=
+  Graph.node_agrees _ 971 smallRow971 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow971_checked
+
+def smallNode983 : Graph := .node 983 smallRow983 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode983_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode983 :=
+  Graph.node_agrees _ 983 smallRow983 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow983_checked
+
+def smallNode977 : Graph := .node 977 smallRow977 smallNode971 smallNode983
+set_option maxRecDepth 4096 in
+theorem smallNode977_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode977 :=
+  Graph.node_agrees _ 977 smallRow977 smallNode971 smallNode983
+    smallNode971_agrees smallNode983_agrees (by decide) (by decide) smallRow977_checked
+
+def smallNode997 : Graph := .node 997 smallRow997 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode997_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode997 :=
+  Graph.node_agrees _ 997 smallRow997 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow997_checked
+
+def smallNode1013 : Graph := .node 1013 smallRow1013 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1013_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1013 :=
+  Graph.node_agrees _ 1013 smallRow1013 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1013_checked
+
+def smallNode1009 : Graph := .node 1009 smallRow1009 smallNode997 smallNode1013
+set_option maxRecDepth 4096 in
+theorem smallNode1009_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1009 :=
+  Graph.node_agrees _ 1009 smallRow1009 smallNode997 smallNode1013
+    smallNode997_agrees smallNode1013_agrees (by decide) (by decide) smallRow1009_checked
+
+def smallNode991 : Graph := .node 991 smallRow991 smallNode977 smallNode1009
+set_option maxRecDepth 4096 in
+theorem smallNode991_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode991 :=
+  Graph.node_agrees _ 991 smallRow991 smallNode977 smallNode1009
+    smallNode977_agrees smallNode1009_agrees (by decide) (by decide) smallRow991_checked
+
+def smallNode1021 : Graph := .node 1021 smallRow1021 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1021_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1021 :=
+  Graph.node_agrees _ 1021 smallRow1021 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1021_checked
+
+def smallNode1033 : Graph := .node 1033 smallRow1033 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1033_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1033 :=
+  Graph.node_agrees _ 1033 smallRow1033 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1033_checked
+
+def smallNode1031 : Graph := .node 1031 smallRow1031 smallNode1021 smallNode1033
+set_option maxRecDepth 4096 in
+theorem smallNode1031_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1031 :=
+  Graph.node_agrees _ 1031 smallRow1031 smallNode1021 smallNode1033
+    smallNode1021_agrees smallNode1033_agrees (by decide) (by decide) smallRow1031_checked
+
+def smallNode1049 : Graph := .node 1049 smallRow1049 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1049_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1049 :=
+  Graph.node_agrees _ 1049 smallRow1049 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1049_checked
+
+def smallNode1061 : Graph := .node 1061 smallRow1061 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1061_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1061 :=
+  Graph.node_agrees _ 1061 smallRow1061 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1061_checked
+
+def smallNode1051 : Graph := .node 1051 smallRow1051 smallNode1049 smallNode1061
+set_option maxRecDepth 4096 in
+theorem smallNode1051_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1051 :=
+  Graph.node_agrees _ 1051 smallRow1051 smallNode1049 smallNode1061
+    smallNode1049_agrees smallNode1061_agrees (by decide) (by decide) smallRow1051_checked
+
+def smallNode1039 : Graph := .node 1039 smallRow1039 smallNode1031 smallNode1051
+set_option maxRecDepth 4096 in
+theorem smallNode1039_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1039 :=
+  Graph.node_agrees _ 1039 smallRow1039 smallNode1031 smallNode1051
+    smallNode1031_agrees smallNode1051_agrees (by decide) (by decide) smallRow1039_checked
+
+def smallNode1019 : Graph := .node 1019 smallRow1019 smallNode991 smallNode1039
+set_option maxRecDepth 4096 in
+theorem smallNode1019_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1019 :=
+  Graph.node_agrees _ 1019 smallRow1019 smallNode991 smallNode1039
+    smallNode991_agrees smallNode1039_agrees (by decide) (by decide) smallRow1019_checked
+
+def smallNode1069 : Graph := .node 1069 smallRow1069 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1069_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1069 :=
+  Graph.node_agrees _ 1069 smallRow1069 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1069_checked
+
+def smallNode1091 : Graph := .node 1091 smallRow1091 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1091_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1091 :=
+  Graph.node_agrees _ 1091 smallRow1091 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1091_checked
+
+def smallNode1087 : Graph := .node 1087 smallRow1087 smallNode1069 smallNode1091
+set_option maxRecDepth 4096 in
+theorem smallNode1087_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1087 :=
+  Graph.node_agrees _ 1087 smallRow1087 smallNode1069 smallNode1091
+    smallNode1069_agrees smallNode1091_agrees (by decide) (by decide) smallRow1087_checked
+
+def smallNode1097 : Graph := .node 1097 smallRow1097 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1097_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1097 :=
+  Graph.node_agrees _ 1097 smallRow1097 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1097_checked
+
+def smallNode1109 : Graph := .node 1109 smallRow1109 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1109_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1109 :=
+  Graph.node_agrees _ 1109 smallRow1109 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1109_checked
+
+def smallNode1103 : Graph := .node 1103 smallRow1103 smallNode1097 smallNode1109
+set_option maxRecDepth 4096 in
+theorem smallNode1103_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1103 :=
+  Graph.node_agrees _ 1103 smallRow1103 smallNode1097 smallNode1109
+    smallNode1097_agrees smallNode1109_agrees (by decide) (by decide) smallRow1103_checked
+
+def smallNode1093 : Graph := .node 1093 smallRow1093 smallNode1087 smallNode1103
+set_option maxRecDepth 4096 in
+theorem smallNode1093_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1093 :=
+  Graph.node_agrees _ 1093 smallRow1093 smallNode1087 smallNode1103
+    smallNode1087_agrees smallNode1103_agrees (by decide) (by decide) smallRow1093_checked
+
+def smallNode1123 : Graph := .node 1123 smallRow1123 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1123_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1123 :=
+  Graph.node_agrees _ 1123 smallRow1123 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1123_checked
+
+def smallNode1151 : Graph := .node 1151 smallRow1151 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1151_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1151 :=
+  Graph.node_agrees _ 1151 smallRow1151 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1151_checked
+
+def smallNode1129 : Graph := .node 1129 smallRow1129 smallNode1123 smallNode1151
+set_option maxRecDepth 4096 in
+theorem smallNode1129_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1129 :=
+  Graph.node_agrees _ 1129 smallRow1129 smallNode1123 smallNode1151
+    smallNode1123_agrees smallNode1151_agrees (by decide) (by decide) smallRow1129_checked
+
+def smallNode1163 : Graph := .node 1163 smallRow1163 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1163_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1163 :=
+  Graph.node_agrees _ 1163 smallRow1163 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1163_checked
+
+def smallNode1181 : Graph := .node 1181 smallRow1181 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1181_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1181 :=
+  Graph.node_agrees _ 1181 smallRow1181 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1181_checked
+
+def smallNode1171 : Graph := .node 1171 smallRow1171 smallNode1163 smallNode1181
+set_option maxRecDepth 4096 in
+theorem smallNode1171_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1171 :=
+  Graph.node_agrees _ 1171 smallRow1171 smallNode1163 smallNode1181
+    smallNode1163_agrees smallNode1181_agrees (by decide) (by decide) smallRow1171_checked
+
+def smallNode1153 : Graph := .node 1153 smallRow1153 smallNode1129 smallNode1171
+set_option maxRecDepth 4096 in
+theorem smallNode1153_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1153 :=
+  Graph.node_agrees _ 1153 smallRow1153 smallNode1129 smallNode1171
+    smallNode1129_agrees smallNode1171_agrees (by decide) (by decide) smallRow1153_checked
+
+def smallNode1117 : Graph := .node 1117 smallRow1117 smallNode1093 smallNode1153
+set_option maxRecDepth 4096 in
+theorem smallNode1117_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1117 :=
+  Graph.node_agrees _ 1117 smallRow1117 smallNode1093 smallNode1153
+    smallNode1093_agrees smallNode1153_agrees (by decide) (by decide) smallRow1117_checked
+
+def smallNode1063 : Graph := .node 1063 smallRow1063 smallNode1019 smallNode1117
+set_option maxRecDepth 4096 in
+theorem smallNode1063_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1063 :=
+  Graph.node_agrees _ 1063 smallRow1063 smallNode1019 smallNode1117
+    smallNode1019_agrees smallNode1117_agrees (by decide) (by decide) smallRow1063_checked
+
+def smallNode967 : Graph := .node 967 smallRow967 smallNode853 smallNode1063
+set_option maxRecDepth 4096 in
+theorem smallNode967_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode967 :=
+  Graph.node_agrees _ 967 smallRow967 smallNode853 smallNode1063
+    smallNode853_agrees smallNode1063_agrees (by decide) (by decide) smallRow967_checked
+
+def smallNode1193 : Graph := .node 1193 smallRow1193 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1193_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1193 :=
+  Graph.node_agrees _ 1193 smallRow1193 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1193_checked
+
+def smallNode1213 : Graph := .node 1213 smallRow1213 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1213_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1213 :=
+  Graph.node_agrees _ 1213 smallRow1213 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1213_checked
+
+def smallNode1201 : Graph := .node 1201 smallRow1201 smallNode1193 smallNode1213
+set_option maxRecDepth 4096 in
+theorem smallNode1201_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1201 :=
+  Graph.node_agrees _ 1201 smallRow1201 smallNode1193 smallNode1213
+    smallNode1193_agrees smallNode1213_agrees (by decide) (by decide) smallRow1201_checked
+
+def smallNode1223 : Graph := .node 1223 smallRow1223 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1223_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1223 :=
+  Graph.node_agrees _ 1223 smallRow1223 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1223_checked
+
+def smallNode1231 : Graph := .node 1231 smallRow1231 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1231_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1231 :=
+  Graph.node_agrees _ 1231 smallRow1231 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1231_checked
+
+def smallNode1229 : Graph := .node 1229 smallRow1229 smallNode1223 smallNode1231
+set_option maxRecDepth 4096 in
+theorem smallNode1229_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1229 :=
+  Graph.node_agrees _ 1229 smallRow1229 smallNode1223 smallNode1231
+    smallNode1223_agrees smallNode1231_agrees (by decide) (by decide) smallRow1229_checked
+
+def smallNode1217 : Graph := .node 1217 smallRow1217 smallNode1201 smallNode1229
+set_option maxRecDepth 4096 in
+theorem smallNode1217_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1217 :=
+  Graph.node_agrees _ 1217 smallRow1217 smallNode1201 smallNode1229
+    smallNode1201_agrees smallNode1229_agrees (by decide) (by decide) smallRow1217_checked
+
+def smallNode1249 : Graph := .node 1249 smallRow1249 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1249_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1249 :=
+  Graph.node_agrees _ 1249 smallRow1249 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1249_checked
+
+def smallNode1277 : Graph := .node 1277 smallRow1277 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1277_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1277 :=
+  Graph.node_agrees _ 1277 smallRow1277 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1277_checked
+
+def smallNode1259 : Graph := .node 1259 smallRow1259 smallNode1249 smallNode1277
+set_option maxRecDepth 4096 in
+theorem smallNode1259_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1259 :=
+  Graph.node_agrees _ 1259 smallRow1259 smallNode1249 smallNode1277
+    smallNode1249_agrees smallNode1277_agrees (by decide) (by decide) smallRow1259_checked
+
+def smallNode1283 : Graph := .node 1283 smallRow1283 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1283_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1283 :=
+  Graph.node_agrees _ 1283 smallRow1283 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1283_checked
+
+def smallNode1291 : Graph := .node 1291 smallRow1291 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1291_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1291 :=
+  Graph.node_agrees _ 1291 smallRow1291 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1291_checked
+
+def smallNode1289 : Graph := .node 1289 smallRow1289 smallNode1283 smallNode1291
+set_option maxRecDepth 4096 in
+theorem smallNode1289_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1289 :=
+  Graph.node_agrees _ 1289 smallRow1289 smallNode1283 smallNode1291
+    smallNode1283_agrees smallNode1291_agrees (by decide) (by decide) smallRow1289_checked
+
+def smallNode1279 : Graph := .node 1279 smallRow1279 smallNode1259 smallNode1289
+set_option maxRecDepth 4096 in
+theorem smallNode1279_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1279 :=
+  Graph.node_agrees _ 1279 smallRow1279 smallNode1259 smallNode1289
+    smallNode1259_agrees smallNode1289_agrees (by decide) (by decide) smallRow1279_checked
+
+def smallNode1237 : Graph := .node 1237 smallRow1237 smallNode1217 smallNode1279
+set_option maxRecDepth 4096 in
+theorem smallNode1237_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1237 :=
+  Graph.node_agrees _ 1237 smallRow1237 smallNode1217 smallNode1279
+    smallNode1217_agrees smallNode1279_agrees (by decide) (by decide) smallRow1237_checked
+
+def smallNode1301 : Graph := .node 1301 smallRow1301 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1301_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1301 :=
+  Graph.node_agrees _ 1301 smallRow1301 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1301_checked
+
+def smallNode1307 : Graph := .node 1307 smallRow1307 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1307_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1307 :=
+  Graph.node_agrees _ 1307 smallRow1307 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1307_checked
+
+def smallNode1303 : Graph := .node 1303 smallRow1303 smallNode1301 smallNode1307
+set_option maxRecDepth 4096 in
+theorem smallNode1303_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1303 :=
+  Graph.node_agrees _ 1303 smallRow1303 smallNode1301 smallNode1307
+    smallNode1301_agrees smallNode1307_agrees (by decide) (by decide) smallRow1303_checked
+
+def smallNode1321 : Graph := .node 1321 smallRow1321 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1321_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1321 :=
+  Graph.node_agrees _ 1321 smallRow1321 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1321_checked
+
+def smallNode1361 : Graph := .node 1361 smallRow1361 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1361_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1361 :=
+  Graph.node_agrees _ 1361 smallRow1361 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1361_checked
+
+def smallNode1327 : Graph := .node 1327 smallRow1327 smallNode1321 smallNode1361
+set_option maxRecDepth 4096 in
+theorem smallNode1327_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1327 :=
+  Graph.node_agrees _ 1327 smallRow1327 smallNode1321 smallNode1361
+    smallNode1321_agrees smallNode1361_agrees (by decide) (by decide) smallRow1327_checked
+
+def smallNode1319 : Graph := .node 1319 smallRow1319 smallNode1303 smallNode1327
+set_option maxRecDepth 4096 in
+theorem smallNode1319_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1319 :=
+  Graph.node_agrees _ 1319 smallRow1319 smallNode1303 smallNode1327
+    smallNode1303_agrees smallNode1327_agrees (by decide) (by decide) smallRow1319_checked
+
+def smallNode1373 : Graph := .node 1373 smallRow1373 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1373_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1373 :=
+  Graph.node_agrees _ 1373 smallRow1373 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1373_checked
+
+def smallNode1399 : Graph := .node 1399 smallRow1399 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1399_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1399 :=
+  Graph.node_agrees _ 1399 smallRow1399 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1399_checked
+
+def smallNode1381 : Graph := .node 1381 smallRow1381 smallNode1373 smallNode1399
+set_option maxRecDepth 4096 in
+theorem smallNode1381_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1381 :=
+  Graph.node_agrees _ 1381 smallRow1381 smallNode1373 smallNode1399
+    smallNode1373_agrees smallNode1399_agrees (by decide) (by decide) smallRow1381_checked
+
+def smallNode1423 : Graph := .node 1423 smallRow1423 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1423_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1423 :=
+  Graph.node_agrees _ 1423 smallRow1423 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1423_checked
+
+def smallNode1429 : Graph := .node 1429 smallRow1429 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1429_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1429 :=
+  Graph.node_agrees _ 1429 smallRow1429 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1429_checked
+
+def smallNode1427 : Graph := .node 1427 smallRow1427 smallNode1423 smallNode1429
+set_option maxRecDepth 4096 in
+theorem smallNode1427_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1427 :=
+  Graph.node_agrees _ 1427 smallRow1427 smallNode1423 smallNode1429
+    smallNode1423_agrees smallNode1429_agrees (by decide) (by decide) smallRow1427_checked
+
+def smallNode1409 : Graph := .node 1409 smallRow1409 smallNode1381 smallNode1427
+set_option maxRecDepth 4096 in
+theorem smallNode1409_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1409 :=
+  Graph.node_agrees _ 1409 smallRow1409 smallNode1381 smallNode1427
+    smallNode1381_agrees smallNode1427_agrees (by decide) (by decide) smallRow1409_checked
+
+def smallNode1367 : Graph := .node 1367 smallRow1367 smallNode1319 smallNode1409
+set_option maxRecDepth 4096 in
+theorem smallNode1367_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1367 :=
+  Graph.node_agrees _ 1367 smallRow1367 smallNode1319 smallNode1409
+    smallNode1319_agrees smallNode1409_agrees (by decide) (by decide) smallRow1367_checked
+
+def smallNode1297 : Graph := .node 1297 smallRow1297 smallNode1237 smallNode1367
+set_option maxRecDepth 4096 in
+theorem smallNode1297_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1297 :=
+  Graph.node_agrees _ 1297 smallRow1297 smallNode1237 smallNode1367
+    smallNode1237_agrees smallNode1367_agrees (by decide) (by decide) smallRow1297_checked
+
+def smallNode1439 : Graph := .node 1439 smallRow1439 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1439_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1439 :=
+  Graph.node_agrees _ 1439 smallRow1439 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1439_checked
+
+def smallNode1451 : Graph := .node 1451 smallRow1451 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1451_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1451 :=
+  Graph.node_agrees _ 1451 smallRow1451 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1451_checked
+
+def smallNode1447 : Graph := .node 1447 smallRow1447 smallNode1439 smallNode1451
+set_option maxRecDepth 4096 in
+theorem smallNode1447_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1447 :=
+  Graph.node_agrees _ 1447 smallRow1447 smallNode1439 smallNode1451
+    smallNode1439_agrees smallNode1451_agrees (by decide) (by decide) smallRow1447_checked
+
+def smallNode1459 : Graph := .node 1459 smallRow1459 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1459_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1459 :=
+  Graph.node_agrees _ 1459 smallRow1459 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1459_checked
+
+def smallNode1481 : Graph := .node 1481 smallRow1481 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1481_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1481 :=
+  Graph.node_agrees _ 1481 smallRow1481 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1481_checked
+
+def smallNode1471 : Graph := .node 1471 smallRow1471 smallNode1459 smallNode1481
+set_option maxRecDepth 4096 in
+theorem smallNode1471_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1471 :=
+  Graph.node_agrees _ 1471 smallRow1471 smallNode1459 smallNode1481
+    smallNode1459_agrees smallNode1481_agrees (by decide) (by decide) smallRow1471_checked
+
+def smallNode1453 : Graph := .node 1453 smallRow1453 smallNode1447 smallNode1471
+set_option maxRecDepth 4096 in
+theorem smallNode1453_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1453 :=
+  Graph.node_agrees _ 1453 smallRow1453 smallNode1447 smallNode1471
+    smallNode1447_agrees smallNode1471_agrees (by decide) (by decide) smallRow1453_checked
+
+def smallNode1487 : Graph := .node 1487 smallRow1487 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1487_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1487 :=
+  Graph.node_agrees _ 1487 smallRow1487 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1487_checked
+
+def smallNode1493 : Graph := .node 1493 smallRow1493 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1493_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1493 :=
+  Graph.node_agrees _ 1493 smallRow1493 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1493_checked
+
+def smallNode1489 : Graph := .node 1489 smallRow1489 smallNode1487 smallNode1493
+set_option maxRecDepth 4096 in
+theorem smallNode1489_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1489 :=
+  Graph.node_agrees _ 1489 smallRow1489 smallNode1487 smallNode1493
+    smallNode1487_agrees smallNode1493_agrees (by decide) (by decide) smallRow1489_checked
+
+def smallNode1511 : Graph := .node 1511 smallRow1511 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1511_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1511 :=
+  Graph.node_agrees _ 1511 smallRow1511 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1511_checked
+
+def smallNode1531 : Graph := .node 1531 smallRow1531 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1531_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1531 :=
+  Graph.node_agrees _ 1531 smallRow1531 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1531_checked
+
+def smallNode1523 : Graph := .node 1523 smallRow1523 smallNode1511 smallNode1531
+set_option maxRecDepth 4096 in
+theorem smallNode1523_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1523 :=
+  Graph.node_agrees _ 1523 smallRow1523 smallNode1511 smallNode1531
+    smallNode1511_agrees smallNode1531_agrees (by decide) (by decide) smallRow1523_checked
+
+def smallNode1499 : Graph := .node 1499 smallRow1499 smallNode1489 smallNode1523
+set_option maxRecDepth 4096 in
+theorem smallNode1499_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1499 :=
+  Graph.node_agrees _ 1499 smallRow1499 smallNode1489 smallNode1523
+    smallNode1489_agrees smallNode1523_agrees (by decide) (by decide) smallRow1499_checked
+
+def smallNode1483 : Graph := .node 1483 smallRow1483 smallNode1453 smallNode1499
+set_option maxRecDepth 4096 in
+theorem smallNode1483_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1483 :=
+  Graph.node_agrees _ 1483 smallRow1483 smallNode1453 smallNode1499
+    smallNode1453_agrees smallNode1499_agrees (by decide) (by decide) smallRow1483_checked
+
+def smallNode1549 : Graph := .node 1549 smallRow1549 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1549_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1549 :=
+  Graph.node_agrees _ 1549 smallRow1549 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1549_checked
+
+def smallNode1559 : Graph := .node 1559 smallRow1559 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1559_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1559 :=
+  Graph.node_agrees _ 1559 smallRow1559 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1559_checked
+
+def smallNode1553 : Graph := .node 1553 smallRow1553 smallNode1549 smallNode1559
+set_option maxRecDepth 4096 in
+theorem smallNode1553_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1553 :=
+  Graph.node_agrees _ 1553 smallRow1553 smallNode1549 smallNode1559
+    smallNode1549_agrees smallNode1559_agrees (by decide) (by decide) smallRow1553_checked
+
+def smallNode1571 : Graph := .node 1571 smallRow1571 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1571_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1571 :=
+  Graph.node_agrees _ 1571 smallRow1571 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1571_checked
+
+def smallNode1583 : Graph := .node 1583 smallRow1583 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1583_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1583 :=
+  Graph.node_agrees _ 1583 smallRow1583 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1583_checked
+
+def smallNode1579 : Graph := .node 1579 smallRow1579 smallNode1571 smallNode1583
+set_option maxRecDepth 4096 in
+theorem smallNode1579_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1579 :=
+  Graph.node_agrees _ 1579 smallRow1579 smallNode1571 smallNode1583
+    smallNode1571_agrees smallNode1583_agrees (by decide) (by decide) smallRow1579_checked
+
+def smallNode1567 : Graph := .node 1567 smallRow1567 smallNode1553 smallNode1579
+set_option maxRecDepth 4096 in
+theorem smallNode1567_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1567 :=
+  Graph.node_agrees _ 1567 smallRow1567 smallNode1553 smallNode1579
+    smallNode1553_agrees smallNode1579_agrees (by decide) (by decide) smallRow1567_checked
+
+def smallNode1601 : Graph := .node 1601 smallRow1601 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1601_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1601 :=
+  Graph.node_agrees _ 1601 smallRow1601 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1601_checked
+
+def smallNode1609 : Graph := .node 1609 smallRow1609 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1609_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1609 :=
+  Graph.node_agrees _ 1609 smallRow1609 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1609_checked
+
+def smallNode1607 : Graph := .node 1607 smallRow1607 smallNode1601 smallNode1609
+set_option maxRecDepth 4096 in
+theorem smallNode1607_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1607 :=
+  Graph.node_agrees _ 1607 smallRow1607 smallNode1601 smallNode1609
+    smallNode1601_agrees smallNode1609_agrees (by decide) (by decide) smallRow1607_checked
+
+def smallNode1619 : Graph := .node 1619 smallRow1619 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1619_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1619 :=
+  Graph.node_agrees _ 1619 smallRow1619 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1619_checked
+
+def smallNode1627 : Graph := .node 1627 smallRow1627 smallEmpty smallEmpty
+set_option maxRecDepth 4096 in
+theorem smallNode1627_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1627 :=
+  Graph.node_agrees _ 1627 smallRow1627 smallEmpty smallEmpty
+    smallEmpty_agrees smallEmpty_agrees (by decide) (by decide) smallRow1627_checked
+
+def smallNode1621 : Graph := .node 1621 smallRow1621 smallNode1619 smallNode1627
+set_option maxRecDepth 4096 in
+theorem smallNode1621_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1621 :=
+  Graph.node_agrees _ 1621 smallRow1621 smallNode1619 smallNode1627
+    smallNode1619_agrees smallNode1627_agrees (by decide) (by decide) smallRow1621_checked
+
+def smallNode1613 : Graph := .node 1613 smallRow1613 smallNode1607 smallNode1621
+set_option maxRecDepth 4096 in
+theorem smallNode1613_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1613 :=
+  Graph.node_agrees _ 1613 smallRow1613 smallNode1607 smallNode1621
+    smallNode1607_agrees smallNode1621_agrees (by decide) (by decide) smallRow1613_checked
+
+def smallNode1597 : Graph := .node 1597 smallRow1597 smallNode1567 smallNode1613
+set_option maxRecDepth 4096 in
+theorem smallNode1597_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1597 :=
+  Graph.node_agrees _ 1597 smallRow1597 smallNode1567 smallNode1613
+    smallNode1567_agrees smallNode1613_agrees (by decide) (by decide) smallRow1597_checked
+
+def smallNode1543 : Graph := .node 1543 smallRow1543 smallNode1483 smallNode1597
+set_option maxRecDepth 4096 in
+theorem smallNode1543_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1543 :=
+  Graph.node_agrees _ 1543 smallRow1543 smallNode1483 smallNode1597
+    smallNode1483_agrees smallNode1597_agrees (by decide) (by decide) smallRow1543_checked
+
+def smallNode1433 : Graph := .node 1433 smallRow1433 smallNode1297 smallNode1543
+set_option maxRecDepth 4096 in
+theorem smallNode1433_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1433 :=
+  Graph.node_agrees _ 1433 smallRow1433 smallNode1297 smallNode1543
+    smallNode1297_agrees smallNode1543_agrees (by decide) (by decide) smallRow1433_checked
+
+def smallNode1187 : Graph := .node 1187 smallRow1187 smallNode967 smallNode1433
+set_option maxRecDepth 4096 in
+theorem smallNode1187_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode1187 :=
+  Graph.node_agrees _ 1187 smallRow1187 smallNode967 smallNode1433
+    smallNode967_agrees smallNode1433_agrees (by decide) (by decide) smallRow1187_checked
+
+def smallNode739 : Graph := .node 739 smallRow739 smallNode331 smallNode1187
+set_option maxRecDepth 4096 in
+theorem smallNode739_agrees : Graph.Agrees PrimePairVertices.smallTree smallNode739 :=
+  Graph.node_agrees _ 739 smallRow739 smallNode331 smallNode1187
+    smallNode331_agrees smallNode1187_agrees (by decide) (by decide) smallRow739_checked
+
+def smallPrefix : Graph := smallNode739
+theorem smallPrefix_agrees : Graph.Agrees PrimePairVertices.smallTree smallPrefix := smallNode739_agrees
+set_option maxRecDepth 4096 in
+theorem smallPrefix_vertices : smallPrefix.vertices = PrimePairVertices.small.take 256 := rfl
 
 theorem smallPrefix_vertices_subset (p : Nat) (member : p ∈ smallPrefix.vertices) : p ∈ PrimePairVertices.small := by
   rw [smallPrefix_vertices] at member
