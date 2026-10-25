@@ -1473,4 +1473,137 @@ theorem argument_numbers (heap : Mutable.Heap) (nodes : List (Nat × Node)) (val
       some (integerSet (usedNumbers (nodes ++ [(heap.length, (value, kind))]))) := by
   simp [argumentHeap, pathHeap, usedNumbers, List.append_assoc]
 
+private def numbers (items : List Int) : List Mutable.Value := items.map number
+private abbrev candidates := ProjectEulerSolutions.PolygonalCycle.candidates
+
+private theorem lookup_of_mem (entries : List (Int × Nat)) (key : Int) (address : Nat)
+    (distinct : (entries.map Prod.fst).Nodup) (member : (key, address) ∈ entries) :
+    build_prefix_map.lookup entries key = some address := by
+  induction entries with
+  | nil => simp at member
+  | cons entry rest ih =>
+      obtain ⟨stored, target⟩ := entry
+      rcases List.mem_cons.mp member with same | later
+      · obtain ⟨rfl, rfl⟩ := Prod.mk.inj same
+        simp [build_prefix_map.lookup]
+      · have different : stored ≠ key := by
+          intro equal
+          have present : key ∈ rest.map Prod.fst := List.mem_map.mpr ⟨(key, address), later, rfl⟩
+          exact (List.nodup_cons.mp distinct).1 (by simpa [equal] using present)
+        simpa [build_prefix_map.lookup, different] using ih (List.nodup_cons.mp distinct).2 later
+
+/-- Captured read-only tables needed by every recursive source call. -/
+structure World (heap : Mutable.Heap) (prefixCell typesCell : Nat) where
+  typesAddress : Nat
+  prefixAddress : Nat
+  typesCellFound : heap[typesCell]? = some (.list [.ref typesAddress])
+  typesFound : heap[typesAddress]? = some (.list (numbers solve_setup.types))
+  prefixCellFound : heap[prefixCell]? = some (.list [.ref prefixAddress])
+  family : ∀ kind ∈ solve_setup.types, ∃ target entries,
+    heap[prefixAddress]? = some (.dict entries) ∧
+    ScalarDict.lookup entries (.int kind) = some (.ref target) ∧
+    Nonempty (build_prefix_map.Buckets heap target (candidates kind))
+
+variable {prefixCell typesCell : Nat}
+
+def World.append (world : World heap prefixCell typesCell) (extra : Mutable.Heap) :
+    World (heap ++ extra) prefixCell typesCell where
+  typesAddress := world.typesAddress
+  prefixAddress := world.prefixAddress
+  typesCellFound := build_prefix_map.found_append _ _ _ _ world.typesCellFound
+  typesFound := build_prefix_map.found_append _ _ _ _ world.typesFound
+  prefixCellFound := build_prefix_map.found_append _ _ _ _ world.prefixCellFound
+  family := by
+    intro kind member
+    obtain ⟨target, entries, found, looked, ⟨buckets⟩⟩ := world.family kind member
+    exact ⟨target, entries, build_prefix_map.found_append _ _ _ _ found, looked,
+      ⟨buckets.append extra⟩⟩
+
+def World.of_setup (caller : Mutable.Heap) (cell : Nat)
+    (state : solve_setup.PrefixState (solve_setup.generatedHeap caller) heap solve_setup.types)
+    (cellFound : heap[cell]? = some (.list [.ref (solve_setup.generatedHeap caller).length])) :
+    World heap cell (caller.length + 1) where
+  typesAddress := caller.length
+  prefixAddress := (solve_setup.generatedHeap caller).length
+  typesCellFound := by
+    obtain ⟨extra, extension⟩ := state.extension
+    rw [extension]
+    apply build_prefix_map.found_append
+    simp [solve_setup.generated_layout, solve_setup.initialHeap, List.append_assoc]
+  typesFound := by
+    obtain ⟨extra, extension⟩ := state.extension
+    rw [extension]
+    apply build_prefix_map.found_append
+    simp [solve_setup.generated_layout, solve_setup.initialHeap, List.append_assoc, solve_setup.numbers, numbers]
+  prefixCellFound := cellFound
+  family := by
+    intro kind member
+    have inKeys : kind ∈ state.entries.map Prod.fst := by rw [state.keys]; exact member
+    obtain ⟨⟨key, target⟩, present, equal⟩ := List.mem_map.mp inKeys
+    change key = kind at equal
+    subst key
+    have distinct : (state.entries.map Prod.fst).Nodup := by rw [state.keys]; decide
+    have looked := lookup_of_mem state.entries kind target distinct present
+    obtain ⟨_, ⟨buckets⟩⟩ := state.children kind target present
+    change build_prefix_map.Buckets heap target (generate_4digit_polygonals.answer kind) at buckets
+    rw [generate_4digit_polygonals.candidates_eq_model kind (by simp [solve_setup.types] at member; omega)] at buckets
+    refine ⟨target, build_prefix_map.encode state.entries, state.table, ?_, ⟨buckets⟩⟩
+    simp only [build_prefix_map.lookup_encode, looked, Option.map_some]
+
+theorem types_evaluate (world : World heap prefixCell typesCell) (env : HeapCalls.Env)
+    (getCell : env "__formalsw_cell_solve_types" = some (.ref typesCell)) (globals : Mutable.Globals := []) :
+    Evaluates program env solve_setup.typeCell heap (.ref world.typesAddress) heap globals := by
+  apply Evaluates.subscript (middle := heap) (afterIndex := heap) (finalHeap := heap)
+    (by intros; intro impossible; cases impossible) (Evaluates.lookup getCell) Evaluates.constant
+  exact Mutable.getItem_list _ _ 0 [.ref world.typesAddress] world.typesCellFound (by simp)
+
+/-- The real `.get(suffix, [])` allocates its default on hits as well as misses. -/
+theorem next_values_evaluate (world : World heap prefixCell typesCell) (kind suffix : Int)
+    (member : kind ∈ solve_setup.types) (env : HeapCalls.Env)
+    (getCell : env "__formalsw_cell_solve_pref_map" = some (.ref prefixCell))
+    (getKind : env "t" = some (number kind)) (getSuffix : env "suffix" = some (number suffix))
+    (globals : Mutable.Globals := []) :
+    ∃ result, Evaluates program env nextValues heap (.ref result) (heap ++ [.list []]) globals ∧
+      (heap ++ [.list []])[result]? =
+        some (.list (numbers (build_prefix_map.bucket (candidates kind) suffix))) := by
+  obtain ⟨target, entries, table, looked, ⟨buckets⟩⟩ := world.family kind member
+  have cell : Evaluates program env
+      (.subscript (.name "__formalsw_cell_solve_pref_map") (.constant (.int 0))) heap
+      (.ref world.prefixAddress) heap globals := by
+    apply Evaluates.subscript (middle := heap) (afterIndex := heap) (finalHeap := heap)
+      (by intros; intro impossible; cases impossible) (Evaluates.lookup getCell) Evaluates.constant
+    exact Mutable.getItem_list _ _ 0 [.ref world.prefixAddress] world.prefixCellFound (by simp)
+  have receiver : Evaluates program env
+      (.subscript (.subscript (.name "__formalsw_cell_solve_pref_map") (.constant (.int 0))) (.name "t"))
+      heap (.ref target) heap globals := by
+    apply Evaluates.subscript (middle := heap) (afterIndex := heap) (finalHeap := heap)
+      (by intros; intro impossible; cases impossible) cell (Evaluates.lookup getKind)
+    exact Mutable.getItem_dictionary _ _ _ table (.int kind) looked
+  let extended := buckets.append [.list []]
+  have sameEntries : extended.entries = buckets.entries := rfl
+  cases selected : build_prefix_map.lookup buckets.entries suffix with
+  | none =>
+      refine ⟨heap.length, ?_, ?_⟩
+      · apply Evaluates.dictionary_get (afterReceiver := heap) (afterArguments := heap ++ [.list []])
+          (values := [number suffix, .ref heap.length])
+          (by intro name impossible; cases impossible) receiver buckets.table
+          (.cons (Evaluates.lookup getSuffix) (.cons (Evaluates.list .nil) .nil))
+        change Mutable.dictionaryGet target (number suffix) (.ref heap.length) (heap ++ [.list []]) = _
+        rw [Mutable.dictionaryGet_scalar _ _ _ extended.table (.int suffix) (.ref heap.length),
+          build_prefix_map.lookup_encode, sameEntries, selected]
+        rfl
+      · rw [buckets.missing suffix selected]
+        simp [numbers]
+  | some result =>
+      refine ⟨result, ?_, ?_⟩
+      · apply Evaluates.dictionary_get (afterReceiver := heap) (afterArguments := heap ++ [.list []])
+          (values := [number suffix, .ref heap.length])
+          (by intro name impossible; cases impossible) receiver buckets.table
+          (.cons (Evaluates.lookup getSuffix) (.cons (Evaluates.list .nil) .nil))
+        change Mutable.dictionaryGet target (number suffix) (.ref heap.length) (heap ++ [.list []]) = _
+        rw [Mutable.dictionaryGet_scalar _ _ _ extended.table (.int suffix) (.ref heap.length),
+          build_prefix_map.lookup_encode, sameEntries, selected]
+        rfl
+      · exact build_prefix_map.found_append _ _ _ _ (buckets.present suffix result selected).2
+
 end solvers.«61».dfs
