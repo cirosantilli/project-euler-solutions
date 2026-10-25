@@ -2064,4 +2064,273 @@ theorem inner_loop (state : SearchState heap path typesAddress numbersAddress pr
     (fun _ _ good => good.2.2.2.2) iterate env heap ⟨⟨state⟩, bound, getKind, getSuffix, found⟩
   exact ⟨extra, finalEnv, answer, good.2.1, good.2.2.2.1, represented, executed⟩
 
+theorem BlockOutcome.for_sequence
+    (ordinary : ∀ expressions, iterable ≠ .call (.name "range") expressions)
+    (evaluated : Evaluates program env iterable heap value middle globals)
+    (sequence : Mutable.sequence value middle = some (.ok items, middle))
+    (rest : BlockOutcome env [.sequenceStepLoop name (sequenceSource value) 0 body []]
+      middle finalEnv finalHeap result answer globals) :
+    BlockOutcome env [.forIn (.name name) iterable body []] heap finalEnv finalHeap result answer globals := by
+  cases result with
+  | none => exact BlockContinues.for_sequence ordinary evaluated sequence rest
+  | some logical =>
+      intro following
+      apply BlockReturns.for_sequence ordinary evaluated sequence
+      exact rest following
+
+theorem IterationOutcome.of_block
+    (executed : BlockOutcome env body heap finalEnv finalHeap result answer globals) :
+    IterationOutcome env body heap finalEnv finalHeap result answer globals := by
+  cases result with
+  | none =>
+      have continued := IterationContinues.prepend executed (IterationContinues.nil finalEnv finalHeap globals)
+      simpa only [List.append_nil] using continued
+  | some logical => exact executed
+
+theorem outer_skip (state : SearchState heap path typesAddress numbersAddress prefixCell typesCell nodes)
+    (bound : Bindings env path typesAddress numbersAddress prefixCell typesCell) (kind : Int)
+    (used : kind ∈ usedKinds nodes) (getKind : env "t" = some (number kind))
+    (globals : Mutable.Globals := []) :
+    IterationContinues env outerBody heap env heap globals := by
+  have tested := set_membership_evaluate heap typesAddress (usedKinds nodes) state.typesFound
+    "used_types" "t" kind env bound.getTypes getKind globals
+  apply IterationContinues.branch (flag := true) (by simpa [used] using tested) rfl
+  apply IterationContinues.skip
+  intros
+  rfl
+
+def typeVisit (nodes : List (Nat × Node)) (suffix : Int)
+    (visit : Int → Int → Option ProjectEulerSolutions.PolygonalCycle.Path) (kind : Int) :
+    Option ProjectEulerSolutions.PolygonalCycle.Path :=
+  if kind ∈ usedKinds nodes then none else
+    ProjectEulerSolutions.PolygonalCycle.firstResult (build_prefix_map.bucket (candidates kind) suffix)
+      (fun value => if value ∈ usedNumbers nodes then none else visit kind value)
+
+/-- Both source loops retain their order, captured tables, and failed-call allocations. -/
+theorem outer_loop (state : SearchState heap path typesAddress numbersAddress prefixCell typesCell nodes)
+    (bound : Bindings env path typesAddress numbersAddress prefixCell typesCell)
+    (suffix : Int) (getSuffix : env "suffix" = some (number suffix))
+    (visit : Int → Int → Option ProjectEulerSolutions.PolygonalCycle.Path)
+    (child : ∀ currentHeap kind value,
+      SearchState currentHeap path typesAddress numbersAddress prefixCell typesCell nodes →
+      kind ∈ solve_setup.types → kind ∉ usedKinds nodes →
+      value ∈ build_prefix_map.bucket (candidates kind) suffix → value ∉ usedNumbers nodes →
+      ∃ extra answer, ReturnsValue program "__formalsw_local_solve_dfs"
+        [.ref (currentHeap.length + 2), .ref (currentHeap.length + 4), .ref (currentHeap.length + 6),
+         .ref prefixCell, .ref typesCell]
+        (argumentHeap currentHeap nodes value kind) answer (argumentHeap currentHeap nodes value kind ++ extra) globals ∧
+        ResultView (argumentHeap currentHeap nodes value kind ++ extra) (visit kind value) answer) :
+    ∃ extra finalEnv answer, Bindings finalEnv path typesAddress numbersAddress prefixCell typesCell ∧
+      ResultView (heap ++ extra)
+        (ProjectEulerSolutions.PolygonalCycle.firstResult solve_setup.types (typeVisit nodes suffix visit)) answer ∧
+      BlockOutcome env [.forIn (.name "t") solve_setup.typeCell outerBody []] heap finalEnv (heap ++ extra)
+        (ProjectEulerSolutions.PolygonalCycle.firstResult solve_setup.types (typeVisit nodes suffix visit)) answer globals := by
+  let source := state.world.typesAddress
+  let invariant := fun currentEnv currentHeap =>
+    Nonempty (SearchState currentHeap path typesAddress numbersAddress prefixCell typesCell nodes) ∧
+      Bindings currentEnv path typesAddress numbersAddress prefixCell typesCell ∧
+      currentEnv "suffix" = some (number suffix) ∧
+      currentHeap[source]? = some (.list (numbers solve_setup.types))
+  have iterate : ∀ currentEnv currentHeap kind, invariant currentEnv currentHeap → kind ∈ solve_setup.types →
+      ∃ extra finalEnv answer, invariant finalEnv (currentHeap ++ extra) ∧
+        ResultView (currentHeap ++ extra) (typeVisit nodes suffix visit kind) answer ∧
+        IterationOutcome (setLocal currentEnv "t" (number kind)) outerBody currentHeap finalEnv
+          (currentHeap ++ extra) (typeVisit nodes suffix visit kind) answer globals := by
+    intro currentEnv currentHeap kind good member
+    obtain ⟨⟨current⟩, currentBound, currentSuffix, currentFound⟩ := good
+    let chosenEnv := setLocal currentEnv "t" (number kind)
+    have chosenBound : Bindings chosenEnv path typesAddress numbersAddress prefixCell typesCell :=
+      currentBound.local "t" (number kind) (by decide)
+    have chosenSuffix : chosenEnv "suffix" = some (number suffix) := by simpa [chosenEnv, setLocal] using currentSuffix
+    by_cases used : kind ∈ usedKinds nodes
+    · refine ⟨[], chosenEnv, .scalar .none, ?_, ?_, ?_⟩
+      · exact ⟨⟨by simpa using current⟩, chosenBound, chosenSuffix, by simpa using currentFound⟩
+      · simp only [typeVisit, if_pos used]; rfl
+      · simp only [typeVisit, if_pos used, IterationOutcome]
+        simpa only [List.append_nil] using outer_skip current chosenBound kind used rfl globals
+    · obtain ⟨bucketAddress, evaluated, bucketFound⟩ := next_values_evaluate current.world kind suffix member chosenEnv
+        chosenBound.getPrefixCell rfl chosenSuffix globals
+      obtain ⟨extra, finalEnv, answer, finalBound, finalSuffix, represented, executed⟩ :=
+        inner_loop (current.append [.list []]) chosenBound kind suffix used rfl chosenSuffix
+          (build_prefix_map.bucket (candidates kind) suffix) bucketAddress bucketFound (visit kind)
+          (fun nextHeap value ready inBucket fresh => child nextHeap kind value ready member used inBucket fresh)
+      have sequence : Mutable.sequence (.ref bucketAddress) (currentHeap ++ [.list []]) =
+          some (.ok (numbers (build_prefix_map.bucket (candidates kind) suffix)), currentHeap ++ [.list []]) := by
+        simp [Mutable.sequence, bucketFound]
+      have header := BlockOutcome.for_sequence
+        (by intro expressions impossible; cases impossible) evaluated sequence executed
+      let total : Mutable.Heap := .list [] :: extra
+      have layout : (currentHeap ++ [.list []]) ++ extra = currentHeap ++ total := by
+        simp [total, List.append_assoc]
+      rw [layout] at represented header
+      refine ⟨total, finalEnv, answer, ?_, ?_, ?_⟩
+      · exact ⟨⟨current.append total⟩, finalBound, finalSuffix,
+          build_prefix_map.found_append _ _ _ _ currentFound⟩
+      · simpa only [typeVisit, if_neg used] using represented
+      · simp only [typeVisit, if_neg used]
+        have tested := set_membership_evaluate currentHeap typesAddress (usedKinds nodes) current.typesFound
+          "used_types" "t" kind chosenEnv chosenBound.getTypes rfl globals
+        cases outcome : ProjectEulerSolutions.PolygonalCycle.firstResult
+            (build_prefix_map.bucket (candidates kind) suffix)
+            (fun value => if value ∈ usedNumbers nodes then none else visit kind value) with
+        | none =>
+            apply IterationContinues.branch (flag := false) (by simpa [used] using tested) rfl
+            have continued : IterationContinues chosenEnv [.forIn (.name "nxt") nextValues innerBody []]
+                currentHeap finalEnv (currentHeap ++ total) globals :=
+              IterationOutcome.of_block (result := none) (by simpa only [outcome] using header)
+            exact continued
+        | some logical =>
+            intro following
+            apply BlockReturns.branch (flag := false) (by simpa [used] using tested) rfl
+            have returned : ∀ following, BlockReturns program chosenEnv
+                ([.forIn (.name "nxt") nextValues innerBody []] ++ following) currentHeap answer
+                (currentHeap ++ total) globals := by simpa only [outcome, BlockOutcome] using header
+            exact returned following
+  obtain ⟨extra, finalEnv, answer, good, represented, executed⟩ := ordered_loop solve_setup.types solve_setup.types 0 rfl
+    source "t" outerBody rfl (typeVisit nodes suffix visit) invariant (fun _ _ good => good.2.2.2) iterate
+    env heap ⟨⟨state⟩, bound, getSuffix, state.world.typesFound⟩
+  refine ⟨extra, finalEnv, answer, good.2.1, represented, ?_⟩
+  exact BlockOutcome.for_sequence (items := numbers solve_setup.types) (by intro expressions impossible; cases impossible)
+    (types_evaluate state.world env bound.getTypesCell globals)
+    (by simp [Mutable.sequence, state.world.typesFound]) executed
+
+theorem BlockOutcome.complete
+    (executed : BlockOutcome env body heap finalEnv finalHeap result answer globals)
+    (represented : ResultView finalHeap result answer) :
+    BlockReturns program env (body ++ [.return (.constant .none)]) heap answer finalHeap globals := by
+  cases result with
+  | none =>
+      have failed : answer = .scalar .none := represented
+      subst answer
+      exact BlockContinues.returns executed (BlockReturns.return_value Evaluates.constant)
+  | some logical => exact executed _
+
+/-- Every reachable source DFS call terminates with the exact ordered search-model result. -/
+theorem search_result (fuel : Nat) (heap : Mutable.Heap)
+    (path typesAddress numbersAddress prefixCell typesCell : Nat) (nodes : List (Nat × Node))
+    (state : SearchState heap path typesAddress numbersAddress prefixCell typesCell nodes)
+    (nonempty : nodes ≠ []) (depth : nodes.length + fuel = 6) (globals : Mutable.Globals := []) :
+    ∃ extra answer, ReturnsValue program "__formalsw_local_solve_dfs"
+      [.ref path, .ref typesAddress, .ref numbersAddress, .ref prefixCell, .ref typesCell]
+      heap answer (heap ++ extra) globals ∧
+      ResultView (heap ++ extra) (ProjectEulerSolutions.PolygonalCycle.search fuel (nodes.map Prod.snd)) answer := by
+  induction fuel generalizing heap path typesAddress numbersAddress prefixCell typesCell nodes with
+  | zero =>
+      have size : nodes.length = 6 := by omega
+      obtain ⟨answer, returned, represented⟩ := finish_result state.pathView size (.ref typesAddress)
+        (.ref numbersAddress) (.ref prefixCell) (.ref typesCell) globals
+      refine ⟨[], answer, by simpa using returned, ?_⟩
+      simpa [ProjectEulerSolutions.PolygonalCycle.search, size] using represented
+  | succ fuel ih =>
+      have short : nodes.length ≠ 6 := by omega
+      obtain ⟨target, value, kind, last⟩ : ∃ target value kind, nodes.getLast? = some (target, (value, kind)) := by
+        cases found : nodes.getLast? with
+        | none => exact False.elim (nonempty (List.getLast?_eq_none_iff.mp found))
+        | some item => exact ⟨item.1, item.2.1, item.2.2, rfl⟩
+      let params := ((findFunctionIn program.body "__formalsw_local_solve_dfs").getD ([], [])).1
+      let sourceBody := ((findFunctionIn program.body "__formalsw_local_solve_dfs").getD ([], [])).2
+      let env := functionEnv params sourceBody
+        [.ref path, .ref typesAddress, .ref numbersAddress, .ref prefixCell, .ref typesCell] globals
+      have bound : Bindings env path typesAddress numbersAddress prefixCell typesCell :=
+        Bindings.function path typesAddress numbersAddress prefixCell typesCell globals
+      let suffixEnv := setLocal env "suffix" (number (value % 100))
+      have suffixBound : Bindings suffixEnv path typesAddress numbersAddress prefixCell typesCell :=
+        bound.local "suffix" (number (value % 100)) (by decide)
+      let visit := fun nextKind nextValue =>
+        ProjectEulerSolutions.PolygonalCycle.search fuel (nodes.map Prod.snd ++ [(nextValue, nextKind)])
+      have child : ∀ currentHeap nextKind nextValue,
+          SearchState currentHeap path typesAddress numbersAddress prefixCell typesCell nodes →
+          nextKind ∈ solve_setup.types → nextKind ∉ usedKinds nodes →
+          nextValue ∈ build_prefix_map.bucket (candidates nextKind) (value % 100) →
+          nextValue ∉ usedNumbers nodes →
+          ∃ extra answer, ReturnsValue program "__formalsw_local_solve_dfs"
+            [.ref (currentHeap.length + 2), .ref (currentHeap.length + 4), .ref (currentHeap.length + 6),
+             .ref prefixCell, .ref typesCell]
+            (argumentHeap currentHeap nodes nextValue nextKind) answer
+              (argumentHeap currentHeap nodes nextValue nextKind ++ extra) globals ∧
+            ResultView (argumentHeap currentHeap nodes nextValue nextKind ++ extra) (visit nextKind nextValue) answer := by
+        intro currentHeap nextKind nextValue ready _ _ _ _
+        have childDepth : (nodes ++ [(currentHeap.length, (nextValue, nextKind))]).length + fuel = 6 := by
+          simp only [List.length_append, List.length_singleton]
+          omega
+        have returned := ih (argumentHeap currentHeap nodes nextValue nextKind)
+          (currentHeap.length + 2) (currentHeap.length + 4) (currentHeap.length + 6) prefixCell typesCell
+          (nodes ++ [(currentHeap.length, (nextValue, nextKind))]) (ready.arguments nextValue nextKind)
+          (by simp) childDepth
+        simpa only [visit, List.map_append, List.map_cons, List.map_nil] using returned
+      obtain ⟨extra, finalEnv, answer, finalBound, represented, executed⟩ :=
+        outer_loop state suffixBound (value % 100) rfl visit child
+      have model : ProjectEulerSolutions.PolygonalCycle.search (fuel + 1) (nodes.map Prod.snd) =
+          ProjectEulerSolutions.PolygonalCycle.firstResult solve_setup.types (typeVisit nodes (value % 100) visit) := by
+        rw [ProjectEulerSolutions.PolygonalCycle.search, List.length_map, if_neg short]
+        simp only [List.getLast?_map, last, Option.map_some, Option.getD_some]
+        simp only [List.map_map]
+        rfl
+      refine ⟨extra, answer, ?_, ?_⟩
+      · apply BlockReturns.function rfl rfl
+        change BlockReturns program env code heap answer (heap ++ extra) globals
+        apply BlockReturns.branch (flag := false)
+          (by simpa only [short, decide_false] using path_length_evaluate state.pathView env bound.getPath globals) rfl
+        apply BlockReturns.assign (suffix_evaluate state.pathView target value kind last env bound.getPath globals)
+        exact BlockOutcome.complete executed represented
+      · rw [model]
+        exact represented
+
+def sumTarget : Expr := .tuple [.name "x", .name "_t"]
+def sumExpression : Expr :=
+  .sumGeneratorTargets (.name "x") [(sumTarget, .name "res", [])] (.constant (.int 0))
+private def sumIteration : List Stmt := comprehensionTargetBody sumTarget (sumBody (.name "x") [])
+
+private theorem sum_loop (view : PathView heap path nodes) (remaining : List (Nat × Node))
+    (position : Nat) (suffix : nodes.drop position = remaining) (env : HeapCalls.Env) (initial : Int)
+    (accumulator : env sumAccumulator = some (number initial)) (globals : Mutable.Globals) :
+    BlockReturns program env
+      [.sequenceStepLoop (comprehensionTargetName sumTarget) (.ref path) position sumIteration [],
+       .return (.name sumAccumulator)] heap
+      (number (remaining.foldl (fun total node => total + node.2.1) initial)) heap globals := by
+  have sequence : Mutable.sequence (sequenceValue (.ref path)) heap = some (.ok (references nodes), heap) := by
+    simp [sequenceValue, Mutable.sequence, view.found]
+  induction remaining generalizing position env initial with
+  | nil =>
+      apply BlockReturns.sequence_done sequence
+      · have exhausted : nodes[position]? = none := by rw [← List.head?_drop, suffix]; rfl
+        simp [references, List.getElem?_map, exhausted]
+      · exact BlockReturns.return_value (Evaluates.lookup accumulator)
+  | cons head rest ih =>
+      have selected : nodes[position]? = some head := by rw [← List.head?_drop, suffix]; rfl
+      have tuple := view.contents head.1 head.2 (List.mem_of_getElem? selected)
+      apply BlockReturns.sequence_step (value := .ref head.1) sequence
+        (by simp [references, List.getElem?_map, selected])
+      apply BlockReturns.unpack (middle := heap) (afterUnpack := heap)
+        (names := ["x", "_t"]) (items := [number head.2.1, number head.2.2])
+        rfl (Evaluates.lookup rfl) (by simp [Mutable.sequence, tuple]) rfl
+      apply BlockReturns.assign (value := number (initial + head.2.1)) (middle := heap)
+      · apply Evaluates.binary (middle := heap) (afterRight := heap) (finalHeap := heap)
+          (av := number initial) (bv := number head.2.1)
+        · apply Evaluates.lookup
+          simpa [assignNames, setLocal, sumAccumulator, comprehensionTargetName, sumTarget] using accumulator
+        · exact Evaluates.lookup (by simp [assignNames, setLocal])
+        · simp [Mutable.binary, scalarBinary, number]
+      · change BlockReturns program _
+          [.sequenceStepLoop (comprehensionTargetName sumTarget) (.ref path) (position + 1) sumIteration [],
+           .return (.name sumAccumulator)] heap _ heap globals
+        apply ih
+        · simp [List.drop_add_one_eq_tail_drop, suffix]
+        · rfl
+
+/-- The source generator unpacks the actual path tuples and sums their first components. -/
+theorem sum_evaluate (view : PathView heap path nodes) (env : HeapCalls.Env)
+    (getResult : env "res" = some (.ref path)) (globals : Mutable.Globals := []) :
+    Evaluates program env sumExpression heap (number (usedNumbers nodes).sum) heap globals := by
+  have total : nodes.foldl (fun total node => total + node.2.1) 0 = (usedNumbers nodes).sum := by
+    simp [usedNumbers, List.sum_eq_foldl, List.foldl_map]
+  apply Evaluates.sum_generator_targets_sequence (items := references nodes)
+    (by intro expressions impossible; cases impossible)
+    (by intro expressions impossible; cases impossible)
+    (by intro expressions impossible; cases impossible)
+    (Evaluates.lookup getResult) (by simp [Mutable.sequence, view.found]) Evaluates.constant rfl
+  have executed := sum_loop view nodes 0 rfl
+    (setLocal (comprehensionTargetsEnv env [(sumTarget, .name "res", [])]) sumAccumulator (number 0)) 0 rfl globals
+  simpa only [total, comprehensionFilters, comprehensionTargetsBody, sumIteration] using executed
+
 end solvers.«61».dfs
