@@ -5,6 +5,7 @@ import lang.py.FormalSW.ReverseSortingCalls
 import lang.py.FormalSW.TupleComparisons
 import ProjectEulerSolutions.Lib.HeapCollection
 import ProjectEulerSolutions.Lib.PokerGroupOrder
+import ProjectEulerSolutions.Lib.PokerUnique
 import ProjectEulerSolutions.Lib.TupleSorting
 import Mathlib.Data.List.Forall2
 
@@ -1382,3 +1383,561 @@ theorem two_pair_groups_kicker_nonempty (heap : Mutable.Heap) (address : Nat) (v
   exact two_pairs_kicker_nonempty values high low five different (by omega) (by omega)
 
 end solvers.«54».Kickers
+
+namespace solvers.«54».Kickers
+open FormalSW.PyAst
+
+def decodedRanks (heap : Mutable.Heap) (table : List (Int × Int)) : List Int :=
+  ((rank_groups.resultGroups heap table).map
+    (ProjectEulerSolutions.TupleSorting.readInts (rank_groups.collected heap table))).map (fun row => row.getD 1 0)
+
+def returnedHeap (heap : Mutable.Heap) (table : List (Int × Int)) : Mutable.Heap :=
+  rank_groups.collected heap table ++ [.list (rank_groups.resultGroups heap table)]
+
+def returnedRanks (heap : Mutable.Heap) (table : List (Int × Int)) : List Int :=
+  ((rank_groups.resultGroups heap table).map
+    (ProjectEulerSolutions.TupleSorting.readInts (returnedHeap heap table))).map (fun row => row.getD 1 0)
+
+/-- Actual sorted source tuples retain exactly the original dictionary ranks. -/
+theorem decodedRanks_perm (heap : Mutable.Heap) (address : Nat) (table : List (Int × Int))
+    (found : heap[address]? = some (.dict (count_values.entries table))) :
+    (decodedRanks heap table).Perm (table.map Prod.fst) := by
+  have permutation := ((ProjectEulerSolutions.TupleSorting.sorted_perm (rank_groups.collected heap table) true
+    (rank_groups.references (heap.length+1) table)).map
+      (ProjectEulerSolutions.TupleSorting.readInts (rank_groups.collected heap table))).map (fun row => row.getD 1 0)
+  have rows := rank_groups.Represents.readInts _ _ _ (rank_groups.collected_represents heap address table found)
+  rw [rows] at permutation
+  simpa only [decodedRanks, List.map_map, Function.comp_def] using permutation
+
+theorem returnedRanks_eq (heap : Mutable.Heap) (address : Nat) (table : List (Int × Int))
+    (found : heap[address]? = some (.dict (count_values.entries table))) :
+    returnedRanks heap table = decodedRanks heap table := by
+  exact congrArg (List.map (fun row : List Int => row.getD 1 0))
+    (rank_groups.resultGroups_readInts_append heap address table found [.list (rank_groups.resultGroups heap table)])
+
+theorem returnedRanks_perm (heap : Mutable.Heap) (address : Nat) (table : List (Int × Int))
+    (found : heap[address]? = some (.dict (count_values.entries table))) :
+    (returnedRanks heap table).Perm (table.map Prod.fst) := by
+  rw [returnedRanks_eq heap address table found]
+  exact decodedRanks_perm heap address table found
+
+/-- In the final source heap, frequency groups still have pairwise distinct ranks. -/
+theorem returnedRanks_nodup (heap : Mutable.Heap) (address : Nat) (values : List Int)
+    (found : heap[address]? = some (.dict (count_values.entries (count_values.counts values)))) :
+    (returnedRanks heap (count_values.counts values)).Nodup :=
+  (returnedRanks_perm heap address (count_values.counts values) found).nodup_iff.mpr
+    (count_values.counts_keys_nodup values)
+
+theorem returned_row_eq (heap : Mutable.Heap) (address : Nat) (table : List (Int × Int))
+    (found : heap[address]? = some (.dict (count_values.entries table))) (group : Mutable.Value)
+    (member : group ∈ rank_groups.resultGroups heap table) :
+    ProjectEulerSolutions.TupleSorting.readInts (returnedHeap heap table) group =
+      ProjectEulerSolutions.TupleSorting.readInts (rank_groups.collected heap table) group := by
+  obtain ⟨index, atIndex⟩ := List.mem_iff_getElem?.mp member
+  have equal := congrArg (fun rows : List (List Int) => rows[index]?)
+    (rank_groups.resultGroups_readInts_append heap address table found [.list (rank_groups.resultGroups heap table)])
+  simpa only [returnedHeap, List.getElem?_map, atIndex, Option.map_some, Option.some.injEq] using equal
+
+/-- Two different successful group subscriptions cannot name the same rank. -/
+theorem group_rank_ne_of_indices (heap : Mutable.Heap) (address : Nat) (values : List Int)
+    (found : heap[address]? = some (.dict (count_values.entries (count_values.counts values))))
+    (i j : Nat) (left right : Mutable.Value)
+    (atLeft : (rank_groups.resultGroups heap (count_values.counts values))[i]? = some left)
+    (atRight : (rank_groups.resultGroups heap (count_values.counts values))[j]? = some right)
+    (different : i ≠ j) :
+    (ProjectEulerSolutions.TupleSorting.readInts (returnedHeap heap (count_values.counts values)) left).getD 1 0 ≠
+      (ProjectEulerSolutions.TupleSorting.readInts (returnedHeap heap (count_values.counts values)) right).getD 1 0 := by
+  have leftRead : (returnedRanks heap (count_values.counts values))[i]? = some
+      ((ProjectEulerSolutions.TupleSorting.readInts (returnedHeap heap (count_values.counts values)) left).getD 1 0) := by
+    simp only [returnedRanks, List.getElem?_map, atLeft, Option.map_some]
+  have rightRead : (returnedRanks heap (count_values.counts values))[j]? = some
+      ((ProjectEulerSolutions.TupleSorting.readInts (returnedHeap heap (count_values.counts values)) right).getD 1 0) := by
+    simp only [returnedRanks, List.getElem?_map, atRight, Option.map_some]
+  intro same
+  apply different
+  apply (List.getElem?_inj (List.getElem?_eq_some_iff.mp leftRead).1 (returnedRanks_nodup heap address values found)).mp
+  rw [leftRead, rightRead, same]
+
+/-- The actual two-pair source positions imply both distinct ranks and a nonempty kicker filter. -/
+theorem two_pair_positions_kicker_nonempty (heap : Mutable.Heap) (address : Nat) (values : List Int)
+    (found : heap[address]? = some (.dict (count_values.entries (count_values.counts values))))
+    (five : values.length = 5) (i j : Nat) (highGroup lowGroup : Mutable.Value)
+    (atHigh : (rank_groups.resultGroups heap (count_values.counts values))[i]? = some highGroup)
+    (atLow : (rank_groups.resultGroups heap (count_values.counts values))[j]? = some lowGroup)
+    (different : i ≠ j) (high low : Int)
+    (highDecoded : ProjectEulerSolutions.TupleSorting.readInts (returnedHeap heap (count_values.counts values)) highGroup = [2, high])
+    (lowDecoded : ProjectEulerSolutions.TupleSorting.readInts (returnedHeap heap (count_values.counts values)) lowGroup = [2, low]) :
+    values.filter (fun value => value != high && value != low) ≠ [] := by
+  have highMember := List.mem_iff_getElem?.mpr ⟨i, atHigh⟩
+  have lowMember := List.mem_iff_getElem?.mpr ⟨j, atLow⟩
+  have separated := group_rank_ne_of_indices heap address values found i j highGroup lowGroup atHigh atLow different
+  have distinctRanks : high ≠ low := by
+    simpa only [highDecoded, lowDecoded, List.getD_cons_succ, List.getD_cons_zero] using separated
+  have highBefore : ProjectEulerSolutions.TupleSorting.readInts (rank_groups.collected heap (count_values.counts values)) highGroup =
+      [2, high] := (returned_row_eq heap address (count_values.counts values) found highGroup highMember).symm.trans highDecoded
+  have lowBefore : ProjectEulerSolutions.TupleSorting.readInts (rank_groups.collected heap (count_values.counts values)) lowGroup =
+      [2, low] := (returned_row_eq heap address (count_values.counts values) found lowGroup lowMember).symm.trans lowDecoded
+  exact two_pair_groups_kicker_nonempty heap address values found five highGroup lowGroup highMember lowMember high low
+    distinctRanks highBefore lowBefore
+
+end solvers.«54».Kickers
+
+namespace solvers.«54».numeric_score.straight_detection
+open FormalSW.PyAst FormalSW.PyAst.HeapCalls
+set_option Elab.async false
+
+private abbrev program := Solvers.P54Ast.module
+private abbrev number (n : Int) : Mutable.Value := .scalar (.int n)
+private abbrev numbers (values : List Int) : List Mutable.Value := values.map number
+private abbrev flag (b : Bool) : Mutable.Value := .scalar (.bool b)
+private def code : List Stmt := executableBody ((findFunctionIn program.body "_score_values").getD ([], [])).2
+
+def wheel : List Int := [2, 3, 4, 5, 14]
+def spread (values : List Int) : Int := values.getLastD 0 - values.headD 0
+def detected (values : List Int) : Bool := decide (values.length = 5 ∧ (spread values = 4 ∨ values = wheel))
+def high (values : List Int) : Int := if detected values then if spread values = 4 then values.getLastD 0 else 5 else 0
+def updated (env : HeapCalls.Env) (values : List Int) : HeapCalls.Env :=
+  if detected values then setLocal (setLocal env "is_straight" (flag true)) "straight_high" (number (high values)) else env
+def extra (values : List Int) : Heap :=
+  if values.length = 5 ∧ spread values ≠ 4 then [.list (numbers wheel)] else []
+
+private abbrev lengthTest : Expr := .compare (.builtinCall .len [.name "uniq"]) [(.eq, .constant (.int 5))]
+private abbrev firstExpression : Expr := .subscript (.name "uniq") (.constant (.int 0))
+private abbrev lastExpression : Expr := .subscript (.name "uniq") (.unaryOp .uSub (.constant (.int 1)))
+private abbrev spreadTest : Expr := .compare (.binOp lastExpression .sub firstExpression) [(.eq, .constant (.int 4))]
+private abbrev wheelExpression : Expr := .list
+  [.constant (.int 2), .constant (.int 3), .constant (.int 4), .constant (.int 5), .constant (.int 14)]
+private abbrev wheelTest : Expr := .compare (.name "uniq") [(.eq, wheelExpression)]
+private abbrev assignments (top : Expr) : List Stmt :=
+  [.assign [.name "is_straight"] (.constant (.bool true)), .assign [.name "straight_high"] top]
+private abbrev statement : Stmt := .ifThen lengthTest
+  [.ifThen spreadTest (assignments lastExpression) [.ifThen wheelTest (assignments (.constant (.int 5))) []]] []
+
+private theorem found_append {heap : Heap} {address : Nat} {object : Mutable.Object}
+    (found : heap[address]? = some object) (objects : Heap) : (heap ++ objects)[address]? = some object := by
+  rw [List.getElem?_append_left (List.getElem?_eq_some_iff.mp found).1]
+  exact found
+
+private theorem length_test (heap : Heap) (env : HeapCalls.Env) (address : Nat) (values : List Int)
+    (globals : Mutable.Globals) (bound : env "uniq" = some (.ref address))
+    (found : heap[address]? = some (.list (numbers values))) :
+    Evaluates program env lengthTest heap (flag (decide (values.length = 5))) heap globals := by
+  apply Evaluates.compare (av := number values.length) (bv := number 5) (middle := heap) (afterRight := heap)
+  · apply Evaluates.builtin (.cons (Evaluates.lookup bound) .nil)
+    simp [primitive, Mutable.length, found, numbers]
+  · exact Evaluates.constant
+  · simp [HeapCalls.compare, scalarCompare, evalCmpOp, flag]
+    omega
+
+private theorem first_five (heap : Heap) (env : HeapCalls.Env) (address : Nat) (a b c d e : Int)
+    (globals : Mutable.Globals) (bound : env "uniq" = some (.ref address))
+    (found : heap[address]? = some (.list (numbers [a, b, c, d, e]))) :
+    Evaluates program env firstExpression heap (number a) heap globals := by
+  apply Evaluates.subscript (by intros; simp) (Evaluates.lookup bound) Evaluates.constant
+  simp [Mutable.getItem, Mutable.index, found, numbers, number, Except.map]
+
+private theorem last_five (heap : Heap) (env : HeapCalls.Env) (address : Nat) (a b c d e : Int)
+    (globals : Mutable.Globals) (bound : env "uniq" = some (.ref address))
+    (found : heap[address]? = some (.list (numbers [a, b, c, d, e]))) :
+    Evaluates program env lastExpression heap (number e) heap globals := by
+  apply Evaluates.subscript (by intros; simp) (Evaluates.lookup bound) (Evaluates.unary Evaluates.constant rfl)
+  simp [Mutable.getItem, Mutable.index, found, numbers, number, Except.map]
+
+private theorem spread_test (heap : Heap) (env : HeapCalls.Env) (address : Nat) (a b c d e : Int)
+    (globals : Mutable.Globals) (bound : env "uniq" = some (.ref address))
+    (found : heap[address]? = some (.list (numbers [a, b, c, d, e]))) :
+    Evaluates program env spreadTest heap (flag (decide (e-a = 4))) heap globals := by
+  apply Evaluates.compare (av := number (e-a)) (bv := number 4) (middle := heap) (afterRight := heap)
+  · exact Evaluates.binary (last_five heap env address a b c d e globals bound found)
+      (first_five heap env address a b c d e globals bound found) rfl
+  · exact Evaluates.constant
+  · simp [HeapCalls.compare, scalarCompare, evalCmpOp, flag]
+
+private theorem wheel_test (heap : Heap) (env : HeapCalls.Env) (address : Nat) (values : List Int)
+    (globals : Mutable.Globals) (bound : env "uniq" = some (.ref address))
+    (found : heap[address]? = some (.list (numbers values))) :
+    Evaluates program env wheelTest heap (flag (decide (values = wheel)))
+      (heap ++ [.list (numbers wheel)]) globals := by
+  let middle := heap ++ [Mutable.Object.list (numbers wheel)]
+  have inside := (List.getElem?_eq_some_iff.mp found).1
+  have different : address ≠ heap.length := by omega
+  have original : middle[address]? = some (.list (numbers values)) := found_append found _
+  have literal : middle[heap.length]? = some (.list (numbers wheel)) := by simp [middle]
+  apply Evaluates.compare (av := .ref address) (bv := .ref heap.length) (middle := heap) (afterRight := middle)
+  · exact Evaluates.lookup bound
+  · exact Evaluates.list (.cons Evaluates.constant (.cons Evaluates.constant
+      (.cons Evaluates.constant (.cons Evaluates.constant (.cons Evaluates.constant .nil)))))
+  · simp [HeapCalls.compare, Mutable.array, original, literal, different, equalLists_ints, numbers, flag]
+    exact ⟨rfl, rfl⟩
+
+private theorem five_parts (values : List Int) (five : values.length = 5) :
+    ∃ a b c d e, values = [a, b, c, d, e] := by
+  cases values with
+  | nil => simp at five
+  | cons a values => cases values with
+    | nil => simp at five
+    | cons b values => cases values with
+      | nil => simp at five
+      | cons c values => cases values with
+        | nil => simp at five
+        | cons d values => cases values with
+          | nil => simp at five
+          | cons e values =>
+              have empty : values = [] := List.length_eq_zero_iff.mp (by simpa using five)
+              exact ⟨a, b, c, d, e, by simp [empty]⟩
+
+private theorem five_case (heap : Heap) (env : HeapCalls.Env) (address : Nat) (a b c d e : Int)
+    (globals : Mutable.Globals) (bound : env "uniq" = some (.ref address))
+    (found : heap[address]? = some (.list (numbers [a, b, c, d, e]))) :
+    BlockContinues program env [statement] heap (updated env [a, b, c, d, e])
+      (heap ++ extra [a, b, c, d, e]) globals := by
+  by_cases range : e-a = 4
+  · simp [updated, detected, high, extra, spread, range]
+    apply BlockContinues.branch (flag := true) (value := flag true) (middle := heap)
+    · simpa using length_test heap env address [a, b, c, d, e] globals bound found
+    · rfl
+    · apply BlockContinues.branch (flag := true) (value := flag true) (middle := heap)
+      · simpa only [range, decide_true] using spread_test heap env address a b c d e globals bound found
+      · rfl
+      · exact (BlockContinues.assign (name := "is_straight") (Evaluates.constant (value := .bool true))).append
+          (BlockContinues.assign (name := "straight_high")
+            (last_five heap (setLocal env "is_straight" (flag true)) address a b c d e globals
+              (by simpa [setLocal] using bound) found))
+  · by_cases special : [a, b, c, d, e] = wheel
+    · simp [updated, detected, high, extra, spread, special]
+      apply BlockContinues.branch (flag := true) (value := flag true) (middle := heap)
+      · simpa using length_test heap env address [a, b, c, d, e] globals bound found
+      · rfl
+      · apply BlockContinues.branch (flag := false) (value := flag false) (middle := heap)
+        · simpa only [range, decide_false] using spread_test heap env address a b c d e globals bound found
+        · rfl
+        · apply BlockContinues.branch (flag := true) (value := flag true) (middle := heap ++ [.list (numbers wheel)])
+          · simpa only [special, decide_true] using wheel_test heap env address [a, b, c, d, e] globals bound found
+          · rfl
+          · exact (BlockContinues.assign (name := "is_straight") (Evaluates.constant (value := .bool true))).append
+              (BlockContinues.assign (name := "straight_high") (Evaluates.constant (value := .int 5)))
+    · simp [updated, detected, extra, spread, range, special]
+      apply BlockContinues.branch (flag := true) (value := flag true) (middle := heap)
+      · simpa using length_test heap env address [a, b, c, d, e] globals bound found
+      · rfl
+      · apply BlockContinues.branch (flag := false) (value := flag false) (middle := heap)
+        · simpa only [range, decide_false] using spread_test heap env address a b c d e globals bound found
+        · rfl
+        · apply BlockContinues.branch (flag := false) (value := flag false) (middle := heap ++ [.list (numbers wheel)])
+          · simpa only [special, decide_false] using wheel_test heap env address [a, b, c, d, e] globals bound found
+          · rfl
+          · exact BlockContinues.nil
+
+/-- The source handles every unique-list length safely, allocating the wheel literal exactly when needed. -/
+theorem result (heap : Heap) (env : HeapCalls.Env) (address : Nat) (values : List Int)
+    (globals : Mutable.Globals) (bound : env "uniq" = some (.ref address))
+    (found : heap[address]? = some (.list (numbers values))) :
+    BlockContinues program env ((code.drop 5).take 1) heap (updated env values) (heap ++ extra values) globals := by
+  change BlockContinues program env [statement] heap (updated env values) (heap ++ extra values) globals
+  by_cases five : values.length = 5
+  · obtain ⟨a, b, c, d, e, rfl⟩ := five_parts values five
+    exact five_case heap env address a b c d e globals bound found
+  · simp only [updated, detected, extra, five, false_and, decide_false, Bool.false_eq_true, ↓reduceIte, List.append_nil]
+    apply BlockContinues.branch (flag := false) (value := flag false) (middle := heap)
+    · simpa only [five, decide_false] using length_test heap env address values globals bound found
+    · rfl
+    · exact BlockContinues.nil
+
+theorem updated_straight (env : HeapCalls.Env) (values : List Int)
+    (initial : env "is_straight" = some (flag false)) :
+    updated env values "is_straight" = some (flag (detected values)) := by
+  cases test : detected values <;> simp [updated, test, setLocal, initial]
+
+theorem updated_high (env : HeapCalls.Env) (values : List Int)
+    (initial : env "straight_high" = some (number 0)) :
+    updated env values "straight_high" = some (number (high values)) := by
+  cases test : detected values <;> simp [updated, high, test, setLocal, initial]
+
+theorem updated_other (env : HeapCalls.Env) (values : List Int) (name : String)
+    (notStraight : name ≠ "is_straight") (notHigh : name ≠ "straight_high") :
+    updated env values name = env name := by
+  cases test : detected values <;> simp [updated, test, setLocal, notStraight, notHigh]
+
+/-- Composition with the checked normalization phase executes the first six source statements. -/
+theorem normalization_straight (heap : Heap) (env : HeapCalls.Env) (valuesAddress suitsAddress : Nat)
+    (values : List Int) (suits : List String) (globals : Mutable.Globals)
+    (nonempty : values ≠ [])
+    (valuesFound : heap[valuesAddress]? = some (.list (numbers values)))
+    (suitsFound : heap[suitsAddress]? = some (.list (suits.map fun value => Mutable.Value.scalar (.string value))))
+    (getValues : env "values" = some (.ref valuesAddress)) (getSuits : env "suits" = some (.ref suitsAddress)) :
+    BlockContinues program env (code.take 6) heap
+      (updated (normalizationEnv env heap suits) (orderedUnique values))
+      (normalizationHeap heap valuesAddress values suits ++ extra (orderedUnique values)) globals := by
+  have normalized := normalization heap env valuesAddress suitsAddress values suits globals nonempty valuesFound suitsFound getValues getSuits
+  have found : (normalizationHeap heap valuesAddress values suits)[heap.length+2]? =
+      some (.list (numbers (orderedUnique values))) := by
+    simp [normalizationHeap]
+  have branch := result (normalizationHeap heap valuesAddress values suits) (normalizationEnv env heap suits)
+    (heap.length+2) (orderedUnique values) globals (by simp [normalizationEnv, setLocal]) found
+  simpa [code] using normalized.append branch
+
+private abbrev sourceArgs := ((findFunctionIn program.body "_score_values").getD ([], [])).1
+private abbrev sourceBody := ((findFunctionIn program.body "_score_values").getD ([], [])).2
+private abbrev initial (globals : Mutable.Globals) (valuesAddress suitsAddress : Nat) : HeapCalls.Env :=
+  functionEnv sourceArgs sourceBody [.ref valuesAddress, .ref suitsAddress] globals
+
+/-- The complete numeric helper returns its real rank tuple on the straight-flush path. -/
+theorem straight_flush_result (heap : Heap) (valuesAddress suitsAddress : Nat)
+    (values : List Int) (suits : List String) (globals : Mutable.Globals)
+    (nonempty : values ≠ [])
+    (valuesFound : heap[valuesAddress]? = some (.list (numbers values)))
+    (suitsFound : heap[suitsAddress]? = some (.list (suits.map fun value => Mutable.Value.scalar (.string value))))
+    (straight : detected (orderedUnique values) = true) (flushing : isFlush suits = true) :
+    let readyHeap := normalizationHeap heap valuesAddress values suits ++ extra (orderedUnique values)
+    ReturnsValue program "_score_values" [.ref valuesAddress, .ref suitsAddress] heap (.ref readyHeap.length)
+      (readyHeap ++ [.tuple [number 8, number (high (orderedUnique values))]]) globals := by
+  let start := initial globals valuesAddress suitsAddress
+  let ready := updated (normalizationEnv start heap suits) (orderedUnique values)
+  let readyHeap := normalizationHeap heap valuesAddress values suits ++ extra (orderedUnique values)
+  have getValues : start "values" = some (.ref valuesAddress) := by cases globals <;> rfl
+  have getSuits : start "suits" = some (.ref suitsAddress) := by cases globals <;> rfl
+  have normalized := normalization_straight heap start valuesAddress suitsAddress values suits globals
+    nonempty valuesFound suitsFound getValues getSuits
+  have getStraight : ready "is_straight" = some (flag true) := by
+    simpa only [straight] using updated_straight (normalizationEnv start heap suits) (orderedUnique values)
+      (by simp [normalizationEnv, setLocal])
+  have getHigh : ready "straight_high" = some (number (high (orderedUnique values))) :=
+    updated_high (normalizationEnv start heap suits) (orderedUnique values) (by simp [normalizationEnv, setLocal])
+  have getFlush : ready "is_flush" = some (flag true) := by
+    change updated (normalizationEnv start heap suits) (orderedUnique values) "is_flush" = _
+    rw [updated_other _ _ "is_flush" (by decide) (by decide)]
+    simp [normalizationEnv, setLocal, flushing]
+  have returned : BlockReturns program ready (code.drop 6) readyHeap (.ref readyHeap.length)
+      (readyHeap ++ [.tuple [number 8, number (high (orderedUnique values))]]) globals := by
+    apply BlockReturns.branch (flag := true) (value := flag true) (middle := readyHeap)
+    · exact Evaluates.boolean_next (flag := true) (Evaluates.lookup getStraight) rfl rfl
+        (Evaluates.boolean_last (flag := true) (Evaluates.lookup getFlush) rfl)
+    · rfl
+    · apply BlockReturns.return_value
+      exact Evaluates.tuple (.cons Evaluates.constant (.cons (Evaluates.lookup getHigh) .nil)) (by simp)
+  apply BlockReturns.function rfl rfl
+  simpa only [List.take_append_drop] using normalized.returns returned
+
+def countedHeap (heap : Heap) (values : List Int) : Heap :=
+  heap ++ [.dict (count_values.entries (count_values.counts values))]
+
+def groupedHeap (heap : Heap) (values : List Int) : Heap :=
+  rank_groups.collected (countedHeap heap values) (count_values.counts values) ++
+    [.list (rank_groups.resultGroups (countedHeap heap values) (count_values.counts values))]
+
+def groupedEnv (env : HeapCalls.Env) (heap : Heap) (values : List Int) : HeapCalls.Env :=
+  setLocal (setLocal env "cnt" (.ref heap.length)) "groups"
+    (.ref (rank_groups.collected (countedHeap heap values) (count_values.counts values)).length)
+
+private theorem straight_flush_test (heap : Heap) (env : HeapCalls.Env) (straight flush : Bool)
+    (globals : Mutable.Globals)
+    (getStraight : env "is_straight" = some (flag straight)) (getFlush : env "is_flush" = some (flag flush)) :
+    Evaluates program env (.boolOp .and [.name "is_straight", .name "is_flush"])
+      heap (flag (straight && flush)) heap globals := by
+  cases straight with
+  | false => exact Evaluates.boolean_stop (flag := false) (Evaluates.lookup getStraight) rfl rfl
+  | true =>
+      exact Evaluates.boolean_next (flag := true) (Evaluates.lookup getStraight) rfl rfl
+        (Evaluates.boolean_last (flag := flush) (Evaluates.lookup getFlush) rfl)
+
+/-- After the non-straight-flush branch, the source counts ranks and returns the real sorted tuple groups. -/
+theorem groups_phase (heap : Heap) (env : HeapCalls.Env) (valuesAddress : Nat) (values : List Int)
+    (straight flush : Bool) (globals : Mutable.Globals)
+    (found : heap[valuesAddress]? = some (.list (numbers values)))
+    (getValues : env "values" = some (.ref valuesAddress))
+    (getStraight : env "is_straight" = some (flag straight)) (getFlush : env "is_flush" = some (flag flush))
+    (notBoth : (straight && flush) = false) :
+    BlockContinues program env ((code.drop 6).take 3) heap (groupedEnv env heap values) (groupedHeap heap values) globals := by
+  let counted := countedHeap heap values
+  let counterEnv := setLocal env "cnt" (.ref heap.length)
+  have countsFound : counted[heap.length]? = some (.dict (count_values.entries (count_values.counts values))) := by
+    simp [counted, countedHeap]
+  have skipped : BlockContinues program env [(code[6]?).getD (.expr (.constant .none))] heap env heap globals := by
+    apply BlockContinues.branch (flag := false) (value := flag false) (middle := heap)
+    · simpa only [notBoth] using straight_flush_test heap env straight flush globals getStraight getFlush
+    · rfl
+    · exact BlockContinues.nil
+  have counts := BlockContinues.assign (name := "cnt")
+    (Evaluates.call (.cons (Evaluates.lookup getValues) .nil)
+      (count_values.result heap valuesAddress values globals found))
+  have groups := BlockContinues.assign (name := "groups")
+    (Evaluates.call (.cons (Evaluates.lookup (env := counterEnv) (name := "cnt") rfl) .nil)
+      (rank_groups.result counted heap.length (count_values.counts values) globals countsFound))
+  simpa [code, groupedEnv, groupedHeap, counted, countedHeap, counterEnv] using skipped.append (counts.append groups)
+
+/-- The profile certificate applies to the very heap returned by the operational group phase. -/
+theorem grouped_profile (heap : Heap) (values : List Int) (five : values.length = 5) :
+    ((rank_groups.resultGroups (countedHeap heap values) (count_values.counts values)).map
+      (ProjectEulerSolutions.TupleSorting.readInts (groupedHeap heap values))).map (fun row => row.headD 0) ∈
+        ProjectEulerSolutions.PokerCountPatterns.profiles := by
+  exact rank_groups.resultGroups_profile_returned (countedHeap heap values) heap.length values
+    (by simp [countedHeap]) five
+
+theorem grouped_other (env : HeapCalls.Env) (heap : Heap) (values : List Int) (name : String)
+    (notCounts : name ≠ "cnt") (notGroups : name ≠ "groups") :
+    groupedEnv env heap values name = env name := by
+  simp [groupedEnv, setLocal, notCounts, notGroups]
+
+private theorem represented_members (heap : Heap) (groups : List Mutable.Value) (table : List (Int × Int))
+    (rows : rank_groups.Represents heap groups table) :
+    ∀ group ∈ groups, ∃ pair ∈ table, ∃ address : Nat,
+      group = .ref address ∧ heap[address]? = some (rank_groups.groupTuple pair) := by
+  induction rows with
+  | nil => intro group member; cases member
+  | @cons group pair groups table first rest ih =>
+      intro value member
+      rcases List.mem_cons.mp member with same | member
+      · subst value
+        obtain ⟨address, reference, found⟩ := first
+        exact ⟨pair, List.mem_cons_self, address, reference, found⟩
+      · obtain ⟨other, otherMember, address, reference, found⟩ := ih value member
+        exact ⟨other, List.mem_cons_of_mem pair otherMember, address, reference, found⟩
+
+/-- Each returned group is an actual two-field tuple from an entry of the exact source count dictionary. -/
+theorem grouped_member (heap : Heap) (values : List Int) (group : Mutable.Value)
+    (member : group ∈ rank_groups.resultGroups (countedHeap heap values) (count_values.counts values)) :
+    ∃ pair ∈ count_values.counts values, ∃ address : Nat,
+      group = .ref address ∧ (groupedHeap heap values)[address]? = some (.tuple [number pair.2, number pair.1]) := by
+  let counted := countedHeap heap values
+  let table := count_values.counts values
+  have countsFound : counted[heap.length]? = some (.dict (count_values.entries table)) := by simp [counted, countedHeap, table]
+  have rows := rank_groups.collected_represents counted heap.length table countsFound
+  have original : group ∈ rank_groups.references (counted.length+1) table :=
+    (ProjectEulerSolutions.TupleSorting.sorted_perm (rank_groups.collected counted table) true
+      (rank_groups.references (counted.length+1) table)).mem_iff.mp member
+  obtain ⟨pair, pairMember, address, reference, found⟩ := represented_members
+    (rank_groups.collected counted table) (rank_groups.references (counted.length+1) table) table rows group original
+  exact ⟨pair, pairMember, address, reference, found_append found _⟩
+
+theorem grouped_found (heap : Heap) (values : List Int) :
+    (groupedHeap heap values)[(rank_groups.collected (countedHeap heap values) (count_values.counts values)).length]? =
+      some (.list (rank_groups.resultGroups (countedHeap heap values) (count_values.counts values))) := by
+  simp [groupedHeap]
+
+def groupExpression (index field : Nat) : Expr :=
+  .subscript (.subscript (.name "groups") (.constant (.int index))) (.constant (.int field))
+
+private theorem group_item (heap : Heap) (env : HeapCalls.Env) (listAddress index tupleAddress : Nat)
+    (groups : List Mutable.Value) (globals : Mutable.Globals)
+    (bound : env "groups" = some (.ref listAddress)) (found : heap[listAddress]? = some (.list groups))
+    (element : groups[index]? = some (.ref tupleAddress)) :
+    Evaluates program env (.subscript (.name "groups") (.constant (.int index))) heap (.ref tupleAddress) heap globals := by
+  apply Evaluates.subscript (by intros; simp) (Evaluates.lookup bound) Evaluates.constant
+  obtain ⟨inside, item⟩ := List.getElem?_eq_some_iff.mp element
+  simpa only [item] using Mutable.getItem_list heap listAddress index groups found inside
+
+/-- Reading a count follows the actual groups list reference and its immutable source pair. -/
+theorem group_count (heap : Heap) (env : HeapCalls.Env) (listAddress index tupleAddress : Nat)
+    (groups : List Mutable.Value) (count rank : Int) (globals : Mutable.Globals)
+    (bound : env "groups" = some (.ref listAddress)) (found : heap[listAddress]? = some (.list groups))
+    (element : groups[index]? = some (.ref tupleAddress))
+    (pair : heap[tupleAddress]? = some (.tuple [number count, number rank])) :
+    Evaluates program env (groupExpression index 0) heap (number count) heap globals := by
+  apply Evaluates.subscript (by intros; simp)
+    (group_item heap env listAddress index tupleAddress groups globals bound found element) Evaluates.constant
+  simp [Mutable.getItem, Mutable.index, pair, number, Except.map]
+
+theorem group_rank (heap : Heap) (env : HeapCalls.Env) (listAddress index tupleAddress : Nat)
+    (groups : List Mutable.Value) (count rank : Int) (globals : Mutable.Globals)
+    (bound : env "groups" = some (.ref listAddress)) (found : heap[listAddress]? = some (.list groups))
+    (element : groups[index]? = some (.ref tupleAddress))
+    (pair : heap[tupleAddress]? = some (.tuple [number count, number rank])) :
+    Evaluates program env (groupExpression index 1) heap (number rank) heap globals := by
+  apply Evaluates.subscript (by intros; simp)
+    (group_item heap env listAddress index tupleAddress groups globals bound found element) Evaluates.constant
+  simp [Mutable.getItem, Mutable.index, pair, number, Except.map]
+
+end solvers.«54».numeric_score.straight_detection
+
+namespace solvers.«54».numeric_score.straight_detection
+
+open FormalSW.PyAst
+
+set_option Elab.async false
+
+private theorem five_entries (values : List Int) (five : values.length = 5) :
+    ∃ a b c d e : Int, values = [a, b, c, d, e] := by
+  cases values with
+  | nil => simp at five
+  | cons a rest =>
+    cases rest with
+    | nil => simp at five
+    | cons b rest =>
+      cases rest with
+      | nil => simp at five
+      | cons c rest =>
+        cases rest with
+        | nil => simp at five
+        | cons d rest =>
+          cases rest with
+          | nil => simp at five
+          | cons e rest =>
+            have empty : rest.length = 0 := by
+              simp only [List.length_cons] at five
+              omega
+            have restEmpty : rest = [] := List.length_eq_zero_iff.mp empty
+            exact ⟨a, b, c, d, e, by rw [restEmpty]⟩
+
+/-- The source detector and the indexed reference detector agree on five strictly ordered ranks. -/
+theorem detected_eq_reference_of_five (values : List Int) (five : values.length = 5)
+    (ordered : values.Pairwise (fun left right : Int => left < right)) :
+    detected values = ProjectEulerSolutions.PokerStraights.referenceStraight values := by
+  obtain ⟨a, b, c, d, e, same⟩ := five_entries values five
+  subst values
+  have first := List.pairwise_cons.mp ordered
+  have second := List.pairwise_cons.mp first.2
+  have third := List.pairwise_cons.mp second.2
+  have fourth := List.pairwise_cons.mp third.2
+  have ab : a < b := first.1 b (by simp)
+  have bc : b < c := second.1 c (by simp)
+  have cd : c < d := third.1 d (by simp)
+  have de : d < e := fourth.1 e (by simp)
+  rw [ProjectEulerSolutions.PokerStraights.five_straight a b c d e ab bc cd de]
+  simp [detected, spread, wheel, ProjectEulerSolutions.PokerStraights.wheel]
+
+/-- Deduplication excludes repeated-rank straights, and the remaining five-rank tests coincide. -/
+theorem detected_orderedUnique_eq_reference (values : List Int) (five : values.length = 5) :
+    detected (orderedUnique values) =
+      ProjectEulerSolutions.PokerStraights.referenceStraight (ScalarSort.ints values) := by
+  change detected (ProjectEulerSolutions.PokerUnique.orderedUnique values) = _
+  rw [ProjectEulerSolutions.PokerUnique.five_referenceStraight values five]
+  by_cases complete : (ProjectEulerSolutions.PokerUnique.orderedUnique values).length = 5
+  · rw [if_pos complete]
+    exact detected_eq_reference_of_five _ complete
+      (ProjectEulerSolutions.PokerUnique.orderedUnique_strict values)
+  · rw [if_neg complete]
+    simp [detected, complete]
+
+/-- Once the source detector succeeds, its width branch and wheel branch return the reference high. -/
+theorem high_eq_reference_of_detected (values : List Int) (formed : detected values = true) :
+    high values = ProjectEulerSolutions.PokerStraights.straightHigh values := by
+  have conditions : values.length = 5 ∧ (spread values = 4 ∨ values = wheel) :=
+    of_decide_eq_true formed
+  obtain ⟨a, b, c, d, e, same⟩ := five_entries values conditions.1
+  subst values
+  by_cases width : spread [a, b, c, d, e] = 4
+  · have endpoint : e - a = 4 := width
+    calc
+      high [a, b, c, d, e] = e := by simp [high, formed, width]
+      _ = ProjectEulerSolutions.PokerStraights.straightHigh [a, b, c, d, e] :=
+        (ProjectEulerSolutions.PokerStraights.width_high a b c d e endpoint).symm
+  · have special : [a, b, c, d, e] = wheel := conditions.2.resolve_left width
+    have pureSpecial : [a, b, c, d, e] = ProjectEulerSolutions.PokerStraights.wheel := special
+    calc
+      high [a, b, c, d, e] = 5 := by simp [high, formed, width]
+      _ = ProjectEulerSolutions.PokerStraights.straightHigh [a, b, c, d, e] := by
+        rw [pureSpecial, ProjectEulerSolutions.PokerStraights.wheel_high]
+
+/-- The numeric scorer and reference scorer use the same straight high for every five-card input. -/
+theorem high_orderedUnique_eq_reference (values : List Int) (five : values.length = 5)
+    (formed : detected (orderedUnique values) = true) :
+    high (orderedUnique values) =
+      ProjectEulerSolutions.PokerStraights.straightHigh (ScalarSort.ints values) := by
+  change detected (ProjectEulerSolutions.PokerUnique.orderedUnique values) = true at formed
+  change high (ProjectEulerSolutions.PokerUnique.orderedUnique values) = _
+  have uniqueFive : (ProjectEulerSolutions.PokerUnique.orderedUnique values).length = 5 :=
+    (of_decide_eq_true formed).1
+  rw [ProjectEulerSolutions.PokerUnique.sorted_eq_orderedUnique_five values five uniqueFive]
+  exact high_eq_reference_of_detected _ formed
+
+end solvers.«54».numeric_score.straight_detection
