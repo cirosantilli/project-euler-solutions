@@ -119,4 +119,46 @@ theorem isPrime_correct (n : Nat) : isPrime n = decide (Nat.Prime n) := by
       exact trial_correct n 5 (by omega) (by decide) (by decide)
         (initial n (fun h => divides (Or.inl h)) (fun h => divides (Or.inr h)))
 
+/-- A square-root-bounded structural loop avoids reducing large well-founded measures in certificates. -/
+def boundedTrial (n first : Nat) : Nat → Bool
+  | 0 => true
+  | fuel+1 =>
+      if 5≤first ∧ first*first≤n then
+        if n%first=0 ∨ n%(first+2)=0 then false else boundedTrial n (first+6) fuel
+      else true
+
+theorem boundedTrial_correct (n first fuel : Nat) (large : 5≤first)
+    (enough : Nat.sqrt n<first+6*fuel) : boundedTrial n first fuel=trial n first := by
+  induction fuel generalizing first with
+  | zero =>
+      have inactive : ¬ (5≤first ∧ first*first≤n) := by
+        rintro ⟨_, square⟩
+        have bound : first≤Nat.sqrt n := Nat.le_sqrt'.mpr (by simpa only [Nat.pow_two] using square)
+        omega
+      rw [boundedTrial, trial, dif_neg inactive]
+  | succ fuel ih =>
+      rw [boundedTrial, trial]
+      by_cases active : 5≤first ∧ first*first≤n
+      · rw [if_pos active, dif_pos active]
+        by_cases divides : n%first=0 ∨ n%(first+2)=0
+        · simp only [if_pos divides]
+        · simp only [if_neg divides]
+          exact ih (first+6) (by omega) (by omega)
+      · rw [if_neg active, dif_neg active]
+
+/-- A complete primality predicate with a small, structural kernel reduction bound. -/
+def certifiedPrime (n : Nat) : Bool :=
+  if n≤3 then decide (2≤n)
+  else if n%2=0 ∨ n%3=0 then false
+  else boundedTrial n 5 (n/6+1)
+
+theorem certifiedPrime_correct (n : Nat) : certifiedPrime n=decide (Nat.Prime n) := by
+  rw [← isPrime_correct]
+  unfold certifiedPrime isPrime
+  split
+  · rfl
+  · split
+    · rfl
+    · exact boundedTrial_correct n 5 (n/6+1) (by decide) (by have := Nat.sqrt_le_self n; omega)
+
 end ProjectEulerSolutions.SixStepPrimality
