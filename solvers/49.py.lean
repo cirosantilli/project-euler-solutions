@@ -2,6 +2,7 @@ import «.formalsw».solvers.«49.py.ast»
 import lang.py.FormalSW.HeapCalls
 import ProjectEulerSolutions.Lib.BooleanPrimeSieve
 import ProjectEulerSolutions.Lib.HeapCollection
+import ProjectEulerSolutions.Lib.DigitSignatures
 
 set_option Elab.async false
 
@@ -343,6 +344,8 @@ open ProjectEulerSolutions.HeapCollection
 
 private def code : List Stmt :=
   executableBody ((findFunctionIn program.body "find_prime_perm_arith_sequence").getD ([], [])).2
+private def groupBody : List Stmt :=
+  match (code[3]? : Option Stmt) with | some (.forIn _ _ body _) => body | _ => []
 private def numbers (items : List Nat) : List Mutable.Value := items.map (fun (n : Nat) => number n)
 private def primeBody (collector : Nat) : List Stmt :=
   [.ifThen (.subscript (.name "is_prime") (.name "p")) [.comprehensionAppend collector (.name "p")] []]
@@ -454,6 +457,17 @@ theorem setup_result (heap : Mutable.Heap) (env : HeapCalls.Env) :
 
 theorem primes4d_mem (p : Nat) : p ∈ primes4d ↔ 1000≤p ∧ p<10000 ∧ Nat.Prime p := by
   simp [primes4d, List.mem_range'_1, and_assoc]
+
+theorem primes4d_ordered : primes4d.Pairwise (· < ·) :=
+  (List.pairwise_lt_range' 1 (by decide)).filter _
+
+/-- The original grouping loop computes its digit key and retains its sorted character list. -/
+theorem key_result (heap : Mutable.Heap) (env : HeapCalls.Env) (p : Int)
+    (getP : env "p"=some (number p)) :
+    BlockContinues program env (groupBody.take 1) heap
+      (setLocal env "key" (.scalar (.string (ProjectEulerSolutions.DigitSignatures.signature p))))
+      (heap++[.list (ProjectEulerSolutions.DigitSignatures.values p)]) :=
+  BlockContinues.assign (ProjectEulerSolutions.DigitSignatures.evaluate program env heap "p" p getP)
 
 end find_prime_perm_arith_sequence
 end solvers.«49»
