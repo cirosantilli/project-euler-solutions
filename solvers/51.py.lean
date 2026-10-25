@@ -2189,6 +2189,177 @@ theorem result (items : List Nat) (width lower arrayAddress powerAddress primeAd
 
 end primeSearch
 
+namespace digitSearch
+open ProjectEulerSolutions
+private def upper (width : Nat) : Nat := 10 ^ width - 1
+private def lower (width : Nat) : Nat := 10 ^ (width - 1)
+private def powerExpression : Expr := .binOp (.constant (.int 10)) .pow
+  (.binOp (.binOp (.name "ndigits") .sub (.constant (.int 1))) .sub (.name "i"))
+private def powerBody (address : Nat) : List Stmt := [.comprehensionAppend address powerExpression]
+
+private theorem ten_power (exponent : Nat) (env : HeapCalls.Env) (heap : Mutable.Heap) (expression : Expr)
+    (evaluated : Evaluates program env expression heap (number exponent) heap) :
+    Evaluates program env (.binOp (.constant (.int 10)) .pow expression) heap (number (10 ^ exponent : Nat)) heap := by
+  exact Evaluates.binary (av := number 10) (bv := number exponent) (middle := heap) (afterRight := heap)
+    Evaluates.constant evaluated (by simp [Mutable.binary, scalarBinary, show ¬ (exponent : Int) < 0 by omega])
+
+private theorem power_value (width index : Nat) (inside : index < width) (env : HeapCalls.Env) (heap : Mutable.Heap)
+    (getWidth : env "ndigits" = some (number width)) (getIndex : env "i" = some (number index)) :
+    Evaluates program env powerExpression heap (number (10 ^ (width - 1 - index) : Nat)) heap := by
+  have exponent : Evaluates program env (.binOp (.binOp (.name "ndigits") .sub (.constant (.int 1))) .sub (.name "i"))
+      heap (number ((width : Int) - 1 - index)) heap := by
+    apply Evaluates.binary (av := number ((width : Int) - 1)) (bv := number index) (middle := heap) (afterRight := heap)
+    · exact Evaluates.binary (av := number width) (bv := number 1) (middle := heap) (afterRight := heap)
+        (Evaluates.lookup getWidth) Evaluates.constant (by simp [Mutable.binary, scalarBinary])
+    · exact Evaluates.lookup getIndex
+    · simp [Mutable.binary, scalarBinary]
+  have nonnegative : (width : Int) - 1 - index = ((width - 1 - index : Nat) : Int) := by omega
+  rw [nonnegative] at exponent
+  exact ten_power (width - 1 - index) env heap _ exponent
+
+private theorem power_loop (width first remaining : Nat) (endpoint : first + remaining = width)
+    (base : Mutable.Heap) (before : List Nat) (env : HeapCalls.Env) (getWidth : env "ndigits" = some (number width)) :
+    ∃ finalEnv, BlockContinues program env [.rangeStepLoop "i" first width 1 (powerBody base.length) []]
+      (HeapCollection.working base (numbers before) []) finalEnv
+      (HeapCollection.working base (numbers (before ++ (List.range' first remaining).map (fun index => 10 ^ (width - 1 - index)))) []) := by
+  induction remaining generalizing first before env with
+  | zero =>
+      refine ⟨env, ?_⟩
+      simp only [List.range'_zero, List.map_nil, List.append_nil]
+      exact BlockContinues.range_done (by simp [Calls.rangeContinues]; omega) .nil
+  | succ remaining ih =>
+      let bound := setLocal env "i" (number first)
+      have boundWidth : bound "ndigits" = some (number width) := by simpa [bound, setLocal] using getWidth
+      have evaluated := power_value width first (by omega) bound (HeapCollection.working base (numbers before) []) boundWidth rfl
+      have emitted := HeapCollection.emit base (numbers before) [] [] (number (10 ^ (width - 1 - first) : Nat))
+        (by simpa only [List.append_nil] using evaluated)
+      have stored : BlockContinues program bound (powerBody base.length) (HeapCollection.working base (numbers before) []) bound
+          (HeapCollection.working base (numbers (before ++ [10 ^ (width - 1 - first)])) []) := by
+        simpa only [powerBody, numbers, List.map_append, List.map_singleton, List.nil_append] using emitted
+      obtain ⟨finalEnv, executed⟩ := ih (first+1) (by omega) (before ++ [10 ^ (width - 1 - first)]) bound boundWidth
+      refine ⟨finalEnv, ?_⟩
+      apply BlockContinues.range_step (by simp [Calls.rangeContinues]; omega)
+      simpa only [powerBody, List.range'_succ, List.map_cons, List.append_assoc, List.singleton_append] using stored.append executed
+
+/-- The source comprehension builds the complete big-endian decimal-weight table. -/
+theorem power_table (width : Nat) (env : HeapCalls.Env) (heap : Mutable.Heap) (getWidth : env "ndigits" = some (number width)) :
+    Evaluates program env (.listComp powerExpression [("i", .call (.name "range") [.name "ndigits"], [])])
+      heap (.ref heap.length) (heap ++ [.list (numbers (powers width))]) := by
+  obtain ⟨finalEnv, executed⟩ := power_loop width 0 width (by omega) heap []
+    (comprehensionEnv env [("i", .call (.name "range") [.name "ndigits"], [])]) (by simpa [comprehensionEnv] using getWidth)
+  apply Evaluates.list_comp_range (.cons (Evaluates.lookup getWidth) .nil) rfl
+  simpa only [List.nil_append, ← List.range_eq_range', powers, HeapCollection.working] using executed
+
+private def boundsEnv (env : HeapCalls.Env) (width : Nat) : HeapCalls.Env :=
+  setLocal (setLocal env "upper" (number (upper width))) "lower" (number (lower width))
+private def sievedEnv (env : HeapCalls.Env) (base width : Nat) : HeapCalls.Env :=
+  setLocal (setLocal (boundsEnv env width) "is_prime" (.ref (base+1))) "primes" (.ref (base+2))
+private def preparedEnv (env : HeapCalls.Env) (base width : Nat) : HeapCalls.Env :=
+  setLocal (sievedEnv env base width) "pow10" (.ref (base+4))
+private def sievedHeap (heap : Mutable.Heap) (bytes : List UInt8) (width : Nat) : Mutable.Heap :=
+  heap ++ [.bytearray [1], .bytearray bytes, .list (numbers (sieve.primes (upper width))),
+    .tuple [.ref (heap.length+1), .ref (heap.length+2)]]
+private def preparedHeap (heap : Mutable.Heap) (bytes : List UInt8) (width : Nat) : Mutable.Heap :=
+  sievedHeap heap bytes width ++ [.list (numbers (powers width))]
+
+/-- The actual width setup computes its bounds, unpacks the inclusive source sieve, and allocates its power table. -/
+theorem prepare (width : Nat) (positive : 1 ≤ width) (env : HeapCalls.Env) (heap : Mutable.Heap)
+    (getWidth : env "ndigits" = some (number width)) :
+    ∃ bytes, BlockContinues program env (digitBody.take 4) heap (preparedEnv env heap.length width) (preparedHeap heap bytes width) ∧
+      bytes.length = 10 ^ width ∧ (∀ i byte, bytes[i]? = some byte → (byte.toNat ≠ 0 ↔ Nat.Prime i)) := by
+  have powerBound : 10 ≤ 10 ^ width := by
+    simpa only [pow_one] using Nat.pow_le_pow_right (by decide : 1 ≤ 10) positive
+  have large : 1 ≤ upper width := by unfold upper; omega
+  let withUpper := setLocal env "upper" (number (upper width))
+  have first : BlockContinues program env [digitBody[0]'(by decide)] heap withUpper heap := by
+    apply BlockContinues.assign
+    apply Evaluates.binary (av := number (10 ^ width : Nat)) (bv := number 1) (middle := heap) (afterRight := heap)
+      (ten_power width env heap (.name "ndigits") (Evaluates.lookup getWidth)) Evaluates.constant
+    simp [upper, Mutable.binary, scalarBinary, Int.natCast_sub (show 1 ≤ 10 ^ width by omega)]
+  have exponent : Evaluates program withUpper (.binOp (.name "ndigits") .sub (.constant (.int 1))) heap (number (width-1 : Nat)) heap :=
+    Evaluates.binary (av := number width) (bv := number 1) (middle := heap) (afterRight := heap)
+      (Evaluates.lookup (by simpa [withUpper, setLocal] using getWidth)) Evaluates.constant
+      (by simp [Mutable.binary, scalarBinary, Int.natCast_sub positive])
+  have second : BlockContinues program withUpper [digitBody[1]'(by decide)] heap (boundsEnv env width) heap :=
+    BlockContinues.assign (ten_power (width-1) withUpper heap _ exponent)
+  obtain ⟨bytes, returned, length, correct⟩ := sieve.positive_result (upper width) large heap
+  have called : ReturnsValue program "sieve" [number (upper width)] heap (.ref (heap.length+3)) (sievedHeap heap bytes width) := by
+    simpa only [sievedHeap, sieve.numbers, numbers] using returned
+  have third : BlockContinues program (boundsEnv env width) [digitBody[2]'(by decide)] heap
+      (sievedEnv env heap.length width) (sievedHeap heap bytes width) := by
+    apply BlockContinues.unpack (names := ["is_prime", "primes"]) (items := [.ref (heap.length+1), .ref (heap.length+2)])
+      (value := .ref (heap.length+3)) (middle := sievedHeap heap bytes width) (finalHeap := sievedHeap heap bytes width) rfl
+    · exact Evaluates.call (.cons (Evaluates.lookup rfl) .nil) called
+    · simp [Mutable.sequence, sievedHeap]
+    · rfl
+  have fourth : BlockContinues program (sievedEnv env heap.length width) [digitBody[3]'(by decide)] (sievedHeap heap bytes width)
+      (preparedEnv env heap.length width) (preparedHeap heap bytes width) := by
+    have evaluated := power_table width (sievedEnv env heap.length width) (sievedHeap heap bytes width)
+      (by simpa [sievedEnv, boundsEnv, setLocal] using getWidth)
+    simpa [preparedEnv, preparedHeap, sievedHeap] using BlockContinues.assign (name := "pow10") evaluated
+  refine ⟨bytes, first.append (second.append (third.append fourth)), ?_, correct⟩
+  dsimp only [upper] at length
+  omega
+
+private def writes : List String := ["upper", "lower", "is_prime", "primes", "pow10"] ++ primeSearch.writes
+private def Stable (before after : HeapCalls.Env) : Prop := ∀ name, name ∉ writes → after name = before name
+private def answer (target : Int) (width : Nat) : Option Nat :=
+  (sieve.primes (upper width)).find? (primeSearch.accepted target (lower width))
+private def Scan (env : HeapCalls.Env) (body : List Stmt) (heap : Mutable.Heap) : Option Nat → Prop
+  | none => ∃ finalEnv finalHeap, BlockContinues program env body heap finalEnv finalHeap ∧
+      Stable env finalEnv ∧ primeSearch.HeapFrame heap finalHeap
+  | some value => ∃ finalHeap, (∀ following, BlockReturns program env (body ++ following) heap (number value) finalHeap) ∧
+      primeSearch.HeapFrame heap finalHeap
+
+/-- A complete source width iteration prepares its tables and scans the entire prime window. -/
+theorem result (width : Nat) (positive : 1 ≤ width) (target : Int) (env : HeapCalls.Env) (heap : Mutable.Heap)
+    (getWidth : env "ndigits" = some (number width)) (getTarget : env "target" = some (number target)) :
+    Scan env digitBody heap (answer target width) := by
+  obtain ⟨bytes, prepared, size, correct⟩ := prepare width positive env heap getWidth
+  have allPrimes : ∀ p ∈ sieve.primes (upper width), Nat.Prime p := fun p member => (sieve.mem_primes _ p).mp member |>.1
+  have allWidths : ∀ p ∈ sieve.primes (upper width), lower width ≤ p → (Nat.digits 10 p).length = width := by
+    intro p member minimum
+    have maximum := (sieve.mem_primes _ p).mp member |>.2
+    apply primeSearch.digits_width p width positive minimum
+    have powerPositive : 0 < 10 ^ width := Nat.pow_pos (by decide)
+    unfold upper at maximum
+    omega
+  have oldHeap : primeSearch.HeapFrame heap (preparedHeap heap bytes width) := by
+    intro address object found
+    exact HeapCollection.prefix_found (sievedHeap heap bytes width) _ address object
+      (HeapCollection.prefix_found heap _ address object found)
+  have scanned := primeSearch.result (sieve.primes (upper width)) width (lower width)
+    (heap.length+2) (heap.length+4) (heap.length+1) target allPrimes allWidths
+    (preparedEnv env heap.length width) (preparedHeap heap bytes width) bytes
+    (by simpa [preparedEnv, sievedEnv, boundsEnv, setLocal] using getTarget)
+    (by simp [preparedEnv, sievedEnv, boundsEnv, setLocal])
+    (by simp [preparedEnv, sievedEnv, setLocal]) (by simp [preparedEnv, setLocal])
+    (by simp [preparedEnv, sievedEnv, setLocal])
+    (by simp [preparedHeap, sievedHeap]) (by simp [preparedHeap, sievedHeap]) (by simp [preparedHeap, sievedHeap]) size correct
+  change primeSearch.Scan (preparedEnv env heap.length width) [digitBody[4]'(by decide)] (preparedHeap heap bytes width) (answer target width) at scanned
+  cases found : answer target width with
+  | some value =>
+      rw [found] at scanned
+      obtain ⟨finalHeap, returned, framed⟩ := scanned
+      refine ⟨finalHeap, ?_, primeSearch.heap_trans oldHeap framed⟩
+      intro following
+      exact prepared.returns (returned following)
+  | none =>
+      rw [found] at scanned
+      obtain ⟨finalEnv, finalHeap, continued, preserved, framed⟩ := scanned
+      refine ⟨finalEnv, finalHeap, prepared.append continued, ?_, primeSearch.heap_trans oldHeap framed⟩
+      intro name untouched
+      have notPrimeWrite : name ∉ primeSearch.writes := fun member => untouched (List.mem_append_right _ member)
+      have noUpper : name ≠ "upper" := fun equal => untouched (by simp [writes, equal])
+      have noLower : name ≠ "lower" := fun equal => untouched (by simp [writes, equal])
+      have noBuffer : name ≠ "is_prime" := fun equal => untouched (by simp [writes, equal])
+      have noArray : name ≠ "primes" := fun equal => untouched (by simp [writes, equal])
+      have noPower : name ≠ "pow10" := fun equal => untouched (by simp [writes, equal])
+      exact (preserved name notPrimeWrite).trans
+        (by simp only [preparedEnv, sievedEnv, boundsEnv, setLocal, noUpper, noLower, noBuffer, noArray, noPower, if_false])
+
+end digitSearch
+
 end solve
 
 end solvers.«51»
