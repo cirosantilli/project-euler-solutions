@@ -1,22 +1,22 @@
 #!/usr/bin/env python
 from __future__ import annotations
 
-from typing import Tuple
-
 
 def digit_sum(n: int) -> int:
     return sum(ord(ch) - 48 for ch in str(n))
 
 
-def max_digital_sum(limit: int) -> Tuple[int, int, int]:
+def max_digital_sum(limit: int) -> tuple[int, int, int]:
     """
-    Returns (best_sum, best_a, best_b) for 1 <= a,b < limit.
+    Return (best_sum, best_a, best_b) for 0 <= a,b < limit.
+
+    The empty search returns (0, -1, -1).
     """
-    best = -1
+    best = 0
     best_a = -1
     best_b = -1
-    for a in range(1, limit):
-        for b in range(1, limit):
+    for a in range(limit):
+        for b in range(limit):
             s = digit_sum(pow(a, b))
             if s > best:
                 best = s
