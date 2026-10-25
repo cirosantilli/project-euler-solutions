@@ -1,7 +1,4 @@
 #!/usr/bin/env python
-from typing import List
-
-
 def reverse_int(n: int) -> int:
     return int(str(n)[::-1])
 
