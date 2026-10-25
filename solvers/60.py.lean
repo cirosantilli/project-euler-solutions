@@ -3,6 +3,7 @@ import «.formalsw».solvers.«60.py.ast»
 import lang.py.FormalSW.HeapCalls
 import ProjectEulerSolutions.Lib.DecimalShift
 import ProjectEulerSolutions.Lib.PrimeSieve
+import ProjectEulerSolutions.Lib.IntPairCache
 import Mathlib.Data.Nat.Sqrt
 
 /-! Actual pow10_for source, for every signed Int and arbitrary caller state. -/
@@ -1482,3 +1483,651 @@ def SourceGlobals.append (context : SourceGlobals heap globals) (extra : Mutable
     exact context.basesTuple
 
 end solvers.«60».is_prime
+
+
+namespace solvers.«60».pair_ok
+open FormalSW.PyAst FormalSW.PyAst.HeapCalls
+open ProjectEulerSolutions
+private abbrev program := Solvers.P60Ast.module
+private abbrev number (n : Int) : Mutable.Value := .scalar (.int n)
+private abbrev flag (b : Bool) : Mutable.Value := .scalar (.bool b)
+private abbrev empty : Mutable.Value := .scalar .none
+
+def cacheCell : Expr := .subscript (.name "__formalsw_cell_solve_cache_local") (.constant (.int 0))
+def powerCell : Expr := .subscript (.name "__formalsw_cell_solve_pow10_local") (.constant (.int 0))
+def keyExpression : Expr := .tuple [.name "p", .name "q"]
+def getExpression : Expr := .call (.attribute cacheCell "get") [.name "key"]
+def hitTest : Expr := .unaryOp .not (.builtinCall .identity [.name "v", .constant .none])
+def divisibleTest : Expr :=
+  .compare (.binOp (.binOp (.name "p") .add (.name "q")) .mod (.constant (.int 3)))
+    [(.eq, .constant (.int 0))]
+def concatExpression (left right : String) : Expr :=
+  .binOp (.binOp (.name left) .mult (.subscript powerCell (.name right))) .add (.name right)
+def write (expression : Expr) : Stmt := .assign [.subscript cacheCell (.name "key")] expression
+def reject : List Stmt := [write (.constant (.bool false)), .return (.constant (.bool false))]
+def tail : List Stmt :=
+  [.assign [.name "key"] keyExpression,
+   .assign [.name "v"] getExpression,
+   .ifThen hitTest [.return (.name "v")] [],
+   .ifThen divisibleTest reject [],
+   .assign [.name "c1"] (concatExpression "p" "q"),
+   .ifThen (.unaryOp .not (.call (.name "is_prime") [.name "c1"])) reject [],
+   .assign [.name "c2"] (concatExpression "q" "p"),
+   .assign [.name "ok"] (.call (.name "is_prime") [.name "c2"]),
+   write (.name "ok"), .return (.name "ok")]
+def code : List Stmt :=
+  .ifThen (.compare (.name "p") [(.gt, .name "q")])
+    [.assign [.tuple [.name "p", .name "q"]] (.tuple [.name "q", .name "p"])] [] :: tail
+
+theorem code_source :
+    executableBody ((findFunctionIn program.body "__formalsw_local_solve_pair_ok").getD ([], [])).2 = code := rfl
+
+def concatenated (left right : Int) : Int := left * (DecimalShift.decimalShift right : Int) + right
+def answer (left right : Int) : Bool :=
+  if (left + right) % 3 = 0 then false
+  else MillerRabin.isPrimeModel (concatenated left right).toNat &&
+    MillerRabin.isPrimeModel (concatenated right left).toNat
+
+theorem answer_comm (left right : Int) : answer left right = answer right left := by
+  simp only [answer, Int.add_comm right left]
+  split <;> simp [Bool.and_comm]
+
+variable {heap : Mutable.Heap} {env : HeapCalls.Env} {entries : List IntPairCache.Entry}
+  {left right : Int} {cacheCell powerCell address : Nat} {globals : Mutable.Globals}
+  {values : List Mutable.Value}
+
+private theorem found_append (found : heap[address]? = some (object : Mutable.Object))
+    (extra : Mutable.Heap) : (heap ++ extra)[address]? = some object := by
+  rw [List.getElem?_append_left ((List.getElem?_eq_some_iff.mp found).1)]
+  exact found
+
+structure Store (heap : Mutable.Heap) (entries : List IntPairCache.Entry) (cacheCell powerCell : Nat) where
+  cacheAddress : Nat
+  powerAddress : Nat
+  powers : List (Constant × Mutable.Value)
+  cacheCellFound : heap[cacheCell]? = some (.list [.ref cacheAddress])
+  powerCellFound : heap[powerCell]? = some (.list [.ref powerAddress])
+  cacheFound : heap[cacheAddress]? = some (IntPairCache.object entries)
+  powerFound : heap[powerAddress]? = some (.dict powers)
+  separate : cacheAddress ≠ powerAddress
+
+def Store.append (store : Store heap entries cacheCell powerCell) (extra : Mutable.Heap) :
+    Store (heap ++ extra) entries cacheCell powerCell where
+  cacheAddress := store.cacheAddress
+  powerAddress := store.powerAddress
+  powers := store.powers
+  cacheCellFound := found_append store.cacheCellFound extra
+  powerCellFound := found_append store.powerCellFound extra
+  cacheFound := found_append store.cacheFound extra
+  powerFound := found_append store.powerFound extra
+  separate := store.separate
+
+theorem Store.cache_ne_list (store : Store heap entries cacheCell powerCell)
+    (found : heap[address]? = some (.list values)) : store.cacheAddress ≠ address := by
+  intro same
+  have impossible := store.cacheFound
+  rw [same, found] at impossible
+  cases entries <;> cases impossible
+
+theorem Store.cache_ne_tuple (store : Store heap entries cacheCell powerCell)
+    (found : heap[address]? = some (.tuple values)) : store.cacheAddress ≠ address := by
+  intro same
+  have impossible := store.cacheFound
+  rw [same, found] at impossible
+  cases entries <;> cases impossible
+
+def Store.update (store : Store heap entries cacheCell powerCell) (updated : List IntPairCache.Entry) :
+    Store (heap.set store.cacheAddress (IntPairCache.object updated)) updated cacheCell powerCell where
+  cacheAddress := store.cacheAddress
+  powerAddress := store.powerAddress
+  powers := store.powers
+  cacheCellFound := by
+    rw [List.getElem?_set_ne (store.cache_ne_list store.cacheCellFound)]
+    exact store.cacheCellFound
+  powerCellFound := by
+    rw [List.getElem?_set_ne (store.cache_ne_list store.powerCellFound)]
+    exact store.powerCellFound
+  cacheFound := List.getElem?_set_self ((List.getElem?_eq_some_iff.mp store.cacheFound).1)
+  powerFound := by
+    rw [List.getElem?_set_ne store.separate]
+    exact store.powerFound
+  separate := store.separate
+
+def Store.update_globals (store : Store heap entries cacheCell powerCell)
+    (context : is_prime.SourceGlobals heap globals) (updated : List IntPairCache.Entry) :
+    is_prime.SourceGlobals (heap.set store.cacheAddress (IntPairCache.object updated)) globals where
+  smallAddress := context.smallAddress
+  basesAddress := context.basesAddress
+  smallBinding := context.smallBinding
+  basesBinding := context.basesBinding
+  smallTuple := by
+    rw [List.getElem?_set_ne (store.cache_ne_tuple context.smallTuple)]
+    exact context.smallTuple
+  basesTuple := by
+    rw [List.getElem?_set_ne (store.cache_ne_tuple context.basesTuple)]
+    exact context.basesTuple
+
+structure Environment (env : HeapCalls.Env) (left right : Int) (cacheCell powerCell : Nat) : Prop where
+  leftValue : env "p" = some (number left)
+  rightValue : env "q" = some (number right)
+  cacheValue : env "__formalsw_cell_solve_cache_local" = some (.ref cacheCell)
+  powerValue : env "__formalsw_cell_solve_pow10_local" = some (.ref powerCell)
+
+theorem Environment.bind (environment : Environment env left right cacheCell powerCell)
+    (name : String) (value : Mutable.Value) (allowed : name ∈ ["key", "v", "c1", "c2", "ok"]) :
+    Environment (setLocal env name value) left right cacheCell powerCell := by
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at allowed
+  rcases allowed with rfl | rfl | rfl | rfl | rfl <;>
+    exact ⟨by simpa [setLocal] using environment.leftValue,
+      by simpa [setLocal] using environment.rightValue,
+      by simpa [setLocal] using environment.cacheValue,
+      by simpa [setLocal] using environment.powerValue⟩
+
+private theorem read_cell (env : HeapCalls.Env) (heap : Mutable.Heap) (name : String) (cell target : Nat)
+    (bound : env name = some (.ref cell)) (found : heap[cell]? = some (.list [.ref target]))
+    (globals : Mutable.Globals) :
+    Evaluates program env (.subscript (.name name) (.constant (.int 0))) heap (.ref target) heap globals := by
+  apply Evaluates.subscript (by intros; simp) (Evaluates.lookup bound) Evaluates.constant
+  exact Mutable.getItem_list heap cell 0 [.ref target] found (by simp)
+
+private theorem get_evaluates (env : HeapCalls.Env) (heap : Mutable.Heap) (left right : Int)
+    (cacheCell powerCell tuple : Nat) (entries : List IntPairCache.Entry)
+    (store : Store heap entries cacheCell powerCell)
+    (environment : Environment env left right cacheCell powerCell)
+    (getKey : env "key" = some (.ref tuple))
+    (tupleFound : heap[tuple]? = some (.tuple [number left, number right]))
+    (globals : Mutable.Globals) :
+    Evaluates program env getExpression heap
+      (((IntPairCache.lookup entries left right).map flag).getD empty) heap globals := by
+  apply Evaluates.dictionary_get_bound (by intros name impossible; cases impossible)
+    (read_cell env heap _ _ _ environment.cacheValue store.cacheCellFound globals)
+  · cases entries <;> simp [bindMethod, store.cacheFound, IntPairCache.object]
+  · exact .cons (Evaluates.lookup getKey) .nil
+  · exact IntPairCache.get heap store.cacheAddress tuple entries left right store.cacheFound tupleFound
+
+private theorem hit_evaluates (env : HeapCalls.Env) (heap : Mutable.Heap) (cached : Option Bool)
+    (getV : env "v" = some (((cached.map flag).getD empty))) (globals : Mutable.Globals) :
+    Evaluates program env hitTest heap (flag cached.isSome) heap globals := by
+  cases cached with
+  | none =>
+      apply Evaluates.unary (value := flag true)
+      · exact Evaluates.builtin (.cons (Evaluates.lookup getV) (.cons Evaluates.constant .nil)) rfl
+      · rfl
+  | some value =>
+      apply Evaluates.unary (value := flag false)
+      · apply Evaluates.builtin (.cons (Evaluates.lookup getV) (.cons Evaluates.constant .nil))
+        cases value <;> rfl
+      · rfl
+
+private theorem divisible_evaluates (env : HeapCalls.Env) (heap : Mutable.Heap) (left right : Int)
+    (environment : Environment env left right cacheCell powerCell) (globals : Mutable.Globals) :
+    Evaluates program env divisibleTest heap (flag (decide ((left + right) % 3 = 0))) heap globals := by
+  apply Evaluates.compare (av := number ((left + right) % 3)) (bv := number 0)
+  · exact Evaluates.binary (Evaluates.binary (Evaluates.lookup environment.leftValue)
+      (Evaluates.lookup environment.rightValue) rfl) Evaluates.constant rfl
+  · exact Evaluates.constant
+  · simp [HeapCalls.compare, scalarCompare, evalCmpOp, flag]
+
+private theorem reject_result (env : HeapCalls.Env) (heap : Mutable.Heap) (left right : Int)
+    (cacheCell powerCell tuple : Nat) (entries : List IntPairCache.Entry)
+    (store : Store heap entries cacheCell powerCell)
+    (environment : Environment env left right cacheCell powerCell)
+    (getKey : env "key" = some (.ref tuple))
+    (tupleFound : heap[tuple]? = some (.tuple [number left, number right]))
+    (following : List Stmt) (globals : Mutable.Globals) :
+    BlockReturns program env (reject ++ following) heap (flag false)
+      (heap.set store.cacheAddress (IntPairCache.object (IntPairCache.insert entries left right tuple false))) globals := by
+  apply BlockReturns.setItem (by intros; simp) Evaluates.constant
+    (.cons (read_cell env heap _ _ _ environment.cacheValue store.cacheCellFound globals)
+      (.cons (Evaluates.lookup getKey) .nil))
+    (IntPairCache.set heap store.cacheAddress tuple entries left right false store.cacheFound tupleFound)
+  exact BlockReturns.return_value Evaluates.constant
+
+private theorem concat_evaluates (env : HeapCalls.Env) (heap : Mutable.Heap)
+    (first second : String) (left right : Int) (powerCell powerAddress : Nat)
+    (powers : List (Constant × Mutable.Value))
+    (getFirst : env first = some (number left)) (getSecond : env second = some (number right))
+    (getCell : env "__formalsw_cell_solve_pow10_local" = some (.ref powerCell))
+    (cellFound : heap[powerCell]? = some (.list [.ref powerAddress]))
+    (mapFound : heap[powerAddress]? = some (.dict powers))
+    (powerFound : ScalarDict.lookup powers (.int right) = some (number (DecimalShift.decimalShift right)))
+    (globals : Mutable.Globals) :
+    Evaluates program env (concatExpression first second) heap (number (concatenated left right)) heap globals := by
+  apply Evaluates.binary (av := number (left * (DecimalShift.decimalShift right : Int)))
+    (bv := number right)
+  · apply Evaluates.binary (av := number left) (bv := number (DecimalShift.decimalShift right))
+    · exact Evaluates.lookup getFirst
+    · apply Evaluates.subscript (by intros; simp)
+        (read_cell env heap _ _ _ getCell cellFound globals) (Evaluates.lookup getSecond)
+      exact Mutable.getItem_dictionary heap powerAddress powers mapFound (.int right) powerFound
+    · rfl
+  · exact Evaluates.lookup getSecond
+  · rfl
+
+private theorem after_lookup (env : HeapCalls.Env) (heap : Mutable.Heap) (left right : Int)
+    (cacheCell powerCell tuple : Nat) (entries : List IntPairCache.Entry)
+    (store : Store heap entries cacheCell powerCell)
+    (environment : Environment env left right cacheCell powerCell)
+    (getKey : env "key" = some (.ref tuple))
+    (getV : env "v" = some ((((IntPairCache.lookup entries left right).map flag).getD empty)))
+    (tupleFound : heap[tuple]? = some (.tuple [number left, number right]))
+    (leftPower : ScalarDict.lookup store.powers (.int left) = some (number (DecimalShift.decimalShift left)))
+    (rightPower : ScalarDict.lookup store.powers (.int right) = some (number (DecimalShift.decimalShift right)))
+    (correct : IntPairCache.Correct answer entries)
+    (globals : Mutable.Globals) (context : is_prime.SourceGlobals heap globals) :
+    BlockReturns program env (tail.drop 2) heap (flag (answer left right))
+      (if (IntPairCache.lookup entries left right).isSome then heap
+       else heap.set store.cacheAddress (IntPairCache.object
+         (IntPairCache.insert entries left right tuple (answer left right)))) globals := by
+  cases cached : IntPairCache.lookup entries left right with
+  | some value =>
+      have valueEq : value = answer left right := IntPairCache.lookup_correct correct cached
+      have getValue : env "v" = some (flag (answer left right)) := by simpa [cached, valueEq] using getV
+      simp only [Option.isSome_some, ↓reduceIte]
+      apply BlockReturns.branch (flag := true) (value := flag true) (middle := heap)
+        (by simpa only [Option.isSome_some] using (hit_evaluates env heap (some value)
+          (by simpa only [cached] using getV) globals)) rfl
+      exact BlockReturns.return_value (Evaluates.lookup getValue)
+  | none =>
+      simp only [Option.isSome_none, Bool.false_eq_true, ↓reduceIte]
+      apply BlockReturns.branch (flag := false) (value := flag false) (middle := heap)
+        (by simpa only [Option.isSome_none] using (hit_evaluates env heap none
+          (by simpa only [cached] using getV) globals)) rfl
+      by_cases divisible : (left + right) % 3 = 0
+      · have answerEq : answer left right = false := by simp [answer, divisible]
+        rw [answerEq]
+        apply BlockReturns.branch (flag := true) (value := flag true) (middle := heap)
+          (by simpa only [divisible, decide_true] using divisible_evaluates env heap left right environment globals) rfl
+        exact reject_result env heap left right cacheCell powerCell tuple entries store environment getKey tupleFound _ globals
+      · apply BlockReturns.branch (flag := false) (value := flag false) (middle := heap)
+          (by simpa only [divisible, decide_false] using divisible_evaluates env heap left right environment globals) rfl
+        let c1 := concatenated left right
+        let first := setLocal env "c1" (number c1)
+        have firstEnvironment : Environment first left right cacheCell powerCell :=
+          environment.bind "c1" (number c1) (by simp)
+        have firstKey : first "key" = some (.ref tuple) := by simpa [first, setLocal] using getKey
+        have firstValue : first "c1" = some (number c1) := by simp [first, setLocal]
+        have firstPrime : Evaluates program first (.call (.name "is_prime") [.name "c1"])
+            heap (flag (MillerRabin.isPrimeModel c1.toNat)) heap globals :=
+          Evaluates.call (.cons (Evaluates.lookup firstValue) .nil) (is_prime.raw_result c1 heap globals context)
+        have firstTest : Evaluates program first (.unaryOp .not (.call (.name "is_prime") [.name "c1"]))
+            heap (flag (!MillerRabin.isPrimeModel c1.toNat)) heap globals := by
+          apply Evaluates.unary firstPrime
+          cases MillerRabin.isPrimeModel c1.toNat <;> rfl
+        apply BlockReturns.assign
+          (concat_evaluates env heap "p" "q" left right powerCell store.powerAddress store.powers
+            environment.leftValue environment.rightValue environment.powerValue store.powerCellFound
+            store.powerFound rightPower globals)
+        cases accepted : MillerRabin.isPrimeModel c1.toNat with
+        | false =>
+            have answerEq : answer left right = false := by simp [answer, divisible, c1, accepted]
+            rw [answerEq]
+            apply BlockReturns.branch (flag := true) (value := flag true) (middle := heap)
+              (by simpa only [accepted, Bool.not_false] using firstTest) rfl
+            exact reject_result first heap left right cacheCell powerCell tuple entries store firstEnvironment firstKey tupleFound _ globals
+        | true =>
+            apply BlockReturns.branch (flag := false) (value := flag false) (middle := heap)
+              (by simpa only [accepted, Bool.not_true] using firstTest) rfl
+            let c2 := concatenated right left
+            let second := setLocal first "c2" (number c2)
+            let finished := setLocal second "ok" (flag (MillerRabin.isPrimeModel c2.toNat))
+            have secondEnvironment : Environment second left right cacheCell powerCell :=
+              firstEnvironment.bind "c2" (number c2) (by simp)
+            have finishedEnvironment : Environment finished left right cacheCell powerCell :=
+              secondEnvironment.bind "ok" (flag (MillerRabin.isPrimeModel c2.toNat)) (by simp)
+            have finishedKey : finished "key" = some (.ref tuple) := by
+              simpa [finished, second, first, setLocal] using getKey
+            have finishedValue : finished "ok" = some (flag (MillerRabin.isPrimeModel c2.toNat)) := by
+              simp [finished, setLocal]
+            have answerEq : answer left right = MillerRabin.isPrimeModel c2.toNat := by
+              simp [answer, divisible, c1, c2, accepted]
+            rw [answerEq]
+            apply BlockReturns.assign
+              (concat_evaluates first heap "q" "p" right left powerCell store.powerAddress store.powers
+                firstEnvironment.rightValue firstEnvironment.leftValue firstEnvironment.powerValue
+                store.powerCellFound store.powerFound leftPower globals)
+            apply BlockReturns.assign
+              (Evaluates.call (.cons (Evaluates.lookup (show second "c2" = some (number c2) by simp [second, setLocal])) .nil)
+                (is_prime.raw_result c2 heap globals context))
+            apply BlockReturns.setItem (by intros; simp) (Evaluates.lookup finishedValue)
+              (.cons (read_cell finished heap _ _ _ finishedEnvironment.cacheValue store.cacheCellFound globals)
+                (.cons (Evaluates.lookup finishedKey) .nil))
+              (IntPairCache.set heap store.cacheAddress tuple entries left right
+                (MillerRabin.isPrimeModel c2.toNat) store.cacheFound tupleFound)
+            exact BlockReturns.return_value (Evaluates.lookup finishedValue)
+
+def keyHeap (heap : Mutable.Heap) (left right : Int) : Mutable.Heap :=
+  heap ++ [.tuple [number left, number right]]
+
+def nextEntries (entries : List IntPairCache.Entry) (left right : Int) (tuple : Nat) : List IntPairCache.Entry :=
+  if (IntPairCache.lookup entries left right).isSome then entries
+  else IntPairCache.insert entries left right tuple (answer left right)
+
+def nextHeap (heap : Mutable.Heap) (cacheAddress : Nat) (entries : List IntPairCache.Entry)
+    (left right : Int) : Mutable.Heap :=
+  let keyed := keyHeap heap left right
+  if (IntPairCache.lookup entries left right).isSome then keyed
+  else keyed.set cacheAddress (IntPairCache.object (nextEntries entries left right heap.length))
+
+theorem tail_result (env : HeapCalls.Env) (heap : Mutable.Heap) (left right : Int)
+    (cacheCell powerCell : Nat) (entries : List IntPairCache.Entry)
+    (store : Store heap entries cacheCell powerCell)
+    (environment : Environment env left right cacheCell powerCell)
+    (leftPower : ScalarDict.lookup store.powers (.int left) = some (number (DecimalShift.decimalShift left)))
+    (rightPower : ScalarDict.lookup store.powers (.int right) = some (number (DecimalShift.decimalShift right)))
+    (correct : IntPairCache.Correct answer entries)
+    (globals : Mutable.Globals) (context : is_prime.SourceGlobals heap globals) :
+    BlockReturns program env tail heap (flag (answer left right))
+      (nextHeap heap store.cacheAddress entries left right) globals := by
+  let keyed := setLocal env "key" (.ref heap.length)
+  let bound := setLocal keyed "v" (((IntPairCache.lookup entries left right).map flag).getD empty)
+  have keyedEnvironment : Environment keyed left right cacheCell powerCell :=
+    environment.bind "key" (.ref heap.length) (by simp)
+  have boundEnvironment : Environment bound left right cacheCell powerCell :=
+    keyedEnvironment.bind "v" _ (by simp)
+  have keyedKey : keyed "key" = some (.ref heap.length) := by simp [keyed, setLocal]
+  have boundKey : bound "key" = some (.ref heap.length) := by simpa [bound, setLocal] using keyedKey
+  have boundValue : bound "v" = some (((IntPairCache.lookup entries left right).map flag).getD empty) := by
+    simp [bound, setLocal]
+  let appended := store.append [.tuple [number left, number right]]
+  have keyFound : (keyHeap heap left right)[heap.length]? = some (.tuple [number left, number right]) := by
+    simp [keyHeap]
+  have rest := after_lookup bound (keyHeap heap left right) left right cacheCell powerCell heap.length entries
+    appended boundEnvironment boundKey boundValue keyFound
+    (by simpa only [appended, Store.append] using leftPower)
+    (by simpa only [appended, Store.append] using rightPower) correct globals
+    (context.append [.tuple [number left, number right]])
+  have same : nextHeap heap store.cacheAddress entries left right =
+      (if (IntPairCache.lookup entries left right).isSome then keyHeap heap left right
+       else (keyHeap heap left right).set store.cacheAddress
+         (IntPairCache.object (IntPairCache.insert entries left right heap.length (answer left right)))) := by
+    unfold nextHeap nextEntries
+    split <;> simp_all
+  rw [same]
+  apply BlockReturns.assign
+    (Evaluates.tuple (.cons (Evaluates.lookup environment.leftValue)
+      (.cons (Evaluates.lookup environment.rightValue) .nil)) (by simp))
+  apply BlockReturns.assign
+    (get_evaluates keyed (keyHeap heap left right) left right cacheCell powerCell heap.length entries
+      appended keyedEnvironment keyedKey keyFound globals)
+  simpa only [bound, appended, Store.append] using rest
+
+private theorem nextHeap_found (found : heap[address]? = some (object : Mutable.Object))
+    (cacheAddress : Nat) (different : cacheAddress ≠ address)
+    (entries : List IntPairCache.Entry) (left right : Int) :
+    (nextHeap heap cacheAddress entries left right)[address]? = some object := by
+  unfold nextHeap
+  split
+  · exact found_append found _
+  · rw [List.getElem?_set_ne different]
+    exact found_append found _
+
+def Store.after (store : Store heap entries cacheCell powerCell) (left right : Int) :
+    Store (nextHeap heap store.cacheAddress entries left right)
+      (nextEntries entries left right heap.length) cacheCell powerCell where
+  cacheAddress := store.cacheAddress
+  powerAddress := store.powerAddress
+  powers := store.powers
+  cacheCellFound := nextHeap_found store.cacheCellFound _ (store.cache_ne_list store.cacheCellFound) entries left right
+  powerCellFound := nextHeap_found store.powerCellFound _ (store.cache_ne_list store.powerCellFound) entries left right
+  cacheFound := by
+    by_cases hit : (IntPairCache.lookup entries left right).isSome = true
+    · simp only [nextHeap, nextEntries, if_pos hit]
+      exact found_append store.cacheFound _
+    · simp only [nextHeap, nextEntries, if_neg hit]
+      apply List.getElem?_set_self
+      have bound := (List.getElem?_eq_some_iff.mp store.cacheFound).1
+      simp only [keyHeap, List.length_append, List.length_cons, List.length_nil]
+      omega
+  powerFound := nextHeap_found store.powerFound _ store.separate entries left right
+  separate := store.separate
+
+def Store.after_globals (store : Store heap entries cacheCell powerCell) (left right : Int)
+    (context : is_prime.SourceGlobals heap globals) :
+    is_prime.SourceGlobals (nextHeap heap store.cacheAddress entries left right) globals := by
+  let appended := store.append [.tuple [number left, number right]]
+  let ready := context.append [.tuple [number left, number right]]
+  by_cases hit : (IntPairCache.lookup entries left right).isSome = true
+  · simpa only [nextHeap, if_pos hit] using ready
+  · simpa only [nextHeap, nextEntries, if_neg hit] using
+      appended.update_globals ready (IntPairCache.insert entries left right heap.length (answer left right))
+
+@[simp] theorem Store.after_cacheAddress (store : Store heap entries cacheCell powerCell) (left right : Int) :
+    (store.after left right).cacheAddress = store.cacheAddress := rfl
+
+@[simp] theorem Store.after_powerAddress (store : Store heap entries cacheCell powerCell) (left right : Int) :
+    (store.after left right).powerAddress = store.powerAddress := rfl
+
+@[simp] theorem Store.after_powers (store : Store heap entries cacheCell powerCell) (left right : Int) :
+    (store.after left right).powers = store.powers := rfl
+
+theorem nextHeap_preserves (found : heap[address]? = some (object : Mutable.Object))
+    (cacheAddress : Nat) (different : cacheAddress ≠ address)
+    (entries : List IntPairCache.Entry) (left right : Int) :
+    (nextHeap heap cacheAddress entries left right)[address]? = some object :=
+  nextHeap_found found cacheAddress different entries left right
+
+theorem nextHeap_length (heap : Mutable.Heap) (cacheAddress : Nat) (entries : List IntPairCache.Entry)
+    (left right : Int) : (nextHeap heap cacheAddress entries left right).length = heap.length + 1 := by
+  unfold nextHeap
+  split <;> simp [keyHeap]
+
+theorem nextEntries_correct (correct : IntPairCache.Correct answer entries) (left right : Int) (tuple : Nat) :
+    IntPairCache.Correct answer (nextEntries entries left right tuple) := by
+  unfold nextEntries
+  split
+  · exact correct
+  · exact IntPairCache.insert_correct correct rfl
+
+def orderedHeap (heap : Mutable.Heap) (left right : Int) : Mutable.Heap :=
+  if right < left then heap ++ [.tuple [number right, number left]] else heap
+
+private theorem found_ordered (found : heap[address]? = some (object : Mutable.Object))
+    (left right : Int) : (orderedHeap heap left right)[address]? = some object := by
+  unfold orderedHeap
+  split
+  · exact found_append found _
+  · exact found
+
+def Store.ordered (store : Store heap entries cacheCell powerCell) (left right : Int) :
+    Store (orderedHeap heap left right) entries cacheCell powerCell where
+  cacheAddress := store.cacheAddress
+  powerAddress := store.powerAddress
+  powers := store.powers
+  cacheCellFound := found_ordered store.cacheCellFound left right
+  powerCellFound := found_ordered store.powerCellFound left right
+  cacheFound := found_ordered store.cacheFound left right
+  powerFound := found_ordered store.powerFound left right
+  separate := store.separate
+
+def orderedGlobals (context : is_prime.SourceGlobals heap globals) (left right : Int) :
+    is_prime.SourceGlobals (orderedHeap heap left right) globals where
+  smallAddress := context.smallAddress
+  basesAddress := context.basesAddress
+  smallBinding := context.smallBinding
+  basesBinding := context.basesBinding
+  smallTuple := found_ordered context.smallTuple left right
+  basesTuple := found_ordered context.basesTuple left right
+
+def resultEntries (heap : Mutable.Heap) (entries : List IntPairCache.Entry) (left right : Int) : List IntPairCache.Entry :=
+  nextEntries entries (min left right) (max left right) (orderedHeap heap left right).length
+
+def resultHeap (heap : Mutable.Heap) (cacheAddress : Nat) (entries : List IntPairCache.Entry)
+    (left right : Int) : Mutable.Heap :=
+  nextHeap (orderedHeap heap left right) cacheAddress entries (min left right) (max left right)
+
+/-- The complete lowered source helper, including the tuple-unpacking swap,
+fresh lookup tuple, cached False results, and each actual primality call. -/
+theorem result (left right : Int) (heap : Mutable.Heap) (cacheCell powerCell : Nat)
+    (entries : List IntPairCache.Entry) (store : Store heap entries cacheCell powerCell)
+    (leftPower : ScalarDict.lookup store.powers (.int left) = some (number (DecimalShift.decimalShift left)))
+    (rightPower : ScalarDict.lookup store.powers (.int right) = some (number (DecimalShift.decimalShift right)))
+    (correct : IntPairCache.Correct answer entries)
+    (globals : Mutable.Globals) (context : is_prime.SourceGlobals heap globals) :
+    ReturnsValue program "__formalsw_local_solve_pair_ok"
+      [number left, number right, .ref cacheCell, .ref powerCell] heap (flag (answer left right))
+      (resultHeap heap store.cacheAddress entries left right) globals := by
+  let params := ((findFunctionIn program.body "__formalsw_local_solve_pair_ok").getD ([], [])).1
+  let sourceBody := ((findFunctionIn program.body "__formalsw_local_solve_pair_ok").getD ([], [])).2
+  let env := functionEnv params sourceBody [number left, number right, .ref cacheCell, .ref powerCell] globals
+  have environment : Environment env left right cacheCell powerCell := by
+    constructor <;> cases globals <;> rfl
+  apply BlockReturns.function rfl rfl
+  change BlockReturns program env (executableBody sourceBody) heap (flag (answer left right))
+    (resultHeap heap store.cacheAddress entries left right) globals
+  rw [code_source]
+  by_cases reversed : right < left
+  · have lower : right ≤ left := by omega
+    have finalHeap : resultHeap heap store.cacheAddress entries left right =
+        nextHeap (heap ++ [.tuple [number right, number left]]) store.cacheAddress entries right left := by
+      simp only [resultHeap, orderedHeap, if_pos reversed, min_eq_right lower, max_eq_left lower]
+    rw [finalHeap, answer_comm left right]
+    apply BlockReturns.branch (flag := true) (value := flag true) (middle := heap)
+      (Evaluates.compare (Evaluates.lookup environment.leftValue) (Evaluates.lookup environment.rightValue)
+        (by simp [HeapCalls.compare, scalarCompare, evalCmpOp, reversed])) rfl
+    let swapped := assignNames env ["p", "q"] [number right, number left]
+    have swappedEnvironment : Environment swapped right left cacheCell powerCell :=
+      ⟨rfl, rfl,
+        by simpa [swapped, assignNames, setLocal] using environment.cacheValue,
+        by simpa [swapped, assignNames, setLocal] using environment.powerValue⟩
+    let appended := store.append [.tuple [number right, number left]]
+    have rest := tail_result swapped (heap ++ [.tuple [number right, number left]]) right left
+      cacheCell powerCell entries appended swappedEnvironment
+      (by simpa only [appended, Store.append] using rightPower)
+      (by simpa only [appended, Store.append] using leftPower) correct globals
+      (context.append [.tuple [number right, number left]])
+    apply BlockReturns.unpack (items := [number right, number left])
+      (afterUnpack := heap ++ [.tuple [number right, number left]]) rfl
+      (Evaluates.tuple (.cons (Evaluates.lookup environment.rightValue)
+        (.cons (Evaluates.lookup environment.leftValue) .nil)) (by simp))
+      (by simp [Mutable.sequence]) rfl
+    simpa only [appended, Store.append] using rest
+  · have lower : left ≤ right := by omega
+    have finalHeap : resultHeap heap store.cacheAddress entries left right =
+        nextHeap heap store.cacheAddress entries left right := by
+      simp only [resultHeap, orderedHeap, if_neg reversed, min_eq_left lower, max_eq_right lower]
+    rw [finalHeap]
+    apply BlockReturns.branch (flag := false) (value := flag false) (middle := heap)
+      (Evaluates.compare (Evaluates.lookup environment.leftValue) (Evaluates.lookup environment.rightValue)
+        (by simp [HeapCalls.compare, scalarCompare, evalCmpOp, reversed])) rfl
+    exact tail_result env heap left right cacheCell powerCell entries store environment leftPower rightPower correct globals context
+
+def Store.result (store : Store heap entries cacheCell powerCell) (left right : Int) :
+    Store (resultHeap heap store.cacheAddress entries left right)
+      (resultEntries heap entries left right) cacheCell powerCell where
+  cacheAddress := store.cacheAddress
+  powerAddress := store.powerAddress
+  powers := store.powers
+  cacheCellFound := by
+    simpa only [resultHeap, Store.ordered] using
+      ((store.ordered left right).after (min left right) (max left right)).cacheCellFound
+  powerCellFound := by
+    simpa only [resultHeap, Store.ordered] using
+      ((store.ordered left right).after (min left right) (max left right)).powerCellFound
+  cacheFound := by
+    simpa only [resultHeap, resultEntries, Store.ordered] using
+      ((store.ordered left right).after (min left right) (max left right)).cacheFound
+  powerFound := by
+    simpa only [resultHeap, Store.ordered] using
+      ((store.ordered left right).after (min left right) (max left right)).powerFound
+  separate := store.separate
+
+def Store.result_globals (store : Store heap entries cacheCell powerCell) (left right : Int)
+    (context : is_prime.SourceGlobals heap globals) :
+    is_prime.SourceGlobals (resultHeap heap store.cacheAddress entries left right) globals := by
+  simpa only [resultHeap, Store.ordered] using
+    (store.ordered left right).after_globals (min left right) (max left right) (orderedGlobals context left right)
+
+theorem resultEntries_correct (correct : IntPairCache.Correct answer entries) (heap : Mutable.Heap) (left right : Int) :
+    IntPairCache.Correct answer (resultEntries heap entries left right) :=
+  nextEntries_correct correct (min left right) (max left right) _
+
+@[simp] theorem Store.result_cacheAddress (store : Store heap entries cacheCell powerCell) (left right : Int) :
+    (store.result left right).cacheAddress = store.cacheAddress := rfl
+
+@[simp] theorem Store.result_powerAddress (store : Store heap entries cacheCell powerCell) (left right : Int) :
+    (store.result left right).powerAddress = store.powerAddress := rfl
+
+@[simp] theorem Store.result_powers (store : Store heap entries cacheCell powerCell) (left right : Int) :
+    (store.result left right).powers = store.powers := rfl
+
+theorem resultHeap_preserves (found : heap[address]? = some (object : Mutable.Object))
+    (cacheAddress : Nat) (different : cacheAddress ≠ address)
+    (entries : List IntPairCache.Entry) (left right : Int) :
+    (resultHeap heap cacheAddress entries left right)[address]? = some object :=
+  nextHeap_preserves (found_ordered found left right) cacheAddress different entries _ _
+
+theorem resultHeap_length (heap : Mutable.Heap) (cacheAddress : Nat) (entries : List IntPairCache.Entry)
+    (left right : Int) : (resultHeap heap cacheAddress entries left right).length =
+      heap.length + (if right < left then 2 else 1) := by
+  rw [resultHeap, nextHeap_length]
+  unfold orderedHeap
+  split <;> simp [Nat.add_assoc]
+
+def initialHeap (base : Mutable.Heap) (powers : List (Constant × Mutable.Value)) : Mutable.Heap :=
+  base ++ [.dict powers, .dict [], .list [.ref base.length], .list [.ref (base.length + 1)]]
+
+/-- The concrete state established by the owner's dictionary and capture-cell
+allocations, before the first pair test. It also witnesses the empty-cache case. -/
+def initialStore (base : Mutable.Heap) (powers : List (Constant × Mutable.Value)) :
+    Store (initialHeap base powers) [] (base.length + 3) (base.length + 2) where
+  cacheAddress := base.length + 1
+  powerAddress := base.length
+  powers := powers
+  cacheCellFound := by simp [initialHeap]
+  powerCellFound := by simp [initialHeap]
+  cacheFound := by simp [initialHeap, IntPairCache.object]
+  powerFound := by simp [initialHeap]
+  separate := by omega
+
+def captureCode : List Stmt :=
+  ((executableBody ((findFunctionIn program.body "solve").getD ([], [])).2).drop 2).take 3
+
+theorem capture_source : captureCode =
+    [.annAssign (.name "pair_cache")
+      (.subscript (.name "dict") (.tuple [.subscript (.name "tuple") (.tuple [.name "int", .name "int"]), .name "bool"]))
+      (some (.dict [])),
+     .assign [.name "__formalsw_cell_solve_pow10_local"] (.list [.name "pow10_map"]),
+     .assign [.name "__formalsw_cell_solve_cache_local"] (.list [.name "pair_cache"])] := rfl
+
+def captureEnv (env : HeapCalls.Env) (base : Mutable.Heap) : HeapCalls.Env :=
+  setLocal (setLocal (setLocal env "pair_cache" (.ref (base.length + 1)))
+    "__formalsw_cell_solve_pow10_local" (.ref (base.length + 2)))
+    "__formalsw_cell_solve_cache_local" (.ref (base.length + 3))
+
+/-- Execute the actual owner statements that create the empty cache and both
+shared cells. The already-built power dictionary keeps its original address. -/
+theorem capture_initialization (env : HeapCalls.Env) (base : Mutable.Heap)
+    (powers : List (Constant × Mutable.Value))
+    (getPowers : env "pow10_map" = some (.ref base.length)) (globals : Mutable.Globals) :
+    BlockContinues program env captureCode (base ++ [.dict powers])
+      (captureEnv env base) (initialHeap base powers) globals := by
+  let first := setLocal env "pair_cache" (.ref (base.length + 1))
+  let second := setLocal first "__formalsw_cell_solve_pow10_local" (.ref (base.length + 2))
+  have firstRun : BlockContinues program env [captureCode[0]'(by decide)]
+      (base ++ [.dict powers]) first ((base ++ [.dict powers]) ++ [.dict []]) globals := by
+    apply BlockContinues.annAssign
+    convert (Evaluates.dictionary (module := program) (env := env)
+      (heap := base ++ [.dict powers]) (globals := globals) .nil) using 1
+    simp [List.length_append]
+  have secondRun : BlockContinues program first [captureCode[1]'(by decide)]
+      ((base ++ [.dict powers]) ++ [.dict []]) second
+      (((base ++ [.dict powers]) ++ [.dict []]) ++ [.list [.ref base.length]]) globals := by
+    apply BlockContinues.assign
+    convert (Evaluates.list (module := program) (env := first)
+      (heap := (base ++ [.dict powers]) ++ [.dict []]) (globals := globals)
+      (.cons (Evaluates.lookup (show first "pow10_map" = some (.ref base.length) by
+        simpa [first, setLocal] using getPowers)) .nil)) using 1
+    simp [List.length_append, List.append_assoc]
+  have thirdRun : BlockContinues program second [captureCode[2]'(by decide)]
+      (((base ++ [.dict powers]) ++ [.dict []]) ++ [.list [.ref base.length]]) (captureEnv env base)
+      ((((base ++ [.dict powers]) ++ [.dict []]) ++ [.list [.ref base.length]]) ++ [.list [.ref (base.length + 1)]]) globals := by
+    apply BlockContinues.assign
+    convert (Evaluates.list (module := program) (env := second)
+      (heap := ((base ++ [.dict powers]) ++ [.dict []]) ++ [.list [.ref base.length]]) (globals := globals)
+      (.cons (Evaluates.lookup (show second "pair_cache" = some (.ref (base.length + 1)) by simp [second, first, setLocal])) .nil)) using 1
+    simp [List.length_append, List.append_assoc]
+  simpa [capture_source, captureEnv, first, second, initialHeap, List.append_assoc] using
+    firstRun.append (secondRun.append thirdRun)
+
+end solvers.«60».pair_ok
