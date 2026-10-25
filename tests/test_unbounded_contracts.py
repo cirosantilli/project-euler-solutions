@@ -23,7 +23,7 @@ def implementations(problem):
 
 class UnboundedContractTests(unittest.TestCase):
     def test_shared_arguments(self):
-        for problem in (66, 74, 77, 78, 85, 88, 92, 100):
+        for problem in (66, 68, 74, 77, 78, 85, 88, 92, 100):
             with self.subTest(problem=problem):
                 reference, optimized = implementations(problem)
                 self.assertEqual(list(inspect.signature(reference.naive).parameters),
@@ -55,6 +55,16 @@ class UnboundedContractTests(unittest.TestCase):
                 self.assertEqual(triangle, before)
         self.assertFalse(optimized["is_triangle"]([[]]))
         self.assertFalse(optimized["is_triangle"]([[1], [2]]))
+
+    def test_magic_ring_size_and_decimal_length(self):
+        reference, optimized = implementations(68)
+        for size, digits, expected in ((-1, 16, ""), (2, 6, ""), (3, 8, ""),
+                                       (3, 9, "432621513"), (4, 12, "462723831516"), (4, 13, "")):
+            with self.subTest(size=size, digits=digits):
+                self.assertEqual(reference.naive(size, digits), expected)
+                self.assertEqual(optimized["solve"](size, digits), expected)
+        self.assertEqual(optimized["solve"](), "6531031914842725")
+        self.assertEqual(optimized["solve"](5, 17), "28797161103104548")
 
     def test_factorial_chain_longer_than_its_start(self):
         reference, optimized = implementations(74)

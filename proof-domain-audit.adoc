@@ -79,9 +79,12 @@ The default root-partition certificate for problem 62 is numerical evidence towa
 
 The following interfaces have matching Python arguments and passing numerical regression checks. Their generalized structural source proofs remain pending; the separate Lean statements and solver models also need reconciliation before they can certify these contracts.
 
+For problem 68, universal ring identities prove both the line-sum formula and the representation length from repeated inner labels. The source framework models positional combinations and proves their membership characterization and loop rules. Candidate-set completeness, canonical rotation, and the full solver/reference source equivalence remain pending.
+
 [cols="1,3"]
 |===
 | Problem | Current design
+| 68 | Share the ring size and exact decimal length. Derive the inner-label digit filter from the total label widths and the repeated inner labels. Both implementations return text, or an empty string when no requested representation exists.
 | 74 | Share the exclusive starting bound and desired chain length. The reference walks until repetition; the optimized solver memoizes tails and cycles without fixed arrays or iteration limits. Zero has digit-factorial successor one and is excluded as a starting value.
 | 77 | Share only the prime-partition threshold and search integers from two until it is exceeded.
 | 78 | Share the positive partition divisor and search positive indices until divisible. No universal existence claim is assumed.
