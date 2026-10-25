@@ -1,9 +1,11 @@
 #!/usr/bin/env python
-from typing import Tuple
 
+def digit_signature(n: int) -> tuple[int, ...]:
+    """
+    Return the ten decimal digit counts; nonpositive inputs have zero counts.
 
-def digit_signature(n: int) -> Tuple[int, ...]:
-    """Return a digit-count signature (length 10 tuple) for n in base-10."""
+    @formalsw: Returns
+    """
     cnt = [0] * 10
     while n > 0:
         cnt[n % 10] += 1
