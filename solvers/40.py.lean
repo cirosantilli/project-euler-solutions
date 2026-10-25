@@ -1,6 +1,8 @@
 import «.formalsw».solvers.«40.py.ast»
 import lang.py.FormalSW.HeapCalls
 import lang.py.FormalSW.IntegerParsing
+import lang.py.FormalSW.TruthCalls
+import lang.py.FormalSW.ContainerTypes
 import ProjectEulerStatements.Lib.ChampernowneBlocks
 import ProjectEulerStatements.Lib.ChampernowneStrings
 import data.«project-euler-statements».data.py.project_euler_statements.«p40.py»
@@ -192,21 +194,20 @@ theorem result (n : Nat) (positive : 0 < n) (heap : Mutable.Heap) :
   exact loop n 1 positive (by decide) heap ready initial
 
 end digit_at
-namespace solve
-private def positions : List Nat := [1, 10, 100, 1000, 10000, 100000, 1000000]
-private def numbers (items : List Nat) : List Mutable.Value := items.map number
-private abbrev loopBody : List Stmt :=
-  [.augAssign (.name "prod") .mult (.call (.name "digit_at") [.name "p"])]
 
-private theorem loop (items remaining : List Nat) (position address total limit : Nat)
+private abbrev numbers (items : List Nat) : List Mutable.Value := items.map number
+private abbrev answer := data.«project-euler-statements».data.py.project_euler_statements.p40.naive.answer
+
+namespace solve
+private def body : List Stmt := [.augAssign (.name "product") .mult (.call (.name "digit_at") [.name "position"])]
+
+private theorem loop (items remaining : List Nat) (position address total : Nat)
     (heap : Mutable.Heap) (env : HeapCalls.Env)
-    (found : heap[address]? = some (.list (numbers items)))
-    (suffix : items.drop position = remaining)
-    (bounds : ∀ n ∈ remaining, 0 < n ∧ n ≤ limit)
-    (getTotal : env "prod" = some (number total)) :
+    (found : heap[address]? = some (.tuple (numbers items))) (suffix : items.drop position = remaining)
+    (positive : ∀ n ∈ remaining, 0 < n) (getTotal : env "product" = some (number total)) :
     BlockReturns program env
-      [.sequenceStepLoop "p" (.ref address) position loopBody [], .return (.name "prod")]
-      heap (number (remaining.foldl (fun acc n => acc * P40.digitAt n limit) total)) heap := by
+      [.sequenceStepLoop "position" (.ref address) position body [], .return (.name "product")]
+      heap (number (remaining.foldl (fun total n => total * blockDigit 1 n) total)) heap := by
   have sequence : Mutable.sequence (.ref address) heap = some (.ok (numbers items), heap) := by
     simp [Mutable.sequence, found]
   induction remaining generalizing position total env with
@@ -219,68 +220,122 @@ private theorem loop (items remaining : List Nat) (position address total limit 
   | cons head tail ih =>
       have item : items[position]? = some head := by
         simpa [suffix] using (List.head?_drop (l := items) (i := position)).symm
-      have headBounds := bounds head (by simp)
-      let bound := setLocal env "p" (number head)
-      have getP : bound "p" = some (number head) := by simp [bound, setLocal]
-      have boundTotal : bound "prod" = some (number total) := by
-        simpa [bound, setLocal] using getTotal
-      have tailSuffix : items.drop (position+1) = tail := by
-        simp [List.drop_add_one_eq_tail_drop, suffix]
-      have tailBounds : ∀ n ∈ tail, 0 < n ∧ n ≤ limit := fun n member => bounds n (by simp [member])
-      have digit : Evaluates program bound (.call (.name "digit_at") [.name "p"])
-          heap (number (P40.digitAt head limit)) heap := by
-        have evaluated := Evaluates.call (module := program) (env := bound)
-          (.cons (Evaluates.lookup getP) .nil) (digit_at.result head headBounds.1 heap)
-        simpa only [blockDigit_correct head limit headBounds.1 headBounds.2] using evaluated
-      apply BlockReturns.sequence_step (source := .ref address) (value := number head)
-        sequence (by simp [numbers, item])
-      apply BlockReturns.augAssign (left := number total) (right := number (P40.digitAt head limit))
-        (value := number (total*P40.digitAt head limit)) (middle := heap) (afterOperation := heap)
-        boundTotal digit
+      let bound := setLocal env "position" (number head)
+      let updated := setLocal bound "product" (number (total * blockDigit 1 head))
+      have boundTotal : bound "product" = some (number total) := by simpa [bound, setLocal] using getTotal
+      have tailSuffix : items.drop (position + 1) = tail := by simp [List.drop_add_one_eq_tail_drop, suffix]
+      apply BlockReturns.sequence_step (source := .ref address) (value := number head) sequence (by simp [numbers, item])
+      apply BlockReturns.augAssign (left := number total) (right := number (blockDigit 1 head))
+        (value := number (total * blockDigit 1 head)) (middle := heap) (afterOperation := heap) boundTotal
+      · exact Evaluates.call (.cons (Evaluates.lookup (show bound "position" = some (number head) from rfl)) .nil)
+          (digit_at.result head (positive head (by simp)) heap)
       · simp [inplace, Mutable.binary, scalarBinary, number]
-      · simpa only [Calls.loopContinuation, Calls.loopControl, Calls.loopControlStmt,
-          Bool.false_or, Bool.false_eq_true, if_false, List.nil_append, List.foldl_cons] using
-          ih (position+1) (total*P40.digitAt head limit)
-            (setLocal bound "prod" (number (total*P40.digitAt head limit))) tailSuffix tailBounds rfl
+      · simpa only [Calls.loopContinuation, Calls.loopControl, Calls.loopControlStmt, Bool.false_or,
+          Bool.false_eq_true, if_false, List.nil_append, List.foldl_cons] using
+          ih (position + 1) (total * blockDigit 1 head) updated tailSuffix
+            (fun n member => positive n (by simp [member])) rfl
 
-/-- Allocate the seven source positions and multiply their independently computed digits. -/
-theorem result (heap : Mutable.Heap) :
-    ReturnsValue program "solve" [] heap (number (P40.naive 1000000))
-      (heap ++ [.list (numbers positions)]) := by
+/-- The optimized source handles any finite positive position tuple without allocating a stream. -/
+theorem result (positions : List Nat) (positive : ∀ n ∈ positions, 0 < n) (heap : Mutable.Heap) (address : Nat)
+    (found : heap[address]? = some (.tuple (numbers positions))) :
+    ReturnsValue program "solve" [.ref address] heap (number (answer positions)) heap := by
+  let initial := functionEnv ((findFunctionIn program.body "solve").getD ([], [])).1
+    ((findFunctionIn program.body "solve").getD ([], [])).2 [.ref address] []
+  let ready := setLocal initial "product" (number 1)
   apply BlockReturns.function rfl rfl
-  apply BlockContinues.returns (BlockContinues.annAssign (value := .ref heap.length)
-    (Evaluates.list (.cons Evaluates.constant (.cons Evaluates.constant (.cons Evaluates.constant
-      (.cons Evaluates.constant (.cons Evaluates.constant (.cons Evaluates.constant
-        (.cons Evaluates.constant .nil)))))))))
   apply BlockReturns.assign Evaluates.constant
-  apply BlockReturns.for_sequence (items := numbers positions) (value := .ref heap.length)
-    (by intros; simp) (Evaluates.lookup (by simp [setLocal])) (by simp [Mutable.sequence, numbers, positions])
-  exact loop positions positions 0 heap.length 1 1000000 _ _ (by simp [numbers, positions]) rfl
-    (by intro n member; simp only [positions, List.mem_cons, List.not_mem_nil, or_false] at member; omega)
-    (by simp [setLocal])
+  apply BlockReturns.for_sequence (items := numbers positions) (value := .ref address)
+    (by intros; simp) (Evaluates.lookup (show ready "positions" = some (.ref address) from rfl))
+    (by simp [Mutable.sequence, found])
+  exact loop positions positions 0 address 1 heap ready found rfl positive rfl
 
 end solve
 
-theorem solve.«Equiv(naive_default)» :
-    (HeapCalls.scalarFunction program "solve" []).Equiv
-      (HeapCalls.scalarFunction P40Ast.module "naive_default" []) := by
-  obtain ⟨_, reference⟩ :=
-    data.«project-euler-statements».data.py.project_euler_statements.p40.naive_default.result []
-  have optimized := HeapCalls.ReturnsValue.scalar_finishes (values := []) (solve.result [])
-  have original := HeapCalls.ReturnsValue.scalar_finishes (values := []) reference
-  intro outcome
-  constructor
-  · intro finished
-    rw [finished.unique optimized]
-    exact original
-  · intro finished
-    rw [finished.unique original]
-    exact optimized
+private abbrev inputEnv (address : Nat) : HeapCalls.Env :=
+  fun name => if name = "positions" then some (.ref address) else none
+
+private theorem contents (heap : Mutable.Heap) (address : Nat)
+    (typed : Mutable.Value.HasContainerType heap (.ref address) (.tupleOf (.scalar "int"))) :
+    ∃ values : List Int, heap[address]? = some (.tuple (values.map (fun n => .scalar (.int n)))) := by
+  obtain ⟨items, found, elements⟩ := Mutable.Value.hasContainerType_variadicTuple_iff.mp typed
+  have projected : ∃ values : List Int, items = values.map (fun n => Mutable.Value.scalar (.int n)) := by
+    clear found
+    induction items with
+    | nil => exact ⟨[], rfl⟩
+    | cons first rest ih =>
+        obtain ⟨n, rfl⟩ := Mutable.Value.hasContainerType_int_iff.mp (elements first (by simp))
+        obtain ⟨values, rfl⟩ := ih (fun item member => elements item (List.mem_cons_of_mem _ member))
+        exact ⟨n :: values, rfl⟩
+  obtain ⟨values, rfl⟩ := projected
+  exact ⟨values, found⟩
+
+private theorem condition_result (values : List Int) (heap : Mutable.Heap) (address : Nat)
+    (found : heap[address]? = some (.tuple (values.map (fun n => .scalar (.int n))))) :
+    Evaluates program (inputEnv address) Solvers.P40Ast.requires_solve_0 heap
+      (.scalar (.bool (decide (∀ n ∈ values, 0 < n)))) heap :=
+  Evaluates.all_positive (name := "position") (sourceName := "positions")
+    (Evaluates.lookup rfl) (by simp [Mutable.sequence, found])
+
+private theorem domain (heap : Mutable.Heap) (address : Nat)
+    (typed : Mutable.Value.HasContainerType heap (.ref address) (.tupleOf (.scalar "int")))
+    (requires : HeapCalls.Condition program (inputEnv address) Solvers.P40Ast.requires_solve_0 heap) :
+    ∃ positions : List Nat, (∀ n ∈ positions, 0 < n) ∧ heap[address]? = some (.tuple (numbers positions)) := by
+  obtain ⟨values, found⟩ := contents heap address typed
+  have positive : ∀ n ∈ values, 0 < n := by simpa using (condition_result values heap address found).condition_iff.mp requires
+  refine ⟨values.map Int.toNat, ?_, ?_⟩
+  · intro n member
+    obtain ⟨value, present, rfl⟩ := List.mem_map.mp member
+    have bound := positive value present
+    omega
+  · have encoded : numbers (values.map Int.toNat) = values.map (fun n => Mutable.Value.scalar (.int n)) := by
+      simp only [numbers, List.map_map]
+      apply List.map_congr_left
+      intro value member
+      simp only [Function.comp_apply, number, Int.toNat_of_nonneg (positive value member).le]
+    rw [encoded]
+    exact found
+
+theorem requires_solve_0_supported (heap : Mutable.Heap) (address : Nat) (_valid : heap.Valid)
+    (typed : Mutable.Value.HasContainerType heap (.ref address) (.tupleOf (.scalar "int"))) :
+    (HeapCalls.evaluate program (inputEnv address) Solvers.P40Ast.requires_solve_0 heap).Supported := by
+  obtain ⟨values, found⟩ := contents heap address typed
+  exact Execution.supported_of_finishes (condition_result values heap address found).finishes
+
+theorem solve.«Returns» (heap : Mutable.Heap) (address : Nat) (_valid : heap.Valid)
+    (typed : Mutable.Value.HasContainerType heap (.ref address) (.tupleOf (.scalar "int")))
+    (requires : HeapCalls.Condition program (inputEnv address) Solvers.P40Ast.requires_solve_0 heap) :
+    (HeapCalls.call program "solve" [.ref address] heap).Returns := by
+  obtain ⟨positions, positive, found⟩ := domain heap address typed requires
+  exact (solve.result positions positive heap address found).returns
+
+theorem solve.«Equiv(naive)» (heap : Mutable.Heap) (address : Nat) (valid : heap.Valid)
+    (typed : Mutable.Value.HasContainerType heap (.ref address) (.tupleOf (.scalar "int")))
+    (requires : HeapCalls.Condition program (inputEnv address) Solvers.P40Ast.requires_solve_0 heap) :
+    (HeapCalls.call program "solve" [.ref address] heap).Equiv (HeapCalls.call P40Ast.module "naive" [.ref address] heap) := by
+  obtain ⟨positions, positive, found⟩ := domain heap address typed requires
+  obtain ⟨extra, reference⟩ :=
+    data.«project-euler-statements».data.py.project_euler_statements.p40.naive.result positions positive heap address found
+  apply Mutable.Call.equiv_of_finishes (solve.result positions positive heap address found).finishes reference.finishes
+  simpa only [List.append_nil] using
+    Mutable.Completion.equivalent_allocations heap [] extra (number (answer positions)) [] valid trivial (by simp)
 
 theorem solve.«Supported» :
-    (HeapCalls.scalarFunction program "solve" []).Supported ∧
-      (HeapCalls.scalarFunction P40Ast.module "naive_default" []).Supported :=
-  ⟨(HeapCalls.ReturnsValue.scalar_returns (values := []) (solve.result [])).supported,
-    data.«project-euler-statements».data.py.project_euler_statements.p40.naive_default.«Supported»⟩
+    (∀ (heap : Mutable.Heap) (address : Nat), heap.Valid →
+      Mutable.Value.HasContainerType heap (.ref address) (.tupleOf (.scalar "int")) →
+      HeapCalls.Condition program (inputEnv address) Solvers.P40Ast.requires_solve_0 heap →
+      (HeapCalls.call program "solve" [.ref address] heap).Supported) ∧
+    (∀ (heap : Mutable.Heap) (address : Nat), heap.Valid →
+      Mutable.Value.HasContainerType heap (.ref address) (.tupleOf (.scalar "int")) →
+      HeapCalls.Condition program (inputEnv address) Solvers.P40Ast.requires_solve_0 heap →
+      (HeapCalls.call P40Ast.module "naive" [.ref address] heap).Supported) := by
+  constructor
+  · intro heap address _ typed requires
+    obtain ⟨positions, positive, found⟩ := domain heap address typed requires
+    exact (solve.result positions positive heap address found).returns.supported
+  · intro heap address _ typed requires
+    obtain ⟨positions, positive, found⟩ := domain heap address typed requires
+    obtain ⟨_, reference⟩ :=
+      data.«project-euler-statements».data.py.project_euler_statements.p40.naive.result positions positive heap address found
+    exact reference.returns.supported
 
 end solvers.«40»

@@ -544,7 +544,7 @@ Problem 38’s previous source proof is archived after removing the reference-on
 
 Problem 39’s source-level equivalence proof connects primitive Pythagorean triples and their multiples to the reference’s triangle counts, including first-on-tie perimeter selection, for every nonnegative limit.
 
-Problem 40 now generalizes over a tuple of positive digit positions, with the same interface on both sides. The reference generates enough decimal digits for those positions, without a separate stream-exhaustion limit. The previous fixed-position source proof is retained as an attempt pending a generalized `Equiv` proof.
+Problem 40’s source-level equivalence proof covers every finite tuple of positive digit positions, including empty, repeated, and unsorted inputs. The reference grows its digit stream until each requested position exists; the optimized solver locates that digit using decimal blocks. Prefix stability and positive digit contributions prove agreement and termination without a maximum position or whole-program evaluation. Both preserve caller objects, and the proofs use only standard Lean axioms.
 
 Problem 41’s source-level equivalence proof covers trial division, tuple-to-integer conversion, permutation enumeration, digit-sum and last-digit pruning, and the descending search’s early return for bounds from zero through nine digits. The reference constructs every permutation and terminates for every nonnegative width. The proofs use only standard Lean axioms.
 
@@ -709,7 +709,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/37.py[37.py] | link:solvers/37.md[37.md] |  | 0.140 | 748317 |
 | link:solvers/38.py[38.py] | link:solvers/38.md[38.md] |  | 0.141 | 932718654 |
 | link:solvers/39.py[39.py] | link:solvers/39.md[39.md] | link:solvers/39.py.lean[39.py.lean] | 0.118 | 840 |
-| link:solvers/40.py[40.py] | link:solvers/40.md[40.md] |  | 0.118 | 210 |
+| link:solvers/40.py[40.py] | link:solvers/40.md[40.md] | link:solvers/40.py.lean[40.py.lean] | 0.118 | 210 |
 | link:solvers/41.py[41.py] | link:solvers/41.md[41.md] | link:solvers/41.py.lean[41.py.lean] | 0.143 | 7652413 |
 | link:solvers/42.py[42.py] | link:solvers/42.md[42.md] | link:solvers/42.py.lean[42.py.lean] | 0.178 | 162 |
 | link:solvers/43.py[43.py] | link:solvers/43.md[43.md] | link:solvers/43.py.lean[43.py.lean] | 0.121 | 16695334890 |

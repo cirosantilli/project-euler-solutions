@@ -20,7 +20,7 @@ Prefer a meaningful argument shared by both implementations. A reference-only se
 | 62 | Supplied cube-root limit | Accept only the requested class size and expand complete digit widths until successful. Internal finite counting windows come from those widths.
 |===
 
-The source proofs made stale by these changes are retained as `.py.lean.attempt`; their README proof links are removed. They are not counted as current proofs. Unchanged zero-argument `Equiv` proofs remain in place; they need not be discarded merely because they have no arguments.
+Source proofs still awaiting replacement are retained as `.py.lean.attempt`; their README proof links are removed, and they are not counted as current proofs. Problem 40 has a structural equivalence and termination proof for every finite tuple of positive positions, with no maximum position. Unchanged zero-argument `Equiv` proofs remain in place; they need not be discarded merely because they have no arguments.
 
 == Remaining implementation and proof restrictions
 

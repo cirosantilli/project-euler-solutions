@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-
 def digit_at(n: int) -> int:
     """
     Return the nth digit (1-indexed) of the fractional part of Champernowne's constant:
@@ -27,12 +26,13 @@ def digit_at(n: int) -> int:
             return int(str(num)[pos])
 
 
-def solve(positions: tuple[int, ...] = (1, 10, 100, 1000, 10000, 100000, 1000000)) -> int:
+def solve(positions: tuple[int, ...]) -> int:
     """
     Multiply the digits at the supplied positive one-based positions.
 
     @formalsw: Py from project_euler_statements.p40 import naive
-    @formalsw: Requires(all(position >= 1 for position in positions))
+    @formalsw: Requires(all(position > 0 for position in positions))
+    @formalsw: Returns
     @formalsw: Equiv(naive)
     """
     product = 1
@@ -54,5 +54,4 @@ if __name__ == "__main__":
     assert digit_at(100000) == 2
     assert digit_at(1000000) == 1
 
-
-    print(solve())
+    print(solve((1, 10, 100, 1000, 10000, 100000, 1000000)))
