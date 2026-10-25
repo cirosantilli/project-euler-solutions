@@ -3544,4 +3544,500 @@ theorem candidate_code_result (heap : Mutable.Heap) (globals : Mutable.Globals)
     have old := (List.getElem?_eq_some_iff.mp found).1
     exact transition.frame address object (HeapCollection.prefix_found heap _ _ _ found) notCache (by omega)
 
+
+structure SearchWorld (heap : Mutable.Heap) (globals : Mutable.Globals)
+    (sumCell setCell cacheCell powerCell : Nat) (best : CliqueSearch.Best) where
+  entries : List IntPairCache.Entry
+  store : pair_ok.Store heap entries cacheCell powerCell
+  correct : IntPairCache.Correct pair_ok.answer entries
+  context : is_prime.SourceGlobals heap globals
+  incumbent : Incumbent heap sumCell setCell best.bound best.chosen
+
+variable {heap : Mutable.Heap} {globals : Mutable.Globals}
+  {sumCell setCell cacheCell powerCell : Nat} {best : CliqueSearch.Best}
+
+def SearchWorld.append (world : SearchWorld heap globals sumCell setCell cacheCell powerCell best)
+    (extra : Mutable.Heap) : SearchWorld (heap ++ extra) globals sumCell setCell cacheCell powerCell best where
+  entries := world.entries
+  store := world.store.append extra
+  correct := world.correct
+  context := world.context.append extra
+  incumbent := world.incumbent.append extra
+
+def SearchWorld.improved (world : SearchWorld heap globals sumCell setCell cacheCell powerCell best)
+    (sum : Int) (clique : List Nat) :
+    SearchWorld (improvedHeap heap sumCell setCell sum clique) globals sumCell setCell cacheCell powerCell
+      ⟨sum, clique⟩ where
+  entries := world.entries
+  store := cache_after_improve world.incumbent cacheCell powerCell world.entries world.store sum clique
+  correct := world.correct
+  context := globals_after_improve world.incumbent world.context sum clique
+  incumbent := improvedIncumbent world.incumbent sum clique
+
+/-- Search may mutate the pair dictionary and the two incumbent cells. Every
+other existing object, including the parent's lists, remains at its address. -/
+structure SearchTransition
+    (before : SearchWorld heap globals sumCell setCell cacheCell powerCell best)
+    {finalHeap : Mutable.Heap} {finalBest : CliqueSearch.Best}
+    (after : SearchWorld finalHeap globals sumCell setCell cacheCell powerCell finalBest) : Prop where
+  powers : after.store.powers = before.store.powers
+  cacheAddress : after.store.cacheAddress = before.store.cacheAddress
+  frame : ∀ address object, heap[address]? = some object → before.store.cacheAddress ≠ address →
+    sumCell ≠ address → setCell ≠ address → finalHeap[address]? = some object
+
+theorem SearchTransition.refl (world : SearchWorld heap globals sumCell setCell cacheCell powerCell best) :
+    SearchTransition world world := ⟨rfl, rfl, fun _ _ found _ _ _ => found⟩
+
+theorem SearchTransition.append (world : SearchWorld heap globals sumCell setCell cacheCell powerCell best)
+    (extra : Mutable.Heap) : SearchTransition world (world.append extra) :=
+  ⟨rfl, rfl, fun address object found _ _ _ => HeapCollection.prefix_found heap extra address object found⟩
+
+theorem SearchTransition.trans
+    (before : SearchWorld heap globals sumCell setCell cacheCell powerCell best)
+    {middleHeap finalHeap : Mutable.Heap} {middleBest finalBest : CliqueSearch.Best}
+    (middle : SearchWorld middleHeap globals sumCell setCell cacheCell powerCell middleBest)
+    (after : SearchWorld finalHeap globals sumCell setCell cacheCell powerCell finalBest)
+    (first : SearchTransition before middle) (second : SearchTransition middle after) :
+    SearchTransition before after where
+  powers := second.powers.trans first.powers
+  cacheAddress := second.cacheAddress.trans first.cacheAddress
+  frame := fun address object found notCache notSum notSet => second.frame address object
+    (first.frame address object found notCache notSum notSet)
+    (by simpa only [first.cacheAddress] using notCache) notSum notSet
+
+theorem SearchTransition.improved (world : SearchWorld heap globals sumCell setCell cacheCell powerCell best)
+    (sum : Int) (clique : List Nat) : SearchTransition world (world.improved sum clique) :=
+  ⟨rfl, rfl, fun address object found _ notSum notSet =>
+    improved_preserves heap sumCell setCell sum clique address object found notSum notSet⟩
+
+structure SearchInputs (world : SearchWorld heap globals sumCell setCell cacheCell powerCell best)
+    (cliqueAddress candidateAddress : Nat) (clique candidates : List Nat) : Prop where
+  cliqueFound : heap[cliqueAddress]? = some (.list (numbers clique))
+  candidateFound : heap[candidateAddress]? = some (.list (numbers candidates))
+  cliqueNotSum : sumCell ≠ cliqueAddress
+  cliqueNotSet : setCell ≠ cliqueAddress
+  candidatesNotSum : sumCell ≠ candidateAddress
+  candidatesNotSet : setCell ≠ candidateAddress
+  powers : ∀ r ∈ candidates,
+    ScalarDict.lookup world.store.powers (.int r) = some (number (DecimalShift.decimalShift r))
+
+def SearchInputs.after {cliqueAddress candidateAddress : Nat} {clique candidates : List Nat}
+    {world : SearchWorld heap globals sumCell setCell cacheCell powerCell best}
+    (inputs : SearchInputs world cliqueAddress candidateAddress clique candidates)
+    {finalHeap : Mutable.Heap} {finalBest : CliqueSearch.Best}
+    (after : SearchWorld finalHeap globals sumCell setCell cacheCell powerCell finalBest)
+    (transition : SearchTransition world after) : SearchInputs after cliqueAddress candidateAddress clique candidates where
+  cliqueFound := transition.frame _ _ inputs.cliqueFound (world.store.cache_ne_list inputs.cliqueFound)
+    inputs.cliqueNotSum inputs.cliqueNotSet
+  candidateFound := transition.frame _ _ inputs.candidateFound (world.store.cache_ne_list inputs.candidateFound)
+    inputs.candidatesNotSum inputs.candidatesNotSet
+  cliqueNotSum := inputs.cliqueNotSum
+  cliqueNotSet := inputs.cliqueNotSet
+  candidatesNotSum := inputs.candidatesNotSum
+  candidatesNotSet := inputs.candidatesNotSet
+  powers := fun r member => by rw [transition.powers]; exact inputs.powers r member
+
+def SearchCorrectAt (need : Nat) : Prop :=
+  ∀ (heap : Mutable.Heap) (globals : Mutable.Globals) (sumCell setCell cacheCell powerCell : Nat)
+    (cliqueAddress candidateAddress : Nat) (clique candidates : List Nat) (sum : Int) (best : CliqueSearch.Best),
+    clique.length + need = 5 →
+    ∀ world : SearchWorld heap globals sumCell setCell cacheCell powerCell best,
+    SearchInputs world cliqueAddress candidateAddress clique candidates →
+    ∃ finalHeap,
+      ∃ finalWorld : SearchWorld finalHeap globals sumCell setCell cacheCell powerCell
+        (CliqueSearch.search (fun q r => pair_ok.answer q r) need clique candidates sum best),
+      ReturnsValue program "__formalsw_local_solve_dfs"
+        [.ref cliqueAddress, .ref candidateAddress, number sum, .ref setCell, .ref sumCell, .ref cacheCell, .ref powerCell]
+        heap nothing finalHeap globals ∧ SearchTransition world finalWorld
+
+theorem search_zero_correct : SearchCorrectAt 0 := by
+  intro heap globals sumCell setCell cacheCell powerCell cliqueAddress candidateAddress clique candidates sum best
+    size world inputs
+  have lengthFive : clique.length = 5 := by omega
+  by_cases better : sum < best.bound
+  · have model : CliqueSearch.search (fun q r => pair_ok.answer q r) 0 clique candidates sum best = ⟨sum, clique⟩ := by
+      simp [CliqueSearch.search, CliqueSearch.improve, better]
+    rw [model]
+    refine ⟨improvedHeap heap sumCell setCell sum clique, world.improved sum clique, ?_,
+      SearchTransition.improved world sum clique⟩
+    simpa only [leafHeap, if_pos better] using complete_result cliqueAddress (.ref candidateAddress) sum heap
+      sumCell setCell cacheCell powerCell best.bound best.chosen clique world.incumbent inputs.cliqueFound lengthFive
+  · have model : CliqueSearch.search (fun q r => pair_ok.answer q r) 0 clique candidates sum best = best := by
+      simp [CliqueSearch.search, CliqueSearch.improve, better]
+    rw [model]
+    refine ⟨heap, world, ?_, SearchTransition.refl world⟩
+    simpa only [leafHeap, if_neg better] using complete_result cliqueAddress (.ref candidateAddress) sum heap
+      sumCell setCell cacheCell powerCell best.bound best.chosen clique world.incumbent inputs.cliqueFound lengthFive
+
+def extensionHeap (heap : Mutable.Heap) (clique : List Nat) (q : Nat) : Mutable.Heap :=
+  heap ++ [.list [number q], .list (numbers (clique ++ [q]))]
+
+def recursiveTest : Expr :=
+  .compare (.builtinCall .len [.name "new_candidates"])
+    [(.gtE, .binOp (.name "need") .sub (.constant (.int 1)))]
+
+def recursiveExpression : Expr := .call (.name "__formalsw_local_solve_dfs")
+  [.binOp (.name "clique") .add (.list [.name "q"]), .name "new_candidates",
+   .binOp (.name "curr_sum") .add (.name "q"), .name "__formalsw_cell_solve_best_set",
+   .name "__formalsw_cell_solve_best_sum", .name "__formalsw_cell_solve_cache_local",
+   .name "__formalsw_cell_solve_pow10_local"]
+
+def recursiveCode : List Stmt := outerBody.drop 4
+
+theorem recursiveCode_source : recursiveCode = [.ifThen recursiveTest [.expr recursiveExpression] []] := rfl
+
+theorem outerBody_source : outerBody =
+    [.assign [.name "q"] (.subscript (.name "candidates") (.name "idx")),
+     .ifThen (.compare (.binOp (.name "curr_sum") .add (.binOp (.name "q") .mult (.name "need")))
+       [(.gtE, sumExpression)]) [.breakLoop] []] ++ candidateCode ++ recursiveCode := rfl
+
+theorem extension_evaluates (env : HeapCalls.Env) (heap : Mutable.Heap)
+    (cliqueAddress : Nat) (clique : List Nat) (q : Nat)
+    (getClique : env "clique" = some (.ref cliqueAddress)) (getQ : env "q" = some (number q))
+    (cliqueFound : heap[cliqueAddress]? = some (.list (numbers clique))) :
+    Evaluates program env (.binOp (.name "clique") .add (.list [.name "q"]))
+      heap (.ref (heap.length+1)) (extensionHeap heap clique q) globals := by
+  have old : (heap ++ [.list [number q]])[cliqueAddress]? = some (.list (numbers clique)) :=
+    HeapCollection.prefix_found heap _ _ _ cliqueFound
+  apply Evaluates.binary (Evaluates.lookup getClique) (Evaluates.list (.cons (Evaluates.lookup getQ) .nil))
+  have add : (BinOp.add == BinOp.add) = true := rfl
+  simp only [Mutable.binary, add, if_true]
+  simp [old, Mutable.array, Mutable.allocate, extensionHeap,
+    numbers, primes_up_to.numbers, List.append_assoc, Except.map]
+
+structure SearchEnv (env : HeapCalls.Env) (sumCell setCell cacheCell powerCell cliqueAddress candidateAddress : Nat)
+    (sum : Int) (need : Nat) : Prop where
+  getClique : env "clique" = some (.ref cliqueAddress)
+  getCandidates : env "candidates" = some (.ref candidateAddress)
+  getSum : env "curr_sum" = some (number sum)
+  getNeed : env "need" = some (number need)
+  getSumCell : env "__formalsw_cell_solve_best_sum" = some (.ref sumCell)
+  getSetCell : env "__formalsw_cell_solve_best_set" = some (.ref setCell)
+  getCache : env "__formalsw_cell_solve_cache_local" = some (.ref cacheCell)
+  getPower : env "__formalsw_cell_solve_pow10_local" = some (.ref powerCell)
+
+theorem SearchEnv.bind {env : HeapCalls.Env} {cliqueAddress candidateAddress need : Nat} {sum : Int}
+    (environment : SearchEnv env sumCell setCell cacheCell powerCell cliqueAddress candidateAddress sum need)
+    (name : String) (value : Mutable.Value) (allowed : name ∈ ["idx", "q", "j", "r", "new_candidates"]) :
+    SearchEnv (setLocal env name value) sumCell setCell cacheCell powerCell cliqueAddress candidateAddress sum need := by
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at allowed
+  rcases allowed with rfl | rfl | rfl | rfl | rfl <;>
+    exact ⟨by simpa [setLocal] using environment.getClique,
+      by simpa [setLocal] using environment.getCandidates,
+      by simpa [setLocal] using environment.getSum,
+      by simpa [setLocal] using environment.getNeed,
+      by simpa [setLocal] using environment.getSumCell,
+      by simpa [setLocal] using environment.getSetCell,
+      by simpa [setLocal] using environment.getCache,
+      by simpa [setLocal] using environment.getPower⟩
+
+/-- The actual child call allocates both the singleton right operand and the
+concatenated clique before reading its remaining scalar and capture arguments. -/
+theorem recursive_code_result (need : Nat) (childCorrect : SearchCorrectAt need)
+    (world : SearchWorld heap globals sumCell setCell cacheCell powerCell best)
+    (cliqueAddress collector : Nat) (clique next : List Nat) (sum : Int) (q : Nat)
+    (size : clique.length + (need+1) = 5)
+    (inputs : SearchInputs world cliqueAddress collector clique next)
+    (env : HeapCalls.Env) (candidateAddress : Nat)
+    (environment : SearchEnv env sumCell setCell cacheCell powerCell cliqueAddress candidateAddress sum (need+1))
+    (getQ : env "q" = some (number q)) (getCollector : env "new_candidates" = some (.ref collector)) :
+    ∃ finalHeap,
+      ∃ finalWorld : SearchWorld finalHeap globals sumCell setCell cacheCell powerCell
+        (if need ≤ next.length then CliqueSearch.search (fun q r => pair_ok.answer q r) need
+          (clique ++ [q]) next (sum+q) best else best),
+      BlockContinues program env recursiveCode heap env finalHeap globals ∧ SearchTransition world finalWorld := by
+  have lengthEval : Evaluates program env (.builtinCall .len [.name "new_candidates"])
+      heap (number next.length) heap globals := by
+    apply Evaluates.builtin (.cons (Evaluates.lookup getCollector) .nil)
+    simp [primitive, Mutable.length, inputs.candidateFound, numbers, primes_up_to.numbers]
+  have test : Evaluates program env recursiveTest heap (flag (decide (need ≤ next.length))) heap globals := by
+    have decrement : Evaluates program env (.binOp (.name "need") .sub (.constant (.int 1)))
+        heap (number need) heap globals := by
+      apply Evaluates.binary (Evaluates.lookup environment.getNeed) Evaluates.constant
+      simp [Mutable.binary, scalarBinary]
+    apply Evaluates.compare lengthEval decrement
+    simp [HeapCalls.compare, scalarCompare, evalCmpOp]
+  by_cases enough : need ≤ next.length
+  · rw [if_pos enough]
+    let extra : Mutable.Heap := [.list [number q], .list (numbers (clique ++ [q]))]
+    let extended := world.append extra
+    have childInputs : SearchInputs extended (heap.length+1) collector (clique ++ [q]) next := by
+      constructor
+      · simp [extra]
+      · exact HeapCollection.prefix_found heap extra _ _ inputs.candidateFound
+      · have old := (List.getElem?_eq_some_iff.mp world.incumbent.sumFound).1
+        omega
+      · have old := (List.getElem?_eq_some_iff.mp world.incumbent.setFound).1
+        omega
+      · exact inputs.candidatesNotSum
+      · exact inputs.candidatesNotSet
+      · exact inputs.powers
+    obtain ⟨finalHeap, finalWorld, returned, transition⟩ := childCorrect (heap ++ extra) globals
+      sumCell setCell cacheCell powerCell (heap.length+1) collector (clique ++ [q]) next (sum+q) best
+      (by simp only [List.length_append, List.length_cons, List.length_nil]; omega) extended childInputs
+    refine ⟨finalHeap, finalWorld, ?_, SearchTransition.trans world extended finalWorld
+      (SearchTransition.append world extra) transition⟩
+    rw [recursiveCode_source]
+    apply BlockContinues.branch (by simpa only [enough, decide_true] using test) rfl
+    apply BlockContinues.discard
+    apply Evaluates.call
+      (.cons (extension_evaluates env heap cliqueAddress clique q environment.getClique getQ inputs.cliqueFound)
+        (.cons (Evaluates.lookup getCollector)
+          (.cons (Evaluates.binary (Evaluates.lookup environment.getSum) (Evaluates.lookup getQ) rfl)
+            (.cons (Evaluates.lookup environment.getSetCell) (.cons (Evaluates.lookup environment.getSumCell)
+              (.cons (Evaluates.lookup environment.getCache) (.cons (Evaluates.lookup environment.getPower) .nil)))))))
+    exact returned
+  · rw [if_neg enough]
+    refine ⟨heap, world, ?_, SearchTransition.refl world⟩
+    rw [recursiveCode_source]
+    exact BlockContinues.branch (by simpa only [enough, decide_false] using test) rfl .nil
+
+theorem SearchEnv.after_candidates {env finalEnv : HeapCalls.Env} {cliqueAddress candidateAddress need : Nat} {sum : Int}
+    (environment : SearchEnv env sumCell setCell cacheCell powerCell cliqueAddress candidateAddress sum need)
+    (locals : ∀ name, name ≠ "new_candidates" → name ≠ "j" → name ≠ "r" → finalEnv name = env name) :
+    SearchEnv finalEnv sumCell setCell cacheCell powerCell cliqueAddress candidateAddress sum need :=
+  ⟨(locals "clique" (by decide) (by decide) (by decide)).trans environment.getClique,
+   (locals "candidates" (by decide) (by decide) (by decide)).trans environment.getCandidates,
+   (locals "curr_sum" (by decide) (by decide) (by decide)).trans environment.getSum,
+   (locals "need" (by decide) (by decide) (by decide)).trans environment.getNeed,
+   (locals "__formalsw_cell_solve_best_sum" (by decide) (by decide) (by decide)).trans environment.getSumCell,
+   (locals "__formalsw_cell_solve_best_set" (by decide) (by decide) (by decide)).trans environment.getSetCell,
+   (locals "__formalsw_cell_solve_cache_local" (by decide) (by decide) (by decide)).trans environment.getCache,
+   (locals "__formalsw_cell_solve_pow10_local" (by decide) (by decide) (by decide)).trans environment.getPower⟩
+
+theorem candidate_recursive_result (need : Nat) (childCorrect : SearchCorrectAt need)
+    (world : SearchWorld heap globals sumCell setCell cacheCell powerCell best)
+    (cliqueAddress candidateAddress : Nat) (clique candidates : List Nat) (sum : Int) (q index : Nat)
+    (size : clique.length + (need+1) = 5) (within : index < candidates.length) (memberQ : q ∈ candidates)
+    (inputs : SearchInputs world cliqueAddress candidateAddress clique candidates)
+    (env : HeapCalls.Env)
+    (environment : SearchEnv env sumCell setCell cacheCell powerCell cliqueAddress candidateAddress sum (need+1))
+    (getQ : env "q" = some (number q)) (getIndex : env "idx" = some (number index)) :
+    let next := CliqueSearch.candidates (fun q r => pair_ok.answer q r) (need+1) sum q
+      (candidates.drop (index+1)) best.bound
+    ∃ finalHeap finalEnv,
+      ∃ finalWorld : SearchWorld finalHeap globals sumCell setCell cacheCell powerCell
+        (if need ≤ next.length then CliqueSearch.search (fun q r => pair_ok.answer q r) need
+          (clique ++ [q]) next (sum+q) best else best),
+      BlockContinues program env (candidateCode ++ recursiveCode) heap finalEnv finalHeap globals ∧
+      SearchTransition world finalWorld ∧
+      SearchEnv finalEnv sumCell setCell cacheCell powerCell cliqueAddress candidateAddress sum (need+1) := by
+  let next := CliqueSearch.candidates (fun q r => pair_ok.answer q r) (need+1) sum q
+    (candidates.drop (index+1)) best.bound
+  have candidateEnvironment : CandidateEnv (setLocal env "new_candidates" (.ref heap.length))
+      sumCell cacheCell powerCell candidateAddress heap.length sum q (need+1) :=
+    ⟨by simpa [setLocal] using environment.getSum,
+     by simpa [setLocal] using getQ,
+     by simpa [setLocal] using environment.getNeed,
+     by simpa [setLocal] using environment.getSumCell,
+     by simpa [setLocal] using environment.getCache,
+     by simpa [setLocal] using environment.getPower,
+     by simpa [setLocal] using environment.getCandidates,
+     by simp [setLocal]⟩
+  obtain ⟨candidateHeap, candidateEnv, state, collected, powersEq, cacheEq, getCollector, locals, frame⟩ :=
+    candidate_code_result heap globals sumCell setCell cacheCell powerCell candidateAddress best.bound sum
+      best.chosen candidates q (need+1) index within world.entries world.store world.correct world.context world.incumbent
+      inputs.candidateFound env candidateEnvironment getIndex (inputs.powers q memberQ)
+      (fun r member => inputs.powers r (List.mem_of_mem_drop member))
+  let after : SearchWorld candidateHeap globals sumCell setCell cacheCell powerCell best :=
+    ⟨state.entries, state.store, state.correct, state.context, state.incumbent⟩
+  have toCandidate : SearchTransition world after :=
+    ⟨powersEq, cacheEq, fun address object found notCache _ _ => frame address object found notCache⟩
+  have newInputs : SearchInputs after cliqueAddress heap.length clique next := by
+    constructor
+    · exact (inputs.after after toCandidate).cliqueFound
+    · exact state.collectorFound
+    · exact inputs.cliqueNotSum
+    · exact inputs.cliqueNotSet
+    · exact Ne.symm state.notSum
+    · exact Ne.symm state.notSet
+    · intro r member
+      rw [powersEq]
+      exact inputs.powers r (List.mem_of_mem_drop ((CliqueSearch.candidates_sublist _ _ _ _ _ _).mem member))
+  have afterEnvironment := environment.after_candidates locals
+  obtain ⟨finalHeap, finalWorld, recursed, transition⟩ := recursive_code_result need childCorrect after
+    cliqueAddress heap.length clique next sum q size newInputs candidateEnv candidateAddress afterEnvironment
+    ((locals "q" (by decide) (by decide) (by decide)).trans getQ) getCollector
+  exact ⟨finalHeap, candidateEnv, finalWorld, collected.append recursed,
+    SearchTransition.trans world after finalWorld toCandidate transition, afterEnvironment⟩
+
+def outerGuard : Expr :=
+  .compare (.binOp (.name "curr_sum") .add (.binOp (.name "q") .mult (.name "need"))) [(.gtE, sumExpression)]
+
+theorem outer_guard_evaluates (world : SearchWorld heap globals sumCell setCell cacheCell powerCell best)
+    (env : HeapCalls.Env) (cliqueAddress candidateAddress : Nat) (sum : Int) (q need : Nat)
+    (environment : SearchEnv env sumCell setCell cacheCell powerCell cliqueAddress candidateAddress sum need)
+    (getQ : env "q" = some (number q)) :
+    Evaluates program env outerGuard heap (flag (decide (best.bound ≤ sum + (q : Int) * need))) heap globals := by
+  apply Evaluates.compare
+    (Evaluates.binary (Evaluates.lookup environment.getSum)
+      (Evaluates.binary (Evaluates.lookup getQ) (Evaluates.lookup environment.getNeed) rfl) rfl)
+  · apply Evaluates.subscript (by intros; simp) (Evaluates.lookup environment.getSumCell) Evaluates.constant
+    exact Mutable.getItem_list heap sumCell 0 [number best.bound] world.incumbent.sumFound (by simp)
+  · rfl
+
+theorem outer_continuation (next : Stmt) : Calls.loopContinuation outerBody next = .loopResume next := rfl
+
+private theorem outer_pruned (world : SearchWorld heap globals sumCell setCell cacheCell powerCell best)
+    (env : HeapCalls.Env) (cliqueAddress candidateAddress : Nat) (sum : Int) (q need : Nat)
+    (environment : SearchEnv env sumCell setCell cacheCell powerCell cliqueAddress candidateAddress sum need)
+    (getQ : env "q" = some (number q)) (next stop : Int)
+    (cut : best.bound ≤ sum + (q : Int) * need) :
+    BlockContinues program env
+      ([.ifThen outerGuard [.breakLoop] []] ++ candidateCode ++ recursiveCode ++
+        [Calls.loopContinuation outerBody (.rangeStepLoop "idx" next stop 1 outerBody [])]) heap env heap globals := by
+  intro following anchors stack
+  apply Reaches.next rfl
+  apply ((outer_guard_evaluates world env cliqueAddress candidateAddress sum q need environment getQ) anchors _).trans
+  apply Reaches.next (following := ⟨.block
+    ([.breakLoop] ++ candidateCode ++ recursiveCode ++
+      [Calls.loopContinuation outerBody (.rangeStepLoop "idx" next stop 1 outerBody [])] ++ following) env, stack, heap⟩)
+  · simp [step, run, cut, Mutable.truth, scalarTruth, List.append_assoc]
+  · exact .next (by simp [step, outer_continuation, candidateCode_source, recursiveCode_source, Calls.loopTarget]) .refl
+
+/-- The source's outer DFS range reads each candidate from the original live
+list and uses the incumbent produced by earlier recursive calls. -/
+theorem outer_range_result (need : Nat) (childCorrect : SearchCorrectAt need)
+    (remaining : List Nat) (first : Nat) (cliqueAddress candidateAddress : Nat)
+    (clique candidates : List Nat) (sum : Int) (size : clique.length + (need+1) = 5)
+    (suffix : candidates.drop first = remaining) (within : first ≤ candidates.length)
+    (world : SearchWorld heap globals sumCell setCell cacheCell powerCell best)
+    (inputs : SearchInputs world cliqueAddress candidateAddress clique candidates)
+    (env : HeapCalls.Env)
+    (environment : SearchEnv env sumCell setCell cacheCell powerCell cliqueAddress candidateAddress sum (need+1)) :
+    ∃ finalHeap finalEnv,
+      ∃ finalWorld : SearchWorld finalHeap globals sumCell setCell cacheCell powerCell
+        (CliqueSearch.scan (fun q r => pair_ok.answer q r)
+          (CliqueSearch.search (fun q r => pair_ok.answer q r) need) (need+1) clique sum remaining best),
+      BlockContinues program env [.rangeStepLoop "idx" first candidates.length 1 outerBody []]
+        heap finalEnv finalHeap globals ∧
+      SearchTransition world finalWorld ∧
+      SearchEnv finalEnv sumCell setCell cacheCell powerCell cliqueAddress candidateAddress sum (need+1) := by
+  induction remaining generalizing first heap best env with
+  | nil =>
+    have emptyLength := congrArg List.length suffix
+    simp only [List.length_drop, List.length_nil] at emptyLength
+    exact ⟨heap, env, world, BlockContinues.range_done (by simp [Calls.rangeContinues]; omega) .nil,
+      SearchTransition.refl world, environment⟩
+  | cons q rest ih =>
+    let indexed := setLocal env "idx" (number first)
+    let chosen := setLocal indexed "q" (number q)
+    have chosenEnvironment := (environment.bind "idx" (number first) (by simp)).bind "q" (number q) (by simp)
+    have getIndex : indexed "idx" = some (number first) := by simp [indexed, setLocal]
+    have getQ : chosen "q" = some (number q) := by simp [chosen, setLocal]
+    have getChosenIndex : chosen "idx" = some (number first) := by simp [chosen, setLocal, getIndex]
+    have getCandidates : indexed "candidates" = some (.ref candidateAddress) := by
+      simpa [indexed, setLocal] using environment.getCandidates
+    have item : candidates[first]? = some q := by
+      have head : (candidates.drop first)[0]? = some q := by rw [suffix]; rfl
+      simpa using head
+    have continues : first < candidates.length := (List.getElem?_eq_some_iff.mp item).1
+    have readQ : Evaluates program indexed (.subscript (.name "candidates") (.name "idx"))
+        heap (number q) heap globals := by
+      apply Evaluates.subscript (by intros; simp) (Evaluates.lookup getCandidates) (Evaluates.lookup getIndex)
+      simpa [numbers, primes_up_to.numbers, (List.getElem?_eq_some_iff.mp item).2] using
+        Mutable.getItem_list heap candidateAddress first (numbers candidates) inputs.candidateFound
+          (by simpa [numbers, primes_up_to.numbers] using continues)
+    have assigned : BlockContinues program indexed
+        [.assign [.name "q"] (.subscript (.name "candidates") (.name "idx"))] heap chosen heap globals :=
+      BlockContinues.assign readQ
+    by_cases cut : best.bound ≤ sum + (q : Int) * (need+1 : Nat)
+    · rw [CliqueSearch.scan, if_pos cut]
+      refine ⟨heap, chosen, world, ?_, SearchTransition.refl world, chosenEnvironment⟩
+      apply BlockContinues.range_step (by simp [Calls.rangeContinues]; omega)
+      simpa only [outerBody_source, List.append_assoc, Int.natCast_add, Int.natCast_one] using
+        assigned.append (outer_pruned world chosen cliqueAddress candidateAddress sum q (need+1)
+          chosenEnvironment getQ (first+1) candidates.length cut)
+    · have tailSuffix : candidates.drop (first+1) = rest := by
+        simpa [List.drop_drop, Nat.add_comm] using congrArg (List.drop 1) suffix
+      have stepped := candidate_recursive_result need childCorrect world cliqueAddress candidateAddress
+        clique candidates sum q first size continues (List.mem_of_getElem? item) inputs chosen chosenEnvironment getQ getChosenIndex
+      dsimp only at stepped
+      rw [tailSuffix] at stepped
+      obtain ⟨middleHeap, middleEnv, middleWorld, steppedRun, firstTransition, middleEnvironment⟩ := stepped
+      obtain ⟨finalHeap, finalEnv, finalWorld, tailRun, tailTransition, finalEnvironment⟩ :=
+        ih (first+1) tailSuffix (by omega) middleWorld (inputs.after middleWorld firstTransition) middleEnv middleEnvironment
+      rw [CliqueSearch.scan, if_neg cut]
+      refine ⟨finalHeap, finalEnv, finalWorld, ?_,
+        SearchTransition.trans world middleWorld finalWorld firstTransition tailTransition, finalEnvironment⟩
+      apply BlockContinues.range_step (by simp [Calls.rangeContinues]; omega)
+      have guard : BlockContinues program chosen [.ifThen outerGuard [.breakLoop] []] heap chosen heap globals :=
+        BlockContinues.branch (by simpa only [cut, decide_false] using
+          (outer_guard_evaluates world chosen cliqueAddress candidateAddress sum q (need+1) chosenEnvironment getQ)) rfl .nil
+      have resumed := BlockContinues.loop_resume tailRun
+      simpa only [outerBody_source, outer_continuation, List.append_assoc, Int.natCast_add, Int.natCast_one] using
+        assigned.append (guard.append (steppedRun.append resumed))
+
+private theorem search_fallthrough (env : HeapCalls.Env) (heap : Mutable.Heap) :
+    BlockReturns program env [] heap nothing heap globals := fun _ _ => .next rfl .refl
+
+theorem search_successor_correct (need : Nat) (childCorrect : SearchCorrectAt need) : SearchCorrectAt (need+1) := by
+  intro heap globals sumCell setCell cacheCell powerCell cliqueAddress candidateAddress clique candidates sum best
+    size world inputs
+  by_cases short : candidates.length < need+1
+  · have model : CliqueSearch.search (fun q r => pair_ok.answer q r) (need+1) clique candidates sum best = best := by
+      rw [CliqueSearch.search, if_pos short]
+    rw [model]
+    exact ⟨heap, world, insufficient_result cliqueAddress candidateAddress sum heap sumCell setCell cacheCell powerCell
+      clique candidates inputs.cliqueFound inputs.candidateFound (by omega), SearchTransition.refl world⟩
+  · let params := ((findFunctionIn program.body "__formalsw_local_solve_dfs").getD ([], [])).1
+    let sourceBody := ((findFunctionIn program.body "__formalsw_local_solve_dfs").getD ([], [])).2
+    let env := functionEnv params sourceBody
+      [.ref cliqueAddress, .ref candidateAddress, number sum, .ref setCell, .ref sumCell, .ref cacheCell, .ref powerCell] globals
+    let counted := setLocal env "k" (number clique.length)
+    let ready := setLocal counted "need" (number (need+1))
+    have getClique : env "clique" = some (.ref cliqueAddress) := by cases globals <;> rfl
+    have getK : counted "k" = some (number clique.length) := by simp [counted, setLocal]
+    have environment : SearchEnv ready sumCell setCell cacheCell powerCell cliqueAddress candidateAddress sum (need+1) := by
+      constructor <;> cases globals <;> rfl
+    have candidateLength : Evaluates program ready (.builtinCall .len [.name "candidates"])
+        heap (number candidates.length) heap globals := by
+      apply Evaluates.builtin (.cons (Evaluates.lookup environment.getCandidates) .nil)
+      simp [primitive, Mutable.length, inputs.candidateFound, numbers, primes_up_to.numbers]
+    obtain ⟨finalHeap, finalEnv, finalWorld, scanned, transition, _⟩ :=
+      outer_range_result need childCorrect candidates 0 cliqueAddress candidateAddress clique candidates sum size
+        (by simp) (by omega) world inputs ready environment
+    have model : CliqueSearch.search (fun q r => pair_ok.answer q r) (need+1) clique candidates sum best =
+        CliqueSearch.scan (fun q r => pair_ok.answer q r) (CliqueSearch.search (fun q r => pair_ok.answer q r) need)
+          (need+1) clique sum candidates best := by rw [CliqueSearch.search, if_neg short]
+    rw [model]
+    refine ⟨finalHeap, finalWorld, ?_, transition⟩
+    apply BlockReturns.function rfl rfl
+    change BlockReturns program env code heap nothing finalHeap globals
+    rw [code_source]
+    apply BlockReturns.assign (value := number clique.length) (middle := heap)
+    · apply Evaluates.builtin (.cons (Evaluates.lookup getClique) .nil)
+      simp [primitive, Mutable.length, inputs.cliqueFound, numbers, primes_up_to.numbers]
+    · apply BlockReturns.branch (flag := false) (value := flag false) (middle := heap)
+        (Evaluates.compare (Evaluates.lookup getK) Evaluates.constant
+          (by simp [HeapCalls.compare, scalarCompare, evalCmpOp]; omega)) rfl
+      apply BlockReturns.assign (value := number (need+1)) (middle := heap)
+      · apply Evaluates.binary Evaluates.constant (Evaluates.lookup getK)
+        have countEq : (5 : Int) - clique.length = (need+1 : Nat) := by omega
+        simp [Mutable.binary, scalarBinary, countEq]
+      · apply BlockReturns.branch (flag := false) (value := flag false) (middle := heap)
+          (Evaluates.compare candidateLength (Evaluates.lookup environment.getNeed)
+            (by simp [HeapCalls.compare, scalarCompare, evalCmpOp]; omega)) rfl
+        apply BlockReturns.for_range (.cons candidateLength .nil) rfl
+        exact scanned.returns (search_fallthrough finalEnv finalHeap)
+
+/-- Structural induction on the number of picks still needed proves the
+complete recursive DFS source, including its dynamically improving bound. -/
+theorem search_correct (need : Nat) : SearchCorrectAt need := by
+  induction need with
+  | zero => exact search_zero_correct
+  | succ need ih => exact search_successor_correct need ih
+
+theorem search_result (world : SearchWorld heap globals sumCell setCell cacheCell powerCell best)
+    (cliqueAddress candidateAddress : Nat) (clique candidates : List Nat) (sum : Int)
+    (size : clique.length ≤ 5) (inputs : SearchInputs world cliqueAddress candidateAddress clique candidates) :
+    ∃ finalHeap,
+      ∃ finalWorld : SearchWorld finalHeap globals sumCell setCell cacheCell powerCell
+        (CliqueSearch.search (fun q r => pair_ok.answer q r) (5-clique.length) clique candidates sum best),
+      ReturnsValue program "__formalsw_local_solve_dfs"
+        [.ref cliqueAddress, .ref candidateAddress, number sum, .ref setCell, .ref sumCell, .ref cacheCell, .ref powerCell]
+        heap nothing finalHeap globals ∧ SearchTransition world finalWorld :=
+  search_correct (5-clique.length) heap globals sumCell setCell cacheCell powerCell
+    cliqueAddress candidateAddress clique candidates sum best (by omega) world inputs
+
 end solvers.«60».dfs
