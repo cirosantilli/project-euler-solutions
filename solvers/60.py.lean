@@ -4,6 +4,8 @@ import lang.py.FormalSW.HeapCalls
 import ProjectEulerSolutions.Lib.DecimalShift
 import ProjectEulerSolutions.Lib.PrimeSieve
 import ProjectEulerSolutions.Lib.IntPairCache
+import ProjectEulerSolutions.Lib.HeapCollection
+import lang.py.FormalSW.ComprehensionCalls
 import Mathlib.Data.Nat.Sqrt
 
 /-! Actual pow10_for source, for every signed Int and arbitrary caller state. -/
@@ -2131,3 +2133,520 @@ theorem capture_initialization (env : HeapCalls.Env) (base : Mutable.Heap)
     firstRun.append (secondRun.append thirdRun)
 
 end solvers.«60».pair_ok
+
+
+namespace solvers.«60».solve_setup
+open FormalSW.PyAst FormalSW.PyAst.HeapCalls
+open ProjectEulerSolutions
+private abbrev program := Solvers.P60Ast.module
+private abbrev number (value : Int) : Mutable.Value := .scalar (.int value)
+private abbrev numbers (values : List Nat) : List Mutable.Value := values.map fun (value : Nat) => number value
+private abbrev flag (value : Bool) : Mutable.Value := .scalar (.bool value)
+variable {globals : Mutable.Globals}
+
+def powerExpression : Expr := .call (.name "pow10_for") [.name "p"]
+def powerGenerators : List (Expr × Expr × List Expr) := [(.name "p", .name "primes", [])]
+def powerComprehension : Expr := .dictComp (.name "p") powerExpression powerGenerators
+def powerBody (address : Nat) : List Stmt := [.comprehensionStore address (.name "p") powerExpression]
+
+theorem power_source :
+    (executableBody ((findFunctionIn program.body "solve").getD ([], [])).2)[1]? =
+      some (.annAssign (.name "pow10_map")
+        (.subscript (.name "dict") (.tuple [.name "int", .name "int"])) (some powerComprehension)) := rfl
+
+private theorem lookup_insert_integer (entries : List (Constant × Mutable.Value)) (key query : Int) (value : Mutable.Value) :
+    ScalarDict.lookup (ScalarDict.insert entries (.int key) value) (.int query) =
+      if query = key then some value else ScalarDict.lookup entries (.int query) := by
+  induction entries with
+  | nil =>
+      by_cases same : query = key
+      · subst query
+        simp [ScalarDict.insert, ScalarDict.lookup, scalarCompare, evalCmpOp]
+      · simp [ScalarDict.insert, ScalarDict.lookup, scalarCompare, evalCmpOp, same, Ne.symm same]
+  | cons entry rest ih =>
+      obtain ⟨stored, previous⟩ := entry
+      cases stored with
+      | int n =>
+          by_cases inserted : n = key <;> by_cases selected : n = query <;>
+            by_cases same : query = key <;>
+            simp_all [ScalarDict.insert, ScalarDict.lookup, scalarCompare, evalCmpOp]
+      | bool b =>
+          cases b <;>
+            by_cases inserted : (0 : Int) = key <;> by_cases selected : (0 : Int) = query <;>
+            by_cases insertedOne : (1 : Int) = key <;> by_cases selectedOne : (1 : Int) = query <;>
+            by_cases same : query = key <;>
+            simp_all [ScalarDict.insert, ScalarDict.lookup, scalarCompare, evalCmpOp]
+      | string text | bytes values | none =>
+          by_cases same : query = key <;>
+            simp_all [ScalarDict.insert, ScalarDict.lookup, scalarCompare]
+
+def powerUpdate (entries : List (Constant × Mutable.Value)) (value : Nat) : List (Constant × Mutable.Value) :=
+  ScalarDict.insert entries (.int value) (number (DecimalShift.decimalShift value))
+
+def powerEntries (values : List Nat) : List (Constant × Mutable.Value) := values.foldl powerUpdate []
+
+private theorem fold_lookup (remaining : List Nat) (entries : List (Constant × Mutable.Value)) (query : Nat) :
+    ScalarDict.lookup (remaining.foldl powerUpdate entries) (.int query) =
+      if query ∈ remaining then some (number (DecimalShift.decimalShift query)) else ScalarDict.lookup entries (.int query) := by
+  induction remaining generalizing entries with
+  | nil => simp
+  | cons value rest ih =>
+      rw [List.foldl_cons, ih]
+      by_cases later : query ∈ rest
+      · simp [later]
+      · by_cases same : query = value
+        · simp [same, powerUpdate, ScalarDict.lookup_insert_self]
+        · simp [later, same, powerUpdate, lookup_insert_integer]
+
+theorem powerEntries_lookup (values : List Nat) (query : Nat) (member : query ∈ values) :
+    ScalarDict.lookup (powerEntries values) (.int query) = some (number (DecimalShift.decimalShift query)) := by
+  simp only [powerEntries, fold_lookup, if_pos member]
+
+private theorem power_store (heap : Mutable.Heap) (entries : List (Constant × Mutable.Value))
+    (env : HeapCalls.Env) (value : Nat) (getValue : env "p" = some (number value)) :
+    BlockContinues program env (powerBody heap.length) (heap ++ [.dict entries]) env
+      (heap ++ [.dict (powerUpdate entries value)]) globals := by
+  have calculated : Evaluates program env powerExpression (heap ++ [.dict entries])
+      (number (DecimalShift.decimalShift value)) (heap ++ [.dict entries]) globals :=
+    Evaluates.call (.cons (Evaluates.lookup getValue) .nil) (pow10_for.result value _ globals)
+  have inserted := Mutable.setItem_dictionary (heap ++ [.dict entries]) heap.length entries
+    (by simp) (.int value) (number (DecimalShift.decimalShift value))
+  apply BlockContinues.comprehension_store (.cons (Evaluates.lookup getValue) (.cons calculated .nil))
+  simpa [powerUpdate, List.set_append_right] using inserted
+
+private theorem power_loop (heap : Mutable.Heap) (address : Nat) (values remaining : List Nat)
+    (found : heap[address]? = some (.list (numbers values))) (position : Nat)
+    (suffix : values.drop position = remaining)
+    (entries : List (Constant × Mutable.Value)) (env : HeapCalls.Env) :
+    ∃ finalEnv, BlockContinues program env
+      [.sequenceStepLoop "p" (.ref address) position (powerBody heap.length) []]
+      (heap ++ [.dict entries]) finalEnv
+      (heap ++ [.dict (remaining.foldl powerUpdate entries)]) globals := by
+  have inside := (List.getElem?_eq_some_iff.mp found).1
+  have sequence (entries : List (Constant × Mutable.Value)) :
+      Mutable.sequence (.ref address) (heap ++ [.dict entries]) =
+        some (.ok (numbers values), heap ++ [.dict entries]) := by
+    simp [Mutable.sequence, List.getElem?_append_left inside, found]
+  induction remaining generalizing position entries env with
+  | nil =>
+      refine ⟨env, ?_⟩
+      apply BlockContinues.sequence_done (items := numbers values)
+        (by simpa only [sequenceValue] using sequence entries)
+      · have missing : values[position]? = none := by
+          simpa only [suffix, List.head?_nil] using (List.head?_drop (l := values) (i := position)).symm
+        simp only [numbers, List.getElem?_map, missing, Option.map_none]
+      · exact .nil
+  | cons value rest ih =>
+      let bound := setLocal env "p" (number value)
+      have emitted := power_store (globals := globals) heap entries bound value (by simp [bound, setLocal])
+      obtain ⟨finalEnv, continued⟩ := ih (position + 1)
+        (by simp only [List.drop_add_one_eq_tail_drop, suffix, List.tail_cons]) (powerUpdate entries value) bound
+      refine ⟨finalEnv, ?_⟩
+      have item : values[position]? = some value := by
+        simpa only [suffix, List.head?_cons] using (List.head?_drop (l := values) (i := position)).symm
+      apply BlockContinues.sequence_step (items := numbers values) (value := number value)
+        (by simpa only [sequenceValue] using sequence entries)
+        (by simp only [numbers, List.getElem?_map, item, Option.map_some])
+      simpa only [Calls.loopContinuation, powerBody, Calls.loopControl, Calls.loopControlStmt,
+        Bool.false_or, Bool.false_eq_true, if_false, List.foldl_cons] using emitted.append continued
+
+/-- The source comprehension runs the actual decimal-shift helper for every
+prime, allocates one dictionary, and preserves all existing heap objects. -/
+theorem powers_evaluate (env : HeapCalls.Env) (heap : Mutable.Heap) (address : Nat) (values : List Nat)
+    (getPrimes : env "primes" = some (.ref address))
+    (found : heap[address]? = some (.list (numbers values))) :
+    Evaluates program env powerComprehension heap (.ref heap.length)
+      (heap ++ [.dict (powerEntries values)]) globals := by
+  let masked := comprehensionTargetsEnv env powerGenerators
+  obtain ⟨finalEnv, executed⟩ := power_loop (globals := globals) heap address values values found 0 rfl [] masked
+  apply Evaluates.dict_comp_sequence (receiver := .ref address) (items := numbers values)
+    (middle := heap) (finalEnv := finalEnv)
+    (by intro expressions impossible; cases impossible)
+    (by intro expressions impossible; cases impossible)
+    (by intro expressions impossible; cases impossible)
+    (Evaluates.lookup getPrimes) (by simp [Mutable.sequence, found])
+  simpa only [powerGenerators, comprehensionTargetName, comprehensionTargetBody, comprehensionFilters,
+    List.foldr_nil, comprehensionTargetsBody, sequenceSource, powerEntries, masked, powerBody, powerExpression] using executed
+
+def keep (value : Nat) : Bool := decide (value ≠ 2 ∧ value ≠ 5)
+def literal : Mutable.Object := .tuple [number 2, number 5]
+def filterExpression : Expr :=
+  .membership (.name "p") (.tuple [.constant (.int 2), .constant (.int 5)]) true
+def primeExpression : Expr :=
+  .listComp (.name "p") [("p", .call (.name "primes_up_to") [.name "limit"], [filterExpression])]
+def filterBody (collector : Nat) : List Stmt :=
+  [.ifThen filterExpression [.comprehensionAppend collector (.name "p")] []]
+
+theorem filter_source :
+    (executableBody ((findFunctionIn program.body "solve").getD ([], [])).2)[0]? =
+      some (.assign [.name "primes"] primeExpression) := rfl
+
+private theorem filter_evaluates (env : HeapCalls.Env) (heap : Mutable.Heap) (value : Nat)
+    (getP : env "p" = some (number value)) :
+    Evaluates program env filterExpression heap (flag (keep value)) (heap ++ [literal]) globals := by
+  apply Evaluates.membership
+    (.cons (Evaluates.lookup getP) (.cons (Evaluates.tuple
+      (.cons Evaluates.constant (.cons Evaluates.constant .nil)) (by simp)) .nil))
+  by_cases two : value = 2
+  · subst value
+    simp [membership, sequenceContains, literal, number, flag, keep, Except.map]
+  · by_cases five : value = 5
+    · subst value
+      simp [membership, sequenceContains, HeapCalls.compare, Mutable.truth, scalarTruth,
+        scalarCompare, evalCmpOp, literal, number, flag, keep, Except.map]
+    · have notTwo : (2 : Int) ≠ value := by exact_mod_cast Ne.symm two
+      have notFive : (5 : Int) ≠ value := by exact_mod_cast Ne.symm five
+      simp [membership, sequenceContains, HeapCalls.compare, Mutable.truth, scalarTruth, scalarCompare,
+        evalCmpOp, number, flag, literal, keep, notTwo, notFive, two, five, Except.map]
+
+private theorem filter_loop (base : Mutable.Heap) (address : Nat) (values remaining : List Nat)
+    (found : base[address]? = some (.list (numbers values))) (position : Nat)
+    (suffix : values.drop position = remaining)
+    (before : List Nat) (garbage : Mutable.Heap) (env : HeapCalls.Env) :
+    ∃ finalEnv, BlockContinues program env
+      [.sequenceStepLoop "p" (.ref address) position (filterBody base.length) []]
+      (HeapCollection.working base (numbers before) garbage) finalEnv
+      (HeapCollection.working base (numbers (before ++ remaining.filter keep))
+        (garbage ++ List.replicate remaining.length literal)) globals := by
+  have inside := (List.getElem?_eq_some_iff.mp found).1
+  have sequence (before : List Nat) (garbage : Mutable.Heap) :
+      Mutable.sequence (.ref address) (HeapCollection.working base (numbers before) garbage) =
+        some (.ok (numbers values), HeapCollection.working base (numbers before) garbage) := by
+    simp [Mutable.sequence, HeapCollection.working, List.getElem?_append_left inside, found]
+  induction remaining generalizing position before garbage env with
+  | nil =>
+      refine ⟨env, ?_⟩
+      simp only [List.filter_nil, List.append_nil, List.length_nil, List.replicate_zero]
+      apply BlockContinues.sequence_done (items := numbers values)
+        (by simpa only [sequenceValue] using sequence before garbage)
+      · have missing : values[position]? = none := by
+          simpa only [suffix, List.head?_nil] using (List.head?_drop (l := values) (i := position)).symm
+        simp only [numbers, List.getElem?_map, missing, Option.map_none]
+      · exact .nil
+  | cons value rest ih =>
+      let bound := setLocal env "p" (number value)
+      have tested := filter_evaluates (globals := globals) bound
+        (HeapCollection.working base (numbers before) garbage) value (by simp [bound, setLocal])
+      have item : values[position]? = some value := by
+        simpa only [suffix, List.head?_cons] using (List.head?_drop (l := values) (i := position)).symm
+      cases selected : keep value with
+      | false =>
+          have skipped : BlockContinues program bound (filterBody base.length)
+              (HeapCollection.working base (numbers before) garbage) bound
+              (HeapCollection.working base (numbers before) (garbage ++ [literal])) globals := by
+            apply BlockContinues.branch (flag := false)
+              (by simpa only [selected, HeapCollection.append] using tested) rfl
+            exact .nil
+          obtain ⟨finalEnv, continued⟩ := ih (position + 1)
+            (by simp only [List.drop_add_one_eq_tail_drop, suffix, List.tail_cons]) before (garbage ++ [literal]) bound
+          refine ⟨finalEnv, ?_⟩
+          apply BlockContinues.sequence_step (items := numbers values) (value := number value)
+            (by simpa only [sequenceValue] using sequence before garbage)
+            (by simp only [numbers, List.getElem?_map, item, Option.map_some])
+          simpa [Calls.loopContinuation, Calls.loopControl, Calls.loopControlStmt, filterBody,
+            selected, List.replicate_succ, List.append_assoc] using skipped.append continued
+      | true =>
+          have emitted : BlockContinues program bound (filterBody base.length)
+              (HeapCollection.working base (numbers before) garbage) bound
+              (HeapCollection.working base (numbers (before ++ [value])) (garbage ++ [literal])) globals := by
+            apply BlockContinues.branch (flag := true)
+              (by simpa only [selected, HeapCollection.append] using tested) rfl
+            simpa only [numbers, List.map_append, List.map_cons, List.map_nil, List.append_nil] using
+              (HeapCollection.emit (program := program) base (numbers before) (garbage ++ [literal]) [] (number value)
+                (by simpa only [List.append_nil] using (Evaluates.lookup (globals := globals) (module := program)
+                  (heap := HeapCollection.working base (numbers before) (garbage ++ [literal]))
+                  (show bound "p" = some (number value) by simp [bound, setLocal]))))
+          obtain ⟨finalEnv, continued⟩ := ih (position + 1)
+            (by simp only [List.drop_add_one_eq_tail_drop, suffix, List.tail_cons]) (before ++ [value]) (garbage ++ [literal]) bound
+          refine ⟨finalEnv, ?_⟩
+          apply BlockContinues.sequence_step (items := numbers values) (value := number value)
+            (by simpa only [sequenceValue] using sequence before garbage)
+            (by simp only [numbers, List.getElem?_map, item, Option.map_some])
+          simpa [Calls.loopContinuation, Calls.loopControl, Calls.loopControlStmt, filterBody,
+            selected, List.replicate_succ, List.append_assoc] using emitted.append continued
+
+/-- The live input sequence remains in the heap prefix. Each source tuple
+display contributes one temporary object, including when its prime is rejected. -/
+theorem filter_evaluate (env : HeapCalls.Env) (heap middle : Mutable.Heap) (iterable : Expr)
+    (ordinary : ∀ expressions, iterable ≠ .call (.name "range") expressions)
+    (address : Nat) (values : List Nat)
+    (evaluated : Evaluates program env iterable heap (.ref address) middle globals)
+    (found : middle[address]? = some (.list (numbers values))) :
+    Evaluates program env (.listComp (.name "p") [("p", iterable, [filterExpression])])
+      heap (.ref middle.length)
+      (HeapCollection.working middle (numbers (values.filter keep)) (List.replicate values.length literal)) globals := by
+  let masked := comprehensionEnv env [("p", iterable, [filterExpression])]
+  obtain ⟨finalEnv, executed⟩ := filter_loop (globals := globals) middle address values values found 0 rfl [] [] masked
+  apply Evaluates.list_comp_sequence (items := numbers values) (finalEnv := finalEnv) ordinary evaluated
+    (by simp [Mutable.sequence, found])
+  simpa only [masked, comprehensionFilters, comprehensionBody, List.nil_append,
+    filterBody, numbers, List.map_nil, HeapCollection.working] using executed
+
+def vertices (limit : Int) : List Nat := (primes_up_to.primes limit.toNat).filter keep
+
+def sieveHeap (heap buffers : Mutable.Heap) (limit : Int) : Mutable.Heap :=
+  heap ++ buffers ++ [.list (numbers (primes_up_to.primes limit.toNat))]
+
+def filteredHeap (heap buffers : Mutable.Heap) (limit : Int) : Mutable.Heap :=
+  HeapCollection.working (sieveHeap heap buffers limit) (numbers (vertices limit))
+    (List.replicate (primes_up_to.primes limit.toNat).length literal)
+
+def prefixHeap (heap buffers : Mutable.Heap) (limit : Int) : Mutable.Heap :=
+  pair_ok.initialHeap (filteredHeap heap buffers limit) (powerEntries (vertices limit))
+
+def prefixEnv (env : HeapCalls.Env) (heap buffers : Mutable.Heap) (limit : Int) : HeapCalls.Env :=
+  pair_ok.captureEnv
+    (setLocal (setLocal env "primes" (.ref (sieveHeap heap buffers limit).length))
+      "pow10_map" (.ref (filteredHeap heap buffers limit).length)) (filteredHeap heap buffers limit)
+
+def prefixCode : List Stmt :=
+  (executableBody ((findFunctionIn program.body "solve").getD ([], [])).2).take 5
+
+theorem prefix_source : prefixCode =
+    [.assign [.name "primes"] primeExpression,
+     .annAssign (.name "pow10_map") (.subscript (.name "dict") (.tuple [.name "int", .name "int"]))
+       (some powerComprehension)] ++ pair_ok.captureCode := rfl
+
+/-- The actual first five owner statements initialize the candidate primes,
+power dictionary, empty pair cache, and shared cells for every signed limit. -/
+theorem prefix_result (env : HeapCalls.Env) (heap : Mutable.Heap) (limit : Int)
+    (getLimit : env "limit" = some (number limit)) :
+    ∃ buffers : Mutable.Heap,
+      buffers.length = (if limit < 2 then 0 else 2) ∧
+      BlockContinues program env prefixCode heap (prefixEnv env heap buffers limit)
+        (prefixHeap heap buffers limit) globals := by
+  obtain ⟨buffers, size, returned⟩ := primes_up_to.result (globals := globals) limit heap
+  let sieved := sieveHeap heap buffers limit
+  let filtered := filteredHeap heap buffers limit
+  let ready := setLocal env "primes" (.ref sieved.length)
+  let mapped := setLocal ready "pow10_map" (.ref filtered.length)
+  have found : sieved[(heap ++ buffers).length]? =
+      some (.list (numbers (primes_up_to.primes limit.toNat))) := by simp [sieved, sieveHeap]
+  have call : Evaluates program env (.call (.name "primes_up_to") [.name "limit"]) heap
+      (.ref (heap ++ buffers).length) sieved globals := by
+    apply Evaluates.call (.cons (Evaluates.lookup getLimit) .nil)
+    simpa only [List.length_append] using returned
+  have primeEval : Evaluates program env primeExpression heap (.ref sieved.length) filtered globals :=
+    filter_evaluate env heap sieved (.call (.name "primes_up_to") [.name "limit"])
+      (by intros; simp) (heap ++ buffers).length _ call found
+  have first : BlockContinues program env [.assign [.name "primes"] primeExpression]
+      heap ready filtered globals := BlockContinues.assign primeEval
+  have filteredFound : filtered[sieved.length]? = some (.list (numbers (vertices limit))) := by
+    exact HeapCollection.found sieved _ _
+  have mappedEval := powers_evaluate (globals := globals) ready filtered sieved.length (vertices limit)
+    (by simp [ready, setLocal]) filteredFound
+  have second : BlockContinues program ready
+      [.annAssign (.name "pow10_map") (.subscript (.name "dict") (.tuple [.name "int", .name "int"]))
+        (some powerComprehension)] filtered mapped (filtered ++ [.dict (powerEntries (vertices limit))]) globals :=
+    BlockContinues.annAssign mappedEval
+  have captured := pair_ok.capture_initialization mapped filtered (powerEntries (vertices limit))
+    (by simp [mapped, setLocal]) globals
+  refine ⟨buffers, size, ?_⟩
+  rw [prefix_source]
+  exact first.append (second.append captured)
+
+theorem mem_vertices (limit : Int) (p : Nat) : p ∈ vertices limit ↔
+    Nat.Prime p ∧ 3 ≤ p ∧ (p : Int) ≤ limit ∧ p ≠ 5 := by
+  simp only [vertices, List.mem_filter, primes_up_to.mem_primes_signed, keep, decide_eq_true_eq]
+  constructor
+  · rintro ⟨⟨prime, upper⟩, notTwo, notFive⟩
+    have lower := prime.two_le
+    exact ⟨prime, by omega, upper, notFive⟩
+  · rintro ⟨prime, lower, upper, notFive⟩
+    exact ⟨⟨prime, upper⟩, by omega, notFive⟩
+
+theorem vertices_increasing (limit : Int) : (vertices limit).Pairwise (· < ·) := by
+  unfold vertices
+  exact List.Pairwise.filter _ (primes_up_to.primes_increasing limit.toNat)
+
+theorem vertices_nodup (limit : Int) : (vertices limit).Nodup :=
+  (vertices_increasing limit).imp (fun less => Nat.ne_of_lt less)
+
+def preparedStore (heap buffers : Mutable.Heap) (limit : Int) :
+    pair_ok.Store (prefixHeap heap buffers limit) []
+      ((filteredHeap heap buffers limit).length + 3) ((filteredHeap heap buffers limit).length + 2) :=
+  pair_ok.initialStore (filteredHeap heap buffers limit) (powerEntries (vertices limit))
+
+theorem preparedStore_power (heap buffers : Mutable.Heap) (limit : Int) (p : Nat) (member : p ∈ vertices limit) :
+    ScalarDict.lookup (preparedStore heap buffers limit).powers (.int p) =
+      some (number (DecimalShift.decimalShift p)) :=
+  powerEntries_lookup (vertices limit) p member
+
+theorem preparedStore_correct : IntPairCache.Correct pair_ok.answer [] :=
+  IntPairCache.correct_nil pair_ok.answer
+
+theorem prefix_primes_binding (env : HeapCalls.Env) (heap buffers : Mutable.Heap) (limit : Int) :
+    prefixEnv env heap buffers limit "primes" = some (.ref (sieveHeap heap buffers limit).length) := by
+  simp [prefixEnv, pair_ok.captureEnv, setLocal]
+
+theorem prefix_primes_found (heap buffers : Mutable.Heap) (limit : Int) :
+    (prefixHeap heap buffers limit)[(sieveHeap heap buffers limit).length]? =
+      some (.list (numbers (vertices limit))) := by
+  apply HeapCollection.prefix_found (filteredHeap heap buffers limit) _ _ _
+  exact HeapCollection.found (sieveHeap heap buffers limit) _ _
+
+theorem prefix_preserves (heap buffers : Mutable.Heap) (limit : Int) (address : Nat) (object : Mutable.Object)
+    (found : heap[address]? = some object) : (prefixHeap heap buffers limit)[address]? = some object := by
+  have inside := (List.getElem?_eq_some_iff.mp found).1
+  simp only [prefixHeap, pair_ok.initialHeap, filteredHeap, sieveHeap, HeapCollection.working, List.append_assoc]
+  rw [List.getElem?_append_left inside]
+  exact found
+
+def prefix_globals (context : is_prime.SourceGlobals heap globals) (buffers : Mutable.Heap) (limit : Int) :
+    is_prime.SourceGlobals (prefixHeap heap buffers limit) globals where
+  smallAddress := context.smallAddress
+  basesAddress := context.basesAddress
+  smallBinding := context.smallBinding
+  basesBinding := context.basesBinding
+  smallTuple := prefix_preserves heap buffers limit _ _ context.smallTuple
+  basesTuple := prefix_preserves heap buffers limit _ _ context.basesTuple
+
+def sentinel : Int := 10 ^ 30
+
+def searchHeap (base : Mutable.Heap) : Mutable.Heap :=
+  base ++ [.list [number sentinel], .list [], .list [.ref (base.length + 1)]]
+
+def bestEnv (env : HeapCalls.Env) (base : Mutable.Heap) : HeapCalls.Env :=
+  setLocal (setLocal env "__formalsw_cell_solve_best_sum" (.ref base.length))
+    "__formalsw_cell_solve_best_set" (.ref (base.length + 2))
+
+def searchEnv (env : HeapCalls.Env) (base : Mutable.Heap) (values : List Nat) : HeapCalls.Env :=
+  setLocal (bestEnv env base) "n" (number values.length)
+
+def searchSetupCode : List Stmt :=
+  ((executableBody ((findFunctionIn program.body "solve").getD ([], [])).2).drop 5).take 3
+
+theorem searchSetup_source : searchSetupCode =
+    [.assign [.name "__formalsw_cell_solve_best_sum"]
+      (.list [.binOp (.constant (.int 10)) .pow (.constant (.int 30))]),
+     .assign [.name "__formalsw_cell_solve_best_set"] (.list [.list []]),
+     .assign [.name "n"] (.builtinCall .len [.name "primes"])] := rfl
+
+theorem searchSetup_result (env : HeapCalls.Env) (base : Mutable.Heap) (address : Nat) (values : List Nat)
+    (getPrimes : env "primes" = some (.ref address))
+    (found : base[address]? = some (.list (numbers values))) :
+    BlockContinues program env searchSetupCode base (searchEnv env base values) (searchHeap base) globals := by
+  let first := setLocal env "__formalsw_cell_solve_best_sum" (.ref base.length)
+  let ready := bestEnv env base
+  have firstRun : BlockContinues program env [searchSetupCode[0]'(by decide)] base first
+      (base ++ [.list [number sentinel]]) globals := by
+    apply BlockContinues.assign
+    exact Evaluates.list (.cons (Evaluates.binary Evaluates.constant Evaluates.constant rfl) .nil)
+  have secondRun : BlockContinues program first [searchSetupCode[1]'(by decide)]
+      (base ++ [.list [number sentinel]]) ready (searchHeap base) globals := by
+    apply BlockContinues.assign
+    convert (Evaluates.list (module := program) (env := first) (heap := base ++ [.list [number sentinel]]) (globals := globals)
+      (.cons (Evaluates.list .nil) .nil)) using 1 <;>
+      simp [searchHeap, List.length_append, List.append_assoc]
+  have searchFound : (searchHeap base)[address]? = some (.list (numbers values)) :=
+    HeapCollection.prefix_found base _ address _ found
+  have lengthEval : Evaluates program ready (.builtinCall .len [.name "primes"])
+      (searchHeap base) (number values.length) (searchHeap base) globals := by
+    apply Evaluates.builtin (.cons (Evaluates.lookup (by simpa [ready, bestEnv, setLocal] using getPrimes)) .nil)
+    simp [primitive, Mutable.length, searchFound, numbers]
+  have thirdRun : BlockContinues program ready [searchSetupCode[2]'(by decide)]
+      (searchHeap base) (searchEnv env base values) (searchHeap base) globals :=
+    BlockContinues.assign lengthEval
+  simpa [searchSetup_source] using firstRun.append (secondRun.append thirdRun)
+
+def initializedHeap (heap buffers : Mutable.Heap) (limit : Int) : Mutable.Heap :=
+  searchHeap (prefixHeap heap buffers limit)
+
+def initializedEnv (env : HeapCalls.Env) (heap buffers : Mutable.Heap) (limit : Int) : HeapCalls.Env :=
+  searchEnv (prefixEnv env heap buffers limit) (prefixHeap heap buffers limit) (vertices limit)
+
+def initializationCode : List Stmt :=
+  (executableBody ((findFunctionIn program.body "solve").getD ([], [])).2).take 8
+
+theorem initialization_source : initializationCode = prefixCode ++ searchSetupCode := rfl
+
+/-- Complete execution up to the first outer search iteration. No restriction
+on the signed limit is introduced by the heap or cache invariants. -/
+theorem initialization_result (env : HeapCalls.Env) (heap : Mutable.Heap) (limit : Int)
+    (getLimit : env "limit" = some (number limit)) :
+    ∃ buffers : Mutable.Heap,
+      buffers.length = (if limit < 2 then 0 else 2) ∧
+      BlockContinues program env initializationCode heap (initializedEnv env heap buffers limit)
+        (initializedHeap heap buffers limit) globals := by
+  obtain ⟨buffers, size, prefixRun⟩ := prefix_result (globals := globals) env heap limit getLimit
+  refine ⟨buffers, size, ?_⟩
+  rw [initialization_source]
+  exact prefixRun.append (searchSetup_result (prefixEnv env heap buffers limit) (prefixHeap heap buffers limit)
+    (sieveHeap heap buffers limit).length (vertices limit)
+    (prefix_primes_binding env heap buffers limit) (prefix_primes_found heap buffers limit))
+
+def initializedStore (heap buffers : Mutable.Heap) (limit : Int) :
+    pair_ok.Store (initializedHeap heap buffers limit) []
+      ((filteredHeap heap buffers limit).length + 3) ((filteredHeap heap buffers limit).length + 2) :=
+  (preparedStore heap buffers limit).append
+    [.list [number sentinel], .list [], .list [.ref ((prefixHeap heap buffers limit).length + 1)]]
+
+theorem initializedStore_power (heap buffers : Mutable.Heap) (limit : Int) (p : Nat) (member : p ∈ vertices limit) :
+    ScalarDict.lookup (initializedStore heap buffers limit).powers (.int p) =
+      some (number (DecimalShift.decimalShift p)) :=
+  preparedStore_power heap buffers limit p member
+
+def initialized_globals (context : is_prime.SourceGlobals heap globals) (buffers : Mutable.Heap) (limit : Int) :
+    is_prime.SourceGlobals (initializedHeap heap buffers limit) globals :=
+  (prefix_globals context buffers limit).append
+    [.list [number sentinel], .list [], .list [.ref ((prefixHeap heap buffers limit).length + 1)]]
+
+theorem initialized_sum_binding (env : HeapCalls.Env) (heap buffers : Mutable.Heap) (limit : Int) :
+    initializedEnv env heap buffers limit "__formalsw_cell_solve_best_sum" =
+      some (.ref (prefixHeap heap buffers limit).length) := by
+  simp [initializedEnv, searchEnv, bestEnv, setLocal]
+
+theorem initialized_set_binding (env : HeapCalls.Env) (heap buffers : Mutable.Heap) (limit : Int) :
+    initializedEnv env heap buffers limit "__formalsw_cell_solve_best_set" =
+      some (.ref ((prefixHeap heap buffers limit).length + 2)) := by
+  simp [initializedEnv, searchEnv, bestEnv, setLocal]
+
+theorem initialized_count (env : HeapCalls.Env) (heap buffers : Mutable.Heap) (limit : Int) :
+    initializedEnv env heap buffers limit "n" = some (number (vertices limit).length) := by
+  simp [initializedEnv, searchEnv, setLocal]
+
+end solvers.«60».solve_setup
+
+namespace solvers.«60»
+open FormalSW.PyAst
+open ProjectEulerSolutions
+private abbrev number (value : Int) : Mutable.Value := .scalar (.int value)
+
+/-- Physical state of the shared best-sum and best-set cells. The search proof
+will separately relate their contents to the examined cliques. -/
+structure Incumbent (heap : Mutable.Heap) (sumCell setCell : Nat) (bound : Int) (selected : List Nat) where
+  selectedAddress : Nat
+  sumFound : heap[sumCell]? = some (.list [number bound])
+  setFound : heap[setCell]? = some (.list [.ref selectedAddress])
+  selectedFound : heap[selectedAddress]? = some (.list (primes_up_to.numbers selected))
+
+variable {heap : Mutable.Heap} {sumCell setCell : Nat} {bound : Int} {selected : List Nat}
+
+def Incumbent.append (incumbent : Incumbent heap sumCell setCell bound selected) (extra : Mutable.Heap) :
+    Incumbent (heap ++ extra) sumCell setCell bound selected where
+  selectedAddress := incumbent.selectedAddress
+  sumFound := HeapCollection.prefix_found heap extra _ _ incumbent.sumFound
+  setFound := HeapCollection.prefix_found heap extra _ _ incumbent.setFound
+  selectedFound := HeapCollection.prefix_found heap extra _ _ incumbent.selectedFound
+
+/-- Cache activity retains the complete incumbent graph, including the list
+address held in the best-set cell, across ordered or reversed pair calls. -/
+def Incumbent.after_pair (incumbent : Incumbent heap sumCell setCell bound selected)
+    (cacheCell powerCell : Nat) (entries : List IntPairCache.Entry)
+    (store : pair_ok.Store heap entries cacheCell powerCell) (left right : Int) :
+    Incumbent (pair_ok.resultHeap heap store.cacheAddress entries left right) sumCell setCell bound selected where
+  selectedAddress := incumbent.selectedAddress
+  sumFound := pair_ok.resultHeap_preserves incumbent.sumFound _ (store.cache_ne_list incumbent.sumFound) entries left right
+  setFound := pair_ok.resultHeap_preserves incumbent.setFound _ (store.cache_ne_list incumbent.setFound) entries left right
+  selectedFound := pair_ok.resultHeap_preserves incumbent.selectedFound _ (store.cache_ne_list incumbent.selectedFound) entries left right
+
+def initializedIncumbent (heap buffers : Mutable.Heap) (limit : Int) :
+    Incumbent (solve_setup.initializedHeap heap buffers limit)
+      (solve_setup.prefixHeap heap buffers limit).length
+      ((solve_setup.prefixHeap heap buffers limit).length + 2) solve_setup.sentinel [] where
+  selectedAddress := (solve_setup.prefixHeap heap buffers limit).length + 1
+  sumFound := by simp [solve_setup.initializedHeap, solve_setup.searchHeap, number]
+  setFound := by simp [solve_setup.initializedHeap, solve_setup.searchHeap]
+  selectedFound := by simp [solve_setup.initializedHeap, solve_setup.searchHeap, primes_up_to.numbers]
+
+end solvers.«60»
