@@ -18,6 +18,11 @@ def is_lychrel_candidate(n: int, max_iters: int = 50) -> bool:
 
 
 def solve(limit: int = 10_000) -> int:
+    """
+    @formalsw: Returns
+    @formalsw: Py from project_euler_statements.p55 import naive_default
+    @formalsw: Equiv(naive_default)
+    """
     return sum(1 for n in range(1, limit) if is_lychrel_candidate(n, 50))
 
 
