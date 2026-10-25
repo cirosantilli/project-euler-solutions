@@ -25,11 +25,15 @@ def period_length_sqrt(n: int) -> int:
 
 
 def solve(limit: int) -> int:
+    """
+    Count square-root continued fractions of odd period up to the inclusive bound.
+
+    @formalsw: Py from project_euler_statements.p64 import naive
+    @formalsw: Returns
+    @formalsw: Equiv(naive)
+    """
     count = 0
     for n in range(2, limit + 1):
-        r = isqrt(n)
-        if r * r == n:
-            continue
         if period_length_sqrt(n) % 2 == 1:
             count += 1
     return count
