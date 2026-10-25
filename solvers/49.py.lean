@@ -3,6 +3,8 @@ import lang.py.FormalSW.HeapCalls
 import ProjectEulerSolutions.Lib.BooleanPrimeSieve
 import ProjectEulerSolutions.Lib.HeapCollection
 import ProjectEulerSolutions.Lib.DigitSignatures
+import ProjectEulerSolutions.Lib.StringBuckets
+import ProjectEulerSolutions.Lib.PrimePermutationSearch
 
 set_option Elab.async false
 
@@ -468,6 +470,186 @@ theorem key_result (heap : Mutable.Heap) (env : HeapCalls.Env) (p : Int)
       (setLocal env "key" (.scalar (.string (ProjectEulerSolutions.DigitSignatures.signature p))))
       (heap++[.list (ProjectEulerSolutions.DigitSignatures.values p)]) :=
   BlockContinues.assign (ProjectEulerSolutions.DigitSignatures.evaluate program env heap "p" p getP)
+
+def keyOf (p : Nat) : String := ProjectEulerSolutions.DigitSignatures.signature p
+private def keyHeap (heap : Mutable.Heap) (p : Nat) : Mutable.Heap :=
+  heap ++ [.list (ProjectEulerSolutions.DigitSignatures.values p)]
+private def groupEnv (env : HeapCalls.Env) (p : Nat) : HeapCalls.Env :=
+  setLocal env "key" (.scalar (.string (keyOf p)))
+
+/-- One original iteration retains the character list, eager default, and shared bucket mutation. -/
+theorem group_step (heap : Mutable.Heap) (env : HeapCalls.Env) (dictionary : Nat)
+    (buckets : List ProjectEulerSolutions.StringBuckets.Bucket)
+    (view : ProjectEulerSolutions.StringBuckets.View heap dictionary buckets) (p : Nat)
+    (getP : env "p" = some (number p)) (getGroups : env "groups" = some (.ref dictionary)) :
+    BlockContinues program env groupBody heap (groupEnv env p)
+      (ProjectEulerSolutions.StringBuckets.updated (keyHeap heap p) dictionary buckets (keyOf p) p) := by
+  have key := key_result heap env p getP
+  have inserted := ProjectEulerSolutions.StringBuckets.evaluate (globals := []) program (groupEnv env p)
+    (keyHeap heap p) dictionary buckets (view.append _) (keyOf p) p
+    (by simpa [groupEnv, setLocal] using getGroups) (by simp [groupEnv, setLocal])
+    (by simpa [groupEnv, setLocal, ProjectEulerSolutions.StringBuckets.number] using getP)
+  exact key.append (BlockContinues.discard inserted)
+
+private theorem group_prefix (base extra : Mutable.Heap) (dictionary : Nat)
+    (buckets : List ProjectEulerSolutions.StringBuckets.Bucket)
+    (view : ProjectEulerSolutions.StringBuckets.View (base ++ extra) dictionary buckets)
+    (afterBase : base.length ≤ dictionary) (p : Nat) :
+    ∃ finalExtra, ProjectEulerSolutions.StringBuckets.updated (keyHeap (base ++ extra) p)
+      dictionary buckets (keyOf p) p = base ++ finalExtra := by
+  have appended := view.append [.list (ProjectEulerSolutions.DigitSignatures.values p)]
+  obtain ⟨finalExtra, extended⟩ := ProjectEulerSolutions.StringBuckets.updated_prefix base
+    (extra ++ [.list (ProjectEulerSolutions.DigitSignatures.values p)]) dictionary buckets
+    (by simpa only [List.append_assoc] using appended) afterBase (keyOf p) p
+  exact ⟨finalExtra, by simpa only [keyHeap, List.append_assoc] using extended⟩
+
+private theorem groupBody_control : Calls.loopControl groupBody = false := rfl
+
+/-- The source loop constructs the exact stable partition while preserving its input list. -/
+private theorem group_loop (base : Mutable.Heap) (input : Nat) (items : List Nat)
+    (found : base[input]? = some (.list (numbers items))) (dictionary : Nat)
+    (afterBase : base.length ≤ dictionary) (remaining : List Nat) (position : Nat)
+    (remainingEq : items.drop position = remaining) (processed : List Nat) (extra : Mutable.Heap)
+    (env : HeapCalls.Env) (buckets : List ProjectEulerSolutions.StringBuckets.Bucket)
+    (view : ProjectEulerSolutions.StringBuckets.View (base ++ extra) dictionary buckets)
+    (partition : ProjectEulerSolutions.StringBuckets.Partition keyOf processed buckets)
+    (getGroups : env "groups" = some (.ref dictionary)) :
+    ∃ finalEnv finalExtra finalBuckets,
+      BlockContinues program env [.sequenceStepLoop "p" (.ref input) position groupBody []]
+        (base ++ extra) finalEnv (base ++ finalExtra) ∧
+      ProjectEulerSolutions.StringBuckets.View (base ++ finalExtra) dictionary finalBuckets ∧
+      ProjectEulerSolutions.StringBuckets.Partition keyOf (processed ++ remaining) finalBuckets ∧
+      finalEnv "groups" = some (.ref dictionary) := by
+  induction remaining generalizing position processed extra env buckets with
+  | nil =>
+      refine ⟨env, extra, buckets, ?_, view, ?_, getGroups⟩
+      · apply BlockContinues.sequence_done (items := numbers items)
+          (by simp [sequenceValue, Mutable.sequence, prefix_found base extra input _ found])
+        · have missing : items[position]? = none := by
+            simpa [remainingEq] using (List.head?_drop (l := items) (i := position)).symm
+          simp [numbers, missing]
+        · exact .nil
+      · simpa only [List.append_nil] using partition
+  | cons head tail ih =>
+      let bound := setLocal env "p" (number head)
+      let ready := groupEnv bound head
+      let afterKey := keyHeap (base ++ extra) head
+      let nextBuckets := ProjectEulerSolutions.StringBuckets.push buckets (keyOf head) afterKey.length head
+      have selected : items[position]? = some head := by
+        simpa [remainingEq] using (List.head?_drop (l := items) (i := position)).symm
+      have executed := group_step (base ++ extra) bound dictionary buckets view head
+        (by simp [bound, setLocal]) (by simpa [bound, setLocal] using getGroups)
+      obtain ⟨nextExtra, extended⟩ := group_prefix base extra dictionary buckets view afterBase head
+      have nextView : ProjectEulerSolutions.StringBuckets.View (base ++ nextExtra) dictionary nextBuckets := by
+        rw [← extended]
+        exact ProjectEulerSolutions.StringBuckets.updated_view afterKey dictionary buckets (view.append _) (keyOf head) head
+      have nextPartition : ProjectEulerSolutions.StringBuckets.Partition keyOf (processed ++ [head]) nextBuckets :=
+        partition.push afterKey.length head
+      obtain ⟨finalEnv, finalExtra, finalBuckets, rest, finalView, finalPartition, finalGroups⟩ :=
+        ih (position := position + 1)
+          (remainingEq := by simp [List.drop_add_one_eq_tail_drop, remainingEq])
+          (processed := processed ++ [head]) (extra := nextExtra) (env := ready) (buckets := nextBuckets)
+          nextView nextPartition (by simpa [ready, groupEnv, bound, setLocal] using getGroups)
+      refine ⟨finalEnv, finalExtra, finalBuckets, ?_, finalView, ?_, finalGroups⟩
+      · apply BlockContinues.sequence_step (items := numbers items) (value := number head)
+          (by simp [sequenceValue, Mutable.sequence, prefix_found base extra input _ found])
+          (by simp [numbers, selected])
+        rw [extended] at executed
+        simpa only [Calls.loopContinuation, groupBody_control, Bool.false_eq_true, if_false] using executed.append rest
+      · simpa only [List.append_assoc, List.singleton_append] using finalPartition
+
+/-- The original setup and grouping statements build exactly the four-digit prime buckets. -/
+theorem groups_result (heap : Mutable.Heap) (env : HeapCalls.Env) :
+    ∃ finalEnv extra buckets,
+      BlockContinues program env (code.take 4) heap finalEnv (preparedHeap heap ++ extra) ∧
+      ProjectEulerSolutions.StringBuckets.View (preparedHeap heap ++ extra) (preparedHeap heap).length buckets ∧
+      ProjectEulerSolutions.StringBuckets.Partition keyOf primes4d buckets ∧
+      finalEnv "groups" = some (.ref (preparedHeap heap).length) := by
+  let base := preparedHeap heap
+  let bound := setLocal (preparedEnv env heap) "groups" (.ref base.length)
+  have inputFound : base[heap.length + 2]? = some (.list (numbers primes4d)) := by
+    simp [base, preparedHeap, sieve_primes_upto.tableHeap]
+  have allocated : BlockContinues program (preparedEnv env heap) [code[2]'(by decide)] base bound
+      (base ++ [.dict []]) := BlockContinues.annAssign (Evaluates.dictionary .nil)
+  obtain ⟨finalEnv, extra, buckets, executed, view, partition, finalGroups⟩ :=
+    group_loop base (heap.length + 2) primes4d inputFound base.length (by omega)
+      primes4d 0 rfl [] [.dict []] bound [] (ProjectEulerSolutions.StringBuckets.empty_view base)
+      (ProjectEulerSolutions.StringBuckets.Partition.empty keyOf) (by simp [bound, setLocal])
+  have iterated : BlockContinues program bound [code[3]'(by decide)] (base ++ [.dict []]) finalEnv
+      (base ++ extra) := by
+    apply BlockContinues.for_sequence (value := .ref (heap.length + 2)) (items := numbers primes4d)
+      (by intros; intro impossible; cases impossible)
+      (Evaluates.lookup (by simp [bound, preparedEnv, setLocal]))
+      (by simp [Mutable.sequence, prefix_found base [.dict []] (heap.length + 2) _ inputFound])
+      executed
+  exact ⟨finalEnv, extra, buckets, (setup_result heap env).append (allocated.append iterated), view,
+    by simpa only [List.nil_append] using partition, finalGroups⟩
+
+theorem bucket_member (buckets : List ProjectEulerSolutions.StringBuckets.Bucket)
+    (partition : ProjectEulerSolutions.StringBuckets.Partition keyOf primes4d buckets)
+    (bucket : ProjectEulerSolutions.StringBuckets.Bucket) (member : bucket ∈ buckets)
+    (p : Nat) (present : p ∈ bucket.values) :
+    1000 ≤ p ∧ p < 10000 ∧ Nat.Prime p ∧ keyOf p = bucket.key := by
+  rw [partition.bucket_values bucket member] at present
+  obtain ⟨prime, key⟩ := List.mem_filter.mp present
+  obtain ⟨lower, upper, primality⟩ := (primes4d_mem p).mp prime
+  exact ⟨lower, upper, primality, of_decide_eq_true key⟩
+
+theorem bucket_ordered (buckets : List ProjectEulerSolutions.StringBuckets.Bucket)
+    (partition : ProjectEulerSolutions.StringBuckets.Partition keyOf primes4d buckets)
+    (bucket : ProjectEulerSolutions.StringBuckets.Bucket) (member : bucket ∈ buckets) :
+    bucket.values.Pairwise (· < ·) := by
+  rw [partition.bucket_values bucket member]
+  exact primes4d_ordered.filter _
+
+/-- Any increasing arithmetic triple drawn from a constructed bucket is one of the two certified rows. -/
+theorem bucket_classifies (buckets : List ProjectEulerSolutions.StringBuckets.Bucket)
+    (partition : ProjectEulerSolutions.StringBuckets.Partition keyOf primes4d buckets)
+    (bucket : ProjectEulerSolutions.StringBuckets.Bucket) (member : bucket ∈ buckets)
+    (a b c : Nat) (aMember : a ∈ bucket.values) (bMember : b ∈ bucket.values) (cMember : c ∈ bucket.values)
+    (ab : a < b) (bc : b < c) (arithmetic : c = 2 * b - a) :
+    (a,b,c) = ProjectEulerSolutions.PrimePermutationGroups.known ∨
+      (a,b,c) = ProjectEulerSolutions.PrimePermutationGroups.winner := by
+  have ha := bucket_member buckets partition bucket member a aMember
+  have hb := bucket_member buckets partition bucket member b bMember
+  have hc := bucket_member buckets partition bucket member c cMember
+  have digitPermutation (p : Nat) (positive : 0 < p) (same : keyOf a = keyOf p) :
+      ProjectEulerStatements.P49.isPermutation a p = true := by
+    rw [← ProjectEulerSolutions.PrimePermutations.permutation_statement]
+    apply decide_eq_true
+    apply (ProjectEulerSolutions.PrimePermutations.sortedDigits_eq_iff a p).mpr
+    exact ProjectEulerSolutions.DigitSignatures.equal_implies_permutation a p (by omega) positive same
+  exact ProjectEulerSolutions.PrimePermutationSearch.classifies a b c ha.1 hc.2.1 ab bc arithmetic
+    ha.2.2.1 hb.2.2.1 hc.2.2.1
+    (digitPermutation b (by omega) (ha.2.2.2.trans hb.2.2.2.symm))
+    (digitPermutation c (by omega) (ha.2.2.2.trans hc.2.2.2.symm))
+
+/-- All three numbers of the required progression occur together in a constructed bucket. -/
+theorem winner_bucket (buckets : List ProjectEulerSolutions.StringBuckets.Bucket)
+    (partition : ProjectEulerSolutions.StringBuckets.Partition keyOf primes4d buckets) :
+    ∃ bucket ∈ buckets, 2969 ∈ bucket.values ∧ 6299 ∈ bucket.values ∧ 9629 ∈ bucket.values := by
+  have firstPrime : Nat.Prime 2969 := by
+    simpa only [ProjectEulerSolutions.SixStepPrimality.certifiedPrime_correct, decide_eq_true_eq] using
+      (show ProjectEulerSolutions.SixStepPrimality.certifiedPrime 2969 = true by decide +kernel)
+  have secondPrime : Nat.Prime 6299 := by
+    simpa only [ProjectEulerSolutions.SixStepPrimality.certifiedPrime_correct, decide_eq_true_eq] using
+      (show ProjectEulerSolutions.SixStepPrimality.certifiedPrime 6299 = true by decide +kernel)
+  have thirdPrime : Nat.Prime 9629 := by
+    simpa only [ProjectEulerSolutions.SixStepPrimality.certifiedPrime_correct, decide_eq_true_eq] using
+      (show ProjectEulerSolutions.SixStepPrimality.certifiedPrime 9629 = true by decide +kernel)
+  have firstMember : 2969 ∈ primes4d := (primes4d_mem 2969).mpr ⟨by decide, by decide, firstPrime⟩
+  have secondMember : 6299 ∈ primes4d := (primes4d_mem 6299).mpr ⟨by decide, by decide, secondPrime⟩
+  have thirdMember : 9629 ∈ primes4d := (primes4d_mem 9629).mpr ⟨by decide, by decide, thirdPrime⟩
+  obtain ⟨bucket, member, key, first⟩ := partition.member 2969 firstMember
+  refine ⟨bucket, member, first, ?_, ?_⟩
+  · rw [partition.bucket_values bucket member]
+    exact List.mem_filter.mpr ⟨secondMember, by
+      apply decide_eq_true
+      exact ProjectEulerSolutions.DigitSignatures.winner_signatures.1.symm.trans key.symm⟩
+  · rw [partition.bucket_values bucket member]
+    exact List.mem_filter.mpr ⟨thirdMember, by
+      apply decide_eq_true
+      exact ProjectEulerSolutions.DigitSignatures.winner_signatures.2.symm.trans key.symm⟩
 
 end find_prime_perm_arith_sequence
 end solvers.«49»
