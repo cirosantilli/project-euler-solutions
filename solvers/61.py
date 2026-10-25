@@ -15,6 +15,15 @@
   ∃ finalHeap, Nonempty (solvers.«61».build_prefix_map.Store heap finalHeap values) ∧
     FormalSW.PyAst.HeapCalls.ReturnsValue Solvers.P61Ast.module "build_prefix_map"
       [.ref input] heap (.ref heap.length) finalHeap globals
+
+@formalsw: theorem candidate_setup_source_result
+  (caller : FormalSW.PyAst.Mutable.Heap) (env : FormalSW.PyAst.HeapCalls.Env)
+  (globals : FormalSW.PyAst.Mutable.Globals) :
+  FormalSW.PyAst.HeapCalls.BlockContinues Solvers.P61Ast.module env
+    ((FormalSW.PyAst.executableBody
+      ((FormalSW.PyAst.findFunctionIn Solvers.P61Ast.module.body "solve").getD ([], [])).2).take 2)
+    caller (solvers.«61».solve_setup.generatedEnv env caller)
+    (solvers.«61».solve_setup.generatedHeap caller) globals
 """
 from __future__ import annotations
 

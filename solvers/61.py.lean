@@ -1,6 +1,7 @@
 import «.formalsw».solvers.«61.py.ast»
 import data.«project-euler-statements».data.py.project_euler_statements.«p61.py»
 import FormalSW
+import ProjectEulerSolutions.Lib.PolygonalCycle
 
 namespace solvers.«61».polygonal
 open FormalSW.PyAst
@@ -163,6 +164,11 @@ theorem mem_answer_iff (s value : Int) (sides : 3 ≤ s) :
     change 10000 ≤ polygonal s n at above
     rw [equal] at above
     omega
+
+theorem candidates_eq_model (s : Int) (sides : 3 ≤ s) :
+    answer s = ProjectEulerSolutions.PolygonalCycle.candidates s := by
+  rw [answer, collect_eq_window 140 s 1 sides (by decide)]
+  rfl
 
 private def numbers (values : List Int) : List Mutable.Value := values.map number
 private def working (base : Mutable.Heap) (values : List Int) : Mutable.Heap :=
@@ -339,6 +345,337 @@ theorem generate_4digit_polygonals_source_result (s : Int) (heap : FormalSW.PyAs
         (fun value => .scalar (.int value)))]) globals := by
   intro sides
   exact solvers.«61».generate_4digit_polygonals.result s sides heap globals
+
+end solvers.«61»
+
+namespace solvers.«61».dfs
+open FormalSW.PyAst FormalSW.PyAst.HeapCalls
+
+private abbrev program := Solvers.P61Ast.module
+private abbrev number (value : Int) : Mutable.Value := .scalar (.int value)
+private abbrev flag (value : Bool) : Mutable.Value := .scalar (.bool value)
+
+/-- Only the two endpoint tuples are read by a six-node DFS call. -/
+structure Ends (heap : Mutable.Heap) (path : Nat) (first last : Int) where
+  items : List Mutable.Value
+  size : items.length = 6
+  pathFound : heap[path]? = some (.list items)
+  firstAddress : Nat
+  lastAddress : Nat
+  firstKind : Mutable.Value
+  lastKind : Mutable.Value
+  head : items[0]? = some (.ref firstAddress)
+  tail : items[5]? = some (.ref lastAddress)
+  firstFound : heap[firstAddress]? = some (.tuple [number first, firstKind])
+  lastFound : heap[lastAddress]? = some (.tuple [number last, lastKind])
+
+variable {heap : Mutable.Heap} {path : Nat} {first last : Int}
+
+private def lastExpression : Expr :=
+  .subscript (.subscript (.name "path") (.unaryOp .uSub (.constant (.int 1)))) (.constant (.int 0))
+private def firstExpression : Expr :=
+  .subscript (.subscript (.name "path") (.constant (.int 0))) (.constant (.int 0))
+private def condition : Expr :=
+  .compare (.builtinCall .len [.name "path"]) [(.eq, .constant (.int 6))]
+private def closureCondition : Expr :=
+  .compare (.binOp (.name "last_num") .mod (.constant (.int 100)))
+    [(.eq, .binOp (.name "first_num") .floorDiv (.constant (.int 100)))]
+private def closedBody : List Stmt :=
+  [.assign [.name "last_num"] lastExpression,
+   .assign [.name "first_num"] firstExpression,
+   .ifThen closureCondition [.return (.name "path")] [],
+   .return (.constant .none)]
+
+theorem base_source :
+    (executableBody ((findFunctionIn program.body "__formalsw_local_solve_dfs").getD ([], [])).2)[0]? =
+      some (.ifThen condition closedBody []) := rfl
+
+private theorem length_evaluates (ends : Ends heap path first last) (env : HeapCalls.Env)
+    (getPath : env "path" = some (.ref path)) (globals : Mutable.Globals) :
+    Evaluates program env condition heap (flag true) heap globals := by
+  apply Evaluates.compare (middle := heap) (afterRight := heap) (finalHeap := heap)
+    (av := number 6) (bv := number 6)
+  · apply Evaluates.builtin (.cons (Evaluates.lookup getPath) .nil)
+    simp [primitive, Mutable.length, ends.pathFound, ends.size, number]
+  · exact Evaluates.constant
+  · rfl
+
+private theorem last_evaluates (ends : Ends heap path first last) (env : HeapCalls.Env)
+    (getPath : env "path" = some (.ref path)) (globals : Mutable.Globals) :
+    Evaluates program env lastExpression heap (number last) heap globals := by
+  have nonempty : ends.items ≠ [] := by intro empty; have size := ends.size; simp [empty] at size
+  have inner : Evaluates program env
+      (.subscript (.name "path") (.unaryOp .uSub (.constant (.int 1)))) heap (.ref ends.lastAddress) heap globals := by
+    apply Evaluates.subscript (middle := heap) (afterIndex := heap) (finalHeap := heap)
+      (by intros; intro impossible; cases impossible) (Evaluates.lookup getPath)
+      (Evaluates.unary (middle := heap) (finalHeap := heap) (value := number 1) Evaluates.constant rfl)
+    simp [Mutable.getItem, ends.pathFound, Mutable.index, ends.size, nonempty, Except.map]
+    exact (List.getElem?_eq_some_iff.mp ends.tail).2
+  apply Evaluates.subscript (middle := heap) (afterIndex := heap) (finalHeap := heap)
+    (by intros; intro impossible; cases impossible) inner Evaluates.constant
+  simp [Mutable.getItem, ends.lastFound, Mutable.index, Except.map]
+
+private theorem first_evaluates (ends : Ends heap path first last) (env : HeapCalls.Env)
+    (getPath : env "path" = some (.ref path)) (globals : Mutable.Globals) :
+    Evaluates program env firstExpression heap (number first) heap globals := by
+  have nonempty : ends.items ≠ [] := by intro empty; have size := ends.size; simp [empty] at size
+  have inner : Evaluates program env (.subscript (.name "path") (.constant (.int 0))) heap
+      (.ref ends.firstAddress) heap globals := by
+    apply Evaluates.subscript (middle := heap) (afterIndex := heap) (finalHeap := heap)
+      (by intros; intro impossible; cases impossible) (Evaluates.lookup getPath) Evaluates.constant
+    simp [Mutable.getItem, ends.pathFound, Mutable.index, nonempty, ends.head, Except.map]
+  apply Evaluates.subscript (middle := heap) (afterIndex := heap) (finalHeap := heap)
+    (by intros; intro impossible; cases impossible) inner Evaluates.constant
+  simp [Mutable.getItem, ends.firstFound, Mutable.index, Except.map]
+
+private theorem closure_evaluates (first last : Int) (env : HeapCalls.Env) (heap : Mutable.Heap)
+    (getFirst : env "first_num" = some (number first)) (getLast : env "last_num" = some (number last))
+    (globals : Mutable.Globals) :
+    Evaluates program env closureCondition heap (flag (decide (last % 100 = first / 100))) heap globals := by
+  apply Evaluates.compare (middle := heap) (afterRight := heap) (finalHeap := heap)
+    (av := number (last % 100)) (bv := number (first / 100))
+  · apply Evaluates.binary (middle := heap) (afterRight := heap) (finalHeap := heap)
+      (Evaluates.lookup getLast) Evaluates.constant
+    simp [Mutable.binary, scalarBinary, number]
+  · apply Evaluates.binary (middle := heap) (afterRight := heap) (finalHeap := heap)
+      (Evaluates.lookup getFirst) Evaluates.constant
+    simp [Mutable.binary, scalarBinary, number]
+  · simp [HeapCalls.compare, scalarCompare, evalCmpOp, flag]
+
+/-- A completed path returns its existing list exactly when its endpoints link. -/
+theorem closed_result (heap : Mutable.Heap) (path : Nat) (first last : Int) (ends : Ends heap path first last)
+    (usedTypes usedNums prefixCell typesCell : Mutable.Value) (globals : Mutable.Globals := []) :
+    ReturnsValue program "__formalsw_local_solve_dfs" [.ref path, usedTypes, usedNums, prefixCell, typesCell]
+      heap (if last % 100 = first / 100 then .ref path else .scalar .none) heap globals := by
+  let params := ((findFunctionIn program.body "__formalsw_local_solve_dfs").getD ([], [])).1
+  let sourceBody := ((findFunctionIn program.body "__formalsw_local_solve_dfs").getD ([], [])).2
+  let env := functionEnv params sourceBody [.ref path, usedTypes, usedNums, prefixCell, typesCell] globals
+  let valued := setLocal env "last_num" (number last)
+  let bound := setLocal valued "first_num" (number first)
+  have getPath : env "path" = some (.ref path) := by cases globals <;> rfl
+  have valuedPath : valued "path" = some (.ref path) := by simpa [valued, setLocal] using getPath
+  have boundPath : bound "path" = some (.ref path) := by simpa [bound, setLocal] using valuedPath
+  have boundFirst : bound "first_num" = some (number first) := rfl
+  have boundLast : bound "last_num" = some (number last) := by simp [bound, valued, setLocal]
+  have closing := closure_evaluates first last bound heap boundFirst boundLast globals
+  apply BlockReturns.function rfl rfl
+  change BlockReturns program env
+    (.ifThen condition closedBody [] :: (executableBody sourceBody).drop 1) heap _ heap globals
+  apply BlockReturns.branch (flag := true) (value := flag true) (length_evaluates ends env getPath globals) rfl
+  apply BlockReturns.assign (last_evaluates ends env getPath globals)
+  apply BlockReturns.assign (first_evaluates ends valued valuedPath globals)
+  by_cases closes : last % 100 = first / 100
+  · simp only [if_pos closes]
+    apply BlockReturns.branch (flag := true) (by simpa [closes] using closing) rfl
+    exact BlockReturns.return_value (Evaluates.lookup boundPath)
+  · simp only [if_neg closes]
+    apply BlockReturns.branch (flag := false) (by simpa [closes] using closing) rfl
+    exact BlockReturns.return_value Evaluates.constant
+
+end solvers.«61».dfs
+
+namespace solvers.«61».solve_setup
+open FormalSW.PyAst FormalSW.PyAst.HeapCalls
+
+private abbrev program := Solvers.P61Ast.module
+private abbrev number (value : Int) : Mutable.Value := .scalar (.int value)
+private def numbers (values : List Int) : List Mutable.Value := values.map number
+private abbrev candidates := solvers.«61».generate_4digit_polygonals.answer
+
+def types : List Int := [3, 4, 5, 6, 7, 8]
+def typeCell : Expr := .subscript (.name "__formalsw_cell_solve_types") (.constant (.int 0))
+def numberExpression : Expr := .call (.name "generate_4digit_polygonals") [.name "t"]
+def numberGenerators : List (Expr × Expr × List Expr) := [(.name "t", typeCell, [])]
+def numberComprehension : Expr := .dictComp (.name "t") numberExpression numberGenerators
+
+private def working (base : Mutable.Heap) (entries : List (Constant × Mutable.Value)) (buffers : Mutable.Heap) :
+    Mutable.Heap := base ++ (.dict entries :: buffers)
+
+private def update (baseSize : Nat) (entries : List (Constant × Mutable.Value)) (buffers : Mutable.Heap)
+    (sides : Int) : List (Constant × Mutable.Value) × Mutable.Heap :=
+  (ScalarDict.insert entries (.int sides) (.ref (baseSize + 1 + buffers.length)),
+   buffers ++ [.list (numbers (candidates sides))])
+
+private def generateModel (baseSize : Nat) : List Int → List (Constant × Mutable.Value) → Mutable.Heap →
+    List (Constant × Mutable.Value) × Mutable.Heap
+  | [], entries, buffers => (entries, buffers)
+  | sides :: rest, entries, buffers =>
+      let next := update baseSize entries buffers sides
+      generateModel baseSize rest next.1 next.2
+
+private def numberBody (address : Nat) : List Stmt :=
+  [.comprehensionStore address (.name "t") numberExpression]
+
+private theorem number_store (base : Mutable.Heap) (entries : List (Constant × Mutable.Value))
+    (buffers : Mutable.Heap) (sides : Int) (valid : 3 ≤ sides) (env : HeapCalls.Env)
+    (getType : env "t" = some (number sides)) (globals : Mutable.Globals) :
+    BlockContinues program env (numberBody base.length) (working base entries buffers) env
+      (working base (update base.length entries buffers sides).1 (update base.length entries buffers sides).2)
+      globals := by
+  let heap := working base entries buffers
+  have evaluated : Evaluates program env numberExpression heap (.ref heap.length)
+      (heap ++ [.list (numbers (candidates sides))]) globals :=
+    Evaluates.call (.cons (Evaluates.lookup getType) .nil)
+      (solvers.«61».generate_4digit_polygonals.result sides valid heap globals)
+  have table : (heap ++ [.list (numbers (candidates sides))])[base.length]? = some (.dict entries) := by
+    simp [heap, working, List.append_assoc]
+  apply BlockContinues.comprehension_store (.cons (Evaluates.lookup getType) (.cons evaluated .nil))
+  have written := Mutable.setItem_dictionary _ _ _ table (.int sides) (.ref heap.length)
+  simpa [update, heap, working, number, List.set_append_right, List.length_append, List.append_assoc,
+    Nat.add_assoc, Nat.add_comm, Nat.add_left_comm] using written
+
+private theorem number_loop (remaining values : List Int) (position : Nat)
+    (suffix : values.drop position = remaining) (valid : ∀ s ∈ remaining, (3 : Int) ≤ s)
+    (base : Mutable.Heap) (input : Nat) (found : base[input]? = some (.list (numbers values)))
+    (entries : List (Constant × Mutable.Value)) (buffers : Mutable.Heap) (env : HeapCalls.Env)
+    (globals : Mutable.Globals) :
+    ∃ finalEnv, BlockContinues program env
+      [.sequenceStepLoop "t" (.ref input) position (numberBody base.length) []]
+      (working base entries buffers) finalEnv
+      (working base (generateModel base.length remaining entries buffers).1
+        (generateModel base.length remaining entries buffers).2) globals := by
+  have inside := (List.getElem?_eq_some_iff.mp found).1
+  have sequence (entries : List (Constant × Mutable.Value)) (buffers : Mutable.Heap) :
+      Mutable.sequence (.ref input) (working base entries buffers) =
+        some (.ok (numbers values), working base entries buffers) := by
+    simp [working, Mutable.sequence, List.getElem?_append_left inside, found]
+  induction remaining generalizing position entries buffers env with
+  | nil =>
+      refine ⟨env, ?_⟩
+      apply BlockContinues.sequence_done (items := numbers values)
+        (by simpa only [sequenceValue] using sequence entries buffers)
+      · have done : values[position]? = none := by rw [← List.head?_drop, suffix]; rfl
+        simp [numbers, List.getElem?_map, done]
+      · exact .nil
+  | cons sides rest ih =>
+      let bound := setLocal env "t" (number sides)
+      have generated := number_store base entries buffers sides (valid sides (by simp)) bound rfl globals
+      obtain ⟨finalEnv, executed⟩ := ih (position + 1)
+        (by simp only [List.drop_add_one_eq_tail_drop, suffix, List.tail_cons])
+        (by intro s member; exact valid s (by simp [member]))
+        (update base.length entries buffers sides).1 (update base.length entries buffers sides).2 bound
+      refine ⟨finalEnv, ?_⟩
+      apply BlockContinues.sequence_step (items := numbers values) (value := number sides)
+        (by simpa only [sequenceValue] using sequence entries buffers)
+      · have item : values[position]? = some sides := by rw [← List.head?_drop, suffix]; rfl
+        simp [numbers, List.getElem?_map, item]
+      · simpa [numberBody, Calls.loopContinuation, Calls.loopControl, Calls.loopControlStmt, generateModel]
+          using generated.append executed
+
+/-- Every comprehension callback runs the actual polygonal-list helper in the shared heap. -/
+theorem numbers_evaluate (values : List Int) (valid : ∀ s ∈ values, (3 : Int) ≤ s)
+    (heap : Mutable.Heap) (input cell : Nat) (env : HeapCalls.Env)
+    (getCell : env "__formalsw_cell_solve_types" = some (.ref cell))
+    (cellFound : heap[cell]? = some (.list [.ref input]))
+    (found : heap[input]? = some (.list (numbers values))) (globals : Mutable.Globals := []) :
+    Evaluates program env numberComprehension heap (.ref heap.length)
+      (working heap (generateModel heap.length values [] []).1 (generateModel heap.length values [] []).2)
+      globals := by
+  let masked := comprehensionTargetsEnv env numberGenerators
+  obtain ⟨finalEnv, executed⟩ := number_loop values values 0 rfl valid heap input found [] [] masked globals
+  have iterable : Evaluates program env typeCell heap (.ref input) heap globals := by
+    apply Evaluates.subscript (middle := heap) (afterIndex := heap) (finalHeap := heap)
+      (by intros; intro impossible; cases impossible) (Evaluates.lookup getCell) Evaluates.constant
+    exact Mutable.getItem_list heap cell 0 [.ref input] cellFound (by simp)
+  apply Evaluates.dict_comp_sequence (receiver := .ref input) (items := numbers values)
+    (middle := heap) (finalEnv := finalEnv)
+    (by intro expressions impossible; cases impossible)
+    (by intro expressions impossible; cases impossible)
+    (by intro expressions impossible; cases impossible)
+    iterable (by simp [Mutable.sequence, found])
+  simpa only [numberGenerators, comprehensionTargetName, comprehensionTargetBody, comprehensionFilters,
+    List.foldr_nil, comprehensionTargetsBody, sequenceSource, masked, numberBody, working] using executed
+
+def initialHeap (caller : Mutable.Heap) : Mutable.Heap :=
+  caller ++ [.list (numbers types), .list [.ref caller.length]]
+
+def initialEnv (env : HeapCalls.Env) (caller : Mutable.Heap) : HeapCalls.Env :=
+  setLocal env "__formalsw_cell_solve_types" (.ref (caller.length + 1))
+
+def initialCode : List Stmt :=
+  [.assign [.name "__formalsw_cell_solve_types"]
+    (.list [.list [.constant (.int 3), .constant (.int 4), .constant (.int 5),
+      .constant (.int 6), .constant (.int 7), .constant (.int 8)]])]
+
+theorem initial_source :
+    (executableBody ((findFunctionIn program.body "solve").getD ([], [])).2).take 1 = initialCode := rfl
+
+theorem initial_result (caller : Mutable.Heap) (env : HeapCalls.Env) (globals : Mutable.Globals := []) :
+    BlockContinues program env initialCode caller (initialEnv env caller) (initialHeap caller) globals := by
+  apply BlockContinues.assign
+  convert Evaluates.list (module := program) (env := env) (heap := caller) (globals := globals)
+    (.cons (Evaluates.list (.cons Evaluates.constant (.cons Evaluates.constant (.cons Evaluates.constant
+      (.cons Evaluates.constant (.cons Evaluates.constant (.cons Evaluates.constant .nil))))))) .nil) using 1 <;>
+    simp [initialHeap, types, numbers, List.append_assoc]
+
+def generatedHeap (caller : Mutable.Heap) : Mutable.Heap :=
+  let heap := initialHeap caller
+  let generated := generateModel heap.length types [] []
+  working heap generated.1 generated.2
+
+def numberEntries (caller : Mutable.Heap) : List (Constant × Mutable.Value) :=
+  types.map (fun sides => (.int sides, .ref (caller.length + sides.toNat)))
+
+/-- The generated lists occupy six distinct objects after the type cell and dictionary. -/
+theorem generated_layout (caller : Mutable.Heap) :
+    generatedHeap caller = initialHeap caller ++
+      (.dict (numberEntries caller) :: types.map (fun sides => .list (numbers (candidates sides)))) := by
+  simp [generatedHeap, initialHeap, generateModel, update, working, types, numberEntries,
+    ScalarDict.insert, scalarCompare, evalCmpOp, List.append_assoc, Nat.add_assoc, Nat.add_comm, Nat.add_left_comm]
+
+theorem generated_table (caller : Mutable.Heap) :
+    (generatedHeap caller)[(initialHeap caller).length]? = some (.dict (numberEntries caller)) := by
+  rw [generated_layout]
+  simp
+
+theorem generated_family (caller : Mutable.Heap) (sides : Int) (lower : 3 ≤ sides) (upper : sides ≤ 8) :
+    (generatedHeap caller)[caller.length + sides.toNat]? = some (.list (numbers (candidates sides))) := by
+  have cases : sides = 3 ∨ sides = 4 ∨ sides = 5 ∨ sides = 6 ∨ sides = 7 ∨ sides = 8 := by omega
+  rcases cases with rfl | rfl | rfl | rfl | rfl | rfl <;>
+    simp [generated_layout, initialHeap, types, List.append_assoc]
+
+theorem numberEntries_lookup (caller : Mutable.Heap) (sides : Int) (lower : 3 ≤ sides) (upper : sides ≤ 8) :
+    ScalarDict.lookup (numberEntries caller) (.int sides) = some (.ref (caller.length + sides.toNat)) := by
+  have cases : sides = 3 ∨ sides = 4 ∨ sides = 5 ∨ sides = 6 ∨ sides = 7 ∨ sides = 8 := by omega
+  rcases cases with rfl | rfl | rfl | rfl | rfl | rfl <;>
+    simp [numberEntries, types, ScalarDict.lookup, scalarCompare, evalCmpOp]
+
+def generatedEnv (env : HeapCalls.Env) (caller : Mutable.Heap) : HeapCalls.Env :=
+  setLocal (initialEnv env caller) "nums_by_type" (.ref (initialHeap caller).length)
+
+def generateCode : List Stmt :=
+  [.annAssign (.name "nums_by_type")
+    (.subscript (.name "dict") (.tuple [.name "int", .subscript (.name "list") (.name "int")]))
+    (some numberComprehension)]
+
+theorem generate_source :
+    ((executableBody ((findFunctionIn program.body "solve").getD ([], [])).2).drop 1).take 1 = generateCode := rfl
+
+/-- The first two actual solve statements construct all six candidate families and their shared type cell. -/
+theorem generate_result (caller : Mutable.Heap) (env : HeapCalls.Env) (globals : Mutable.Globals := []) :
+    BlockContinues program env (initialCode ++ generateCode) caller
+      (generatedEnv env caller) (generatedHeap caller) globals := by
+  apply (initial_result caller env globals).append
+  apply BlockContinues.annAssign
+  apply numbers_evaluate (globals := globals) types (by intro s member; simp [types] at member; omega)
+    (initialHeap caller) caller.length (caller.length + 1) (initialEnv env caller) rfl
+  · simp [initialHeap]
+  · simp [initialHeap]
+
+end solvers.«61».solve_setup
+
+namespace solvers.«61»
+
+theorem candidate_setup_source_result (caller : FormalSW.PyAst.Mutable.Heap)
+    (env : FormalSW.PyAst.HeapCalls.Env) (globals : FormalSW.PyAst.Mutable.Globals) :
+    FormalSW.PyAst.HeapCalls.BlockContinues Solvers.P61Ast.module env
+      ((FormalSW.PyAst.executableBody
+        ((FormalSW.PyAst.findFunctionIn Solvers.P61Ast.module.body "solve").getD ([], [])).2).take 2)
+      caller (solve_setup.generatedEnv env caller) (solve_setup.generatedHeap caller) globals := by
+  change FormalSW.PyAst.HeapCalls.BlockContinues Solvers.P61Ast.module env
+    (solve_setup.initialCode ++ solve_setup.generateCode) caller
+    (solve_setup.generatedEnv env caller) (solve_setup.generatedHeap caller) globals
+  exact solve_setup.generate_result caller env globals
 
 end solvers.«61»
 
@@ -527,6 +864,43 @@ def Store.bump (store : Store base heap processed) (value : Int) (address : Nat)
       rw [looked] at absent
       cases absent
     simpa [bucket, different] using store.missing key absent
+
+/-- Search callers need the bucket contents after the construction frame has returned. -/
+structure Buckets (heap : Mutable.Heap) (address : Nat) (values : List Int) where
+  entries : List (Int × Nat)
+  table : heap[address]? = some (.dict (encode entries))
+  present : ∀ key target, lookup entries key = some target →
+    address < target ∧ heap[target]? = some (.list (numbers (bucket values key)))
+  missing : ∀ key, lookup entries key = none → bucket values key = []
+
+def Store.view (store : Store base heap processed) : Buckets heap base.length processed where
+  entries := store.entries
+  table := store.table
+  present := store.present
+  missing := store.missing
+
+variable {address : Nat} {values : List Int}
+
+def Buckets.append (view : Buckets heap address values) (extra : Mutable.Heap) :
+    Buckets (heap ++ extra) address values where
+  entries := view.entries
+  table := found_append heap extra address _ view.table
+  present := by
+    intro key target looked
+    obtain ⟨later, found⟩ := view.present key target looked
+    exact ⟨later, found_append heap extra target _ found⟩
+  missing := view.missing
+
+/-- Storing an outer dictionary entry cannot change a later nested prefix map. -/
+def Buckets.set_before (view : Buckets heap address values) (location : Nat) (earlier : location < address)
+    (object : Mutable.Object) : Buckets (heap.set location object) address values where
+  entries := view.entries
+  table := by simpa only [List.getElem?_set_ne (by omega : location ≠ address)] using view.table
+  present := by
+    intro key target looked
+    obtain ⟨later, found⟩ := view.present key target looked
+    exact ⟨later, by simpa only [List.getElem?_set_ne (by omega : location ≠ target)] using found⟩
+  missing := view.missing
 
 private def defaultExpression : Expr :=
   .call (.attribute (.name "mp") "setdefault") [.name "pref", .list []]
