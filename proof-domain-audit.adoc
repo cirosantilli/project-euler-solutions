@@ -20,7 +20,7 @@ Prefer a meaningful argument shared by both implementations. A reference-only se
 | 62 | Supplied cube-root limit | Accept only the requested class size and expand complete digit widths until successful. Internal finite counting windows come from those widths.
 |===
 
-Source proofs still awaiting replacement are retained as `.py.lean.attempt`; their README proof links are removed, and they are not counted as current proofs. Problem 36 has structural equivalence and termination proofs for every nonnegative limit, with no fixed prefix cutoff. Problem 40 has a structural equivalence and termination proof for every finite tuple of positive positions, with no maximum position. Unchanged zero-argument `Equiv` proofs remain in place; they need not be discarded merely because they have no arguments.
+Source proofs still awaiting replacement are retained as `.py.lean.attempt`; their README proof links are removed, and they are not counted as current proofs. Problem 36 has structural equivalence and termination proofs for every nonnegative limit, with no fixed prefix cutoff. Problem 40 has a structural equivalence and termination proof for every finite tuple of positive positions, with no maximum position. Problem 52 has structural equivalence for every positive multiplier: both searches terminate at the least positive solution for multipliers one through nine and diverge for larger multipliers, where digit widths rule out a solution. Unchanged zero-argument `Equiv` proofs remain in place; they need not be discarded merely because they have no arguments.
 
 == Remaining implementation and proof restrictions
 
@@ -35,7 +35,6 @@ Source proofs still awaiting replacement are retained as `.py.lean.attempt`; the
 | 37 | Fixed: the optimized sieve doubles until it finds the eleven primes specified by the problem. | Restore equivalence to the unbounded reference; there is no fixed sieve cutoff.
 | 44 | Both implementations accept the same finite pentagonal-index bound. | This is a valid bounded parameterization, but equivalence alone does not prove that the default answer is the global minimum over all indices.
 | 51 | Fixed: the decimal-width cutoff and proof-only target cap are removed. | Replace the archived restricted-domain proof; establish termination when a matching family exists.
-| 52 | Fixed: the proof-only upper cap is removed and the old proof is archived. | Prove the generalized equivalence. `1176470588235294` works through multiplier eight, and `105263157894736842` through nine; these are checked witnesses, not claims of leastness.
 | 62 | The old finite-window theorem does not establish the new unbounded public reference contract. | Connect exact class counts and successful-search witnesses to `naive(target)` and `solve(k)` with the same argument.
 |===
 
