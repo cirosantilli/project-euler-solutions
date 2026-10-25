@@ -1,3 +1,5 @@
+import ProjectEulerSolutions.Lib.PokerNestedKeys
+import ProjectEulerSolutions.Lib.PokerScoreOrder
 import data.«project-euler-statements».data.py.project_euler_statements.«p54.py»
 import «.formalsw».solvers.«54.py.ast»
 import lang.py.FormalSW.DictionaryCalls
@@ -3711,3 +3713,1513 @@ theorem isFlush_eq (values : List String) :
   exact unique_length_one_iff values
 
 end ProjectEulerSolutions.PokerFlushEquivalence
+
+namespace solvers.«54».numeric_score.semantics
+open FormalSW.PyAst FormalSW.PyAst.HeapCalls
+open ProjectEulerSolutions.PokerScoreOrder
+open solvers.«54».numeric_score.totality
+set_option Elab.async false
+
+private abbrev program := Solvers.P54Ast.module
+private abbrev number (value : Int) : Mutable.Value := .scalar (.int value)
+private abbrev numbers (values : List Int) : List Mutable.Value := values.map number
+private abbrev flag (value : Bool) : Mutable.Value := .scalar (.bool value)
+private def code : List Stmt := executableBody ((findFunctionIn program.body "_score_values").getD ([], [])).2
+
+/-- The score is represented by the actual Python tuple shape of its category. -/
+inductive Represents (heap : Heap) : Mutable.Value → Score → Prop where
+  | flat (address : Nat) (tag : Int) (key : List Int)
+      (kind : tag = 2 ∨ tag = 4 ∨ tag = 6 ∨ tag = 7 ∨ tag = 8)
+      (found : heap[address]? = some (.tuple (numbers (tag :: key)))) :
+      Represents heap (.ref address) ⟨tag, key⟩
+  | nested (address tailAddress : Nat) (tag : Int) (key : List Int)
+      (kind : tag = 0 ∨ tag = 5)
+      (found : heap[address]? = some (.tuple [number tag, .ref tailAddress]))
+      (tailFound : heap[tailAddress]? = some (.tuple (numbers key))) :
+      Represents heap (.ref address) ⟨tag, key⟩
+  | repeated (address tailAddress : Nat) (tag rank : Int) (kickers : List Int)
+      (kind : tag = 1 ∨ tag = 3)
+      (found : heap[address]? = some (.tuple [number tag, number rank, .ref tailAddress]))
+      (tailFound : heap[tailAddress]? = some (.tuple (numbers kickers))) :
+      Represents heap (.ref address) ⟨tag, rank :: kickers⟩
+
+theorem Represents.append {heap : Heap} {answer : Mutable.Value} {score : Score}
+    (represented : Represents heap answer score) (extra : Heap) : Represents (heap ++ extra) answer score := by
+  cases represented with
+  | flat address tag key kind found =>
+      exact .flat address tag key kind (ProjectEulerSolutions.HeapCollection.prefix_found _ _ _ _ found)
+  | nested address tailAddress tag key kind found tailFound =>
+      exact .nested address tailAddress tag key kind
+        (ProjectEulerSolutions.HeapCollection.prefix_found _ _ _ _ found)
+        (ProjectEulerSolutions.HeapCollection.prefix_found _ _ _ _ tailFound)
+  | repeated address tailAddress tag rank kickers kind found tailFound =>
+      exact .repeated address tailAddress tag rank kickers kind
+        (ProjectEulerSolutions.HeapCollection.prefix_found _ _ _ _ found)
+        (ProjectEulerSolutions.HeapCollection.prefix_found _ _ _ _ tailFound)
+
+theorem Represents.tuple {heap : Heap} {answer : Mutable.Value} {score : Score}
+    (represented : Represents heap answer score) :
+    ∃ address tail, answer = .ref address ∧ heap[address]? = some (.tuple (number score.tag :: tail)) := by
+  cases represented with
+  | flat address tag key kind found => exact ⟨address, numbers key, rfl, found⟩
+  | nested address tailAddress tag key kind found tailFound => exact ⟨address, [.ref tailAddress], rfl, found⟩
+  | repeated address tailAddress tag rank kickers kind found tailFound =>
+      exact ⟨address, [number rank, .ref tailAddress], rfl, found⟩
+
+private theorem compare_different {heap : Heap} {leftValue rightValue : Mutable.Value} {left right : Score}
+    (leftRep : Represents heap leftValue left) (rightRep : Represents heap rightValue right)
+    (different : left.tag ≠ right.tag) :
+    HeapCalls.compare .gt leftValue rightValue heap =
+      some (.ok (.scalar (.bool (HeapSort.lexInt (right.tag :: right.key) (left.tag :: left.key)))), heap) := by
+  obtain ⟨leftAddress, leftTail, rfl, leftFound⟩ := leftRep.tuple
+  obtain ⟨rightAddress, rightTail, rfl, rightFound⟩ := rightRep.tuple
+  simpa only [HeapSort.lexInt, if_neg (Ne.symm different)] using
+    HeapCalls.compare_tuple_head_gt heap leftAddress rightAddress left.tag right.tag leftTail rightTail
+      leftFound rightFound different
+
+/-- The source's category-specific tuple nesting preserves exactly the flattened compressed-key order. -/
+theorem Represents.compare_gt {heap : Heap} {leftValue rightValue : Mutable.Value} {left right : Score}
+    (leftRep : Represents heap leftValue left) (rightRep : Represents heap rightValue right) :
+    HeapCalls.compare .gt leftValue rightValue heap =
+      some (.ok (.scalar (.bool (HeapSort.lexInt (right.tag :: right.key) (left.tag :: left.key)))), heap) := by
+  by_cases same : left.tag = right.tag
+  · cases leftRep with
+    | flat leftAddress leftTag leftKey leftKind leftFound =>
+        cases rightRep with
+        | flat rightAddress rightTag rightKey rightKind rightFound =>
+            exact HeapCalls.compare_int_tuple_gt heap leftAddress rightAddress (leftTag :: leftKey)
+              (rightTag :: rightKey) leftFound rightFound
+        | nested rightAddress rightTailAddress rightTag rightKey rightKind rightFound rightTailFound =>
+            rcases leftKind with leftKind | leftKind | leftKind | leftKind | leftKind <;>
+              rcases rightKind with rightKind | rightKind <;> simp_all
+        | repeated rightAddress rightTailAddress rightTag rank kickers rightKind rightFound rightTailFound =>
+            rcases leftKind with leftKind | leftKind | leftKind | leftKind | leftKind <;>
+              rcases rightKind with rightKind | rightKind <;> simp_all
+    | nested leftAddress leftTailAddress leftTag leftKey leftKind leftFound leftTailFound =>
+        cases rightRep with
+        | flat rightAddress rightTag rightKey rightKind rightFound =>
+            rcases rightKind with rightKind | rightKind | rightKind | rightKind | rightKind <;>
+              rcases leftKind with leftKind | leftKind <;> simp_all
+        | nested rightAddress rightTailAddress rightTag rightKey rightKind rightFound rightTailFound =>
+            simpa using ProjectEulerSolutions.PokerNestedKeys.compare_gt heap leftAddress rightAddress
+              leftTailAddress rightTailAddress [leftTag] [rightTag] leftKey rightKey
+              leftFound rightFound leftTailFound rightTailFound rfl
+        | repeated rightAddress rightTailAddress rightTag rank kickers rightKind rightFound rightTailFound =>
+            rcases leftKind with leftKind | leftKind <;> rcases rightKind with rightKind | rightKind <;> simp_all
+    | repeated leftAddress leftTailAddress leftTag leftRank leftKickers leftKind leftFound leftTailFound =>
+        cases rightRep with
+        | flat rightAddress rightTag rightKey rightKind rightFound =>
+            rcases rightKind with rightKind | rightKind | rightKind | rightKind | rightKind <;>
+              rcases leftKind with leftKind | leftKind <;> simp_all
+        | nested rightAddress rightTailAddress rightTag rightKey rightKind rightFound rightTailFound =>
+            rcases leftKind with leftKind | leftKind <;> rcases rightKind with rightKind | rightKind <;> simp_all
+        | repeated rightAddress rightTailAddress rightTag rightRank rightKickers rightKind rightFound rightTailFound =>
+            simpa using ProjectEulerSolutions.PokerNestedKeys.compare_gt heap leftAddress rightAddress
+              leftTailAddress rightTailAddress [leftTag, leftRank] [rightTag, rightRank] leftKickers rightKickers
+              leftFound rightFound leftTailFound rightTailFound rfl
+  · exact compare_different leftRep rightRep same
+
+/-- Frequency/rank rows are a pure value independent of the source heap addresses. -/
+def rows (values : List Int) : List (List Int) :=
+  ProjectEulerSolutions.TupleSorting.sortedRows true
+    ((count_values.counts values).map fun pair => [pair.2, pair.1])
+
+def field (values : List Int) (index column : Nat) : Int := ((rows values)[index]?.getD []).getD column 0
+
+theorem rows_eq (heap : Heap) (values : List Int) :
+    (groups heap values).map (ProjectEulerSolutions.TupleSorting.readInts (straight_detection.groupedHeap heap values)) =
+      rows values := by
+  let counted := straight_detection.countedHeap heap values
+  have found : counted[heap.length]? = some (.dict (count_values.entries (count_values.counts values))) := by
+    simp [counted, straight_detection.countedHeap]
+  change (rank_groups.resultGroups counted (count_values.counts values)).map
+    (ProjectEulerSolutions.TupleSorting.readInts
+      (rank_groups.collected counted (count_values.counts values) ++
+        [.list (rank_groups.resultGroups counted (count_values.counts values))])) = _
+  rw [rank_groups.resultGroups_readInts_append counted heap.length (count_values.counts values) found,
+    rank_groups.resultGroups_readInts counted heap.length (count_values.counts values) found]
+  rfl
+
+theorem group_row (heap : Heap) (values : List Int) (index address : Nat) (count rank : Int)
+    (atGroup : (groups heap values)[index]? = some (.ref address))
+    (found : (straight_detection.groupedHeap heap values)[address]? = some (.tuple [number count, number rank])) :
+    (rows values)[index]? = some [count, rank] := by
+  rw [← rows_eq heap values, List.getElem?_map, atGroup]
+  simp [ProjectEulerSolutions.TupleSorting.readInts, found, number]
+
+/-- The category decision after the source's straight-flush early return.
+This uses exact frequency/rank rows, and retains the source's flush priority even for nonstandard suit lists. -/
+def suffixScore (values : List Int) (high : Int) (flush straight : Bool) : Score :=
+  let count := field values 0 0
+  let rank := field values 0 1
+  let secondCount := field values 1 0
+  let secondRank := field values 1 1
+  if count = 4 then
+    ⟨7, [rank, repeated_categories.quad_path.maximum (values.filter fun value => value != rank)]⟩
+  else if count = 3 ∧ secondCount = 2 then ⟨6, [rank, secondRank]⟩
+  else if flush then ⟨5, values⟩
+  else if straight then ⟨4, [high]⟩
+  else if count = 3 then ⟨3, rank :: filtered_categories.kickers values rank⟩
+  else if count = 2 ∧ secondCount = 2 then
+    ⟨2, [max rank secondRank, min rank secondRank,
+      repeated_categories.quad_path.maximum (two_pairs.remaining values rank secondRank)]⟩
+  else if count = 2 then ⟨1, rank :: filtered_categories.kickers values rank⟩
+  else ⟨0, values⟩
+
+def score (values : List Int) (suits : List String) : Score :=
+  let high := straight_detection.high (orderedUnique values)
+  let straight := straight_detection.detected (orderedUnique values)
+  if straight && isFlush suits then ⟨8, [high]⟩
+  else suffixScore (descending values) high (isFlush suits) straight
+
+private theorem represented_flat (heap : Heap) (tag : Int) (key : List Int)
+    (kind : tag = 2 ∨ tag = 4 ∨ tag = 6 ∨ tag = 7 ∨ tag = 8) :
+    Represents (heap ++ [.tuple (numbers (tag :: key))]) (.ref heap.length) ⟨tag, key⟩ := by
+  exact .flat heap.length tag key kind (by simp)
+
+private theorem represented_simple (heap : Heap) (values : List Int) (flush straight : Bool) (high : Int) :
+    Represents (simple_categories.output heap values flush straight high)
+      (simple_categories.answer heap flush straight)
+      (if flush then ⟨5, values⟩ else if straight then ⟨4, [high]⟩ else ⟨0, values⟩) := by
+  cases flush <;> cases straight
+  · exact .nested (heap.length+1) heap.length 0 values (by simp)
+      (by simp [simple_categories.output]) (by simp [simple_categories.output])
+  · exact represented_flat heap 4 [high] (by simp)
+  · exact .nested (heap.length+1) heap.length 5 values (by simp)
+      (by simp [simple_categories.output]) (by simp [simple_categories.output])
+  · exact .nested (heap.length+1) heap.length 5 values (by simp)
+      (by simp [simple_categories.output]) (by simp [simple_categories.output])
+
+private theorem represented_filtered (heap : Heap) (values : List Int) (rank tag : Int)
+    (kind : tag = 1 ∨ tag = 3) :
+    Represents (filtered_categories.output heap values rank tag) (.ref (heap.length+3))
+      ⟨tag, rank :: filtered_categories.kickers values rank⟩ := by
+  exact .repeated (heap.length+3) (heap.length+2) tag rank _ kind
+    (by simp [filtered_categories.output]) (by simp [filtered_categories.output])
+
+/-- The complete proved source suffix also identifies the value in its actual final heap. -/
+theorem suffix_result (heap : Heap) (env : HeapCalls.Env) (valuesAddress : Nat)
+    (values : List Int) (high : Int) (flush straight : Bool) (globals : Mutable.Globals)
+    (five : values.length = 5)
+    (getValues : env "values" = some (.ref valuesAddress))
+    (valuesFound : (straight_detection.groupedHeap heap values)[valuesAddress]? = some (.list (numbers values)))
+    (getGroups : env "groups" = some (.ref (groupsAddress heap values)))
+    (getFlush : env "is_flush" = some (flag flush))
+    (getStraight : env "is_straight" = some (flag straight))
+    (getHigh : env "straight_high" = some (number high)) :
+    ∃ answer finalHeap, BlockReturns program env (code.drop 9)
+      (straight_detection.groupedHeap heap values) answer finalHeap globals ∧
+      Represents finalHeap answer (suffixScore values high flush straight) := by
+  have nonempty : values ≠ [] := by intro empty; subst values; simp at five
+  have listFound := straight_detection.grouped_found heap values
+  have profile := straight_detection.grouped_profile heap values five
+  simp only [List.map_map] at profile
+  change frequencies heap values ∈ ProjectEulerSolutions.PokerCountPatterns.profiles at profile
+  simp only [ProjectEulerSolutions.PokerCountPatterns.profiles, List.mem_cons, List.not_mem_nil, or_false] at profile
+  rcases profile with allEqual | quad | fullHouse | triple | twoPairs | onePair | singles
+  · obtain ⟨address, rank, first, pair, counted⟩ := group_at heap values 0 5 (by rw [allEqual]; rfl)
+    have row := group_row heap values 0 address 5 rank first pair
+    refine ⟨_, _, simple_categories.result (straight_detection.groupedHeap heap values) env
+      valuesAddress (groupsAddress heap values) address values (groups heap values) 5 rank high flush straight globals
+      nonempty getValues valuesFound getGroups listFound first pair getFlush getStraight getHigh
+      (by decide) (by decide) (by decide), ?_⟩
+    simpa [suffixScore, field, row] using represented_simple (straight_detection.groupedHeap heap values) values flush straight high
+  · obtain ⟨address, rank, first, pair, counted⟩ := group_at heap values 0 4 (by rw [quad]; rfl)
+    have row := group_row heap values 0 address 4 rank first pair
+    have remains : values.filter (fun value => value != rank) ≠ [] :=
+      Kickers.four_kicker_nonempty values rank five (by omega)
+    refine ⟨_, _, repeated_categories.quad_path.four_of_a_kind (straight_detection.groupedHeap heap values) env
+      valuesAddress (groupsAddress heap values) address values (groups heap values) rank globals
+      getValues getGroups valuesFound listFound first pair remains, ?_⟩
+    have represented : Represents
+        (straight_detection.groupedHeap heap values ++
+          [.list (numbers (values.filter fun value => value != rank)),
+            .tuple [number 7, number rank,
+              number (repeated_categories.quad_path.maximum (values.filter fun value => value != rank))]])
+        (.ref ((straight_detection.groupedHeap heap values).length+1))
+        ⟨7, [rank, repeated_categories.quad_path.maximum (values.filter fun value => value != rank)]⟩ :=
+      .flat _ _ _ (by simp) (by simp)
+    simpa [suffixScore, field, row] using represented
+  · obtain ⟨firstAddress, trip, first, tripFound, tripCount⟩ := group_at heap values 0 3 (by rw [fullHouse]; rfl)
+    obtain ⟨secondAddress, pair, second, pairFound, pairCount⟩ := group_at heap values 1 2 (by rw [fullHouse]; rfl)
+    have row := group_row heap values 0 firstAddress 3 trip first tripFound
+    have rowSecond := group_row heap values 1 secondAddress 2 pair second pairFound
+    refine ⟨_, _, repeated_categories.full_house (straight_detection.groupedHeap heap values) env
+      (groupsAddress heap values) firstAddress secondAddress (groups heap values) trip pair globals
+      getGroups listFound first second tripFound pairFound, ?_⟩
+    simpa [suffixScore, field, row, rowSecond, numbers] using
+      represented_flat (straight_detection.groupedHeap heap values) 6 [trip, pair] (by simp)
+  · obtain ⟨firstAddress, rank, first, firstFound, firstCount⟩ := group_at heap values 0 3 (by rw [triple]; rfl)
+    obtain ⟨secondAddress, secondRank, second, secondFound, secondCount⟩ := group_at heap values 1 1 (by rw [triple]; rfl)
+    have row := group_row heap values 0 firstAddress 3 rank first firstFound
+    have rowSecond := group_row heap values 1 secondAddress 1 secondRank second secondFound
+    by_cases priority : flush || straight = true
+    · refine ⟨_, _, priority_categories.triple_without_full_house (straight_detection.groupedHeap heap values) env
+        valuesAddress (groupsAddress heap values) firstAddress secondAddress values (groups heap values)
+        rank 1 secondRank high flush straight globals nonempty getValues valuesFound getGroups listFound
+        first second firstFound secondFound getFlush getStraight getHigh (by decide) priority, ?_⟩
+      have represented := represented_simple (straight_detection.groupedHeap heap values) values flush straight high
+      cases flush <;> cases straight <;> simp_all [suffixScore, field]
+    · have noFlush : flush = false := by cases flush <;> cases straight <;> simp_all
+      have noStraight : straight = false := by cases flush <;> cases straight <;> simp_all
+      have remains : filtered_categories.filtered values rank ≠ [] :=
+        filtered_categories.nonempty_three values rank five (by omega)
+      refine ⟨_, _, filtered_categories.trips (straight_detection.groupedHeap heap values) env
+        valuesAddress (groupsAddress heap values) firstAddress secondAddress values (groups heap values) rank 1 secondRank globals
+        getValues valuesFound getGroups listFound first second firstFound secondFound (by decide)
+        (by simpa only [noFlush] using getFlush) (by simpa only [noStraight] using getStraight) remains, ?_⟩
+      simpa [suffixScore, field, row, rowSecond, noFlush, noStraight] using
+        represented_filtered (straight_detection.groupedHeap heap values) values rank 3 (by simp)
+  · obtain ⟨firstAddress, left, first, firstFound, firstCount⟩ := group_at heap values 0 2 (by rw [twoPairs]; rfl)
+    obtain ⟨secondAddress, right, second, secondFound, secondCount⟩ := group_at heap values 1 2 (by rw [twoPairs]; rfl)
+    have row := group_row heap values 0 firstAddress 2 left first firstFound
+    have rowSecond := group_row heap values 1 secondAddress 2 right second secondFound
+    by_cases priority : flush || straight = true
+    · refine ⟨_, _, priority_categories.without_triple_or_quad (straight_detection.groupedHeap heap values) env
+        valuesAddress (groupsAddress heap values) firstAddress values (groups heap values) 2 left high flush straight globals
+        nonempty getValues valuesFound getGroups listFound first firstFound getFlush getStraight getHigh
+        (by decide) (by decide) priority, ?_⟩
+      have represented := represented_simple (straight_detection.groupedHeap heap values) values flush straight high
+      cases flush <;> cases straight <;> simp_all [suffixScore, field]
+    · have noFlush : flush = false := by cases flush <;> cases straight <;> simp_all
+      have noStraight : straight = false := by cases flush <;> cases straight <;> simp_all
+      have remains : two_pairs.remaining values left right ≠ [] := by
+        rw [two_pairs.remaining_eq]
+        apply Kickers.two_pair_positions_kicker_nonempty (straight_detection.countedHeap heap values) heap.length values
+          (by simp [straight_detection.countedHeap]) five 0 1 (.ref firstAddress) (.ref secondAddress)
+          first second (by decide) left right
+        · change ProjectEulerSolutions.TupleSorting.readInts (straight_detection.groupedHeap heap values) (.ref firstAddress) = [2, left]
+          simp [ProjectEulerSolutions.TupleSorting.readInts, firstFound]
+        · change ProjectEulerSolutions.TupleSorting.readInts (straight_detection.groupedHeap heap values) (.ref secondAddress) = [2, right]
+          simp [ProjectEulerSolutions.TupleSorting.readInts, secondFound]
+      refine ⟨_, _, two_pairs.result (straight_detection.groupedHeap heap values) env
+        valuesAddress (groupsAddress heap values) firstAddress secondAddress values (groups heap values) left right globals
+        getValues valuesFound getGroups listFound first second firstFound secondFound
+        (by simpa only [noFlush] using getFlush) (by simpa only [noStraight] using getStraight) remains, ?_⟩
+      have represented : Represents
+          (straight_detection.groupedHeap heap values ++
+            [.list (numbers (two_pairs.remaining values left right)),
+              .tuple [number 2, number (max left right), number (min left right),
+                number (repeated_categories.quad_path.maximum (two_pairs.remaining values left right))]])
+          (.ref ((straight_detection.groupedHeap heap values).length+1))
+          ⟨2, [max left right, min left right,
+            repeated_categories.quad_path.maximum (two_pairs.remaining values left right)]⟩ :=
+        .flat _ _ _ (by simp) (by simp)
+      simpa [suffixScore, field, row, rowSecond, noFlush, noStraight] using represented
+  · obtain ⟨firstAddress, rank, first, firstFound, firstCount⟩ := group_at heap values 0 2 (by rw [onePair]; rfl)
+    obtain ⟨secondAddress, secondRank, second, secondFound, secondCount⟩ := group_at heap values 1 1 (by rw [onePair]; rfl)
+    have row := group_row heap values 0 firstAddress 2 rank first firstFound
+    have rowSecond := group_row heap values 1 secondAddress 1 secondRank second secondFound
+    by_cases priority : flush || straight = true
+    · refine ⟨_, _, priority_categories.without_triple_or_quad (straight_detection.groupedHeap heap values) env
+        valuesAddress (groupsAddress heap values) firstAddress values (groups heap values) 2 rank high flush straight globals
+        nonempty getValues valuesFound getGroups listFound first firstFound getFlush getStraight getHigh
+        (by decide) (by decide) priority, ?_⟩
+      have represented := represented_simple (straight_detection.groupedHeap heap values) values flush straight high
+      cases flush <;> cases straight <;> simp_all [suffixScore, field]
+    · have noFlush : flush = false := by cases flush <;> cases straight <;> simp_all
+      have noStraight : straight = false := by cases flush <;> cases straight <;> simp_all
+      have remains : filtered_categories.filtered values rank ≠ [] :=
+        filtered_categories.nonempty_pair values rank five (by omega)
+      refine ⟨_, _, filtered_categories.pair (straight_detection.groupedHeap heap values) env
+        valuesAddress (groupsAddress heap values) firstAddress secondAddress values (groups heap values) rank 1 secondRank globals
+        getValues valuesFound getGroups listFound first second firstFound secondFound (by decide)
+        (by simpa only [noFlush] using getFlush) (by simpa only [noStraight] using getStraight) remains, ?_⟩
+      simpa [suffixScore, field, row, rowSecond, noFlush, noStraight] using
+        represented_filtered (straight_detection.groupedHeap heap values) values rank 1 (by simp)
+  · obtain ⟨address, rank, first, pair, counted⟩ := group_at heap values 0 1 (by rw [singles]; rfl)
+    have row := group_row heap values 0 address 1 rank first pair
+    refine ⟨_, _, simple_categories.result (straight_detection.groupedHeap heap values) env
+      valuesAddress (groupsAddress heap values) address values (groups heap values) 1 rank high flush straight globals
+      nonempty getValues valuesFound getGroups listFound first pair getFlush getStraight getHigh
+      (by decide) (by decide) (by decide), ?_⟩
+    simpa [suffixScore, field, row] using represented_simple (straight_detection.groupedHeap heap values) values flush straight high
+
+/-- The actual source helper computes a specified compressed score, with its exact tuple representation. -/
+theorem result (heap : Heap) (valuesAddress suitsAddress : Nat) (values : List Int) (suits : List String)
+    (globals : Mutable.Globals) (five : values.length = 5)
+    (valuesFound : heap[valuesAddress]? = some (.list (numbers values)))
+    (suitsFound : heap[suitsAddress]? = some (.list (suits.map fun value => .scalar (.string value)))) :
+    ∃ answer finalHeap, ReturnsValue program "_score_values" [.ref valuesAddress, .ref suitsAddress]
+      heap answer finalHeap globals ∧ Represents finalHeap answer (score values suits) := by
+  have nonempty : values ≠ [] := by intro empty; subst values; simp at five
+  by_cases both : (straight_detection.detected (orderedUnique values) && isFlush suits) = true
+  · obtain ⟨straight, flush⟩ := Bool.and_eq_true_iff.mp both
+    refine ⟨_, _, straight_detection.straight_flush_result heap valuesAddress suitsAddress values suits globals
+      nonempty valuesFound suitsFound straight flush, ?_⟩
+    simpa only [score, both, ↓reduceIte] using
+      represented_flat (normalizationHeap heap valuesAddress values suits ++ straight_detection.extra (orderedUnique values))
+        8 [straight_detection.high (orderedUnique values)] (by simp)
+  · have notBoth : (straight_detection.detected (orderedUnique values) && isFlush suits) = false := Bool.eq_false_iff.mpr both
+    let start := composition.entry globals valuesAddress suitsAddress
+    let prepared := composition.preparedHeap heap valuesAddress values suits
+    let ready := composition.scoredEnv start heap valuesAddress values suits
+    have getValues : ready "values" = some (.ref valuesAddress) := by
+      change straight_detection.groupedEnv (composition.preparedEnv start heap values suits) prepared
+        (descending values) "values" = _
+      rw [straight_detection.grouped_other _ _ _ "values" (by decide) (by decide),
+        composition.prepared_other _ _ _ _ "values" (by decide) (by decide) (by decide) (by decide)]
+      cases globals <;> rfl
+    have getGroups : ready "groups" = some (.ref (groupsAddress prepared (descending values))) := by
+      simp [ready, composition.scoredEnv, straight_detection.groupedEnv, groupsAddress, prepared, setLocal]
+    have getFlush : ready "is_flush" = some (flag (isFlush suits)) := by
+      change straight_detection.groupedEnv (composition.preparedEnv start heap values suits) prepared
+        (descending values) "is_flush" = _
+      rw [straight_detection.grouped_other _ _ _ "is_flush" (by decide) (by decide)]
+      exact composition.prepared_flush start heap values suits
+    have getStraight : ready "is_straight" = some (flag (straight_detection.detected (orderedUnique values))) := by
+      change straight_detection.groupedEnv (composition.preparedEnv start heap values suits) prepared
+        (descending values) "is_straight" = _
+      rw [straight_detection.grouped_other _ _ _ "is_straight" (by decide) (by decide)]
+      exact composition.prepared_straight start heap values suits
+    have getHigh : ready "straight_high" = some (number (straight_detection.high (orderedUnique values))) := by
+      change straight_detection.groupedEnv (composition.preparedEnv start heap values suits) prepared
+        (descending values) "straight_high" = _
+      rw [straight_detection.grouped_other _ _ _ "straight_high" (by decide) (by decide)]
+      exact straight_detection.updated_high (normalizationEnv start heap suits) (orderedUnique values)
+        (by simp [normalizationEnv, setLocal])
+    have sortedFive : (descending values).length = 5 :=
+      (ProjectEulerSolutions.PokerUnique.descending_perm values).length_eq.trans five
+    have originalValues : prepared[valuesAddress]? = some (.list (numbers (descending values))) :=
+      composition.prepared_values heap valuesAddress values suits valuesFound
+    obtain ⟨answer, finalHeap, suffix, represented⟩ := suffix_result prepared ready valuesAddress (descending values)
+      (straight_detection.high (orderedUnique values)) (isFlush suits) (straight_detection.detected (orderedUnique values))
+      globals sortedFive getValues (grouped_preserves prepared (descending values) valuesAddress _ originalValues)
+      getGroups getFlush getStraight getHigh
+    refine ⟨answer, finalHeap, composition.result_of_suffix heap valuesAddress suitsAddress values suits globals
+      nonempty valuesFound suitsFound notBoth answer finalHeap suffix, ?_⟩
+    simpa only [score, notBoth, Bool.false_eq_true, ↓reduceIte] using represented
+
+end solvers.«54».numeric_score.semantics
+
+namespace solvers.«54».numeric_score.semantics
+open FormalSW.PyAst
+open ProjectEulerSolutions.PokerScoreOrder
+set_option Elab.async false
+
+/-- Sorting frequency/rank rows does not change their membership or multiplicities. -/
+theorem rows_perm (values : List Int) :
+    (rows values).Perm ((count_values.counts values).map fun pair => [pair.2, pair.1]) := by
+  unfold rows ProjectEulerSolutions.TupleSorting.sortedRows
+  exact (List.reverse_perm _).trans
+    ((HeapSort.sortBy_perm HeapSort.lexInt _).trans (List.reverse_perm _))
+
+/-- A nonzero selected frequency is the actual occurrence count of its associated rank.
+Missing rows have frequency zero, so they cannot create a spurious pair or triple. -/
+theorem field_count (values : List Int) (index : Nat) (nonzero : field values index 0 ≠ 0) :
+    (values.count (field values index 1) : Int) = field values index 0 := by
+  cases selected : (rows values)[index]? with
+  | none => simp [field, selected] at nonzero
+  | some row =>
+      have member := List.mem_of_getElem? selected
+      have original := (rows_perm values).mem_iff.mp member
+      obtain ⟨entry, entryMember, rowEq⟩ := List.mem_map.mp original
+      have counted := Kickers.count_entry values entry entryMember
+      simpa [field, selected, ← rowEq] using counted.symm
+
+/-- The source's reverse sort preserves the number of remaining kickers. -/
+theorem kickers_length (values : List Int) (rank : Int) :
+    (filtered_categories.kickers values rank).length = (values.filter fun value => value != rank).length := by
+  change (ProjectEulerSolutions.PokerUnique.descending (values.filter fun value => value != rank)).length = _
+  exact (ProjectEulerSolutions.PokerUnique.descending_perm _).length_eq
+
+/-- A triple in a five-card list leaves two kickers; a pair leaves three. -/
+theorem kickers_length_of_count (values : List Int) (rank : Int) (count : Nat)
+    (five : values.length = 5) (counted : (values.count rank : Int) = (count : Int)) :
+    (filtered_categories.kickers values rank).length + count = 5 := by
+  rw [kickers_length]
+  have partition := Kickers.length_partition values rank
+  omega
+
+/-- All suffix categories have exactly the compressed key length expected by the comparison bridge.
+This statement needs no rank bounds and allows arbitrary repeated cards. -/
+theorem suffix_valid (values : List Int) (high : Int) (flush straight : Bool) (five : values.length = 5) :
+    Valid (suffixScore values high flush straight) := by
+  unfold suffixScore
+  dsimp only
+  split
+  · constructor <;> simp [weights]
+  · split
+    · constructor <;> simp [weights]
+    · split
+      · constructor <;> simp [weights, five]
+      · split
+        · constructor <;> simp [weights]
+        · split
+          · rename_i triple
+            have counted : (values.count (field values 0 1) : Int) = 3 :=
+              (field_count values 0 (by omega)).trans triple
+            have length := kickers_length_of_count values (field values 0 1) 3 five counted
+            constructor <;> simp [weights]
+            omega
+          · split
+            · constructor <;> simp [weights]
+            · split
+              · rename_i pair
+                have counted : (values.count (field values 0 1) : Int) = 2 :=
+                  (field_count values 0 (by omega)).trans pair
+                have length := kickers_length_of_count values (field values 0 1) 2 five counted
+                constructor <;> simp [weights]
+                omega
+              · constructor <;> simp [weights, five]
+
+private theorem last_le_fourteen (values : List Int) (bounded : ∀ value ∈ values, value ≤ 14) :
+    values.getLastD 0 ≤ 14 := by
+  have member : values.getLastD 0 ∈ (0 : Int) :: values := List.getLastD_mem_cons
+  cases List.mem_cons.mp member with
+  | inl same => omega
+  | inr actual => exact bounded _ actual
+
+/-- Width straights use an input endpoint; wheels use five; the inactive high value is zero. -/
+theorem high_le_fourteen (values : List Int) (bounded : ∀ value ∈ values, value ≤ 14) :
+    straight_detection.high (orderedUnique values) ≤ 14 := by
+  have uniqueBound : ∀ value ∈ orderedUnique values, value ≤ 14 := by
+    intro value member
+    exact bounded value ((ProjectEulerSolutions.PokerUnique.mem_orderedUnique values value).mp member)
+  have lastBound := last_le_fourteen (orderedUnique values) uniqueBound
+  unfold straight_detection.high
+  split
+  · split
+    · exact lastBound
+    · omega
+  · omega
+
+/-- Every five-card score meets the comparison bridge's requirements when input ranks are at most ace.
+The upper rank bound is used only for the straight-flush/royal-flush ordering. -/
+theorem score_valid (values : List Int) (suits : List String) (five : values.length = 5)
+    (bounded : ∀ value ∈ values, value ≤ 14) : Valid (score values suits) := by
+  unfold score
+  dsimp only
+  split
+  · constructor
+    · change (0 : Int) ≤ 8
+      decide
+    · change (8 : Int) ≤ 8
+      decide
+    · simp [weights]
+    · intro _
+      exact high_le_fourteen values bounded
+  · apply suffix_valid
+    exact (ProjectEulerSolutions.PokerUnique.descending_perm values).length_eq.trans five
+
+/-- The normalized reference category/key and the actual solver tuple choose the same winner.
+Source correctness of the reference score remains a separate obligation. -/
+theorem normalized_compare {heap : Mutable.Heap} {leftValue rightValue : Mutable.Value}
+    (leftValues rightValues : List Int) (leftSuits rightSuits : List String)
+    (leftFive : leftValues.length = 5) (rightFive : rightValues.length = 5)
+    (leftBound : ∀ value ∈ leftValues, value ≤ 14) (rightBound : ∀ value ∈ rightValues, value ≤ 14)
+    (leftRep : Represents heap leftValue (score leftValues leftSuits))
+    (rightRep : Represents heap rightValue (score rightValues rightSuits)) :
+    HeapCalls.compare .gt leftValue rightValue heap =
+      some (.ok (.scalar (.bool (comparison (normalize (score leftValues leftSuits))
+        (normalize (score rightValues rightSuits))))), heap) := by
+  rw [normalized_comparison _ _ (score_valid leftValues leftSuits leftFive leftBound)
+    (score_valid rightValues rightSuits rightFive rightBound)]
+  exact leftRep.compare_gt rightRep
+
+end solvers.«54».numeric_score.semantics
+
+namespace solvers.«54».counts_equivalence
+open FormalSW.PyAst
+open ProjectEulerSolutions.PokerUnique
+set_option Elab.async false
+
+/-- Updating an existing count retains its position; a new rank is appended. -/
+theorem put_keys (table : List (Int × Int)) (key value : Int) :
+    (count_values.put table key value).map Prod.fst = addUnique (table.map Prod.fst) key := by
+  induction table with
+  | nil => simp [count_values.put, addUnique]
+  | cons entry rest ih =>
+      obtain ⟨stored, previous⟩ := entry
+      by_cases same : stored = key
+      · subst stored
+        simp [count_values.put, addUnique]
+      · by_cases present : key ∈ rest.map Prod.fst
+        · simp [count_values.put, same, ih, addUnique, Ne.symm same, present]
+        · simp [count_values.put, same, ih, addUnique, Ne.symm same, present]
+
+private theorem fold_keys (values : List Int) (table : List (Int × Int)) :
+    (values.foldl count_values.bump table).map Prod.fst = values.foldl addUnique (table.map Prod.fst) := by
+  induction values generalizing table with
+  | nil => rfl
+  | cons value rest ih =>
+      simp only [List.foldl_cons, ih, count_values.bump, put_keys]
+
+/-- The dictionary's insertion order is precisely the reference's first-seen order. -/
+theorem counts_keys (values : List Int) :
+    (count_values.counts values).map Prod.fst = unique values := by
+  simpa only [count_values.counts, unique, List.map_nil] using fold_keys values []
+
+/-- Both source counting algorithms produce exactly the same ordered count table. -/
+theorem counts_eq_unique (values : List Int) :
+    count_values.counts values = (unique values).map (fun rank => (rank, (values.count rank : Int))) := by
+  calc
+    count_values.counts values =
+        (count_values.counts values).map (fun entry => (entry.1, (values.count entry.1 : Int))) := by
+      symm
+      calc
+        _ = (count_values.counts values).map id := by
+          apply List.map_congr_left
+          intro entry member
+          exact Prod.ext rfl (Kickers.count_entry values entry member).symm
+        _ = _ := List.map_id _
+    _ = ((count_values.counts values).map Prod.fst).map
+        (fun rank => (rank, (values.count rank : Int))) := by
+      rw [List.map_map]
+      rfl
+    _ = _ := by rw [counts_keys]
+
+/-- Reversing each dictionary item yields the reference's count/rank rows. -/
+theorem counts_swap (values : List Int) :
+    (count_values.counts values).map Prod.swap =
+      (unique values).map (fun rank => ((values.count rank : Int), rank)) := by
+  rw [counts_eq_unique, List.map_map]
+  rfl
+
+/-- The source's sorted tuple references decode to sorted first-seen count/rank pairs. -/
+theorem sorted_groups_rows (heap : Mutable.Heap) (address : Nat) (values : List Int)
+    (found : heap[address]? = some (.dict (count_values.entries (count_values.counts values)))) :
+    (rank_groups.resultGroups heap (count_values.counts values)).map
+        (ProjectEulerSolutions.TupleSorting.readInts (rank_groups.collected heap (count_values.counts values))) =
+      (ProjectEulerSolutions.PokerGroupOrder.sortedPairs true
+        ((unique values).map (fun rank => ((values.count rank : Int), rank)))).map
+          ProjectEulerSolutions.PokerGroupOrder.row := by
+  rw [ProjectEulerSolutions.PokerGroupOrder.sortedPairs_rows]
+  simpa only [counts_eq_unique, List.map_map, Function.comp_def, ProjectEulerSolutions.PokerGroupOrder.row] using
+    rank_groups.resultGroups_readInts heap address (count_values.counts values) found
+
+end solvers.«54».counts_equivalence
+
+namespace solvers.«54».hand_rank.semantics
+open FormalSW.PyAst FormalSW.PyAst.HeapCalls
+set_option Elab.async false
+
+private abbrev program := Solvers.P54Ast.module
+
+private theorem returnsValue_unique {source : Module} {name : String} {arguments : List Mutable.Value}
+    {heap leftHeap rightHeap : Heap} {left right : Mutable.Value} {globals : Mutable.Globals}
+    (leftRun : ReturnsValue source name arguments heap left leftHeap globals)
+    (rightRun : ReturnsValue source name arguments heap right rightHeap globals) :
+    left = right ∧ leftHeap = rightHeap := by
+  have same := Mutable.Call.unique leftRun.finishes rightRun.finishes
+  exact ⟨Except.ok.inj (congrArg Mutable.Completion.outcome same),
+    congrArg Mutable.Completion.heap same⟩
+
+/-- The public source scorer returns its specified score and preserves every caller object. -/
+theorem result (heap : Heap) (cardsAddress : Nat) (cards : List Card)
+    (cardsFound : heap[cardsAddress]? = some (.list (tokens cards))) (five : cards.length = 5)
+    (globals : Mutable.Globals) (tableAddress : Nat) (entries : List (Constant × Mutable.Value))
+    (getTable : globals.lookup "VALUE_MAP" = some (.ref tableAddress))
+    (tableFound : heap[tableAddress]? = some (.dict entries)) (ranked : Ranked entries cards) :
+    ∃ answer extra, ReturnsValue program "hand_rank" [.ref cardsAddress] heap answer (heap ++ extra) globals ∧
+      numeric_score.semantics.Represents (heap ++ extra) answer
+        (numeric_score.semantics.score (cards.map Card.value)
+          (cards.map fun card => String.singleton card.suitChar)) := by
+  let ranks : List Int := cards.map Card.value
+  let suitNames : List String := cards.map fun card => String.singleton card.suitChar
+  have ranksFive : ranks.length = 5 := by simpa only [ranks, List.length_map] using five
+  have ranksFound : (parsedHeap heap cards)[heap.length]? =
+      some (.list (ranks.map fun value => .scalar (.int value))) := by
+    simpa [ranks, values, List.map_map] using values_found heap cards
+  have suitNamesFound : (parsedHeap heap cards)[heap.length+1]? =
+      some (.list (suitNames.map fun value => .scalar (.string value))) := by
+    simpa [suitNames, suits, List.map_map] using suits_found heap cards
+  obtain ⟨answer, finalHeap, scored, represented⟩ := numeric_score.semantics.result
+    (parsedHeap heap cards) heap.length (heap.length+1) ranks suitNames globals ranksFive ranksFound suitNamesFound
+  have actual := hand_rank.result heap cardsAddress cards cardsFound globals tableAddress entries
+    getTable tableFound ranked answer finalHeap scored
+  obtain ⟨frameAnswer, extra, framed⟩ := hand_rank.frame.result heap cardsAddress cards cardsFound five
+    globals tableAddress entries getTable tableFound ranked
+  obtain ⟨sameAnswer, sameHeap⟩ := returnsValue_unique actual framed
+  refine ⟨frameAnswer, extra, framed, ?_⟩
+  simpa only [sameAnswer, sameHeap] using represented
+
+end solvers.«54».hand_rank.semantics
+
+namespace solvers.«54».numeric_score.expanded_key
+open FormalSW.PyAst
+open ProjectEulerSolutions.PokerGroupOrder
+open ProjectEulerSolutions.PokerScoreOrder
+open ProjectEulerSolutions.PokerTiebreaks
+open solvers.«54».numeric_score.semantics
+set_option Elab.async false
+
+/-- Shared numerical frequency/rank table, sorted in both sources' descending priority. -/
+def pairs (values : List Int) : List (Int × Int) :=
+  sortedPairs true ((count_values.counts values).map Prod.swap)
+
+/-- The reference emits each rank as many times as its actual frequency. -/
+def expanded : List (Int × Int) → List Int
+  | [] => []
+  | pair :: rest => List.replicate pair.1.toNat pair.2 ++ expanded rest
+
+def countsKey (values : List Int) : List Int := expanded (pairs values)
+
+theorem expanded_flatMap (table : List (Int × Int)) :
+    expanded table = table.flatMap (fun pair => List.replicate pair.1.toNat pair.2) := by
+  induction table with
+  | nil => rfl
+  | cons pair rest ih => simp only [expanded, List.flatMap_cons, ih]
+
+/-- The shared pair table is exactly the integer-row specification used by the proved scorer. -/
+theorem rows_eq_pairs (values : List Int) : rows values = (pairs values).map row := by
+  rw [pairs, sortedPairs_rows]
+  simp only [rows, List.map_map, Function.comp_def, row, Prod.swap]
+
+theorem pairs_perm (values : List Int) :
+    (pairs values).Perm ((count_values.counts values).map Prod.swap) := sortedPairs_perm true _
+
+/-- The table contains each rank only once, even when cards repeat in the input. -/
+theorem pairs_ranks_nodup (values : List Int) : ((pairs values).map Prod.snd).Nodup := by
+  have perm := (pairs_perm values).map Prod.snd
+  apply perm.nodup_iff.mpr
+  simpa only [List.map_map, Function.comp_def] using count_values.counts_keys_nodup values
+
+/-- Every row stores its exact original occurrence count. -/
+theorem pairs_count (values : List Int) (pair : Int × Int) (member : pair ∈ pairs values) :
+    pair.1 = (values.count pair.2 : Int) := by
+  have original := (pairs_perm values).mem_iff.mp member
+  obtain ⟨entry, entryMember, equal⟩ := List.mem_map.mp original
+  subst pair
+  exact Kickers.count_entry values entry entryMember
+
+theorem mem_pairs_ranks (values : List Int) (value : Int) : value ∈ (pairs values).map Prod.snd ↔ value ∈ values := by
+  have perm := (pairs_perm values).map Prod.snd
+  exact perm.mem_iff.trans (by simpa only [List.map_map, Function.comp_def] using count_values.mem_counts_keys values value)
+
+private theorem histogram_count (values ranks : List Int) (distinct : ranks.Nodup) (value : Int) :
+    ((ranks.flatMap fun rank => List.replicate (values.count rank) rank).count value) =
+      if value ∈ ranks then values.count value else 0 := by
+  revert distinct
+  induction ranks with
+  | nil => intro _; simp
+  | cons rank rest ih =>
+      intro distinct
+      obtain ⟨absent, tailDistinct⟩ := List.nodup_cons.mp distinct
+      rw [List.flatMap_cons, List.count_append, ih tailDistinct]
+      by_cases same : rank = value
+      · subst value
+        simp [absent]
+      · simp [List.count_replicate, same, Ne.symm same]
+
+/-- Expanding a complete duplicate-free rank histogram reconstructs the input multiset. -/
+theorem histogram_perm (values ranks : List Int) (distinct : ranks.Nodup)
+    (complete : ∀ value, value ∈ ranks ↔ value ∈ values) :
+    (ranks.flatMap fun rank => List.replicate (values.count rank) rank).Perm values := by
+  apply List.perm_iff_count.mpr
+  intro value
+  rw [histogram_count values ranks distinct value]
+  by_cases present : value ∈ ranks
+  · simp [present]
+  · have missing : value ∉ values := fun member => present ((complete value).mpr member)
+    simp [present, List.count_eq_zero_of_not_mem missing]
+
+private theorem expanded_eq_histogram (values : List Int) (table : List (Int × Int))
+    (counted : ∀ pair ∈ table, pair.1 = (values.count pair.2 : Int)) :
+    expanded table = (table.map Prod.snd).flatMap (fun rank => List.replicate (values.count rank) rank) := by
+  revert counted
+  induction table with
+  | nil => intro _; rfl
+  | cons pair rest ih =>
+      intro counted
+      have first := counted pair List.mem_cons_self
+      have tailCounted : ∀ entry ∈ rest, entry.1 = (values.count entry.2 : Int) :=
+        fun entry member => counted entry (List.mem_cons_of_mem pair member)
+      simp only [expanded, List.map_cons, List.flatMap_cons, ih tailCounted]
+      rw [first]
+      simp
+
+/-- The reference count key has exactly the original five ranks, arranged by their groups. -/
+theorem countsKey_perm (values : List Int) : (countsKey values).Perm values := by
+  rw [countsKey, expanded_eq_histogram values (pairs values) (pairs_count values)]
+  exact histogram_perm values ((pairs values).map Prod.snd) (pairs_ranks_nodup values) (mem_pairs_ranks values)
+
+private theorem expanded_singletons (table : List (Int × Int))
+    (singletons : ∀ pair ∈ table, pair.1 = 1) : expanded table = table.map Prod.snd := by
+  revert singletons
+  induction table with
+  | nil => intro _; rfl
+  | cons pair rest ih =>
+      intro singletons
+      have first := singletons pair List.mem_cons_self
+      have tailSingles : ∀ entry ∈ rest, entry.1 = 1 := fun entry member => singletons entry (List.mem_cons_of_mem pair member)
+      simp [expanded, first, ih tailSingles]
+
+private theorem singletons_ordered (table : List (Int × Int))
+    (ordered : table.Pairwise (fun left right => pairLE right left))
+    (singletons : ∀ pair ∈ table, pair.1 = 1) :
+    (table.map Prod.snd).Pairwise (fun left right : Int => right ≤ left) := by
+  apply List.pairwise_map.mpr
+  apply ordered.imp_of_mem
+  intro left right leftMember rightMember related
+  have leftCount := singletons left leftMember
+  have rightCount := singletons right rightMember
+  simpa [pairLE, leftCount, rightCount] using related
+
+/-- Deleting the repeated leading rank leaves precisely the singleton tail multiset. -/
+theorem filtered_perm_tail (values : List Int) (copies rank : Int) (tail : List (Int × Int))
+    (shape : pairs values = (copies, rank) :: tail)
+    (singletons : ∀ pair ∈ tail, pair.1 = 1) :
+    (values.filter fun value => value != rank).Perm (tail.map Prod.snd) := by
+  have distinct := pairs_ranks_nodup values
+  rw [shape, List.map_cons] at distinct
+  have absent : rank ∉ tail.map Prod.snd := (List.nodup_cons.mp distinct).1
+  have tailKept : (tail.map Prod.snd).filter (fun value => value != rank) = tail.map Prod.snd := by
+    apply List.filter_eq_self.mpr
+    intro value member
+    have different : value ≠ rank := fun same => absent (same ▸ member)
+    simp [different]
+  have filtered := (countsKey_perm values).filter (fun value => value != rank)
+  have decoded : (countsKey values).filter (fun value => value != rank) = tail.map Prod.snd := by
+    simp [countsKey, shape, expanded, List.filter_append, expanded_singletons tail singletons, tailKept]
+  rw [decoded] at filtered
+  exact filtered.symm
+
+/-- The actual filtered/reverse-sorted source kickers equal the count-one rows in their real priority order. -/
+theorem kickers_eq_tail (values : List Int) (copies rank : Int) (tail : List (Int × Int))
+    (shape : pairs values = (copies, rank) :: tail)
+    (singletons : ∀ pair ∈ tail, pair.1 = 1) :
+    filtered_categories.kickers values rank = tail.map Prod.snd := by
+  have ordered := sortedPairs_descending ((count_values.counts values).map Prod.swap)
+  change (pairs values).Pairwise (fun left right => pairLE right left) at ordered
+  rw [shape] at ordered
+  have tailOrder := singletons_ordered tail (List.pairwise_cons.mp ordered).2 singletons
+  have kickerOrder : (filtered_categories.kickers values rank).Pairwise (fun left right : Int => right ≤ left) := by
+    change (ScalarSort.ints (values.filter (fun value => value != rank)).reverse).reverse.Pairwise _
+    exact List.pairwise_reverse.mpr (ScalarSort.ints_ordered _)
+  have perm : (filtered_categories.kickers values rank).Perm (tail.map Prod.snd) :=
+    (ProjectEulerSolutions.PokerUnique.descending_perm _).trans (filtered_perm_tail values copies rank tail shape singletons)
+  exact List.Perm.eq_of_pairwise (le := fun left right : Int => right ≤ left)
+    (fun left right _ _ forward backward => by omega) kickerOrder tailOrder perm
+
+/-- A quad's actual max comprehension sees the single rank in its one-card tail. -/
+theorem quad_filter (values : List Int) (quad kicker : Int)
+    (shape : pairs values = [(4, quad), (1, kicker)]) :
+    values.filter (fun value => value != quad) = [kicker] := by
+  exact (filtered_perm_tail values 4 quad [(1, kicker)] shape (by simp)).eq_singleton
+
+theorem quad_expanded (values : List Int) (quad kicker high : Int) (flush straight : Bool)
+    (shape : pairs values = [(4, quad), (1, kicker)]) :
+    countsKey values = expand (weights (suffixScore values high flush straight).tag)
+      (suffixScore values high flush straight).key := by
+  have rowShape : rows values = [[4, quad], [1, kicker]] := by simp [rows_eq_pairs, shape, row]
+  have remaining := quad_filter values quad kicker shape
+  simp [suffixScore, field, rowShape, remaining, repeated_categories.quad_path.maximum,
+    countsKey, shape, expanded, weights, expand, List.replicate]
+
+theorem full_house_expanded (values : List Int) (trip pair high : Int) (flush straight : Bool)
+    (shape : pairs values = [(3, trip), (2, pair)]) :
+    countsKey values = expand (weights (suffixScore values high flush straight).tag)
+      (suffixScore values high flush straight).key := by
+  have rowShape : rows values = [[3, trip], [2, pair]] := by simp [rows_eq_pairs, shape, row]
+  simp [suffixScore, field, rowShape, countsKey, shape, expanded, weights, expand, List.replicate]
+
+theorem trips_expanded (values : List Int) (trip first second high : Int)
+    (shape : pairs values = [(3, trip), (1, first), (1, second)]) :
+    countsKey values = expand (weights (suffixScore values high false false).tag)
+      (suffixScore values high false false).key := by
+  have rowShape : rows values = [[3, trip], [1, first], [1, second]] := by simp [rows_eq_pairs, shape, row]
+  have kickers := kickers_eq_tail values 3 trip [(1, first), (1, second)] shape (by simp)
+  simp only [List.map_cons, List.map_nil] at kickers
+  simp [suffixScore, field, rowShape, kickers, countsKey, shape, expanded, weights, expand, List.replicate]
+
+theorem pair_expanded (values : List Int) (pair first second third high : Int)
+    (shape : pairs values = [(2, pair), (1, first), (1, second), (1, third)]) :
+    countsKey values = expand (weights (suffixScore values high false false).tag)
+      (suffixScore values high false false).key := by
+  have rowShape : rows values = [[2, pair], [1, first], [1, second], [1, third]] := by simp [rows_eq_pairs, shape, row]
+  have kickers := kickers_eq_tail values 2 pair [(1, first), (1, second), (1, third)] shape (by simp)
+  simp only [List.map_cons, List.map_nil] at kickers
+  simp [suffixScore, field, rowShape, kickers, countsKey, shape, expanded, weights, expand, List.replicate]
+
+/-- Frequency ties in the shared table order the high pair before the low pair. -/
+theorem two_pairs_order (values : List Int) (left right kicker : Int)
+    (shape : pairs values = [(2, left), (2, right), (1, kicker)]) : right ≤ left := by
+  have ordered := sortedPairs_descending ((count_values.counts values).map Prod.swap)
+  change (pairs values).Pairwise (fun left right => pairLE right left) at ordered
+  rw [shape] at ordered
+  have related := (List.pairwise_cons.mp ordered).1 (2, right) (by simp)
+  simpa [pairLE] using related
+
+/-- The actual two-pair max comprehension sees precisely the unique fifth card. -/
+theorem two_pairs_filter (values : List Int) (left right kicker : Int)
+    (shape : pairs values = [(2, left), (2, right), (1, kicker)]) :
+    two_pairs.remaining values left right = [kicker] := by
+  have ordered := two_pairs_order values left right kicker shape
+  have maxEq : max left right = left := Int.max_eq_left ordered
+  have minEq : min left right = right := Int.min_eq_right ordered
+  have differentLeft : kicker ≠ left := by
+    intro same
+    have distinct := pairs_ranks_nodup values
+    simp [shape, same] at distinct
+  have differentRight : kicker ≠ right := by
+    intro same
+    have distinct := pairs_ranks_nodup values
+    simp [shape, same] at distinct
+  have filtered := (countsKey_perm values).filter
+    (fun value => value != max left right && value != min left right)
+  have decoded : (countsKey values).filter
+      (fun value => value != max left right && value != min left right) = [kicker] := by
+    simp [countsKey, shape, expanded, List.replicate, maxEq, minEq, differentLeft, differentRight]
+  rw [decoded] at filtered
+  exact filtered.singleton_eq.symm
+
+theorem two_pairs_expanded (values : List Int) (left right kicker high : Int)
+    (shape : pairs values = [(2, left), (2, right), (1, kicker)]) :
+    countsKey values = expand (weights (suffixScore values high false false).tag)
+      (suffixScore values high false false).key := by
+  have rowShape : rows values = [[2, left], [2, right], [1, kicker]] := by simp [rows_eq_pairs, shape, row]
+  have ordered := two_pairs_order values left right kicker shape
+  have remaining := two_pairs_filter values left right kicker shape
+  simp [suffixScore, field, rowShape, Int.max_eq_left ordered, Int.min_eq_right ordered, remaining,
+    repeated_categories.quad_path.maximum, countsKey, shape, expanded, weights, expand, List.replicate]
+
+end solvers.«54».numeric_score.expanded_key
+
+namespace solvers.«54».player1_wins.semantics
+open FormalSW.PyAst FormalSW.PyAst.HeapCalls
+set_option Elab.async false
+
+private abbrev program := Solvers.P54Ast.module
+private abbrev text (value : String) : Mutable.Value := .scalar (.string value)
+private abbrev flag (value : Bool) : Mutable.Value := .scalar (.bool value)
+
+def cardScore (cards : List hand_rank.Card) : ProjectEulerSolutions.PokerScoreOrder.Score :=
+  numeric_score.semantics.score (cards.map hand_rank.Card.value)
+    (cards.map fun card => String.singleton card.suitChar)
+
+def wins (left right : List hand_rank.Card) : Bool :=
+  HeapSort.lexInt ((cardScore right).tag :: (cardScore right).key)
+    ((cardScore left).tag :: (cardScore left).key)
+
+/-- The complete line scorer parses both hands, preserves the caller heap, and compares their specified scores. -/
+theorem result (line : String) (heap : Heap) (leftCards rightCards : List hand_rank.Card)
+    (lineTokens : player1_wins.tokens line = (leftCards ++ rightCards).map hand_rank.Card.token)
+    (leftFive : leftCards.length = 5) (rightFive : rightCards.length = 5)
+    (globals : Mutable.Globals) (tableAddress : Nat) (entries : List (Constant × Mutable.Value))
+    (getTable : globals.lookup "VALUE_MAP" = some (.ref tableAddress))
+    (tableFound : heap[tableAddress]? = some (.dict entries))
+    (leftRanked : hand_rank.Ranked entries leftCards) (rightRanked : hand_rank.Ranked entries rightCards) :
+    ∃ extra, ReturnsValue program "player1_wins" [text line] heap (flag (wins leftCards rightCards))
+      (heap ++ extra) globals := by
+  have leftTokenFive : (hand_rank.tokens leftCards).length = 5 := by
+    simpa only [hand_rank.tokens, List.length_map] using leftFive
+  have allValues : (player1_wins.tokens line).map text =
+      hand_rank.tokens leftCards ++ hand_rank.tokens rightCards := by
+    change (player1_wins.tokens line).map text =
+      leftCards.map (fun card => text card.token) ++ rightCards.map (fun card => text card.token)
+    rw [lineTokens, List.map_map, List.map_append]
+    rfl
+  have firstParts : ((player1_wins.tokens line).map text).take 5 = hand_rank.tokens leftCards := by
+    rw [allValues]
+    exact List.take_left' leftTokenFive
+  have secondParts : ((player1_wins.tokens line).map text).drop 5 = hand_rank.tokens rightCards := by
+    rw [allValues]
+    exact List.drop_left' leftTokenFive
+  let dealtObjects : Heap :=
+    [.list (hand_rank.tokens leftCards ++ hand_rank.tokens rightCards),
+      .list (hand_rank.tokens leftCards), .list (hand_rank.tokens rightCards)]
+  have dealtShape : player1_wins.handsHeap heap line = heap ++ dealtObjects := by
+    change (heap ++ [.list ((player1_wins.tokens line).map text)] ++
+      [.list (((player1_wins.tokens line).map text).take 5),
+        .list (((player1_wins.tokens line).map text).drop 5)]) = _
+    rw [firstParts, secondParts, allValues]
+    simp only [dealtObjects, List.append_assoc, List.singleton_append]
+  have leftFound : (player1_wins.handsHeap heap line)[heap.length+1]? =
+      some (.list (hand_rank.tokens leftCards)) := by
+    rw [dealtShape]
+    simp [dealtObjects]
+  have rightFound : (player1_wins.handsHeap heap line)[heap.length+2]? =
+      some (.list (hand_rank.tokens rightCards)) := by
+    rw [dealtShape]
+    simp [dealtObjects]
+  have dealtTable : (player1_wins.handsHeap heap line)[tableAddress]? = some (.dict entries) := by
+    rw [dealtShape]
+    exact ProjectEulerSolutions.HeapCollection.prefix_found heap dealtObjects tableAddress _ tableFound
+  obtain ⟨leftAnswer, leftExtra, leftRun, leftRep⟩ := hand_rank.semantics.result
+    (player1_wins.handsHeap heap line) (heap.length+1) leftCards leftFound leftFive
+    globals tableAddress entries getTable dealtTable leftRanked
+  have retainedRight : (player1_wins.handsHeap heap line ++ leftExtra)[heap.length+2]? =
+      some (.list (hand_rank.tokens rightCards)) :=
+    ProjectEulerSolutions.HeapCollection.prefix_found _ leftExtra _ _ rightFound
+  have retainedTable : (player1_wins.handsHeap heap line ++ leftExtra)[tableAddress]? = some (.dict entries) :=
+    ProjectEulerSolutions.HeapCollection.prefix_found _ leftExtra _ _ dealtTable
+  obtain ⟨rightAnswer, rightExtra, rightRun, rightRep⟩ := hand_rank.semantics.result
+    (player1_wins.handsHeap heap line ++ leftExtra) (heap.length+2) rightCards retainedRight rightFive
+    globals tableAddress entries getTable retainedTable rightRanked
+  have retainedLeft := leftRep.append rightExtra
+  have compared := numeric_score.semantics.Represents.compare_gt retainedLeft rightRep
+  have tenTokens : (player1_wins.tokens line).length = 10 := by
+    rw [lineTokens, List.length_map, List.length_append, leftFive, rightFive]
+  have nonempty : player1_wins.tokens line ≠ [] := by
+    intro empty
+    rw [empty] at tenTokens
+    simp at tenTokens
+  have executed := player1_wins.ranked line heap globals nonempty leftAnswer rightAnswer
+    (player1_wins.handsHeap heap line ++ leftExtra)
+    ((player1_wins.handsHeap heap line ++ leftExtra) ++ rightExtra) (wins leftCards rightCards)
+    leftRun rightRun (by simpa only [wins, cardScore] using compared)
+  refine ⟨dealtObjects ++ leftExtra ++ rightExtra, ?_⟩
+  simpa only [dealtShape, List.append_assoc] using executed
+
+end solvers.«54».player1_wins.semantics
+
+namespace solvers.«54».solve.semantics
+open FormalSW.PyAst FormalSW.PyAst.HeapCalls
+set_option Elab.async false
+
+private abbrev program := Solvers.P54Ast.module
+private abbrev text (value : String) : Mutable.Value := .scalar (.string value)
+private abbrev number (value : Int) : Mutable.Value := .scalar (.int value)
+private abbrev flag (value : Bool) : Mutable.Value := .scalar (.bool value)
+
+/-- A line with its two actual five-card token sequences. -/
+structure Game where
+  line : String
+  leftCards : List hand_rank.Card
+  rightCards : List hand_rank.Card
+  tokenized : player1_wins.tokens line = (leftCards ++ rightCards).map hand_rank.Card.token
+  leftFive : leftCards.length = 5
+  rightFive : rightCards.length = 5
+
+def Game.Ranked (entries : List (Constant × Mutable.Value)) (game : Game) : Prop :=
+  hand_rank.Ranked entries game.leftCards ∧ hand_rank.Ranked entries game.rightCards
+
+def weight (game : Game) : Int :=
+  if player1_wins.semantics.wins game.leftCards game.rightCards then 1 else 0
+
+def total : List Game → Int
+  | [] => 0
+  | game :: games => weight game + total games
+
+def lineValues (games : List Game) : List Mutable.Value := games.map fun game => text game.line
+
+private abbrev tested : Expr := .call (.name "player1_wins") [.name "line"]
+private abbrev loopBody : List Stmt := [.ifThen tested (sumBody (.constant (.int 1)) []) []]
+
+/-- One real filter call retains its effects whether the generator yields or skips. -/
+private theorem filter_step (game : Game) (heap : Heap) (env : HeapCalls.Env) (initial : Int)
+    (globals : Mutable.Globals) (tableAddress : Nat) (entries : List (Constant × Mutable.Value))
+    (getTable : globals.lookup "VALUE_MAP" = some (.ref tableAddress))
+    (tableFound : heap[tableAddress]? = some (.dict entries)) (ranked : game.Ranked entries)
+    (getLine : env "line" = some (text game.line))
+    (accumulator : env sumAccumulator = some (number initial)) :
+    ∃ extra finalEnv, BlockContinues program env loopBody heap finalEnv (heap ++ extra) globals ∧
+      finalEnv sumAccumulator = some (number (initial + weight game)) := by
+  obtain ⟨extra, ran⟩ := player1_wins.semantics.result game.line heap game.leftCards game.rightCards
+    game.tokenized game.leftFive game.rightFive globals tableAddress entries getTable tableFound ranked.1 ranked.2
+  have evaluated : Evaluates program env tested heap
+      (flag (player1_wins.semantics.wins game.leftCards game.rightCards)) (heap ++ extra) globals :=
+    Evaluates.call (.cons (Evaluates.lookup getLine) .nil) ran
+  cases winning : player1_wins.semantics.wins game.leftCards game.rightCards with
+  | false =>
+      refine ⟨extra, env, ?_, ?_⟩
+      · apply BlockContinues.branch (flag := false)
+          (by simpa only [winning] using evaluated) rfl
+        exact BlockContinues.nil
+      · simpa only [weight, winning, Bool.false_eq_true, ↓reduceIte, Int.add_zero] using accumulator
+  | true =>
+      refine ⟨extra, setLocal env sumAccumulator (number (initial+1)), ?_, ?_⟩
+      · apply BlockContinues.branch (flag := true)
+          (by simpa only [winning] using evaluated) rfl
+        apply BlockContinues.assign
+        exact Evaluates.binary (Evaluates.lookup accumulator) Evaluates.constant rfl
+      · simp [weight, winning, setLocal]
+
+private theorem loop (games remaining : List Game) (heap : Heap) (address : Nat)
+    (found : heap[address]? = some (.list (lineValues games))) (position : Nat)
+    (suffix : games.drop position = remaining) (env : HeapCalls.Env) (initial : Int)
+    (accumulator : env sumAccumulator = some (number initial))
+    (globals : Mutable.Globals) (tableAddress : Nat) (entries : List (Constant × Mutable.Value))
+    (getTable : globals.lookup "VALUE_MAP" = some (.ref tableAddress))
+    (tableFound : heap[tableAddress]? = some (.dict entries))
+    (ranked : ∀ game ∈ games, game.Ranked entries) :
+    ∃ extra, BlockReturns program env
+      [.sequenceStepLoop "line" (.ref address) position loopBody [], .return (.name sumAccumulator)]
+      heap (number (initial + total remaining)) (heap ++ extra) globals := by
+  induction remaining generalizing heap position env initial with
+  | nil =>
+      have missing : games[position]? = none := by
+        simpa [suffix] using (List.head?_drop (l := games) (i := position)).symm
+      refine ⟨[], ?_⟩
+      simp only [List.append_nil, total, Int.add_zero]
+      apply BlockReturns.sequence_done (source := .ref address) (items := lineValues games)
+        (by simp [sequenceValue, Mutable.sequence, found])
+        (by simp only [lineValues, List.getElem?_map, missing, Option.map_none])
+      exact BlockReturns.return_value (Evaluates.lookup accumulator)
+  | cons game rest ih =>
+      have item : games[position]? = some game := by
+        simpa [suffix] using (List.head?_drop (l := games) (i := position)).symm
+      let ready := setLocal env "line" (text game.line)
+      have readyAccumulator : ready sumAccumulator = some (number initial) := by
+        simpa [ready, setLocal, sumAccumulator] using accumulator
+      obtain ⟨firstExtra, finalEnv, stepped, nextAccumulator⟩ := filter_step game heap ready initial globals
+        tableAddress entries getTable tableFound (ranked game (List.mem_of_getElem? item)) rfl readyAccumulator
+      have retainedLines : (heap ++ firstExtra)[address]? = some (.list (lineValues games)) :=
+        ProjectEulerSolutions.HeapCollection.prefix_found _ firstExtra _ _ found
+      have retainedTable : (heap ++ firstExtra)[tableAddress]? = some (.dict entries) :=
+        ProjectEulerSolutions.HeapCollection.prefix_found _ firstExtra _ _ tableFound
+      obtain ⟨restExtra, continued⟩ := ih (heap ++ firstExtra) retainedLines (position+1)
+        (by simp [List.drop_add_one_eq_tail_drop, suffix]) finalEnv (initial + weight game) nextAccumulator retainedTable
+      refine ⟨firstExtra ++ restExtra, ?_⟩
+      apply BlockReturns.sequence_step (source := .ref address) (items := lineValues games) (value := text game.line)
+        (by simp [sequenceValue, Mutable.sequence, found])
+        (by simp only [lineValues, List.getElem?_map, item, Option.map_some])
+      simpa [Calls.loopContinuation, Calls.loopControl, Calls.loopControlStmt, loopBody, sumBody,
+        total, Int.add_assoc, List.append_assoc] using stepped.returns continued
+
+private abbrev params := ((findFunctionIn program.body "solve").getD ([], [])).1
+private abbrev sourceBody := ((findFunctionIn program.body "solve").getD ([], [])).2
+private abbrev entry (globals : Mutable.Globals) (address : Nat) : HeapCalls.Env :=
+  functionEnv params sourceBody [.ref address] globals
+
+/-- The original filtered generator counts wins for every finite list of valid games. -/
+theorem result (games : List Game) (heap : Heap) (address : Nat)
+    (found : heap[address]? = some (.list (lineValues games)))
+    (globals : Mutable.Globals) (tableAddress : Nat) (entries : List (Constant × Mutable.Value))
+    (getTable : globals.lookup "VALUE_MAP" = some (.ref tableAddress))
+    (tableFound : heap[tableAddress]? = some (.dict entries))
+    (ranked : ∀ game ∈ games, game.Ranked entries) :
+    ∃ extra, ReturnsValue program "solve" [.ref address] heap (number (total games)) (heap ++ extra) globals := by
+  have getLines : entry globals address "lines" = some (.ref address) := by cases globals <;> rfl
+  let inside := setLocal
+    (comprehensionEnv (entry globals address) [("line", .name "lines", [tested])]) sumAccumulator (number 0)
+  obtain ⟨extra, ran⟩ := loop games games heap address found 0 rfl inside 0 (by simp [inside, setLocal])
+    globals tableAddress entries getTable tableFound ranked
+  refine ⟨extra, ?_⟩
+  apply BlockReturns.function rfl rfl
+  apply BlockReturns.return_value
+  apply Evaluates.sum_generator_sequence (name := "line") (filters := [tested]) (generators := [])
+    (items := lineValues games) (by intro expressions impossible; cases impossible)
+    (Evaluates.lookup getLines) (by simp [Mutable.sequence, found]) Evaluates.constant rfl
+  simpa only [inside, comprehensionFilters, sumBody, List.foldr_cons, List.foldr_nil, loopBody, Int.zero_add] using ran
+
+end solvers.«54».solve.semantics
+
+namespace solvers.«54».numeric_score.reference_model
+open FormalSW.PyAst
+open ProjectEulerSolutions.PokerGroupOrder
+open ProjectEulerSolutions.PokerScoreOrder
+open ProjectEulerSolutions.PokerTiebreaks
+open solvers.«54».numeric_score.expanded_key
+open solvers.«54».numeric_score.semantics
+set_option Elab.async false
+
+/-- Shared sorted pairs contain exactly the input ranks with their true occurrence counts. -/
+theorem mem_pairs_iff (values : List Int) (pair : Int × Int) :
+    pair ∈ pairs values ↔ pair.1 = (values.count pair.2 : Int) ∧ pair.2 ∈ values := by
+  constructor
+  · intro member
+    exact ⟨pairs_count values pair member,
+      (mem_pairs_ranks values pair.2).mp (List.mem_map.mpr ⟨pair, member, rfl⟩)⟩
+  · rintro ⟨counted, member⟩
+    obtain ⟨actual, actualMember, sameRank⟩ := List.mem_map.mp ((mem_pairs_ranks values pair.2).mpr member)
+    have sameCount : actual.1 = pair.1 := by rw [pairs_count values actual actualMember, sameRank, counted]
+    have same : actual = pair := Prod.ext sameCount sameRank
+    exact same ▸ actualMember
+
+private theorem pairs_nodup (values : List Int) : (pairs values).Nodup := by
+  have distinct : (pairs values).Pairwise (fun left right => left.2 ≠ right.2) :=
+    List.pairwise_map.mp (pairs_ranks_nodup values)
+  apply distinct.imp
+  intro left right ranksDifferent same
+  exact ranksDifferent (congrArg Prod.snd same)
+
+/-- Both components of the frequency/rank ordering are antisymmetric. -/
+private theorem pairLE_antisymm (left right : Int × Int)
+    (forward : pairLE left right) (backward : pairLE right left) : left = right := by
+  unfold pairLE at forward backward
+  exact Prod.ext (by omega) (by omega)
+
+/-- First-seen insertion order disappears after the full frequency/rank sort. -/
+theorem pairs_of_perm (left right : List Int) (same : left.Perm right) : pairs left = pairs right := by
+  have members (pair : Int × Int) : pair ∈ pairs left ↔ pair ∈ pairs right := by
+    rw [mem_pairs_iff, mem_pairs_iff, same.count_eq pair.2, same.mem_iff]
+  have perm : (pairs left).Perm (pairs right) :=
+    (List.perm_ext_iff_of_nodup (pairs_nodup left) (pairs_nodup right)).mpr members
+  apply List.Perm.eq_of_pairwise (le := fun left right => pairLE right left)
+    (fun first second _ _ forward backward => pairLE_antisymm first second backward forward)
+    (sortedPairs_descending ((count_values.counts left).map Prod.swap))
+    (sortedPairs_descending ((count_values.counts right).map Prod.swap)) perm
+
+/-- The root's private reverse sort has no effect on the shared group table. -/
+theorem pairs_descending (values : List Int) : pairs (descending values) = pairs values :=
+  pairs_of_perm _ _ (ProjectEulerSolutions.PokerUnique.descending_perm values)
+
+theorem countsKey_of_perm (left right : List Int) (same : left.Perm right) : countsKey left = countsKey right := by
+  rw [countsKey, countsKey, pairs_of_perm left right same]
+
+theorem rows_of_perm (left right : List Int) (same : left.Perm right) : rows left = rows right := by
+  rw [rows_eq_pairs, rows_eq_pairs, pairs_of_perm left right same]
+
+/-- Ascending integer sorting is canonical for an input multiset. -/
+theorem ascending_of_perm (left right : List Int) (same : left.Perm right) :
+    ScalarSort.ints left = ScalarSort.ints right := by
+  exact List.Perm.eq_of_pairwise (le := fun left right : Int => left ≤ right)
+    (fun first second _ _ forward backward => by omega)
+    (ScalarSort.ints_ordered left) (ScalarSort.ints_ordered right)
+    ((ScalarSort.ints_perm left).trans (same.trans (ScalarSort.ints_perm right).symm))
+
+/-- The reference's reversed ascending list is the scorer's actual descending list. -/
+theorem descending_eq_reverse (values : List Int) : descending values = (ScalarSort.ints values).reverse := by
+  change (ScalarSort.ints values.reverse).reverse = _
+  rw [ascending_of_perm values.reverse values (List.reverse_perm values)]
+
+def firstCount (values : List Int) : Int := ((pairs values)[0]?.getD (0, 0)).1
+def secondCount (values : List Int) : Int := ((pairs values)[1]?.getD (0, 0)).1
+
+/-- The reference's original category guards and key choices, expressed as numerical data. -/
+def referenceSuffix (values : List Int) (high : Int) (flush straight : Bool) : Score :=
+  if pairs values ≠ [] ∧ firstCount values = 4 then ⟨7, countsKey values⟩
+  else if 2 ≤ (pairs values).length ∧ firstCount values = 3 ∧ secondCount values = 2 then ⟨6, countsKey values⟩
+  else if flush then ⟨5, (ScalarSort.ints values).reverse⟩
+  else if straight then ⟨4, [high]⟩
+  else if pairs values ≠ [] ∧ firstCount values = 3 then ⟨3, countsKey values⟩
+  else if 2 ≤ (pairs values).length ∧ firstCount values = 2 ∧ secondCount values = 2 then ⟨2, countsKey values⟩
+  else if pairs values ≠ [] ∧ firstCount values = 2 then ⟨1, countsKey values⟩
+  else ⟨0, (ScalarSort.ints values).reverse⟩
+
+def referenceScore (values : List Int) (suits : List String) : Score :=
+  let ascending := ScalarSort.ints values
+  let straight := ProjectEulerSolutions.PokerStraights.referenceStraight ascending
+  let high := ProjectEulerSolutions.PokerStraights.straightHigh ascending
+  if straight && isFlush suits then
+    if ascending = [10, 11, 12, 13, 14] then ⟨9, []⟩ else ⟨8, [high]⟩
+  else referenceSuffix values high (isFlush suits) straight
+
+private theorem five_values (values : List Int) (five : values.length = 5) :
+    ∃ a b c d e : Int, values = [a, b, c, d, e] := by
+  cases values with
+  | nil => simp at five
+  | cons a rest =>
+    cases rest with
+    | nil => simp at five
+    | cons b rest =>
+      cases rest with
+      | nil => simp at five
+      | cons c rest =>
+        cases rest with
+        | nil => simp at five
+        | cons d rest =>
+          cases rest with
+          | nil => simp at five
+          | cons e rest =>
+            have empty : rest.length = 0 := by simp only [List.length_cons] at five; omega
+            have restEmpty : rest = [] := List.length_eq_zero_iff.mp empty
+            exact ⟨a, b, c, d, e, by rw [restEmpty]⟩
+
+/-- For a genuine five-rank straight, high ace characterizes exactly the reference royal list.
+No rank bound is needed for this characterization. -/
+theorem royal_iff_high (values : List Int) (five : values.length = 5)
+    (formed : straight_detection.detected (orderedUnique values) = true) :
+    ScalarSort.ints values = [10, 11, 12, 13, 14] ↔
+      straight_detection.high (orderedUnique values) = 14 := by
+  have highEq := straight_detection.high_orderedUnique_eq_reference values five formed
+  have reference : ProjectEulerSolutions.PokerStraights.referenceStraight (ScalarSort.ints values) = true := by
+    rw [← straight_detection.detected_orderedUnique_eq_reference values five]
+    exact formed
+  rw [highEq]
+  constructor
+  · intro royal
+    rw [royal, ProjectEulerSolutions.PokerStraights.royal_high]
+  · intro highAce
+    have length := (ScalarSort.ints_perm values).length_eq.trans five
+    obtain ⟨a, b, c, d, e, shape⟩ := five_values (ScalarSort.ints values) length
+    rw [shape] at reference highAce ⊢
+    by_cases wheel : [a, b, c, d, e] = ProjectEulerSolutions.PokerStraights.wheel
+    · simp [ProjectEulerSolutions.PokerStraights.straightHigh, wheel] at highAce
+    · have consecutive : ProjectEulerSolutions.PokerStraights.consecutive [a, b, c, d, e] = true := by
+        simpa [ProjectEulerSolutions.PokerStraights.referenceStraight, wheel] using reference
+      have highest : e = 14 := by
+        simpa [ProjectEulerSolutions.PokerStraights.straightHigh, wheel] using highAce
+      exact ProjectEulerSolutions.PokerStraights.royal_of_consecutive a b c d e consecutive highest
+
+/-- The actual straight-flush early return normalizes to the exact reference royal branch. -/
+theorem straight_flush_normalizes (values : List Int) (suits : List String) (five : values.length = 5)
+    (both : (straight_detection.detected (orderedUnique values) && isFlush suits) = true) :
+    referenceScore values suits = normalize (score values suits) := by
+  have straight := (Bool.and_eq_true_iff.mp both).1
+  have flushing := (Bool.and_eq_true_iff.mp both).2
+  have flagEq := straight_detection.detected_orderedUnique_eq_reference values five
+  have highEq := straight_detection.high_orderedUnique_eq_reference values five straight
+  have royal := royal_iff_high values five straight
+  unfold referenceScore score
+  dsimp only
+  simp only [← flagEq, straight, flushing, Bool.and_true, ↓reduceIte]
+  simp only [← highEq]
+  by_cases ace : straight_detection.high (orderedUnique values) = 14
+  · have shape := royal.mpr ace
+    simp [normalize, Royal, shape, ace]
+  · have shape : ScalarSort.ints values ≠ [10, 11, 12, 13, 14] := fun same => ace (royal.mp same)
+    simp [normalize, Royal, shape, ace, weights, expand]
+
+end solvers.«54».numeric_score.reference_model
+
+namespace solvers.«54».numeric_score.reference_model
+open FormalSW.PyAst
+open ProjectEulerSolutions.PokerGroupOrder
+open ProjectEulerSolutions.PokerScoreOrder
+open ProjectEulerSolutions.PokerTiebreaks
+open solvers.«54».numeric_score.expanded_key
+open solvers.«54».numeric_score.semantics
+set_option Elab.async false
+
+private theorem profile_cons (table : List (Int × Int)) (count : Int) (rest : List Int)
+    (profile : table.map Prod.fst = count :: rest) :
+    ∃ rank tail, table = (count, rank) :: tail ∧ tail.map Prod.fst = rest := by
+  obtain ⟨⟨actual, rank⟩, tail, shape, equal, remaining⟩ := List.map_eq_cons_iff.mp profile
+  change actual = count at equal
+  subst actual
+  exact ⟨rank, tail, shape, remaining⟩
+
+private theorem profile_one (table : List (Int × Int)) (count : Int) (profile : table.map Prod.fst = [count]) :
+    ∃ rank, table = [(count, rank)] := by
+  obtain ⟨rank, tail, shape, remaining⟩ := profile_cons table count [] profile
+  have empty : tail = [] := List.map_eq_nil_iff.mp remaining
+  exact ⟨rank, by rw [shape, empty]⟩
+
+private theorem profile_two (table : List (Int × Int)) (first second : Int)
+    (profile : table.map Prod.fst = [first, second]) :
+    ∃ a b, table = [(first, a), (second, b)] := by
+  obtain ⟨a, tail, shape, remaining⟩ := profile_cons table first [second] profile
+  obtain ⟨b, tailShape⟩ := profile_one tail second remaining
+  exact ⟨a, b, by rw [shape, tailShape]⟩
+
+private theorem profile_three (table : List (Int × Int)) (first second third : Int)
+    (profile : table.map Prod.fst = [first, second, third]) :
+    ∃ a b c, table = [(first, a), (second, b), (third, c)] := by
+  obtain ⟨a, tail, shape, remaining⟩ := profile_cons table first [second, third] profile
+  obtain ⟨b, c, tailShape⟩ := profile_two tail second third remaining
+  exact ⟨a, b, c, by rw [shape, tailShape]⟩
+
+private theorem profile_four (table : List (Int × Int)) (first second third fourth : Int)
+    (profile : table.map Prod.fst = [first, second, third, fourth]) :
+    ∃ a b c d, table = [(first, a), (second, b), (third, c), (fourth, d)] := by
+  obtain ⟨a, tail, shape, remaining⟩ := profile_cons table first [second, third, fourth] profile
+  obtain ⟨b, c, d, tailShape⟩ := profile_three tail second third fourth remaining
+  exact ⟨a, b, c, d, by rw [shape, tailShape]⟩
+
+private theorem profile_five (table : List (Int × Int)) (first second third fourth fifth : Int)
+    (profile : table.map Prod.fst = [first, second, third, fourth, fifth]) :
+    ∃ a b c d e, table = [(first, a), (second, b), (third, c), (fourth, d), (fifth, e)] := by
+  obtain ⟨a, tail, shape, remaining⟩ := profile_cons table first [second, third, fourth, fifth] profile
+  obtain ⟨b, c, d, e, tailShape⟩ := profile_four tail second third fourth fifth remaining
+  exact ⟨a, b, c, d, e, by rw [shape, tailShape]⟩
+
+private theorem pairs_profile (values : List Int) (five : values.length = 5) :
+    ((pairs values).map Prod.fst) ∈ ProjectEulerSolutions.PokerCountPatterns.profiles := by
+  apply sorted_profile ((count_values.counts values).map Prod.swap)
+  · intro pair member
+    obtain ⟨entry, entryMember, rfl⟩ := List.mem_map.mp member
+    exact count_values.counts_positive values entry entryMember
+  · simpa only [List.map_map, Function.comp_def, five] using count_values.counts_sum values
+
+private theorem expand_ones (values : List Int) : expand (List.replicate values.length 1) values = values := by
+  induction values with
+  | nil => rfl
+  | cons value rest ih => simp [expand, List.replicate_succ, ih]
+
+private theorem expand_five_ones (values : List Int) (five : values.length = 5) :
+    expand [1, 1, 1, 1, 1] values = values := by
+  change expand (List.replicate 5 1) values = _
+  rw [← five]
+  exact expand_ones values
+
+private theorem normalize_ordinary (score : Score) (ordinary : score.tag ≠ 8) :
+    normalize score = ⟨score.tag, expand (weights score.tag) score.key⟩ := by
+  rw [normalize, if_neg (fun royal => ordinary royal.1)]
+
+private theorem count_bridge (values : List Int) (high tag : Int) (flush straight : Bool)
+    (reference : referenceSuffix values high flush straight = ⟨tag, countsKey values⟩)
+    (rootTag : (suffixScore values high flush straight).tag = tag)
+    (expanded : countsKey values = expand (weights (suffixScore values high flush straight).tag)
+      (suffixScore values high flush straight).key) (ordinary : tag ≠ 8) :
+    referenceSuffix values high flush straight = normalize (suffixScore values high flush straight) := by
+  rw [normalize_ordinary _ (by simpa only [rootTag] using ordinary), reference, ← expanded, rootTag]
+
+/-- For a descending five-rank list, the entire reference suffix is the normalized compressed score.
+All seven possible multiplicity profiles, including five equal ranks, are covered. -/
+theorem referenceSuffix_normalizes_sorted (values : List Int) (high : Int) (flush straight : Bool)
+    (five : values.length = 5) (ordered : values = (ScalarSort.ints values).reverse) :
+    referenceSuffix values high flush straight = normalize (suffixScore values high flush straight) := by
+  have ones := expand_five_ones values five
+  have profile := pairs_profile values five
+  simp only [ProjectEulerSolutions.PokerCountPatterns.profiles, List.mem_cons, List.not_mem_nil, or_false] at profile
+  rcases profile with same | quad | fullHouse | triple | twoPairs | pair | singles
+  · obtain ⟨rank, shape⟩ := profile_one (pairs values) 5 same
+    have rowShape : rows values = [[5, rank]] := by simp [rows_eq_pairs, shape, row]
+    cases flush <;> cases straight <;>
+      simp [referenceSuffix, firstCount, secondCount, shape, suffixScore, field, rowShape,
+        ← ordered, normalize, Royal, weights, ones, expand]
+  · obtain ⟨quad, kicker, shape⟩ := profile_two (pairs values) 4 1 quad
+    have rowShape : rows values = [[4, quad], [1, kicker]] := by simp [rows_eq_pairs, shape, row]
+    apply count_bridge values high 7 flush straight
+    · simp [referenceSuffix, firstCount, shape]
+    · simp [suffixScore, field, rowShape]
+    · exact quad_expanded values quad kicker high flush straight shape
+    · decide
+  · obtain ⟨trip, pair, shape⟩ := profile_two (pairs values) 3 2 fullHouse
+    have rowShape : rows values = [[3, trip], [2, pair]] := by simp [rows_eq_pairs, shape, row]
+    apply count_bridge values high 6 flush straight
+    · simp [referenceSuffix, firstCount, secondCount, shape]
+    · simp [suffixScore, field, rowShape]
+    · exact full_house_expanded values trip pair high flush straight shape
+    · decide
+  · obtain ⟨trip, first, second, shape⟩ := profile_three (pairs values) 3 1 1 triple
+    have rowShape : rows values = [[3, trip], [1, first], [1, second]] := by simp [rows_eq_pairs, shape, row]
+    cases flush <;> cases straight
+    · apply count_bridge values high 3 false false
+      · simp [referenceSuffix, firstCount, secondCount, shape]
+      · simp [suffixScore, field, rowShape]
+      · exact trips_expanded values trip first second high shape
+      · decide
+    all_goals simp [referenceSuffix, firstCount, secondCount, shape, suffixScore, field, rowShape,
+      ← ordered, normalize, Royal, weights, ones, expand]
+  · obtain ⟨left, right, kicker, shape⟩ := profile_three (pairs values) 2 2 1 twoPairs
+    have rowShape : rows values = [[2, left], [2, right], [1, kicker]] := by simp [rows_eq_pairs, shape, row]
+    cases flush <;> cases straight
+    · apply count_bridge values high 2 false false
+      · simp [referenceSuffix, firstCount, secondCount, shape]
+      · simp [suffixScore, field, rowShape]
+      · exact two_pairs_expanded values left right kicker high shape
+      · decide
+    all_goals simp [referenceSuffix, firstCount, secondCount, shape, suffixScore, field, rowShape,
+      ← ordered, normalize, Royal, weights, ones, expand]
+  · obtain ⟨pair, first, second, third, shape⟩ := profile_four (pairs values) 2 1 1 1 pair
+    have rowShape : rows values = [[2, pair], [1, first], [1, second], [1, third]] := by simp [rows_eq_pairs, shape, row]
+    cases flush <;> cases straight
+    · apply count_bridge values high 1 false false
+      · simp [referenceSuffix, firstCount, secondCount, shape]
+      · simp [suffixScore, field, rowShape]
+      · exact pair_expanded values pair first second third high shape
+      · decide
+    all_goals simp [referenceSuffix, firstCount, secondCount, shape, suffixScore, field, rowShape,
+      ← ordered, normalize, Royal, weights, ones, expand]
+  · obtain ⟨a, b, c, d, e, shape⟩ := profile_five (pairs values) 1 1 1 1 1 singles
+    have rowShape : rows values = [[1, a], [1, b], [1, c], [1, d], [1, e]] := by simp [rows_eq_pairs, shape, row]
+    cases flush <;> cases straight <;>
+      simp [referenceSuffix, firstCount, secondCount, shape, suffixScore, field, rowShape,
+        ← ordered, normalize, Royal, weights, ones, expand]
+
+/-- The reference category model is independent of input rank order. -/
+theorem referenceSuffix_of_perm (left right : List Int) (high : Int) (flush straight : Bool) (same : left.Perm right) :
+    referenceSuffix left high flush straight = referenceSuffix right high flush straight := by
+  simp only [referenceSuffix, firstCount, secondCount, pairs_of_perm left right same,
+    countsKey_of_perm left right same, ascending_of_perm left right same]
+  rfl
+
+/-- Reference scores normalize the actual source scorer even though the two sources sort at different points. -/
+theorem referenceSuffix_normalizes (values : List Int) (high : Int) (flush straight : Bool)
+    (five : values.length = 5) :
+    referenceSuffix values high flush straight = normalize (suffixScore (descending values) high flush straight) := by
+  rw [referenceSuffix_of_perm values (descending values) high flush straight
+    (ProjectEulerSolutions.PokerUnique.descending_perm values).symm]
+  apply referenceSuffix_normalizes_sorted
+  · exact (ProjectEulerSolutions.PokerUnique.descending_perm values).length_eq.trans five
+  · rw [ascending_of_perm (descending values) values (ProjectEulerSolutions.PokerUnique.descending_perm values)]
+    exact descending_eq_reverse values
+
+private theorem referenceSuffix_high_inactive (values : List Int) (leftHigh rightHigh : Int) (flush : Bool) :
+    referenceSuffix values leftHigh flush false = referenceSuffix values rightHigh flush false := by
+  simp [referenceSuffix]
+
+/-- The pure reference model equals the normalized value of the proved Python scorer for every five-rank input.
+Rank bounds are unnecessary here; they are needed only to compare a nonroyal straight flush against a royal flush. -/
+theorem referenceScore_normalizes (values : List Int) (suits : List String) (five : values.length = 5) :
+    referenceScore values suits = normalize (score values suits) := by
+  by_cases both : (straight_detection.detected (orderedUnique values) && isFlush suits) = true
+  · exact straight_flush_normalizes values suits five both
+  · have notBoth : (straight_detection.detected (orderedUnique values) && isFlush suits) = false := Bool.eq_false_iff.mpr both
+    have flagEq := straight_detection.detected_orderedUnique_eq_reference values five
+    unfold referenceScore score
+    dsimp only
+    simp only [← flagEq, notBoth]
+    by_cases straight : straight_detection.detected (orderedUnique values) = true
+    · rw [← straight_detection.high_orderedUnique_eq_reference values five straight]
+      exact referenceSuffix_normalizes values _ _ _ five
+    · have inactive : straight_detection.detected (orderedUnique values) = false := Bool.eq_false_iff.mpr straight
+      simp only [inactive]
+      rw [referenceSuffix_high_inactive values (ProjectEulerSolutions.PokerStraights.straightHigh (ScalarSort.ints values))
+        (straight_detection.high (orderedUnique values)) (isFlush suits)]
+      exact referenceSuffix_normalizes values _ _ false five
+
+end solvers.«54».numeric_score.reference_model
+
+namespace solvers.«54».numeric_score.reference_model
+open FormalSW.PyAst FormalSW.PyAst.HeapCalls
+open ProjectEulerSolutions
+open data.«project-euler-statements».data.py.project_euler_statements.p54
+open solvers.«54».numeric_score.expanded_key
+set_option Elab.async false
+
+/-- The reference's first-seen occurrence rows equal the root source dictionary's reversed items. -/
+theorem reference_countedRows_eq (values : List Int) :
+    counts_key_source.countedRows values = (count_values.counts values).map Prod.swap := by
+  exact (solvers.«54».counts_equivalence.counts_swap values).symm
+
+/-- The source reference's sorted numerical rows are precisely the shared canonical table. -/
+theorem reference_orderedRows_eq (values : List Int) : counts_key_source.orderedRows values = pairs values := by
+  unfold counts_key_source.orderedRows pairs
+  rw [reference_countedRows_eq]
+
+/-- Both expanded-key definitions perform the same count-sized repetition and concatenation. -/
+theorem reference_expanded_eq (table : List (Int × Int)) :
+    counts_key_source.expanded table = expanded_key.expanded table := by
+  simpa only [counts_key_source.expanded, counts_key_source.segment] using
+    (expanded_key.expanded_flatMap table).symm
+
+/-- The reference source's actual output key is the count key used by the normalized score model. -/
+theorem reference_countsKey_eq (values : List Int) :
+    counts_key_source.expanded (counts_key_source.orderedRows values) = countsKey values := by
+  unfold countsKey
+  rw [reference_orderedRows_eq, reference_expanded_eq]
+
+/-- The root's private descending sort preserves the reference's count priority and key. -/
+theorem reference_orderedRows_descending (values : List Int) :
+    counts_key_source.orderedRows values = pairs (descending values) := by
+  rw [reference_orderedRows_eq, pairs_descending]
+
+theorem reference_countsKey_descending (values : List Int) :
+    counts_key_source.expanded (counts_key_source.orderedRows values) = countsKey (descending values) := by
+  rw [reference_countsKey_eq, countsKey_of_perm (descending values) values
+    (PokerUnique.descending_perm values)]
+
+/-- The checked source sort returns the shared frequency/rank rows when fed its actual counted entries. -/
+theorem reference_sortedRefs_rows (heap : Mutable.Heap) (values : List Int)
+    (entries : List sort_counts_source.Entry)
+    (known : sort_counts_source.Found heap entries)
+    (counted : entries.map sort_counts_source.Entry.pair = counts_key_source.countedRows values) :
+    (sort_counts_source.sortedRefs heap entries).map
+      (TupleSorting.readInts (sort_counts_source.finalHeap heap entries)) =
+        (pairs values).map PokerGroupOrder.row := by
+  rw [sort_counts_source.sortedRefs_rows heap entries known, counted]
+  exact congrArg (List.map PokerGroupOrder.row) (reference_orderedRows_eq values)
+
+/-- The same actual sorted tuple rows supply the scorer's pure row specification. -/
+theorem reference_sortedRefs_semantic_rows (heap : Mutable.Heap) (values : List Int)
+    (entries : List sort_counts_source.Entry)
+    (known : sort_counts_source.Found heap entries)
+    (counted : entries.map sort_counts_source.Entry.pair = counts_key_source.countedRows values) :
+    (sort_counts_source.sortedRefs heap entries).map
+      (TupleSorting.readInts (sort_counts_source.finalHeap heap entries)) = semantics.rows values := by
+  rw [reference_sortedRefs_rows heap values entries known counted, expanded_key.rows_eq_pairs]
+
+/-- This combines the reference's original source execution with the common mathematical key;
+no successful callee execution or equality of outputs is assumed. -/
+theorem reference_counts_key_result (heap : Mutable.Heap) (address : Nat) (values : List Int)
+    (globals : Mutable.Globals)
+    (found : heap[address]? = some (.list (values.map fun value => .scalar (.int value)))) :
+    ReturnsValue P54Ast.module "counts_key" [.ref address] heap (.ref heap.length)
+      (counts_key_source.finalHeap heap values) globals ∧
+    (counts_key_source.finalHeap heap values)[heap.length]? =
+      some (.list ((countsKey values).map fun value => .scalar (.int value))) := by
+  refine ⟨counts_key_source.result heap address values globals found, ?_⟩
+  simpa only [reference_countsKey_eq] using counts_key_source.returned_found heap values
+
+/-- Combining the numerical bridge with the source frame retains every caller object. -/
+theorem reference_counts_key_caller (heap : Mutable.Heap) (values : List Int) (address : Nat)
+    (object : Mutable.Object) (found : heap[address]? = some object) :
+    (counts_key_source.finalHeap heap values)[address]? = some object :=
+  counts_key_source.caller_found heap values address object found
+
+end solvers.«54».numeric_score.reference_model
