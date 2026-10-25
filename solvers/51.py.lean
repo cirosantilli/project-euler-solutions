@@ -1885,6 +1885,69 @@ theorem prepare (p : Nat) (positive : 0 < p) (env : HeapCalls.Env) (heap : Mutab
 
 end decimalDigits
 
+namespace candidate
+open ProjectEulerSolutions
+private def writes : List String := ["s", "ds", "pos_lists", "i", "dig"] ++ groups.writes
+private def Stable (before after : HeapCalls.Env) : Prop := ∀ name, name ∉ writes → after name = before name
+
+/-- The complete source test for one prime constructs its groups and returns exactly for the reference family predicate. -/
+theorem result (p powerAddress primeAddress : Nat) (target : Int) (prime : Nat.Prime p)
+    (env : HeapCalls.Env) (heap : Mutable.Heap) (bytes : List UInt8)
+    (getP : env "p" = some (number p)) (getTarget : env "target" = some (number target))
+    (getPowers : env "pow10" = some (.ref powerAddress)) (getPrimes : env "is_prime" = some (.ref primeAddress))
+    (powersFound : heap[powerAddress]? = some (.list (numbers (powers (Nat.digits 10 p).length))))
+    (primesFound : heap[primeAddress]? = some (.bytearray bytes)) (size : bytes.length = 10^(Nat.digits 10 p).length)
+    (correct : ∀ i byte, bytes[i]? = some byte → (byte.toNat ≠ 0 ↔ Nat.Prime i)) :
+    ∃ finalHeap,
+      (ProjectEulerStatements.P51.hasPrimeFamily target.toNat p = true → ∀ following,
+        BlockReturns program env (primeBody.drop 1 ++ following) heap (number p) finalHeap) ∧
+      (ProjectEulerStatements.P51.hasPrimeFamily target.toNat p = false → ∃ finalEnv,
+        BlockContinues program env (primeBody.drop 1) heap finalEnv finalHeap ∧ Stable env finalEnv) ∧
+      (∀ (address : Nat) (object : Mutable.Object), heap[address]? = some object → finalHeap[address]? = some object) := by
+  let digitHeap := heap ++ [.list (numbers (Nat.digits 10 p).reverse)]
+  let digitEnv := setLocal (setLocal env "s" (.scalar (.string (toString (p : Int))))) "ds" (.ref heap.length)
+  have prepared := decimalDigits.prepare p prime.pos env heap getP
+  obtain ⟨groupEnv, groupHeap, built, getGroups, parentFound, rowsFound, savedHeap, savedEnv⟩ :=
+    groups.build p target heap.length digitEnv digitHeap (by simpa [digitEnv, setLocal] using getTarget) rfl (by simp [digitHeap])
+  have outerHeap : ∀ (address : Nat) (object : Mutable.Object), heap[address]? = some object → groupHeap[address]? = some object := by
+    intro address object previous
+    exact savedHeap address object (HeapCollection.prefix_found heap _ address object previous)
+  have readyP := (savedEnv "p" (by decide)).trans (by simpa [digitEnv, setLocal] using getP)
+  have readyTarget := (savedEnv "target" (by decide)).trans (by simpa [digitEnv, setLocal] using getTarget)
+  have readyPowers := (savedEnv "pow10" (by decide)).trans (by simpa [digitEnv, setLocal] using getPowers)
+  have readyPrimes := (savedEnv "is_prime" (by decide)).trans (by simpa [digitEnv, setLocal] using getPrimes)
+  have addressesLength : (HeapRows.addresses digitHeap.length 10).length = 10 := by simp [HeapRows.addresses]
+  have rows : ∀ original (inside : original < (HeapRows.addresses digitHeap.length 10).length),
+      groupHeap[(HeapRows.addresses digitHeap.length 10)[original]]? =
+        some (.list (numbers (PrimeReplacementSearch.group target.toNat p original))) := by
+    intro original inside
+    simpa only [HeapRows.addresses, List.getElem_map, List.getElem_range] using rowsFound original (by simpa only [addressesLength] using inside)
+  have searched := groups.result p digitHeap.length powerAddress primeAddress target prime (HeapRows.addresses digitHeap.length 10)
+    addressesLength groupEnv groupHeap bytes readyP getGroups readyPowers readyPrimes readyTarget parentFound rows
+    (outerHeap powerAddress _ powersFound) (outerHeap primeAddress _ primesFound) size correct
+  have preparedBlock := prepared.append built
+  refine ⟨groupHeap, ?_, ?_, outerHeap⟩
+  · intro family following
+    have returned := searched
+    rw [family] at returned
+    exact preparedBlock.returns (returned following)
+  · intro noFamily
+    have exhausted := searched
+    rw [noFamily] at exhausted
+    obtain ⟨finalEnv, continued, preserved⟩ := exhausted
+    refine ⟨finalEnv, preparedBlock.append continued, ?_⟩
+    intro name untouched
+    have searchUntouched : name ∉ groups.writes := fun member => untouched (List.mem_append_right _ member)
+    have noS : name ≠ "s" := fun equal => untouched (by simp [writes, equal])
+    have noDs : name ≠ "ds" := fun equal => untouched (by simp [writes, equal])
+    have noParent : name ≠ "pos_lists" := fun equal => untouched (by simp [writes, equal])
+    have noI : name ≠ "i" := fun equal => untouched (by simp [writes, equal])
+    have noDig : name ≠ "dig" := fun equal => untouched (by simp [writes, equal])
+    exact (preserved name searchUntouched).trans ((savedEnv name (by simp [noParent, noI, noDig])).trans
+      (by simp only [digitEnv, setLocal, noS, noDs, if_false]))
+
+end candidate
+
 end solve
 
 end solvers.«51»
