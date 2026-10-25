@@ -98,6 +98,25 @@ private theorem range_loop (program : Module) (name : String) (element : Expr) (
         List.append_assoc, List.singleton_append, Int.natCast_add, Int.natCast_one] using emitted.append rest
 
 /-- Source callbacks may allocate temporary lists; they must preserve the input heap prefix. -/
+theorem range_map_effectful (program : Module) (name : String) (element : Expr) (encode : Nat → Mutable.Value)
+    (callback : ∀ (heap : Mutable.Heap) (env : HeapCalls.Env) (n : Nat),
+      env name = some (.scalar (.int n)) →
+      ∃ extra, Evaluates (globals := globals) program env element heap (encode n) (heap ++ extra))
+    (heap middle : Mutable.Heap) (env : HeapCalls.Env) (expressions : List Expr) (values : List Mutable.Value)
+    (first count : Nat)
+    (arguments : Evaluates.Arguments (globals := globals) program env expressions heap values middle)
+    (bounds : rangeBounds values = .ok (first, first+count, 1)) :
+    ∃ extra, Evaluates (globals := globals) program env
+      (.listComp element [(name, .call (.name "range") expressions, [])]) heap (.ref middle.length)
+      (working middle ((List.range' first count).map encode) extra) := by
+  obtain ⟨finalEnv, extra, executed⟩ := range_loop program name element encode callback
+    first count (first+count) rfl middle [] []
+      (comprehensionEnv env [(name, .call (.name "range") expressions, [])])
+  refine ⟨extra, ?_⟩
+  apply Evaluates.list_comp_range arguments bounds
+  simpa only [working, List.nil_append] using executed
+
+/-- The unchanged-heap specialization for pure range bounds. -/
 theorem range_map (program : Module) (name : String) (element : Expr) (encode : Nat → Mutable.Value)
     (callback : ∀ (heap : Mutable.Heap) (env : HeapCalls.Env) (n : Nat),
       env name = some (.scalar (.int n)) →
@@ -108,12 +127,7 @@ theorem range_map (program : Module) (name : String) (element : Expr) (encode : 
     (bounds : rangeBounds values = .ok (first, first+count, 1)) :
     ∃ extra, Evaluates (globals := globals) program env
       (.listComp element [(name, .call (.name "range") expressions, [])]) heap (.ref heap.length)
-      (working heap ((List.range' first count).map encode) extra) := by
-  obtain ⟨finalEnv, extra, executed⟩ := range_loop program name element encode callback
-    first count (first+count) rfl heap [] []
-      (comprehensionEnv env [(name, .call (.name "range") expressions, [])])
-  refine ⟨extra, ?_⟩
-  apply Evaluates.list_comp_range arguments bounds
-  simpa only [working, List.nil_append] using executed
+      (working heap ((List.range' first count).map encode) extra) :=
+  range_map_effectful program name element encode callback heap heap env expressions values first count arguments bounds
 
 end ProjectEulerSolutions.HeapCollection
