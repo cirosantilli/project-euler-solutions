@@ -592,6 +592,8 @@ Problem 62’s public reference now has the same single problem-level argument a
 
 Problem 63 has structural source termination and equivalence proofs for every numeral base at least two. The optimized solver counts by seed with successive multiplications; the reference counts by exponent using digit lists. Power-growth inequalities prove that both early stops are complete, and a finite-sum transposition equates their traversal orders. The mathematical exponent bound depends on the base and is not a source search limit. Both omitted-argument default calls inherit termination from the general proof; no whole-program evaluation is used.
 
+Problem 64's reference detects the repeated continued-fraction state and measures its period, without an iteration cutoff. The optimized solver uses the terminal coefficient test. Both accept an arbitrary signed upper bound and return zero below two. Their generalized structural source equivalence and termination proofs remain pending.
+
 The proof-domain cleanup and remaining restrictions are tracked in link:proof-domain-audit.adoc[]. Fixed-input functions should retain `Equiv`, using structural source proofs instead of whole-program computation; meaningful shared parameters are preferred whenever the problem admits them.
 
 ====== Problem 14: Collatz termination

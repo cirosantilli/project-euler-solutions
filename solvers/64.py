@@ -1,18 +1,14 @@
 #!/usr/bin/env python
-from __future__ import annotations
-
 from math import isqrt
-from typing import Final
 
 
 def period_length_sqrt(n: int) -> int:
     """
-    Return the period length of the continued fraction for sqrt(n),
-    assuming n is a positive non-square integer.
+    Return the continued-fraction period length of sqrt(n), or zero for squares.
     """
     a0 = isqrt(n)
     if a0 * a0 == n:
-        return 0  # perfect square -> no periodic continued fraction part
+        return 0
 
     m = 0
     d = 1
@@ -24,25 +20,21 @@ def period_length_sqrt(n: int) -> int:
         d = (n - m * m) // d
         a = (a0 + m) // d
         period += 1
-        # For sqrt(n), the period ends when a hits 2*a0.
         if a == 2 * a0:
             return period
 
 
 def solve(limit: int) -> int:
-    cnt = 0
+    count = 0
     for n in range(2, limit + 1):
         r = isqrt(n)
         if r * r == n:
             continue
         if period_length_sqrt(n) % 2 == 1:
-            cnt += 1
-    return cnt
+            count += 1
+    return count
 
 
 if __name__ == "__main__":
-    # Test from the statement: N <= 13 has exactly four odd periods.
     assert solve(13) == 4
-
-    LIMIT: Final[int] = 10_000
-    print(solve(LIMIT))
+    print(solve(10_000))

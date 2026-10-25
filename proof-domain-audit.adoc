@@ -1,6 +1,6 @@
 = Python proof-domain audit
 
-This audit covers the Python solver and reference interfaces for problems 1 through 63, their `Requires` annotations, default adapters, and the documented proof claims.
+This audit covers the Python solver and reference interfaces for problems 1 through 64, their `Requires` annotations, default adapters, and the documented proof claims.
 
 Prefer a meaningful argument shared by both implementations. A reference-only search limit changes an unbounded problem into a bounded one and is not an acceptable substitute. A mathematical bound derived from the inputs or the problem definition is acceptable. For a fixed problem without a useful parameter, retain `Equiv` and prefer structural proofs through shared mathematical models. A completed interpreter observation can establish termination; running out of observation fuel cannot.
 
@@ -19,6 +19,7 @@ Prefer a meaningful argument shared by both implementations. A reference-only se
 | 61 | Supplied polygonal index limit 140 | Share the largest required polygonal type, enumerate each family to its four-digit value boundary, and return the greatest cycle sum.
 | 62 | Supplied cube-root limit | Accept only the requested class size and expand complete digit widths until successful. Internal finite counting windows come from those widths.
 | 63 | Supplied exponent limit; optimized exponent cutoff 200 | Share the numeral base and stop when a power falls below its required digit width; power growth proves completeness and termination.
+| 64 | Reference period search capped at n + 1 steps | Record complete continued-fraction states and measure the distance between equal states; the optimized solver uses the terminal coefficient.
 |===
 
 Source proofs still awaiting replacement are retained as `.py.lean.attempt`; their README proof links are removed, and they are not counted as current proofs. Problem 36 has structural equivalence and termination proofs for every nonnegative limit, with no fixed prefix cutoff. Problem 40 has a structural equivalence and termination proof for every finite tuple of positive positions, with no maximum position. Problem 52 has structural equivalence for every positive multiplier: both searches terminate at the least positive solution for multipliers one through nine and diverge for larger multipliers, where digit widths rule out a solution. Unchanged zero-argument `Equiv` proofs remain in place; they need not be discarded merely because they have no arguments.
@@ -57,6 +58,7 @@ Problem 63 has structural source termination and equivalence proofs for every nu
 | 19 | The solver starts its calendar at 1900 and the proof excludes earlier years. | Extend the implementation before claiming arbitrary year ranges.
 | 44 | Both implementations accept the same finite pentagonal-index bound. | This is a valid bounded parameterization, but equivalence alone does not prove that the default answer is the global minimum over all indices.
 | 62 | Unbounded equivalence and a termination characterization hold for every signed class size. | A separate `Returns` theorem for the default target still needs a verified existence witness.
+| 64 | Both Python searches have no iteration cap; their period algorithms differ. The separate Lean statement still uses a finite iteration budget. | Prove the recurrence invariants and periodicity, connect repeated states to the terminal coefficient, and replace the Lean statement's budget with a justified definition.
 |===
 
 Other explicit bounds were checked for their role: the quadratic coefficient ranges in problem 27, the fifth power in problem 30, the four-digit progression in problem 49, the fifty reverse-and-add steps in problem 55, and the one-tenth spiral threshold in problem 58 come from their stated problem variants. Problems 32 and 38 accept a shared target width. Problem 60's bound is shared by both implementations and its theorem covers every signed bound; it is not a reference-only cutoff. Such shared parameters still deserve review when a more natural generalization is available.
