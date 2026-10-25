@@ -649,3 +649,268 @@ theorem square_loop (remaining n : Nat) (positive : 2 ≤ n) (next stop : Int)
           BlockReturns.loop_resume rest
 
 end solvers.«60».is_prime.bases
+
+
+namespace solvers.«60».is_prime.bases
+open FormalSW.PyAst FormalSW.PyAst.HeapCalls
+open ProjectEulerSolutions.MillerRabin
+private abbrev outerProgram := Solvers.P60Ast.module
+private abbrev outerNumber (value : Int) : Mutable.Value := .scalar (.int value)
+private abbrev outerFlag (value : Bool) : Mutable.Value := .scalar (.bool value)
+private abbrev outerLast : Expr := .binOp (.name "n") .sub (.constant (.int 1))
+private abbrev outerLastTest : Expr := .compare (.name "x") [(.eq, outerLast)]
+def initialTest : Expr := .boolOp .or
+  [.compare (.name "x") [(.eq, .constant (.int 1))], outerLastTest]
+def remainderTest : Expr :=
+  .compare (.binOp (.name "a") .mod (.name "n")) [(.eq, .constant (.int 0))]
+def powerExpression : Expr := .builtinCall .pow [.name "a", .name "d", .name "n"]
+def baseBody : List Stmt :=
+  [.ifThen remainderTest [.continueLoop] [], .assign [.name "x"] powerExpression,
+   .ifThen initialTest [.continueLoop] [],
+   .forIn (.name "_") (.call (.name "range") [.binOp (.name "s") .sub (.constant (.int 1))]) squareBody squareElse]
+
+theorem base_body_source : sourceBaseBody = baseBody := rfl
+
+def changed : List String := ["a", "x", "_"]
+def Frame (before after : HeapCalls.Env) : Prop := ∀ name, name ∉ changed → after name = before name
+
+theorem Frame.refl (env : HeapCalls.Env) : Frame env env := fun _ _ => rfl
+theorem Frame.trans {first second third : HeapCalls.Env} (left : Frame first second)
+    (right : Frame second third) : Frame first third := fun name outside => (right name outside).trans (left name outside)
+theorem Frame.updated (env : HeapCalls.Env) (name : String) (value : Mutable.Value)
+    (written : name ∈ changed) : Frame env (setLocal env name value) := by
+  intro other outside
+  have different : other ≠ name := by intro same; subst other; exact outside written
+  simp [setLocal, different]
+theorem Frame.of_square {before after : HeapCalls.Env}
+    (frame : ∀ name, name ≠ "_" → name ≠ "x" → after name = before name) : Frame before after := by
+  intro name outside
+  apply frame name
+  · intro same; subst name; exact outside (by decide)
+  · intro same; subst name; exact outside (by decide)
+
+structure Inputs (env : HeapCalls.Env) (n d s : Nat) : Prop where
+  n_value : env "n" = some (outerNumber n)
+  d_value : env "d" = some (outerNumber d)
+  s_value : env "s" = some (outerNumber s)
+
+theorem Inputs.frame {before after : HeapCalls.Env} {n d s : Nat} (inputs : Inputs before n d s)
+    (frame : Frame before after) : Inputs after n d s :=
+  ⟨(frame "n" (by decide)).trans inputs.n_value, (frame "d" (by decide)).trans inputs.d_value,
+   (frame "s" (by decide)).trans inputs.s_value⟩
+
+def numbers (values : List Int) : List Mutable.Value := values.map outerNumber
+
+private theorem initial_test (n : Nat) (x : Int) (env : HeapCalls.Env) (heap : Mutable.Heap)
+    (getN : env "n" = some (outerNumber n)) (getX : env "x" = some (outerNumber x))
+    (globals : Mutable.Globals) :
+    Evaluates outerProgram env initialTest heap
+      (outerFlag (decide (x = 1 ∨ x = (n : Int) - 1))) heap globals := by
+  have first : Evaluates outerProgram env
+      (.compare (.name "x") [(.eq, .constant (.int 1))]) heap
+      (outerFlag (decide (x = 1))) heap globals := by
+    apply Evaluates.compare (Evaluates.lookup getX) Evaluates.constant
+    simp [HeapCalls.compare, outerFlag, scalarCompare, evalCmpOp]
+  have last : Evaluates outerProgram env outerLastTest heap
+      (outerFlag (decide (x = (n : Int) - 1))) heap globals := by
+    apply Evaluates.compare (Evaluates.lookup getX)
+      (Evaluates.binary (Evaluates.lookup getN) Evaluates.constant rfl)
+    simp [HeapCalls.compare, outerFlag, scalarCompare, evalCmpOp]
+  by_cases one : x = 1
+  · simp only [one, true_or, decide_true]
+    apply Evaluates.boolean_stop (flag := true) (by simpa [one] using first) rfl rfl
+  · apply Evaluates.boolean_next (flag := false) (by simpa [one] using first) rfl rfl
+    apply Evaluates.boolean_last
+    · simpa [one] using last
+    · cases decide (x = (n : Int) - 1) <;> rfl
+
+/-- The real source base loop executes both continue paths and the nested for-else.
+Its result is the ordered conjunction of the exact modular tests and the actual continuation. -/
+theorem loop (n d s : Nat) (positive : 2 ≤ n) (values remaining : List Int) (position : Nat)
+    (suffix : values.drop position = remaining) (source : SequenceSource)
+    (env : HeapCalls.Env) (heap : Mutable.Heap)
+    (sequence : Mutable.sequence (sequenceValue source) heap = some (.ok (numbers values), heap))
+    (inputs : Inputs env n d s) (following : List Stmt) (tailAnswer : Bool)
+    (continued : ∀ afterEnv, Frame env afterEnv →
+      BlockReturns outerProgram afterEnv following heap (outerFlag tailAnswer) heap globals) :
+    BlockReturns outerProgram env (.sequenceStepLoop "a" source position baseBody [] :: following) heap
+      (outerFlag (remaining.all (fun a => millerCheck a n d s) && tailAnswer)) heap globals := by
+  induction remaining generalizing position env with
+  | nil =>
+      have exhausted : values[position]? = none := by
+        simpa [suffix] using (List.head?_drop (l := values) (i := position)).symm
+      apply BlockReturns.sequence_done sequence
+        (by simp only [numbers, List.getElem?_map, exhausted, Option.map_none])
+      exact continued env (Frame.refl env)
+  | cons a remaining ih =>
+      have present : values[position]? = some a := by
+        simpa [suffix] using (List.head?_drop (l := values) (i := position)).symm
+      have nextSuffix : values.drop (position + 1) = remaining := by simp [List.drop_add_one_eq_tail_drop, suffix]
+      let bound := setLocal env "a" (outerNumber a)
+      let next := Stmt.sequenceStepLoop "a" source (position + 1) baseBody []
+      have boundFrame : Frame env bound := Frame.updated env "a" _ (by decide)
+      have boundInputs : Inputs bound n d s := inputs.frame boundFrame
+      have getA : bound "a" = some (outerNumber a) := by simp [bound, setLocal]
+      have nextRun (afterEnv : HeapCalls.Env) (framed : Frame env afterEnv) :
+          BlockReturns outerProgram afterEnv (next :: following) heap
+            (outerFlag (remaining.all (fun a => millerCheck a n d s) && tailAnswer)) heap globals :=
+        ih (position + 1) nextSuffix afterEnv (inputs.frame framed)
+          (fun finalEnv finalFrame => continued finalEnv (framed.trans finalFrame))
+      have reduced : Evaluates outerProgram bound
+          (.binOp (.name "a") .mod (.name "n")) heap (outerNumber (a % (n : Int))) heap globals := by
+        apply Evaluates.binary (middle := heap) (finalHeap := heap)
+          (Evaluates.lookup getA) (Evaluates.lookup boundInputs.n_value)
+        simp [Mutable.binary, outerNumber, scalarBinary, show n ≠ 0 by omega, show 0 < n by omega]
+      have tested : Evaluates outerProgram bound remainderTest heap
+          (outerFlag (decide (a % (n : Int) = 0))) heap globals := by
+        apply Evaluates.compare (middle := heap) (afterRight := heap)
+          (av := outerNumber (a % (n : Int))) (bv := outerNumber 0) reduced Evaluates.constant
+        simp [HeapCalls.compare, outerFlag, scalarCompare, evalCmpOp]
+      apply BlockReturns.sequence_step (value := outerNumber a) sequence
+        (by simp only [numbers, List.getElem?_map, present, Option.map_some])
+      simp only [List.all_cons]
+      by_cases divisible : a % (n : Int) = 0
+      · have head : millerCheck a n d s = true := by simp [millerCheck, divisible]
+        rw [head]
+        simp only [Bool.true_and]
+        apply BlockReturns.branch (flag := true) (by simpa [divisible] using tested) rfl
+        apply BlockReturns.continue_loop (target := by rfl)
+        exact nextRun bound boundFrame
+      · apply BlockReturns.branch (flag := false) (by simpa [divisible] using tested) rfl
+        let x := FormalSW.Py.Builtin.Int.powModBinary a d n
+        have power : Evaluates outerProgram bound powerExpression heap (outerNumber x) heap globals := by
+          apply Evaluates.builtin (.cons (Evaluates.lookup getA) (.cons (Evaluates.lookup boundInputs.d_value)
+            (.cons (Evaluates.lookup boundInputs.n_value) .nil)))
+          simp [HeapCalls.primitive, HeapCalls.scalarResult, Calls.modularPower, scalarNumber,
+            FormalSW.Py.Builtin.Int.powMod_nonnegative a d n (by omega),
+            ← FormalSW.Py.Builtin.Int.powModBinary_correct a d n, outerNumber, x]
+        apply BlockReturns.assign power
+        let updated := setLocal bound "x" (outerNumber x)
+        have updatedFrame : Frame env updated := boundFrame.trans (Frame.updated bound "x" _ (by decide))
+        have updatedInputs : Inputs updated n d s := inputs.frame updatedFrame
+        have getX : updated "x" = some (outerNumber x) := by simp [updated, setLocal]
+        have initial := initial_test n x updated heap updatedInputs.n_value getX globals
+        by_cases accepted : x = 1 ∨ x = (n : Int) - 1
+        · have head : millerCheck a n d s = true := by simp [millerCheck, divisible, x, accepted]
+          rw [head]
+          simp only [Bool.true_and]
+          apply BlockReturns.branch (flag := true) (by simpa [accepted] using initial) rfl
+          apply BlockReturns.continue_loop (target := by rfl)
+          exact nextRun updated updatedFrame
+        · have head : millerCheck a n d s = squareSearch n (s - 1) x := by
+            rw [millerCheck, if_neg divisible]
+            change (if x = 1 ∨ x = (n : Int) - 1 then true else squareSearch n (s - 1) x) = _
+            rw [if_neg accepted]
+          rw [head, Bool.and_assoc]
+          apply BlockReturns.branch (flag := false) (by simpa [accepted] using initial) rfl
+          apply BlockReturns.for_range
+            (.cons (Evaluates.binary (Evaluates.lookup updatedInputs.s_value) Evaluates.constant rfl) .nil) rfl
+          exact square_loop (s - 1) n positive 0 ((s : Int) - 1) (by omega) x updated heap
+            updatedInputs.n_value getX (.loopResume next :: following)
+            (remaining.all (fun a => millerCheck a n d s) && tailAnswer)
+            (fun afterEnv squareFrame => BlockReturns.loop_resume
+              (nextRun afterEnv (updatedFrame.trans (Frame.of_square squareFrame))))
+
+/-- Evaluate the actual global sequence once, then run the source conjunction. -/
+theorem result (n d s : Nat) (positive : 2 ≤ n) (values : List Int) (address : Nat)
+    (env : HeapCalls.Env) (heap : Mutable.Heap)
+    (found : heap[address]? = some (.tuple (numbers values)))
+    (getValues : env "_MR_BASES_64" = some (.ref address)) (inputs : Inputs env n d s)
+    (globals : Mutable.Globals := []) :
+    BlockReturns outerProgram env
+      [.forIn (.name "a") (.name "_MR_BASES_64") baseBody [], .return (.constant (.bool true))] heap
+      (outerFlag (values.all (fun a => millerCheck a n d s))) heap globals := by
+  have sequence : Mutable.sequence (.ref address) heap = some (.ok (numbers values), heap) := by
+    simp [Mutable.sequence, found]
+  apply BlockReturns.for_sequence (by intros; simp) (Evaluates.lookup getValues) sequence
+  simpa only [List.drop_zero, Bool.and_true] using
+    loop n d s positive values values 0 rfl (.ref address) env heap sequence inputs
+      [.return (.constant (.bool true))] true (fun _ _ => BlockReturns.return_value Evaluates.constant)
+
+end solvers.«60».is_prime.bases
+
+namespace solvers.«60».is_prime
+open FormalSW.PyAst FormalSW.PyAst.HeapCalls
+open ProjectEulerSolutions.MillerRabin
+private abbrev finalProgram := Solvers.P60Ast.module
+private abbrev finalNumber (value : Int) : Mutable.Value := .scalar (.int value)
+private abbrev finalFlag (value : Bool) : Mutable.Value := .scalar (.bool value)
+
+def basesCode : List Stmt :=
+  [.forIn (.name "a") (.name "_MR_BASES_64") bases.baseBody [], .return (.constant (.bool true))]
+def largeCode : List Stmt :=
+  .forIn (.name "p") (.name "_SMALL_PRIMES") small_prime_scan.body [] ::
+    (decomposition.initialCode ++ basesCode)
+def fullCode : List Stmt :=
+  .ifThen (.compare (.name "n") [(.lt, .constant (.int 2))]) [.return (.constant (.bool false))] [] :: largeCode
+
+theorem complete_source :
+    executableBody ((findFunctionIn finalProgram.body "is_prime").getD ([], [])).2 = fullCode := rfl
+
+/-- Every actual source branch terminates and computes the exact Miller-Rabin
+algorithmic model under the supplied source table context. No initializer or
+unrestricted mathematical primality result is assumed. -/
+theorem natural_result (n : Nat) (positive : 2 ≤ n) (heap : Mutable.Heap) (globals : Mutable.Globals)
+    (context : SourceGlobals heap globals) :
+    ReturnsValue finalProgram "is_prime" [finalNumber n] heap
+      (finalFlag (isPrimeModel n)) heap globals := by
+  let params := ((findFunctionIn finalProgram.body "is_prime").getD ([], [])).1
+  let body := ((findFunctionIn finalProgram.body "is_prime").getD ([], [])).2
+  let initial := functionEnv params body [finalNumber n] globals
+  have getN : initial "n" = some (finalNumber n) := by cases globals <;> rfl
+  have getSmall : initial "_SMALL_PRIMES" = some (.ref context.smallAddress) := by
+    cases globals with
+    | nil => have impossible := context.smallBinding; cases impossible
+    | cons entry rest => exact context.smallBinding
+  have getBases : initial "_MR_BASES_64" = some (.ref context.basesAddress) := by
+    cases globals with
+    | nil => have impossible := context.basesBinding; cases impossible
+    | cons entry rest => exact context.basesBinding
+  have smallFound : heap[context.smallAddress]? = some (.tuple (small_prime_scan.numbers smallPrimes)) :=
+    context.smallTuple
+  have baseFound : heap[context.basesAddress]? = some (.tuple (bases.numbers ProjectEulerSolutions.MillerRabin.bases)) :=
+    context.basesTuple
+  let ds := decompose (n - 1)
+  let finalAnswer := ProjectEulerSolutions.MillerRabin.bases.all (fun a => millerCheck a n ds.1 ds.2)
+  have scanned := small_prime_scan.result (globals := globals) n smallPrimes (by decide)
+    context.smallAddress initial heap smallFound getSmall getN
+    (decomposition.initialCode ++ basesCode) (finalFlag finalAnswer) heap
+    (fun _ afterEnv unchanged => by
+      have afterN : afterEnv "n" = some (finalNumber n) := (unchanged "n" (by decide)).trans getN
+      have afterBases : afterEnv "_MR_BASES_64" = some (.ref context.basesAddress) :=
+        (unchanged "_MR_BASES_64" (by decide)).trans getBases
+      obtain ⟨ready, prepared, getD, getS, framed⟩ :=
+        decomposition.initialized_result n positive afterEnv heap afterN globals
+      have readyN : ready "n" = some (finalNumber n) := (framed "n" (by decide) (by decide)).trans afterN
+      have readyBases : ready "_MR_BASES_64" = some (.ref context.basesAddress) :=
+        (framed "_MR_BASES_64" (by decide) (by decide)).trans afterBases
+      have finished := bases.result n ds.1 ds.2 positive ProjectEulerSolutions.MillerRabin.bases
+        context.basesAddress ready heap baseFound readyBases ⟨readyN, getD, getS⟩ globals
+      exact prepared.returns finished)
+  have valueEq : small_prime_scan.answer (smallScan n smallPrimes) (finalFlag finalAnswer) =
+      finalFlag (isPrimeModel n) := by
+    cases scan : smallScan n smallPrimes <;>
+      simp only [isPrimeModel, if_neg (show ¬n < 2 by omega), scan, small_prime_scan.answer, ds, finalAnswer]
+  have heapEq : small_prime_scan.finalHeap (smallScan n smallPrimes) heap heap = heap := by
+    cases smallScan n smallPrimes <;> rfl
+  rw [valueEq, heapEq] at scanned
+  apply BlockReturns.function rfl rfl
+  apply BlockReturns.branch (flag := false) (value := finalFlag false) (middle := heap)
+    (Evaluates.compare (av := finalNumber n) (bv := finalNumber 2) (middle := heap) (afterRight := heap)
+      (Evaluates.lookup getN) Evaluates.constant
+      (by simp [HeapCalls.compare, scalarCompare, evalCmpOp, show ¬(n : Int) < 2 by omega])) rfl
+  exact scanned
+
+/-- All signed inputs are covered, with negative values following the actual
+n<2 return. The context remains explicit until module initialization is proved. -/
+theorem raw_result (n : Int) (heap : Mutable.Heap) (globals : Mutable.Globals)
+    (context : SourceGlobals heap globals) :
+    ReturnsValue finalProgram "is_prime" [finalNumber n] heap
+      (finalFlag (isPrimeModel n.toNat)) heap globals := by
+  by_cases small : n < 2
+  · have modelSmall : n.toNat < 2 := by omega
+    simpa only [isPrimeModel, if_pos modelSmall] using below_two_result n small heap globals
+  · have nonnegative : 0 ≤ n := by omega
+    simpa only [Int.toNat_of_nonneg nonnegative] using natural_result n.toNat (by omega) heap globals context
+
+end solvers.«60».is_prime
