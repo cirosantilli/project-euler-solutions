@@ -590,6 +590,8 @@ Problem 61 has structural source termination and equivalence proofs for every in
 
 Problem 62’s public reference now has the same single problem-level argument as the optimized solver: `naive(target)` corresponds to `solve(k)`. It expands complete digit widths without an externally supplied cutoff. The previous finite-window equivalence entry is archived as an attempt. The mathematical width invariants and root-partition certificates remain useful for proving the unbounded contract, but do not yet establish that contract.
 
+Problem 63 has structural source termination and equivalence proofs for every numeral base at least two. The optimized solver counts by seed with successive multiplications; the reference counts by exponent using digit lists. Power-growth inequalities prove that both early stops are complete, and a finite-sum transposition equates their traversal orders. The mathematical exponent bound depends on the base and is not a source search limit. Both omitted-argument default calls inherit termination from the general proof; no whole-program evaluation is used.
+
 The proof-domain cleanup and remaining restrictions are tracked in link:proof-domain-audit.adoc[]. Fixed-input functions should retain `Equiv`, using structural source proofs instead of whole-program computation; meaningful shared parameters are preferred whenever the problem admits them.
 
 ====== Problem 14: Collatz termination
@@ -734,7 +736,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/60.py[60.py] | link:solvers/60.md[60.md] | link:solvers/60.py.lean[60.py.lean] | 0.471 | 26033 |
 | link:solvers/61.py[61.py] | link:solvers/61.md[61.md] | link:solvers/61.py.lean[61.py.lean] | 0.057 | 28684 |
 | link:solvers/62.py[62.py] | link:solvers/62.md[62.md] | link:solvers/62.py.lean[62.py.lean] | 0.145 | 127035954683 |
-| link:solvers/63.py[63.py] | link:solvers/63.md[63.md] |  | 0.070 | 49 |
+| link:solvers/63.py[63.py] | link:solvers/63.md[63.md] | link:solvers/63.py.lean[63.py.lean] | 0.070 | 49 |
 | link:solvers/64.py[64.py] | link:solvers/64.md[64.md] |  | 0.132 | 1322 |
 | link:solvers/65.py[65.py] | link:solvers/65.md[65.md] |  | 0.113 | 272 |
 | link:solvers/66.py[66.py] | link:solvers/66.md[66.md] |  | 0.135 | 661 |

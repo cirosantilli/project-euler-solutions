@@ -1,6 +1,6 @@
 = Python proof-domain audit
 
-This audit covers the Python solver and reference interfaces for problems 1 through 62, their `Requires` annotations, default adapters, and the documented proof claims.
+This audit covers the Python solver and reference interfaces for problems 1 through 63, their `Requires` annotations, default adapters, and the documented proof claims.
 
 Prefer a meaningful argument shared by both implementations. A reference-only search limit changes an unbounded problem into a bounded one and is not an acceptable substitute. A mathematical bound derived from the inputs or the problem definition is acceptable. For a fixed problem without a useful parameter, retain `Equiv` and prefer structural proofs through shared mathematical models. A completed interpreter observation can establish termination; running out of observation fuel cannot.
 
@@ -18,6 +18,7 @@ Prefer a meaningful argument shared by both implementations. A reference-only se
 | 46 | Scan below 10000 | Accept the same `after` threshold as the optimized solver and search until the first counterexample, without a cutoff.
 | 61 | Supplied polygonal index limit 140 | Share the largest required polygonal type, enumerate each family to its four-digit value boundary, and return the greatest cycle sum.
 | 62 | Supplied cube-root limit | Accept only the requested class size and expand complete digit widths until successful. Internal finite counting windows come from those widths.
+| 63 | Supplied exponent limit; optimized exponent cutoff 200 | Share the numeral base and stop when a power falls below its required digit width; power growth proves completeness and termination.
 |===
 
 Source proofs still awaiting replacement are retained as `.py.lean.attempt`; their README proof links are removed, and they are not counted as current proofs. Problem 36 has structural equivalence and termination proofs for every nonnegative limit, with no fixed prefix cutoff. Problem 40 has a structural equivalence and termination proof for every finite tuple of positive positions, with no maximum position. Problem 52 has structural equivalence for every positive multiplier: both searches terminate at the least positive solution for multipliers one through nine and diverge for larger multipliers, where digit widths rule out a solution. Unchanged zero-argument `Equiv` proofs remain in place; they need not be discarded merely because they have no arguments.
@@ -43,6 +44,8 @@ Problem 32 has structural source termination and equivalence proofs for every si
 Problem 51 has structural equivalence and support proofs for every signed family threshold. Both unbounded source searches return exactly when a qualifying family exists, returning its least prime; otherwise both diverge. The checked eight-member witness establishes termination for every threshold at most eight and for the default call. Thresholds above ten are impossible because there are only ten replacement digits. For thresholds nine and ten, termination retains the general existence condition. The Lean statement uses zero for absence in its mathematical minimum and makes no universal existence assumption.
 
 Problem 61 has structural source termination and equivalence proofs for every signed maximum polygonal type. Both implementations search types three through that argument and return the greatest cycle sum, or zero if absent. Polygonal growth justifies complete family generation without an index argument. Prefix-map construction, eager default allocation, duplicate rejection, decreasing remaining-type recursion, and maximum selection all preserve the common exhaustive model. Both omitted-argument default calls inherit termination from the general proof. No whole-program evaluation or fixed-instance search certificate is used.
+
+Problem 63 has structural source termination and equivalence proofs for every numeral base at least two. The optimized seed traversal and the reference exponent traversal count the same complete set of positive powers. Digit-list conversion gives the reference width test, while power-growth inequalities bound every successful exponent and justify both early stops. Neither source takes an exponent limit. Both omitted-argument default calls inherit termination from the generalized proof.
 
 == Remaining implementation and proof restrictions
 
