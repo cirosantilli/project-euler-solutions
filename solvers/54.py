@@ -53,28 +53,10 @@ def rank_groups(counts: dict[int, int]) -> list[tuple[int, int]]:
     return sorted(groups, reverse=True)
 
 
-def hand_rank(cards: Sequence[str]) -> Tuple:
+def _score_values(values: list[int], suits: list[str]) -> Tuple:
     """
-    Return a tuple comparable lexicographically; higher is better.
-
-    Category order (low->high):
-      0 High card
-      1 One pair
-      2 Two pairs
-      3 Three of a kind
-      4 Straight
-      5 Flush
-      6 Full house
-      7 Four of a kind
-      8 Straight flush (includes royal flush)
+    Rank parsed cards, sorting the private values buffer in place.
     """
-    values: List[int] = []
-    suits: List[str] = []
-    for c in cards:
-        v, s = parse_card(c)
-        values.append(v)
-        suits.append(s)
-
     values.sort(reverse=True)
     is_flush = len(set(suits)) == 1
 
@@ -130,6 +112,31 @@ def hand_rank(cards: Sequence[str]) -> Tuple:
         return (1, pair_val, tuple(kickers))
 
     return (0, tuple(values))
+
+
+def hand_rank(cards: Sequence[str]) -> Tuple:
+    """
+    Return a tuple comparable lexicographically; higher is better.
+
+    Category order (low->high):
+      0 High card
+      1 One pair
+      2 Two pairs
+      3 Three of a kind
+      4 Straight
+      5 Flush
+      6 Full house
+      7 Four of a kind
+      8 Straight flush (includes royal flush)
+    """
+    values: List[int] = []
+    suits: List[str] = []
+    for c in cards:
+        v, s = parse_card(c)
+        values.append(v)
+        suits.append(s)
+
+    return _score_values(values, suits)
 
 
 def player1_wins(line: str) -> bool:

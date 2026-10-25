@@ -903,3 +903,482 @@ theorem different_categories (line : String) (heap : Mutable.Heap) (globals : Mu
 
 end player1_wins
 end solvers.«54»
+
+namespace solvers.«54».hand_rank
+open FormalSW.PyAst FormalSW.PyAst.HeapCalls
+private abbrev program := Solvers.P54Ast.module
+private abbrev number (value : Int) : Mutable.Value := .scalar (.int value)
+private abbrev text (value : String) : Mutable.Value := .scalar (.string value)
+private abbrev character (value : Char) : Mutable.Value := text (String.singleton value)
+
+/-- Tokens retain arbitrary suffixes; parsing reads their first two Unicode characters. -/
+structure Card where
+  token : String
+  rankChar : Char
+  suitChar : Char
+  suffix : List Char
+  value : Int
+  shape : token.toList = rankChar :: suitChar :: suffix
+
+def tokens (cards : List Card) : List Mutable.Value := cards.map fun card => text card.token
+def values (cards : List Card) : List Mutable.Value := cards.map fun card => number card.value
+def suits (cards : List Card) : List Mutable.Value := cards.map fun card => character card.suitChar
+def pairs (cards : List Card) : Mutable.Heap := cards.map fun card => .tuple [number card.value, character card.suitChar]
+
+/-- The parser owns two buffers followed by the actual returned parse-card tuples. -/
+def parsedHeap (heap : Mutable.Heap) (cards : List Card) : Mutable.Heap :=
+  heap ++ [.list (values cards), .list (suits cards)] ++ pairs cards
+
+theorem values_found (heap : Mutable.Heap) (cards : List Card) :
+    (parsedHeap heap cards)[heap.length]? = some (.list (values cards)) := by
+  simp [parsedHeap, List.append_assoc]
+
+theorem suits_found (heap : Mutable.Heap) (cards : List Card) :
+    (parsedHeap heap cards)[heap.length+1]? = some (.list (suits cards)) := by
+  simp [parsedHeap, List.append_assoc]
+
+theorem caller_found (heap : Mutable.Heap) (cards : List Card) (address : Nat) (object : Mutable.Object)
+    (found : heap[address]? = some object) : (parsedHeap heap cards)[address]? = some object := by
+  simpa only [parsedHeap, List.append_assoc] using
+    ProjectEulerSolutions.HeapCollection.prefix_found heap
+      ([.list (values cards), .list (suits cards)] ++ pairs cards) address object found
+
+private def cardPair (card : Card) : Mutable.Object := .tuple [number card.value, character card.suitChar]
+
+private def afterValues (heap : Mutable.Heap) (before : List Card) (card : Card) : Mutable.Heap :=
+  (parsedHeap heap before ++ [cardPair card]).set heap.length (.list (values before ++ [number card.value]))
+
+private theorem stored (heap : Mutable.Heap) (before : List Card) (card : Card) :
+    (afterValues heap before card).set (heap.length+1) (.list (suits before ++ [character card.suitChar])) =
+      parsedHeap heap (before ++ [card]) := by
+  simp [afterValues, parsedHeap, values, suits, pairs, cardPair, List.map_append,
+    List.append_assoc, List.set_append_right]
+
+private def body : List Stmt :=
+  [.assign [.tuple [.name "v", .name "s"]] (.call (.name "parse_card") [.name "c"]),
+   .expr (.call (.attribute (.name "values") "append") [.name "v"]),
+   .expr (.call (.attribute (.name "suits") "append") [.name "s"])]
+
+private theorem one_card (heap : Mutable.Heap) (before : List Card) (card : Card)
+    (globals : Mutable.Globals) (tableAddress : Nat) (entries : List (Constant × Mutable.Value))
+    (getTable : globals.lookup "VALUE_MAP" = some (.ref tableAddress))
+    (tableFound : heap[tableAddress]? = some (.dict entries))
+    (rankFound : ScalarDict.lookup entries (.string (String.singleton card.rankChar)) = some (number card.value))
+    (env : HeapCalls.Env) (getCard : env "c" = some (text card.token))
+    (getValues : env "values" = some (.ref heap.length)) (getSuits : env "suits" = some (.ref (heap.length+1))) :
+    BlockContinues program env body (parsedHeap heap before)
+      (assignNames env ["v", "s"] [number card.value, character card.suitChar])
+      (parsedHeap heap (before ++ [card])) globals := by
+  let current := parsedHeap heap before
+  let ready := assignNames env ["v", "s"] [number card.value, character card.suitChar]
+  have parsed := solvers.«54».parse_card.result card.token card.rankChar card.suitChar card.suffix card.shape
+    current globals tableAddress entries getTable (caller_found heap before tableAddress _ tableFound)
+    (number card.value) rankFound
+  have called : Evaluates program env (.call (.name "parse_card") [.name "c"]) current (.ref current.length)
+      (current ++ [cardPair card]) globals :=
+    Evaluates.call (.cons (Evaluates.lookup getCard) .nil) parsed
+  have unpacked := BlockContinues.unpack (module := program) (env := env) (globals := globals)
+    (heap := current) (value := .ref current.length) (finalHeap := current ++ [cardPair card])
+    (expressions := [.name "v", .name "s"]) (names := ["v", "s"])
+    (items := [number card.value, character card.suitChar])
+    rfl called (by simp [Mutable.sequence, cardPair]) rfl
+  have getV : ready "v" = some (number card.value) := by simp [ready, assignNames, setLocal]
+  have getS : ready "s" = some (character card.suitChar) := by simp [ready, assignNames, setLocal]
+  have getReadyValues : ready "values" = some (.ref heap.length) := by
+    simpa [ready, assignNames, setLocal] using getValues
+  have getReadySuits : ready "suits" = some (.ref (heap.length+1)) := by
+    simpa [ready, assignNames, setLocal] using getSuits
+  have valuesAtPair : (current ++ [cardPair card])[heap.length]? = some (.list (values before)) :=
+    ProjectEulerSolutions.HeapCollection.prefix_found current [cardPair card] heap.length _ (values_found heap before)
+  have suitsAtPair : (current ++ [cardPair card])[heap.length+1]? = some (.list (suits before)) :=
+    ProjectEulerSolutions.HeapCollection.prefix_found current [cardPair card] (heap.length+1) _ (suits_found heap before)
+  have appendedValues : BlockContinues program ready
+      [.expr (.call (.attribute (.name "values") "append") [.name "v"])]
+      (current ++ [cardPair card]) ready (afterValues heap before card) globals :=
+    BlockContinues.discard (Evaluates.append (Evaluates.lookup getReadyValues) valuesAtPair
+      (Evaluates.lookup getV) valuesAtPair)
+  have suitsAfterValues : (afterValues heap before card)[heap.length+1]? = some (.list (suits before)) := by
+    unfold afterValues
+    rw [List.getElem?_set_ne (by omega : heap.length ≠ heap.length+1)]
+    exact suitsAtPair
+  have appendedSuits := BlockContinues.discard (Evaluates.append (module := program) (env := ready) (globals := globals)
+    (Evaluates.lookup getReadySuits) suitsAfterValues (Evaluates.lookup getS) suitsAfterValues)
+  apply BlockContinues.append unpacked
+  apply BlockContinues.append appendedValues
+  simpa only [stored] using appendedSuits
+
+/-- Every record is interpreted through the caller's live dictionary. -/
+def Ranked (entries : List (Constant × Mutable.Value)) (cards : List Card) : Prop :=
+  ∀ card ∈ cards, ScalarDict.lookup entries (.string (String.singleton card.rankChar)) = some (number card.value)
+
+/-- An arbitrary already-parsed portion composes with all remaining source iterations. -/
+theorem parse_remaining (heap : Mutable.Heap) (cardsAddress : Nat) (cards : List Card)
+    (cardsFound : heap[cardsAddress]? = some (.list (tokens cards)))
+    (globals : Mutable.Globals) (tableAddress : Nat) (entries : List (Constant × Mutable.Value))
+    (getTable : globals.lookup "VALUE_MAP" = some (.ref tableAddress))
+    (tableFound : heap[tableAddress]? = some (.dict entries)) (ranked : Ranked entries cards)
+    (remaining before : List Card) (decomposition : cards = before ++ remaining)
+    (env : HeapCalls.Env) (getValues : env "values" = some (.ref heap.length))
+    (getSuits : env "suits" = some (.ref (heap.length+1))) :
+    ∃ finalEnv, finalEnv "values" = some (.ref heap.length) ∧ finalEnv "suits" = some (.ref (heap.length+1)) ∧
+      BlockContinues program env [.sequenceStepLoop "c" (.ref cardsAddress) before.length body []]
+        (parsedHeap heap before) finalEnv (parsedHeap heap cards) globals := by
+  induction remaining generalizing before env with
+  | nil =>
+      refine ⟨env, getValues, getSuits, ?_⟩
+      apply BlockContinues.sequence_done (items := tokens cards)
+      · simp [sequenceValue, Mutable.sequence, caller_found heap before cardsAddress _ cardsFound]
+      · simp [tokens, decomposition]
+      · simpa only [decomposition, List.append_nil] using
+          (BlockContinues.nil (module := program) (env := env) (heap := parsedHeap heap before) (globals := globals))
+  | cons card rest ih =>
+      let bound := setLocal env "c" (text card.token)
+      let ready := assignNames bound ["v", "s"] [number card.value, character card.suitChar]
+      have known : ScalarDict.lookup entries (.string (String.singleton card.rankChar)) = some (number card.value) :=
+        ranked card (by simp [decomposition])
+      have nextValues : ready "values" = some (.ref heap.length) := by
+        simpa [ready, bound, assignNames, setLocal] using getValues
+      have nextSuits : ready "suits" = some (.ref (heap.length+1)) := by
+        simpa [ready, bound, assignNames, setLocal] using getSuits
+      have nextDecomposition : cards = (before ++ [card]) ++ rest := by
+        simpa only [List.append_assoc, List.singleton_append] using decomposition
+      obtain ⟨finalEnv, finalValues, finalSuits, continued⟩ :=
+        ih (before ++ [card]) nextDecomposition ready nextValues nextSuits
+      refine ⟨finalEnv, finalValues, finalSuits, ?_⟩
+      apply BlockContinues.sequence_step (items := tokens cards) (value := text card.token)
+      · simp [sequenceValue, Mutable.sequence, caller_found heap before cardsAddress _ cardsFound]
+      · simp [tokens, decomposition]
+      · apply BlockContinues.append (one_card heap before card globals tableAddress entries getTable tableFound known bound rfl
+          (by simpa [bound, setLocal] using getValues) (by simpa [bound, setLocal] using getSuits))
+        change BlockContinues program ready
+          [.sequenceStepLoop "c" (.ref cardsAddress) (before.length+1) body []]
+          (parsedHeap heap (before ++ [card])) finalEnv (parsedHeap heap cards) globals
+        simpa only [List.length_append, List.length_singleton] using continued
+
+/-- The source loop fills both fresh buffers, preserving the whole caller heap. -/
+theorem parse_loop (heap : Mutable.Heap) (cardsAddress : Nat) (cards : List Card)
+    (cardsFound : heap[cardsAddress]? = some (.list (tokens cards)))
+    (globals : Mutable.Globals) (tableAddress : Nat) (entries : List (Constant × Mutable.Value))
+    (getTable : globals.lookup "VALUE_MAP" = some (.ref tableAddress))
+    (tableFound : heap[tableAddress]? = some (.dict entries)) (ranked : Ranked entries cards)
+    (env : HeapCalls.Env) (getCards : env "cards" = some (.ref cardsAddress))
+    (getValues : env "values" = some (.ref heap.length)) (getSuits : env "suits" = some (.ref (heap.length+1))) :
+    ∃ finalEnv, finalEnv "values" = some (.ref heap.length) ∧ finalEnv "suits" = some (.ref (heap.length+1)) ∧
+      BlockContinues program env [.forIn (.name "c") (.name "cards") body []]
+        (parsedHeap heap []) finalEnv (parsedHeap heap cards) globals := by
+  obtain ⟨finalEnv, finalValues, finalSuits, continued⟩ :=
+    parse_remaining heap cardsAddress cards cardsFound globals tableAddress entries getTable tableFound ranked
+      cards [] (by simp) env getValues getSuits
+  refine ⟨finalEnv, finalValues, finalSuits, ?_⟩
+  apply BlockContinues.for_sequence (items := tokens cards)
+    (by intro expressions impossible; cases impossible) (Evaluates.lookup getCards)
+  · have preserved : (parsedHeap heap [])[cardsAddress]? = some (.list (tokens cards)) :=
+      caller_found heap [] cardsAddress _ cardsFound
+    simp [Mutable.sequence, preserved]
+  · exact continued
+
+/-- The parsing wrapper composes with the numeric scorer's actual source execution. -/
+theorem result (heap : Mutable.Heap) (cardsAddress : Nat) (cards : List Card)
+    (cardsFound : heap[cardsAddress]? = some (.list (tokens cards)))
+    (globals : Mutable.Globals) (tableAddress : Nat) (entries : List (Constant × Mutable.Value))
+    (getTable : globals.lookup "VALUE_MAP" = some (.ref tableAddress))
+    (tableFound : heap[tableAddress]? = some (.dict entries)) (ranked : Ranked entries cards)
+    (answer : Mutable.Value) (finalHeap : Mutable.Heap)
+    (scored : ReturnsValue program "_score_values" [.ref heap.length, .ref (heap.length+1)]
+      (parsedHeap heap cards) answer finalHeap globals) :
+    ReturnsValue program "hand_rank" [.ref cardsAddress] heap answer finalHeap globals := by
+  let entry := functionEnv ((findFunctionIn program.body "hand_rank").getD ([], [])).1
+    ((findFunctionIn program.body "hand_rank").getD ([], [])).2 [.ref cardsAddress] globals
+  let valuesEnv := setLocal entry "values" (.ref heap.length)
+  let ready := setLocal valuesEnv "suits" (.ref (heap.length+1))
+  have getCards : ready "cards" = some (.ref cardsAddress) := by cases globals <;> rfl
+  have suitsAllocated : Evaluates program valuesEnv (.list []) (heap ++ [.list []]) (.ref (heap.length+1))
+      (parsedHeap heap []) globals := by
+    have allocated : Evaluates program valuesEnv (.list []) (heap ++ [.list []])
+        (.ref (heap ++ [Mutable.Object.list []]).length)
+        ((heap ++ [.list []]) ++ [.list []]) globals := Evaluates.list .nil
+    simpa [parsedHeap, values, suits, pairs, List.append_assoc] using allocated
+  obtain ⟨finalEnv, finalValues, finalSuits, parsed⟩ :=
+    parse_loop heap cardsAddress cards cardsFound globals tableAddress entries getTable tableFound ranked ready getCards
+      (by simp [ready, setLocal, valuesEnv]) rfl
+  apply BlockReturns.function rfl rfl
+  apply (BlockContinues.annAssign (Evaluates.list .nil)).returns
+  apply (BlockContinues.annAssign suitsAllocated).returns
+  apply parsed.returns
+  exact BlockReturns.return_value (Evaluates.call
+    (.cons (Evaluates.lookup finalValues) (.cons (Evaluates.lookup finalSuits) .nil)) scored)
+
+end solvers.«54».hand_rank
+
+/-! Operational phases of the numeric poker scorer. -/
+namespace solvers.«54».numeric_score
+open FormalSW.PyAst FormalSW.PyAst.HeapCalls
+set_option Elab.async false
+
+private abbrev program := Solvers.P54Ast.module
+private abbrev number (value : Int) : Mutable.Value := .scalar (.int value)
+private abbrev numbers (values : List Int) : List Mutable.Value := values.map number
+private abbrev texts (values : List String) : List Mutable.Value := values.map fun value => .scalar (.string value)
+private abbrev flag (value : Bool) : Mutable.Value := .scalar (.bool value)
+private def code : List Stmt := executableBody ((findFunctionIn program.body "_score_values").getD ([], [])).2
+
+def addUnique (values : List Int) (value : Int) : List Int :=
+  if value ∈ values then values else values ++ [value]
+
+def unique (values : List Int) : List Int := values.foldl addUnique []
+def descending (values : List Int) : List Int := HeapCalls.sortedInts true values
+def orderedUnique (values : List Int) : List Int := ScalarSort.ints (unique (descending values))
+def suitKeys (suits : List String) : List Constant := (suits.map Constant.string).foldl ScalarSet.insert []
+def isFlush (suits : List String) : Bool := decide ((suitKeys suits).length = 1)
+
+private theorem fold_ints (remaining done : List Int) :
+    (remaining.map Constant.int).foldl ScalarSet.insert (done.map Constant.int) =
+      (remaining.foldl addUnique done).map Constant.int := by
+  induction remaining generalizing done with
+  | nil => rfl
+  | cons first rest ih =>
+      change (rest.map Constant.int).foldl ScalarSet.insert (ScalarSet.insert (done.map Constant.int) (.int first)) =
+        (rest.foldl addUnique (addUnique done first)).map Constant.int
+      rw [ScalarSet.insert_ints]
+      exact ih (addUnique done first)
+
+private theorem unique_keys (values : List Int) :
+    (values.map Constant.int).foldl ScalarSet.insert [] = (unique values).map Constant.int :=
+  fold_ints values []
+
+private theorem found_append {heap : Heap} {address : Nat} {object : Mutable.Object}
+    (found : heap[address]? = some object) (extra : Heap) : (heap ++ extra)[address]? = some object := by
+  rw [List.getElem?_append_left (List.getElem?_eq_some_iff.mp found).1]
+  exact found
+
+theorem buffers_distinct (heap : Heap) (valuesAddress suitsAddress : Nat) (values : List Int) (suits : List String)
+    (nonempty : values ≠ [])
+    (valuesFound : heap[valuesAddress]? = some (.list (numbers values)))
+    (suitsFound : heap[suitsAddress]? = some (.list (texts suits))) : valuesAddress ≠ suitsAddress := by
+  intro same
+  subst suitsAddress
+  have objects := Option.some.inj (valuesFound.symm.trans suitsFound)
+  cases values with
+  | nil => exact nonempty rfl
+  | cons value rest => cases suits <;> simp [numbers, number, texts] at objects
+
+private theorem set_texts (heap : Heap) (env : HeapCalls.Env) (address : Nat) (suits : List String) (globals : Mutable.Globals)
+    (bound : env "suits" = some (.ref address)) (found : heap[address]? = some (.list (texts suits))) :
+    Evaluates program env (.builtinCall .set [.name "suits"]) heap (.ref heap.length)
+      (heap ++ [.set (suitKeys suits)]) globals := by
+  apply Evaluates.builtin (.cons (Evaluates.lookup bound) .nil)
+  simpa [primitive, suitKeys, texts, List.map_map, Function.comp_def] using
+    Mutable.setFrom_list heap address (suits.map Constant.string)
+      (by simpa [texts, List.map_map, Function.comp_def] using found)
+
+private theorem flush_expression (heap : Heap) (env : HeapCalls.Env) (address : Nat) (suits : List String) (globals : Mutable.Globals)
+    (bound : env "suits" = some (.ref address)) (found : heap[address]? = some (.list (texts suits))) :
+    Evaluates program env (.compare (.builtinCall .len [.builtinCall .set [.name "suits"]]) [(.eq, .constant (.int 1))])
+      heap (flag (isFlush suits)) (heap ++ [.set (suitKeys suits)]) globals := by
+  let middle := heap ++ [Mutable.Object.set (suitKeys suits)]
+  apply Evaluates.compare (av := number (suitKeys suits).length) (bv := number 1) (middle := middle) (afterRight := middle)
+  · apply Evaluates.builtin (.cons (set_texts heap env address suits globals bound found) .nil)
+    simp [primitive, Mutable.length, middle, number]
+  · exact Evaluates.constant
+  · simp [HeapCalls.compare, scalarCompare, evalCmpOp, isFlush, flag]
+    constructor
+    · omega
+    · rfl
+
+private theorem set_ints (heap : Heap) (env : HeapCalls.Env) (address : Nat) (values : List Int) (globals : Mutable.Globals)
+    (bound : env "values" = some (.ref address)) (found : heap[address]? = some (.list (numbers values))) :
+    Evaluates program env (.builtinCall .set [.name "values"]) heap (.ref heap.length)
+      (heap ++ [.set ((unique values).map Constant.int)]) globals := by
+  apply Evaluates.builtin (.cons (Evaluates.lookup bound) .nil)
+  simpa [primitive, unique_keys, numbers, number, List.map_map, Function.comp_def] using
+    Mutable.setFrom_list heap address (values.map Constant.int)
+      (by simpa [numbers, number, List.map_map, Function.comp_def] using found)
+
+private theorem unique_expression (heap : Heap) (env : HeapCalls.Env) (address : Nat) (values : List Int) (globals : Mutable.Globals)
+    (bound : env "values" = some (.ref address)) (found : heap[address]? = some (.list (numbers values))) :
+    Evaluates program env (.builtinCall .sorted [.builtinCall .set [.name "values"]]) heap (.ref (heap.length+1))
+      (heap ++ [.set ((unique values).map Constant.int), .list (numbers (ScalarSort.ints (unique values)))]) globals := by
+  apply Evaluates.builtin (.cons (set_ints heap env address values globals bound found) .nil)
+  simp [primitive, HeapSort.sort_scalars, ScalarSort.sort_ints, Mutable.allocate,
+    Except.map, numbers, List.map_map, Function.comp_def, List.append_assoc]
+
+def normalizationHeap (heap : Heap) (address : Nat) (values : List Int) (suits : List String) : Heap :=
+  heap.set address (.list (numbers (descending values))) ++
+    [.set (suitKeys suits), .set ((unique (descending values)).map Constant.int), .list (numbers (orderedUnique values))]
+
+def normalizationEnv (env : HeapCalls.Env) (heap : Heap) (suits : List String) : HeapCalls.Env :=
+  setLocal (setLocal (setLocal (setLocal env "is_flush" (flag (isFlush suits)))
+    "uniq" (.ref (heap.length+2))) "is_straight" (flag false)) "straight_high" (number 0)
+
+/-- The first five source statements sort the values buffer and allocate both sets plus the sorted unique list. -/
+theorem normalization (heap : Heap) (env : HeapCalls.Env) (valuesAddress suitsAddress : Nat)
+    (values : List Int) (suits : List String) (globals : Mutable.Globals)
+    (nonempty : values ≠ [])
+    (valuesFound : heap[valuesAddress]? = some (.list (numbers values)))
+    (suitsFound : heap[suitsAddress]? = some (.list (texts suits)))
+    (getValues : env "values" = some (.ref valuesAddress)) (getSuits : env "suits" = some (.ref suitsAddress)) :
+    BlockContinues program env (code.take 5) heap (normalizationEnv env heap suits)
+      (normalizationHeap heap valuesAddress values suits) globals := by
+  let afterSort := heap.set valuesAddress (Mutable.Object.list (numbers (descending values)))
+  let afterSuits := afterSort ++ [Mutable.Object.set (suitKeys suits)]
+  let flushEnv := setLocal env "is_flush" (flag (isFlush suits))
+  let uniqEnv := setLocal flushEnv "uniq" (.ref (afterSuits.length+1))
+  let straightEnv := setLocal uniqEnv "is_straight" (flag false)
+  have inside := (List.getElem?_eq_some_iff.mp valuesFound).1
+  have different := buffers_distinct heap valuesAddress suitsAddress values suits nonempty valuesFound suitsFound
+  have sortedFound : afterSort[valuesAddress]? = some (.list (numbers (descending values))) := by simp [afterSort, inside]
+  have suitsPreserved : afterSort[suitsAddress]? = some (.list (texts suits)) := by
+    rw [List.getElem?_set_ne different]
+    exact suitsFound
+  have valuesPreserved : afterSuits[valuesAddress]? = some (.list (numbers (descending values))) :=
+    found_append sortedFound _
+  have sorted : Evaluates program env (.call (.attribute (.name "values") "$formalsw.sort.reverse") [.constant (.bool true)])
+      heap (.scalar .none) afterSort globals := by
+    apply Evaluates.sort_reverse (Evaluates.lookup getValues) valuesFound Evaluates.constant
+    · simpa [numbers, number, descending, afterSort, List.map_map, Function.comp_def] using
+        primitive_sort_reverse_ints heap valuesAddress values true
+          (by simpa [numbers, number, List.map_map, Function.comp_def] using valuesFound)
+    · intro name same
+      cases same
+      simp [getValues]
+  have flushed := BlockContinues.assign (name := "is_flush")
+    (flush_expression afterSort env suitsAddress suits globals getSuits suitsPreserved)
+  have uniques := BlockContinues.assign (name := "uniq")
+    (unique_expression afterSuits flushEnv valuesAddress (descending values) globals
+      (by simpa [flushEnv, setLocal] using getValues) valuesPreserved)
+  have first := (BlockContinues.discard sorted).append (flushed.append (uniques.append
+    ((BlockContinues.assign (name := "is_straight") (env := uniqEnv)
+      (Evaluates.constant (value := .bool false))).append
+      (BlockContinues.assign (name := "straight_high") (env := straightEnv)
+        (Evaluates.constant (value := .int 0))))))
+  simpa [code, normalizationEnv, normalizationHeap, afterSort, afterSuits, flushEnv, uniqEnv,
+    straightEnv, orderedUnique, List.append_assoc, Nat.add_assoc] using first
+
+end solvers.«54».numeric_score
+
+namespace solvers.«54».Kickers
+open FormalSW.PyAst
+
+/-- A rank and all the other ranks partition the original list. -/
+theorem length_partition (values : List Int) (rank : Int) :
+    values.length = values.count rank + (values.filter (fun value => value != rank)).length := by
+  have partition := List.length_eq_length_filter_add (l := values) (fun value => value == rank)
+  rw [← List.count_eq_length_filter] at partition
+  exact partition
+
+theorem four_kicker_nonempty (values : List Int) (four : Int)
+    (five : values.length = 5) (counted : values.count four = 4) :
+    values.filter (fun value => value != four) ≠ [] := by
+  intro empty
+  have partition := length_partition values four
+  rw [empty] at partition
+  simp only [List.length_nil] at partition
+  omega
+
+theorem two_pairs_kicker_nonempty (values : List Int) (high low : Int)
+    (five : values.length = 5) (different : high ≠ low)
+    (highCount : values.count high = 2) (lowCount : values.count low = 2) :
+    values.filter (fun value => value != high && value != low) ≠ [] := by
+  intro empty
+  have first := length_partition values high
+  have second := length_partition (values.filter (fun value => value != high)) low
+  have lowPreserved : (values.filter (fun value => value != high)).count low = values.count low :=
+    List.count_filter (by simp [Ne.symm different])
+  have combined : (values.filter (fun value => value != high)).filter (fun value => value != low) =
+      values.filter (fun value => value != high && value != low) := by
+    simp only [List.filter_filter, Bool.and_comm]
+  rw [lowPreserved, combined, empty] at second
+  simp only [List.length_nil] at second
+  omega
+
+/-- Unique dictionary keys identify the value selected by the checked lookup function. -/
+theorem lookup_of_mem (table : List (Int × Int)) (entry : Int × Int)
+    (member : entry ∈ table) (unique : (table.map Prod.fst).Nodup) :
+    count_values.lookup table entry.1 = entry.2 := by
+  revert member unique
+  induction table with
+  | nil => intro member _; cases member
+  | cons first rest ih =>
+      obtain ⟨stored, previous⟩ := first
+      intro member unique
+      have both : stored ∉ rest.map Prod.fst ∧ (rest.map Prod.fst).Nodup := by
+        simpa only [List.map_cons, List.nodup_cons] using unique
+      rcases List.mem_cons.mp member with equal | member
+      · subst entry
+        simp [count_values.lookup]
+      · have different : stored ≠ entry.1 := by
+          intro same
+          apply both.1
+          rw [same]
+          exact List.mem_map.mpr ⟨entry, member, rfl⟩
+        rw [count_values.lookup, if_neg different]
+        exact ih member both.2
+
+/-- Every actual frequency-table entry equals the corresponding occurrence count. -/
+theorem count_entry (values : List Int) (entry : Int × Int) (member : entry ∈ count_values.counts values) :
+    entry.2 = (values.count entry.1 : Int) := by
+  have selected := lookup_of_mem (count_values.counts values) entry member (count_values.counts_keys_nodup values)
+  exact selected.symm.trans (count_values.lookup_counts values entry.1)
+
+/-- Every sorted source tuple decodes to one of the original dictionary entries. -/
+theorem decoded_group_member (heap : Mutable.Heap) (address : Nat) (table : List (Int × Int))
+    (found : heap[address]? = some (.dict (count_values.entries table))) (group : Mutable.Value)
+    (member : group ∈ rank_groups.resultGroups heap table) :
+    ∃ entry ∈ table, ProjectEulerSolutions.TupleSorting.readInts (rank_groups.collected heap table) group = [entry.2, entry.1] := by
+  have original := (ProjectEulerSolutions.TupleSorting.sorted_perm (rank_groups.collected heap table) true
+    (rank_groups.references (heap.length+1) table)).mem_iff.mp member
+  have decoded : ProjectEulerSolutions.TupleSorting.readInts (rank_groups.collected heap table) group ∈
+      (rank_groups.references (heap.length+1) table).map
+        (ProjectEulerSolutions.TupleSorting.readInts (rank_groups.collected heap table)) :=
+    List.mem_map.mpr ⟨group, original, rfl⟩
+  rw [rank_groups.Represents.readInts _ _ _ (rank_groups.collected_represents heap address table found)] at decoded
+  obtain ⟨entry, entryMember, equal⟩ := List.mem_map.mp decoded
+  exact ⟨entry, entryMember, equal.symm⟩
+
+theorem decoded_count_group (heap : Mutable.Heap) (address : Nat) (values : List Int)
+    (found : heap[address]? = some (.dict (count_values.entries (count_values.counts values))))
+    (group : Mutable.Value) (member : group ∈ rank_groups.resultGroups heap (count_values.counts values)) :
+    ∃ rank : Int, ProjectEulerSolutions.TupleSorting.readInts (rank_groups.collected heap (count_values.counts values)) group =
+      [(values.count rank : Int), rank] := by
+  obtain ⟨entry, entryMember, decoded⟩ := decoded_group_member heap address (count_values.counts values) found group member
+  refine ⟨entry.1, ?_⟩
+  rw [decoded, count_entry values entry entryMember]
+
+theorem group_count (heap : Mutable.Heap) (address : Nat) (values : List Int)
+    (found : heap[address]? = some (.dict (count_values.entries (count_values.counts values))))
+    (group : Mutable.Value) (member : group ∈ rank_groups.resultGroups heap (count_values.counts values))
+    (frequency rank : Int)
+    (decoded : ProjectEulerSolutions.TupleSorting.readInts (rank_groups.collected heap (count_values.counts values)) group =
+      [frequency, rank]) :
+    (values.count rank : Int) = frequency := by
+  obtain ⟨actualRank, actual⟩ := decoded_count_group heap address values found group member
+  have same : [(values.count actualRank : Int), actualRank] = [frequency, rank] := actual.symm.trans decoded
+  have fields : (values.count actualRank : Int) = frequency ∧ actualRank = rank := by simpa using same
+  rcases fields with ⟨counted, rfl⟩
+  exact counted
+
+/-- A four-of-a-kind tuple produced by the source has a genuine remaining kicker. -/
+theorem four_group_kicker_nonempty (heap : Mutable.Heap) (address : Nat) (values : List Int)
+    (found : heap[address]? = some (.dict (count_values.entries (count_values.counts values))))
+    (five : values.length = 5) (group : Mutable.Value)
+    (member : group ∈ rank_groups.resultGroups heap (count_values.counts values)) (four : Int)
+    (decoded : ProjectEulerSolutions.TupleSorting.readInts (rank_groups.collected heap (count_values.counts values)) group = [4, four]) :
+    values.filter (fun value => value != four) ≠ [] := by
+  have counted := group_count heap address values found group member 4 four decoded
+  exact four_kicker_nonempty values four five (by omega)
+
+/-- Two distinct pair tuples produced by the source leave a fifth card. -/
+theorem two_pair_groups_kicker_nonempty (heap : Mutable.Heap) (address : Nat) (values : List Int)
+    (found : heap[address]? = some (.dict (count_values.entries (count_values.counts values))))
+    (five : values.length = 5) (highGroup lowGroup : Mutable.Value)
+    (highMember : highGroup ∈ rank_groups.resultGroups heap (count_values.counts values))
+    (lowMember : lowGroup ∈ rank_groups.resultGroups heap (count_values.counts values)) (high low : Int)
+    (different : high ≠ low)
+    (highDecoded : ProjectEulerSolutions.TupleSorting.readInts (rank_groups.collected heap (count_values.counts values)) highGroup = [2, high])
+    (lowDecoded : ProjectEulerSolutions.TupleSorting.readInts (rank_groups.collected heap (count_values.counts values)) lowGroup = [2, low]) :
+    values.filter (fun value => value != high && value != low) ≠ [] := by
+  have highCount := group_count heap address values found highGroup highMember 2 high highDecoded
+  have lowCount := group_count heap address values found lowGroup lowMember 2 low lowDecoded
+  exact two_pairs_kicker_nonempty values high low five different (by omega) (by omega)
+
+end solvers.«54».Kickers
