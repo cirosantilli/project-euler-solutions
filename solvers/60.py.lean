@@ -13,6 +13,7 @@ import ProjectEulerSolutions.Lib.CliqueSearchAgreement
 import ProjectEulerSolutions.Lib.TrialPrimeCertificate
 import ProjectEulerSolutions.Lib.PrimePairCertificate
 import ProjectEulerSolutions.Lib.PrimePairUpperBound
+import ProjectEulerSolutions.Lib.PrimePairBudget
 import ProjectEulerSolutions.Lib.PrimePairVertices.All
 import ProjectEulerSolutions.Lib.PrimePairCache.SmallPrefix
 import data.«project-euler-statements».data.py.project_euler_statements.«p60.py»
@@ -5497,32 +5498,58 @@ theorem small_model_of_upper_certificate (graph : PrimePairCertificate.Graph)
   apply CliqueSearch.search_eq_of_supergraph ordered included checked
   exact Or.inl rfl
 
-/-- Included edges are possible edges only. The winning witness is independently
-checked against the actual source predicate before transferring the optimum. -/
+/-- The actual winning witness supplies soundness independently of any
+possible-edge relation used by the finite search. -/
+theorem witness_finite_completion :
+    CliqueSearch.Completion PrimePairCertificate.relation 5 PrimePairVertices.large competitive.witness := by
+  have source := competitive.witness_mr_completion 26033 (by decide)
+  refine ⟨source.size, ?_, ?_⟩
+  · simpa only [large_vertices] using source.sublist
+  · apply competitive.witness_mr_pairs.imp_of_mem
+    intro p q memberP memberQ accepted
+    have smallP := competitive.witness_bounds p memberP
+    have smallQ := competitive.witness_bounds q memberQ
+    rw [← relation_eq p q (by omega) (by omega)]
+    exact accepted
+
+/-- A checked optimum of any edge superset transfers to the source model,
+including the selected list and its first-on-tie order. -/
+theorem large_model_of_possible_certificate (possible : Nat → Nat → Bool)
+    (included : CliqueSearch.IncludedOn PrimePairCertificate.relation possible PrimePairVertices.large)
+    (checked : CliqueSearch.search possible 5 [] PrimePairVertices.large 0
+      ⟨26034, []⟩ = ⟨26033, competitive.witness⟩) :
+    solve_search.answerModel 26033 = ⟨26033, competitive.witness⟩ := by
+  have ordered : PrimePairVertices.large.Pairwise (· < ·) := by
+    rw [← large_vertices]
+    exact solve_setup.vertices_increasing 26033
+  apply large_model_of_seeded_certificate
+  apply CliqueSearch.search_eq_of_supergraph ordered included checked
+  exact Or.inr ⟨competitive.witness, witness_finite_completion,
+    by rw [competitive.witness_sum]; rfl, rfl, by decide⟩
+
+/-- A complete possible-edge graph is one source of the finite certificate. -/
 theorem large_model_of_upper_certificate (graph : PrimePairCertificate.Graph)
     (covers : graph.Covers PrimePairVertices.largeTree)
     (coverage : ∀ p ∈ PrimePairVertices.large, p ∈ graph.vertices)
     (checked : CliqueSearch.search graph.edge 5 [] PrimePairVertices.large 0
       ⟨26034, []⟩ = ⟨26033, competitive.witness⟩) :
     solve_search.answerModel 26033 = ⟨26033, competitive.witness⟩ := by
-  have ordered : PrimePairVertices.large.Pairwise (· < ·) := by
-    rw [← large_vertices]
-    exact solve_setup.vertices_increasing 26033
-  have included : CliqueSearch.IncludedOn PrimePairCertificate.relation graph.edge PrimePairVertices.large := by
-    simpa only [PrimePairVertices.largeTree_values] using PrimePairCertificate.Graph.included covers
+  apply large_model_of_possible_certificate graph.edge
+  · simpa only [PrimePairVertices.largeTree_values] using PrimePairCertificate.Graph.included covers
       (by simpa only [PrimePairVertices.largeTree_values] using coverage)
-  have completion : CliqueSearch.Completion PrimePairCertificate.relation 5 PrimePairVertices.large competitive.witness := by
-    have source := competitive.witness_mr_completion 26033 (by decide)
-    refine ⟨source.size, ?_, ?_⟩
-    · simpa only [large_vertices] using source.sublist
-    · apply competitive.witness_mr_pairs.imp_of_mem
-      intro p q memberP memberQ accepted
-      have smallP := competitive.witness_bounds p memberP
-      have smallQ := competitive.witness_bounds q memberQ
-      rw [← relation_eq p q (by omega) (by omega)]
-      exact accepted
-  apply large_model_of_seeded_certificate
-  apply CliqueSearch.search_eq_of_supergraph ordered included checked
-  exact Or.inr ⟨competitive.witness, completion, by rw [competitive.witness_sum]; rfl, rfl, by decide⟩
+  · exact checked
+
+/-- Above the seeded pair budget all edges can remain possible. Only rows
+that can participate in an improving pair require numeric rejection proofs. -/
+theorem large_model_of_budget_certificate (graph : PrimePairCertificate.Graph)
+    (covers : PrimePairCertificate.Budget.Covers PrimePairVertices.largeTree 26034 graph)
+    (coverage : ∀ p ∈ PrimePairVertices.large, 2 * p < 26034 → p ∈ graph.vertices)
+    (checked : CliqueSearch.search (PrimePairCertificate.Budget.possible graph 26034)
+      5 [] PrimePairVertices.large 0 ⟨26034, []⟩ = ⟨26033, competitive.witness⟩) :
+    solve_search.answerModel 26033 = ⟨26033, competitive.witness⟩ := by
+  apply large_model_of_possible_certificate (PrimePairCertificate.Budget.possible graph 26034)
+  · simpa only [PrimePairVertices.largeTree_values] using PrimePairCertificate.Budget.included covers
+      (by simpa only [PrimePairVertices.largeTree_values] using coverage)
+  · exact checked
 
 end solvers.«60».certificate
