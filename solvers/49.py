@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 from __future__ import annotations
 
-from typing import Dict, List, Tuple
 
-
-def sieve_primes_upto(n: int) -> List[bool]:
+def sieve_primes_upto(n: int) -> list[bool]:
     """Return boolean array is_prime[0..n]."""
     is_prime = [True] * (n + 1)
     if n >= 0:
@@ -22,12 +20,12 @@ def sieve_primes_upto(n: int) -> List[bool]:
     return is_prime
 
 
-def find_prime_perm_arith_sequence() -> Tuple[int, int, int]:
+def find_prime_perm_arith_sequence() -> tuple[int, int, int]:
     is_prime = sieve_primes_upto(9999)
     primes_4d = [p for p in range(1000, 10000) if is_prime[p]]
 
     # Group primes by digit-multiset signature
-    groups: Dict[str, List[int]] = {}
+    groups: dict[str, list[int]] = {}
     for p in primes_4d:
         key = "".join(sorted(str(p)))
         groups.setdefault(key, []).append(p)
