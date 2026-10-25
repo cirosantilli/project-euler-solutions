@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+"""
+@formalsw: theorem solve_source_equivalence
+  (input : solvers.«54».source_equivalence.Input) :
+  input.Valid → solvers.«54».source_equivalence.Verified input
+"""
 from __future__ import annotations
 
 from typing import Iterable, List, Sequence, Tuple

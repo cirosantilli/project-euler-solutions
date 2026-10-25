@@ -488,6 +488,8 @@ The most important statement is the `@formalsw: Equiv(naive)` one, which, if our
 
 The proofs of FormalSW statements such as `Equiv` as present in .py.lean files present next to each .py file, e.g.: link:solvers/1.py.lean[]. These files are very complicated for humans to understand, but that's fine, we just have LLMs deal with it for us, and Lean checks that the proof checks out.
 
+Problem 54 uses a raw source theorem to relate text lines to the reference's pairs of hands. Its explicit `Input.Valid` domain covers finite lists of matching five-card games with coherent live rank tables and rank values at most 14. `Verified` proves that both original functions return and have equivalent observable results, heaps, and globals for every set-iteration schedule.
+
 After building the Lean libraries above, check a Python proof with:
 
 [source,shell]
@@ -701,7 +703,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/51.py[51.py] | link:solvers/51.md[51.md] | link:solvers/51.py.lean[51.py.lean] | 0.149 | 121313 |
 | link:solvers/52.py[52.py] | link:solvers/52.md[52.md] | link:solvers/52.py.lean[52.py.lean] | 0.123 | 142857 |
 | link:solvers/53.py[53.py] | link:solvers/53.md[53.md] | link:solvers/53.py.lean[53.py.lean] | 0.106 | 4075 |
-| link:solvers/54.py[54.py] | link:solvers/54.md[54.md] |  | 0.198 | 376 |
+| link:solvers/54.py[54.py] | link:solvers/54.md[54.md] | link:solvers/54.py.lean[54.py.lean] | 0.198 | 376 |
 | link:solvers/55.py[55.py] | link:solvers/55.md[55.md] |  | 0.166 | 249 |
 | link:solvers/56.py[56.py] | link:solvers/56.md[56.md] |  | 0.088 | 972 |
 | link:solvers/57.py[57.py] | link:solvers/57.md[57.md] |  | 0.076 | 153 |

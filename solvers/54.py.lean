@@ -5223,3 +5223,371 @@ theorem reference_counts_key_caller (heap : Mutable.Heap) (values : List Int) (a
   counts_key_source.caller_found heap values address object found
 
 end solvers.«54».numeric_score.reference_model
+
+namespace solvers.«54».numeric_score.reference_model
+open FormalSW.PyAst
+open ProjectEulerSolutions
+open data.«project-euler-statements».data.py.project_euler_statements.p54
+open solvers.«54».numeric_score.expanded_key
+set_option Elab.async false
+
+private def scorePair (score : PokerScoreOrder.Score) : Int × List Int := (score.tag, score.key)
+
+private theorem scorePair_ite (condition : Prop) [Decidable condition] (yes no : PokerScoreOrder.Score) :
+    scorePair (if condition then yes else no) = if condition then scorePair yes else scorePair no := by
+  by_cases selected : condition
+  · simp only [if_pos selected]
+  · simp only [if_neg selected]
+
+/-- The source's independently proved straight-high expression is the pure straight-high function. -/
+theorem reference_straightHigh_eq (values : List Int) :
+    straight_high.value values = PokerStraights.straightHigh (ScalarSort.ints values) := by
+  simp only [straight_high.value, straight_high.wheel, PokerStraights.straightHigh,
+    PokerStraights.wheel, List.getLastD_eq_getLast?]
+  rfl
+
+/-- Optional source subscriptions and the shared row model use the same zero default. -/
+theorem reference_firstCount_eq (values : List Int) :
+    hand_score_source.firstCount (counts_key_source.orderedRows values) = firstCount values := by
+  rw [reference_orderedRows_eq]
+  unfold hand_score_source.firstCount firstCount
+  cases (pairs values)[0]? <;> rfl
+
+theorem reference_secondCount_eq (values : List Int) :
+    hand_score_source.secondCount (counts_key_source.orderedRows values) = secondCount values := by
+  rw [reference_orderedRows_eq]
+  unfold hand_score_source.secondCount secondCount
+  cases (pairs values)[1]? <;> rfl
+
+/-- The source's short-circuit nonempty/frequency guard is the model's exact proposition. -/
+theorem reference_oneCount_eq (values : List Int) (count : Int) :
+    hand_score_source.oneCount (counts_key_source.orderedRows values) count =
+      decide (pairs values ≠ [] ∧ firstCount values = count) := by
+  unfold hand_score_source.oneCount
+  rw [reference_firstCount_eq, reference_orderedRows_eq]
+  cases pairs values <;> simp
+
+/-- The source's guarded two-row test agrees without requiring the input to contain two rows. -/
+theorem reference_twoCounts_eq (values : List Int) (first second : Int) :
+    hand_score_source.twoCounts (counts_key_source.orderedRows values) first second =
+      decide (2 ≤ (pairs values).length ∧ firstCount values = first ∧ secondCount values = second) := by
+  unfold hand_score_source.twoCounts
+  rw [reference_firstCount_eq, reference_secondCount_eq, reference_orderedRows_eq]
+  apply Bool.eq_iff_iff.mpr
+  simp [and_assoc]
+
+/-- The complete actual-source suffix model is the shared model, including all empty/short-table guards. -/
+theorem reference_handSuffix_eq (values : List Int) (suits : List String) :
+    hand_score_source.referenceSuffix values suits (counts_key_source.orderedRows values) =
+      ((referenceSuffix values (PokerStraights.straightHigh (ScalarSort.ints values)) (isFlush suits)
+          (PokerStraights.referenceStraight (ScalarSort.ints values))).tag,
+        (referenceSuffix values (PokerStraights.straightHigh (ScalarSort.ints values)) (isFlush suits)
+          (PokerStraights.referenceStraight (ScalarSort.ints values))).key) := by
+  change hand_score_source.referenceSuffix values suits (counts_key_source.orderedRows values) =
+    scorePair (referenceSuffix values (PokerStraights.straightHigh (ScalarSort.ints values)) (isFlush suits)
+      (PokerStraights.referenceStraight (ScalarSort.ints values)))
+  unfold hand_score_source.referenceSuffix referenceSuffix
+  simp only [reference_oneCount_eq, reference_twoCounts_eq, decide_eq_true_eq,
+    reference_countsKey_eq, ← PokerFlushEquivalence.isFlush_eq, reference_straightHigh_eq]
+  simp only [scorePair_ite]
+  rfl
+
+/-- The reference source's complete numerical score equals the common model for every finite rank/suit list.
+This is a definitional/algebraic bridge; five-card and rank-bound restrictions are unnecessary. -/
+theorem reference_handScore_eq (values : List Int) (suits : List String) :
+    hand_score_source.referenceScore values suits = ((referenceScore values suits).tag, (referenceScore values suits).key) := by
+  change hand_score_source.referenceScore values suits = scorePair (referenceScore values suits)
+  unfold hand_score_source.referenceScore referenceScore
+  dsimp only
+  rw [← PokerFlushEquivalence.isFlush_eq]
+  by_cases both : (PokerStraights.referenceStraight (ScalarSort.ints values) && isFlush suits) = true
+  · simp only [if_pos both]
+    unfold hand_score_source.straightFlushCategory hand_score_source.straightFlushKey
+    rw [reference_straightHigh_eq]
+    by_cases royal : ScalarSort.ints values = [10, 11, 12, 13, 14]
+    · simp [hand_score_source.royal, royal, scorePair]
+    · simp [hand_score_source.royal, royal, scorePair]
+  · simp only [if_neg both]
+    exact reference_handSuffix_eq values suits
+
+/-- The score represented by the original reference source is exactly the normalized actual solver score. -/
+theorem reference_handScore_normalized (values : List Int) (suits : List String) (five : values.length = 5) :
+    hand_score_source.referenceScore values suits =
+      ((PokerScoreOrder.normalize (semantics.score values suits)).tag,
+        (PokerScoreOrder.normalize (semantics.score values suits)).key) := by
+  simpa only [referenceScore_normalizes values suits five] using reference_handScore_eq values suits
+
+/-- A reference source result representation therefore carries the normalized solver fields. -/
+theorem reference_hand_represents {heap : Mutable.Heap} {answer : Mutable.Value}
+    (values : List Int) (suits : List String) (five : values.length = 5)
+    (represented : hand_score_source.Represents heap answer (hand_score_source.referenceScore values suits).1
+      (hand_score_source.referenceScore values suits).2) :
+    hand_score_source.Represents heap answer (PokerScoreOrder.normalize (semantics.score values suits)).tag
+      (PokerScoreOrder.normalize (semantics.score values suits)).key := by
+  simpa only [reference_handScore_normalized values suits five] using represented
+
+/-- The complete checked reference source returns the normalized solver score for live dictionary valuations. -/
+theorem reference_hand_source_normalized (heap : Mutable.Heap) (address tableAddress : Nat)
+    (cards : List flush_source.Card) (valuation : flush_source.Card → Int)
+    (table : List (Constant × Mutable.Value)) (globals : Mutable.Globals)
+    (five : cards.length = 5)
+    (found : heap[address]? = some (.list (flush_source.tokens cards)))
+    (tableFound : heap[tableAddress]? = some (.dict table))
+    (getTable : globals.lookup "rank_values" = some (.ref tableAddress))
+    (valued : ∀ card ∈ cards, ScalarDict.lookup table (.string (String.singleton card.rankChar)) =
+      some (.scalar (.int (valuation card)))) :
+    ∃ extra : Mutable.Heap, ∃ answer : Mutable.Value,
+      HeapCalls.ReturnsValue P54Ast.module "hand_score" [.ref address] heap answer (heap ++ extra) globals ∧
+      hand_score_source.Represents (heap ++ extra) answer
+        (PokerScoreOrder.normalize (semantics.score (cards.map valuation) (flush_source.suits cards))).tag
+        (PokerScoreOrder.normalize (semantics.score (cards.map valuation) (flush_source.suits cards))).key := by
+  obtain ⟨extra, answer, run, represented⟩ := hand_score_source.result heap address tableAddress cards valuation
+    table globals found tableFound getTable valued
+  refine ⟨extra, answer, run, ?_⟩
+  exact reference_hand_represents (cards.map valuation) (flush_source.suits cards)
+    (by simpa only [List.length_map] using five) represented
+
+end solvers.«54».numeric_score.reference_model
+
+namespace solvers.«54».source_equivalence
+open FormalSW.PyAst
+open ProjectEulerSolutions
+open data.«project-euler-statements».data.py.project_euler_statements.p54
+set_option Elab.async false
+
+private abbrev RootCard := hand_rank.Card
+private abbrev RefCard := flush_source.Card
+private abbrev Game := solve.semantics.Game
+private abbrev Deal := naive_source.Deal
+
+/-- Correspondence contains only facts about the actual input cards and their live rank valuation. -/
+structure CardMatch (valuation : RefCard → Int) (root : RootCard) (reference : RefCard) : Prop where
+  token : root.token = reference.token
+  value : root.value = valuation reference
+  suit : root.suitChar = reference.suitChar
+  upper : root.value ≤ 14
+
+/-- The two input hands correspond position by position; no result or winner is assumed. -/
+structure GameMatch (valuation : RefCard → Int) (game : Game) (deal : Deal) : Prop where
+  left : List.Forall₂ (CardMatch valuation) game.leftCards deal.leftCards
+  right : List.Forall₂ (CardMatch valuation) game.rightCards deal.rightCards
+
+private theorem card_values_eq (valuation : RefCard → Int) (roots : List RootCard) (references : List RefCard)
+    (matching : List.Forall₂ (CardMatch valuation) roots references) :
+    roots.map hand_rank.Card.value = references.map valuation := by
+  induction matching with
+  | nil => rfl
+  | cons first _ ih => simp only [List.map_cons, first.value, ih]
+
+private theorem card_suits_eq (valuation : RefCard → Int) (roots : List RootCard) (references : List RefCard)
+    (matching : List.Forall₂ (CardMatch valuation) roots references) :
+    (roots.map fun card => String.singleton card.suitChar) = flush_source.suits references := by
+  induction matching with
+  | nil => rfl
+  | @cons root reference roots references first _ ih =>
+      change String.singleton root.suitChar :: (roots.map fun card => String.singleton card.suitChar) =
+        String.singleton reference.suitChar :: flush_source.suits references
+      rw [first.suit, ih]
+
+private theorem card_values_bounded (valuation : RefCard → Int) (roots : List RootCard) (references : List RefCard)
+    (matching : List.Forall₂ (CardMatch valuation) roots references) :
+    ∀ value ∈ roots.map hand_rank.Card.value, value ≤ 14 := by
+  induction matching with
+  | nil => intro value impossible; cases impossible
+  | @cons root reference roots references first _ ih =>
+      intro value member
+      rcases List.mem_cons.mp member with rfl | member
+      · exact first.upper
+      · exact ih value member
+
+/-- Token strings agree before either implementation parses or evaluates a hand. -/
+theorem card_tokens_eq (valuation : RefCard → Int) (roots : List RootCard) (references : List RefCard)
+    (matching : List.Forall₂ (CardMatch valuation) roots references) :
+    roots.map hand_rank.Card.token = references.map flush_source.Card.token := by
+  induction matching with
+  | nil => rfl
+  | cons first _ ih => simp only [List.map_cons, first.token, ih]
+
+/-- The scalar-string heap encodings agree as well. -/
+theorem card_encoded_tokens_eq (valuation : RefCard → Int) (roots : List RootCard) (references : List RefCard)
+    (matching : List.Forall₂ (CardMatch valuation) roots references) :
+    hand_rank.tokens roots = flush_source.tokens references := by
+  have equal := congrArg (List.map fun token => Mutable.Value.scalar (.string token))
+    (card_tokens_eq valuation roots references matching)
+  simpa only [hand_rank.tokens, flush_source.tokens, List.map_map, Function.comp_def] using equal
+
+/-- The source line tokenization and reference pair input have the same ten elementary card tokens. -/
+theorem game_tokens_eq (valuation : RefCard → Int) (game : Game) (deal : Deal)
+    (matching : GameMatch valuation game deal) :
+    player1_wins.tokens game.line = deal.leftCards.map flush_source.Card.token ++ deal.rightCards.map flush_source.Card.token := by
+  rw [game.tokenized, List.map_append, card_tokens_eq valuation _ _ matching.left,
+    card_tokens_eq valuation _ _ matching.right]
+
+private theorem matched_reference_score (valuation : RefCard → Int) (roots : List RootCard) (references : List RefCard)
+    (matching : List.Forall₂ (CardMatch valuation) roots references) (five : roots.length = 5) :
+    beats_source.total.score references valuation =
+      ((PokerScoreOrder.normalize (player1_wins.semantics.cardScore roots)).tag,
+        (PokerScoreOrder.normalize (player1_wins.semantics.cardScore roots)).key) := by
+  have transported := congrArg₂ hand_score_source.referenceScore
+    (card_values_eq valuation roots references matching) (card_suits_eq valuation roots references matching)
+  have normalized := numeric_score.reference_model.reference_handScore_normalized
+    (roots.map hand_rank.Card.value) (roots.map fun card => String.singleton card.suitChar)
+    (by simpa only [List.length_map] using five)
+  exact transported.symm.trans normalized
+
+@[irreducible] private def pairGreater (left right : Int × List Int) : Bool :=
+  beats_source.greater left.1 right.1 left.2 right.2
+
+private theorem pairGreater_comparison (left right : PokerScoreOrder.Score) :
+    pairGreater (left.tag, left.key) (right.tag, right.key) = PokerScoreOrder.comparison left right := by
+  unfold pairGreater beats_source.greater PokerScoreOrder.comparison
+  rfl
+
+private theorem pairGreater_wins (valuation : RefCard → Int) (left right : List RefCard) :
+    pairGreater (beats_source.total.score left valuation) (beats_source.total.score right valuation) =
+      beats_source.total.wins left right valuation := by
+  unfold pairGreater beats_source.total.wins
+  rfl
+
+/-- The original solver and reference choose the same winner from matched elementary game inputs. -/
+theorem game_wins_eq (valuation : RefCard → Int) (game : Game) (deal : Deal)
+    (matching : GameMatch valuation game deal) :
+    player1_wins.semantics.wins game.leftCards game.rightCards =
+      beats_source.total.wins deal.leftCards deal.rightCards valuation := by
+  have leftScore := matched_reference_score valuation game.leftCards deal.leftCards matching.left game.leftFive
+  have rightScore := matched_reference_score valuation game.rightCards deal.rightCards matching.right game.rightFive
+  have leftValid : PokerScoreOrder.Valid (player1_wins.semantics.cardScore game.leftCards) := by
+    dsimp only [player1_wins.semantics.cardScore]
+    apply numeric_score.semantics.score_valid
+    · simpa only [List.length_map] using game.leftFive
+    · exact card_values_bounded valuation game.leftCards deal.leftCards matching.left
+  have rightValid : PokerScoreOrder.Valid (player1_wins.semantics.cardScore game.rightCards) := by
+    dsimp only [player1_wins.semantics.cardScore]
+    apply numeric_score.semantics.score_valid
+    · simpa only [List.length_map] using game.rightFive
+    · exact card_values_bounded valuation game.rightCards deal.rightCards matching.right
+  have transported := congrArg₂ pairGreater leftScore rightScore
+  calc
+    player1_wins.semantics.wins game.leftCards game.rightCards =
+        PokerScoreOrder.comparison (PokerScoreOrder.normalize (player1_wins.semantics.cardScore game.leftCards))
+          (PokerScoreOrder.normalize (player1_wins.semantics.cardScore game.rightCards)) :=
+      (PokerScoreOrder.normalized_comparison _ _ leftValid rightValid).symm
+    _ = pairGreater
+        ((PokerScoreOrder.normalize (player1_wins.semantics.cardScore game.leftCards)).tag,
+          (PokerScoreOrder.normalize (player1_wins.semantics.cardScore game.leftCards)).key)
+        ((PokerScoreOrder.normalize (player1_wins.semantics.cardScore game.rightCards)).tag,
+          (PokerScoreOrder.normalize (player1_wins.semantics.cardScore game.rightCards)).key) :=
+      (pairGreater_comparison _ _).symm
+    _ = pairGreater (beats_source.total.score deal.leftCards valuation) (beats_source.total.score deal.rightCards valuation) :=
+      transported.symm
+    _ = beats_source.total.wins deal.leftCards deal.rightCards valuation :=
+      pairGreater_wins valuation deal.leftCards deal.rightCards
+
+/-- Equal game winners contribute equal integer summands to both actual source totals. -/
+theorem game_weight_eq (valuation : RefCard → Int) (game : Game) (deal : Deal)
+    (matching : GameMatch valuation game deal) : solve.semantics.weight game = naive_source.weight valuation deal := by
+  unfold solve.semantics.weight naive_source.weight
+  rw [game_wins_eq valuation game deal matching]
+
+/-- Pointwise elementary game correspondence lifts to the complete finite input totals. -/
+theorem totals_eq (valuation : RefCard → Int) (games : List Game) (deals : List Deal)
+    (matching : List.Forall₂ (GameMatch valuation) games deals) :
+    solve.semantics.total games = naive_source.total valuation deals := by
+  induction matching with
+  | nil => rfl
+  | @cons game deal games deals first _ ih =>
+      simp only [solve.semantics.total, naive_source.total, game_weight_eq valuation game deal first, ih]
+
+end solvers.«54».source_equivalence
+
+namespace solvers.«54».source_equivalence
+open FormalSW.PyAst
+open data.«project-euler-statements».data.py.project_euler_statements.p54
+set_option Elab.async false
+
+/-- Two encodings of the same finite games share their entire original heap and global context. -/
+structure Input where
+  heap : Mutable.Heap
+  globals : Mutable.Globals
+  linesAddress : Nat
+  dealsAddress : Nat
+  games : List solve.semantics.Game
+  deals : List naive_source.Deal
+  valuation : flush_source.Card → Int
+  valueMapAddress : Nat
+  rankValuesAddress : Nat
+  valueMapEntries : List (Constant × Mutable.Value)
+  rankValuesEntries : List (Constant × Mutable.Value)
+
+/-- Elementary source-domain conditions only: live inputs/tables, rank valuations and matched card tokens.
+Every original heap object and every global binding remains part of the observable state. -/
+structure Input.Valid (input : Input) : Prop where
+  heapValid : input.heap.Valid
+  globalsWithin : ∀ entry ∈ input.globals, entry.2.edge.Within input.heap.length
+  linesFound : input.heap[input.linesAddress]? = some (.list (solve.semantics.lineValues input.games))
+  dealsFound : input.heap[input.dealsAddress]? = some (.list (naive_source.items input.deals))
+  getValueMap : input.globals.lookup "VALUE_MAP" = some (.ref input.valueMapAddress)
+  valueMapFound : input.heap[input.valueMapAddress]? = some (.dict input.valueMapEntries)
+  getRankValues : input.globals.lookup "rank_values" = some (.ref input.rankValuesAddress)
+  rankValuesFound : input.heap[input.rankValuesAddress]? = some (.dict input.rankValuesEntries)
+  ranked : ∀ game ∈ input.games, game.Ranked input.valueMapEntries
+  knownDeals : ∀ deal ∈ input.deals, deal.Found input.heap
+  valuedDeals : ∀ deal ∈ input.deals, deal.Valued input.rankValuesEntries input.valuation
+  matching : List.Forall₂ (GameMatch input.valuation) input.games input.deals
+
+/-- The current solver's original Python solve function, with independent universal set choices. -/
+def left (input : Input) : Mutable.CallFamily :=
+  SetCalls.call Solvers.P54Ast.module "solve" [.ref input.linesAddress] input.heap input.globals
+
+/-- The current reference's original Python naive function, observing the same heap and globals. -/
+def right (input : Input) : Mutable.CallFamily :=
+  SetCalls.call P54Ast.module "naive" [.ref input.dealsAddress] input.heap input.globals
+
+/-- Explicit terminating coverage on both sides and full observational equivalence of the actual calls. -/
+def Verified (input : Input) : Prop := (left input).Returns ∧ (right input).Returns ∧ (left input).Equiv (right input)
+
+/-- Both original source functions return equivalent completions on every related finite input.
+The only difference allowed in the final heaps is allocation of their private temporary objects. -/
+theorem verified (input : Input) (valid : input.Valid) : Verified input := by
+  obtain ⟨leftExtra, leftRun⟩ := solve.semantics.result input.games input.heap input.linesAddress valid.linesFound
+    input.globals input.valueMapAddress input.valueMapEntries valid.getValueMap valid.valueMapFound valid.ranked
+  obtain ⟨rightExtra, rightRun⟩ := naive_source.result input.deals input.heap input.dealsAddress valid.dealsFound
+    input.valuation input.globals input.rankValuesAddress input.rankValuesEntries valid.getRankValues valid.rankValuesFound
+    valid.knownDeals valid.valuedDeals
+  have totals : solve.semantics.total input.games = naive_source.total input.valuation input.deals :=
+    totals_eq input.valuation input.games input.deals valid.matching
+  have rightRunCommon : HeapCalls.ReturnsValue P54Ast.module "naive" [.ref input.dealsAddress]
+      input.heap (.scalar (.int (solve.semantics.total input.games))) (input.heap ++ rightExtra) input.globals := by
+    simpa only [← totals] using rightRun
+  refine ⟨SetCalls.returns_of_heap leftRun.returns, SetCalls.returns_of_heap rightRun.returns, ?_⟩
+  intro leftChoices rightChoices
+  have leftFinished : ((left input).run leftChoices).Finishes
+      ⟨.ok (.scalar (.int (solve.semantics.total input.games))), input.globals,
+        input.heap ++ leftExtra, input.heap.length⟩ :=
+    SetCalls.finishes_of_heap leftRun.finishes leftChoices 0
+  have rightFinished : ((right input).run rightChoices).Finishes
+      ⟨.ok (.scalar (.int (solve.semantics.total input.games))), input.globals,
+        input.heap ++ rightExtra, input.heap.length⟩ :=
+    SetCalls.finishes_of_heap rightRunCommon.finishes rightChoices 0
+  exact Mutable.Call.equiv_of_finishes leftFinished rightFinished
+    (Mutable.Completion.equivalent_allocations input.heap leftExtra rightExtra
+      (.scalar (.int (solve.semantics.total input.games))) input.globals valid.heapValid (by trivial) valid.globalsWithin)
+
+/-- The source theorem's execution coverage quantifies over every choice schedule on each side. -/
+theorem coverage (input : Input) (valid : input.Valid) : (left input).Returns ∧ (right input).Returns := by
+  have checked := verified input valid
+  exact ⟨checked.1, checked.2.1⟩
+
+/-- The semantic comparison preserves all anchored input aliases/cycles and all original global roots. -/
+theorem equivalent (input : Input) (valid : input.Valid) : (left input).Equiv (right input) :=
+  (verified input valid).2.2
+
+end solvers.«54».source_equivalence
+
+namespace solvers.«54»
+
+/-- The declared Python-source entry covers both original APIs and every independent set-iteration schedule. -/
+theorem solve_source_equivalence (input : source_equivalence.Input) :
+    input.Valid → source_equivalence.Verified input := source_equivalence.verified input
+
+end solvers.«54»
