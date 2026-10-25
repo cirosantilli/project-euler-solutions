@@ -26,17 +26,18 @@ def is_pentagonal(x: int) -> bool:
     return (1 + s) % 6 == 0
 
 
-def solve() -> int:
+def solve(after: int = 40755) -> int:
     """
-    @formalsw: Py from project_euler_statements.p45 import naive_default
-    @formalsw: Equiv(naive_default)
+    Find the least positive triangular, pentagonal, and hexagonal value above after.
+
+    @formalsw: Py from project_euler_statements.p45 import naive
+    @formalsw: Equiv(naive)
     """
-    # Every hexagonal number is triangular, so we only need H_n that is pentagonal.
-    n = 144  # next after H_143
+    n = 1
     while True:
-        h = hexagonal(n)
-        if is_pentagonal(h):
-            return h
+        value = hexagonal(n)
+        if value > after and is_pentagonal(value):
+            return value
         n += 1
 
 

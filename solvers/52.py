@@ -15,8 +15,7 @@ def digit_signature(n: int) -> tuple[int, ...]:
 
 def solve(limit_mul: int = 6) -> int:
     """
-    @formalsw: Requires(limit_mul >= 2)
-    @formalsw: Requires(limit_mul <= 6)
+    @formalsw: Requires(limit_mul >= 1)
     @formalsw: Py from project_euler_statements.p52 import naive
     @formalsw: Equiv(naive)
     """

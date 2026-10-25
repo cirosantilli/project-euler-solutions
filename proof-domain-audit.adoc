@@ -1,0 +1,47 @@
+= Python proof-domain audit
+
+This audit covers the Python solver and reference interfaces for problems 1 through 62, their `Requires` annotations, default adapters, and the documented proof claims.
+
+Prefer a meaningful argument shared by both implementations. A reference-only search limit changes an unbounded problem into a bounded one and is not an acceptable substitute. A mathematical bound derived from the inputs or the problem definition is acceptable. For a fixed problem without a useful parameter, retain `Equiv` and prefer structural proofs through shared mathematical models. A completed interpreter observation can establish termination; running out of observation fuel cannot.
+
+== Reference interfaces corrected
+
+[cols="1,3,3"]
+|===
+| Problem | Former reference restriction | Current reference
+| 32 | Supplied factor limits 99 and 9999 | Split every permutation of the actual nine digits into factors and product.
+| 34 | Supplied inclusive limit 2540160 | Derive the maximum possible digit count using `d * 9!` and `10**(d-1)`.
+| 37 | Scan below a million | Exhaust the right-truncatable-prime tree until its frontier is empty.
+| 38 | Supplied base limit 9999 | Derive the maximum base width from fitting at least two products into nine digits.
+| 40 | Supplied decimal-stream construction limit | Accept the same requested digit positions as the optimized solver and extend the stream until they exist.
+| 45 | Scan 100001 triangular indices | Accept the same `after` threshold as the optimized solver and merge the three increasing polygonal sequences without a cutoff.
+| 46 | Scan below 10000 | Search until the first counterexample, without a cutoff.
+| 61 | Supplied polygonal index limit 140 | Enumerate each family until its values reach the problem's four-digit boundary.
+| 62 | Supplied cube-root limit | Accept only the requested class size and expand complete digit widths until successful. Internal finite counting windows come from those widths.
+|===
+
+The source proofs made stale by these changes are retained as `.py.lean.attempt`; their README proof links are removed. They are not counted as current proofs. Unchanged zero-argument `Equiv` proofs remain in place; they need not be discarded merely because they have no arguments.
+
+== Remaining implementation and proof restrictions
+
+[cols="1,3,3"]
+|===
+| Problem | Finding | Required follow-up
+| 11 | The proof fixes the grid to the original 20 by 20 shape. | Consider general rectangular grids; the current theorem is restricted.
+| 17 | Number spelling and its proof stop at 1000. | This is the original problem's range, not an exhaustion bound. A broader naming convention would be a new parameterized problem.
+| 19 | The solver starts its calendar at 1900 and the proof excludes earlier years. | Extend the implementation before claiming arbitrary year ranges.
+| 23 | Embedded example assertions require indices 24 and 28, restricting otherwise meaningful smaller limits. | Move example checks outside the solver and extend its proof domain.
+| 26 | The proof excludes small limits because the two implementations disagree on empty searches and zero-length ties. | Align the boundary semantics rather than hiding them with a lower bound.
+| 36 | Fixed: prefixes now grow until the supplied bound is exhausted. | Replace the archived capped-domain proof with a generalized equivalence proof.
+| 37 | Fixed: the optimized sieve doubles until it finds the eleven primes specified by the problem. | Restore equivalence to the unbounded reference; there is no fixed sieve cutoff.
+| 44 | Both implementations accept the same finite pentagonal-index bound. | This is a valid bounded parameterization, but equivalence alone does not prove that the default answer is the global minimum over all indices.
+| 51 | Fixed: the decimal-width cutoff and proof-only target cap are removed. | Replace the archived restricted-domain proof; establish termination when a matching family exists.
+| 52 | Fixed: the proof-only upper cap is removed and the old proof is archived. | Prove the generalized equivalence. `1176470588235294` works through multiplier eight, and `105263157894736842` through nine; these are checked witnesses, not claims of leastness.
+| 62 | The old finite-window theorem does not establish the new unbounded public reference contract. | Connect exact class counts and successful-search witnesses to `naive(target)` and `solve(k)` with the same argument.
+|===
+
+Other explicit bounds were checked for their role: the quadratic coefficient ranges in problem 27, the fifth power in problem 30, the target decimal digits in problems 32 and 38, the four-digit progression in problem 49, the fifty reverse-and-add steps in problem 55, and the one-tenth spiral threshold in problem 58 come from their stated problem variants. Problem 60's bound is shared by both implementations and its theorem covers every signed bound; it is not a reference-only cutoff. Such shared parameters still deserve review when a more natural generalization is available.
+
+Further useful shared parameters include coefficient ranges in problem 27, the digit-power exponent in problem 30, the numeral base in problem 34, the target digit set in problems 32 and 38, the substring divisors in problem 43, and the diagonal-prime ratio in problem 58. Existing fixed-input proofs do not replace these prospective generalized results. Problems 40 and 45 already have shared position and threshold parameters after this cleanup.
+
+The default root-partition certificate for problem 62 is numerical evidence toward a termination witness, not an execution cap. Its class batches were checked, but final assembly has not passed and is not a completed proof.

@@ -488,6 +488,8 @@ The most important statement is the `@formalsw: Equiv(naive)` one, which, if our
 
 The proofs of FormalSW statements such as `Equiv` as present in .py.lean files present next to each .py file, e.g.: link:solvers/1.py.lean[]. These files are very complicated for humans to understand, but that's fine, we just have LLMs deal with it for us, and Lean checks that the proof checks out.
 
+Prefer a meaningful parameter shared by the optimized and naive implementations. Do not add a reference-only exhaustion limit to an unbounded problem. For fixed problems without a useful generalization, retain `Equiv` and prefer structural proofs through shared mathematical models. Whole-program evaluation is not the default proof strategy. Stale proofs are kept as `.py.lean.attempt` and are not marked proven. See link:proof-domain-audit.adoc[] for the current audit and remaining restrictions.
+
 Problem 54 uses a raw source theorem to relate text lines to the reference's pairs of hands. Its explicit `Input.Valid` domain covers finite lists of matching five-card games with coherent live rank tables and rank values at most 14. `Verified` proves that both original functions return and have equivalent observable results, heaps, and globals for every set-iteration schedule.
 
 After building the Lean libraries above, check a Python proof with:
@@ -526,23 +528,23 @@ Problem 30’s source-level equivalence proof covers digit extraction, the fifth
 
 Problem 31’s source-level equivalence proof connects recursive coin counting to the dynamic programming table for every nonnegative target and list of positive denominations. It covers empty, repeated, and unsorted denominations, with repeated entries treated as distinct coin types. The proofs use only standard Lean axioms.
 
-Problem 32’s source-level equivalence proof covers digit masks, both factor searches, duplicate removal, and every set iteration order. Decimal-length bounds reduce the reference search to 33,821 candidates, checked in small kernel certificates. The contract requires `FULL_MASK = 511`, its initialized value, and preserves that shared global state. The proofs use only standard Lean axioms.
+Problem 32’s previous fixed-instance source proof is archived as an attempt. The reference now splits permutations of the actual nine problem digits, with no separate factor-search limits. Structural `Equiv` checking remains to be attached to this reference.
 
 Problem 33’s source-level equivalence proof covers decimal string replacement, the nested fraction search, tuple allocations, and reduction of the product by its greatest common divisor.
 
-Problem 34’s source-level equivalence proof covers factorial-table construction, digit extraction, the computed search bound, and the sum of matching numbers.
+Problem 34’s previous source proof is archived after removing the reference-only search-limit argument. Both implementations derive a finite bound from the maximum digit-factorial sum. Structural `Equiv` checking for the fixed problem remains pending.
 
 Problem 35’s source-level equivalence proof covers the prime sieve, decimal rotations, captured primality lookup, and circular-prime count for every nonnegative limit.
 
-Problem 36’s source-level equivalence proof covers decimal palindrome generation, binary palindrome testing, and the sum for limits from zero through one million. The reference terminates for every integer limit.
+Problem 36’s optimized palindrome generator now grows prefixes until the supplied bound is exhausted, with no million-value cap. The previous restricted-domain proof is retained as an attempt pending a generalized `Equiv` proof.
 
-Problem 37’s source-level equivalence proof covers the sieve, truncation tests, collection of the eleven primes, and the resulting sum. Finite certificates establish the search bounds and completeness of the reference.
+Problem 37’s reference exhausts the right-truncatable-prime tree without a numeric cutoff, and the optimized sieve expands until finding the problem’s eleven primes. The previous bounded-reference proof is retained as an attempt pending a new `Equiv` proof.
 
-Problem 38’s source-level equivalence proof covers concatenated decimal products, pandigital masks, and maximum selection. Its contract requires `TARGET_MASK = 1022`, the initialized value of that global.
+Problem 38’s previous source proof is archived after removing the reference-only base-search limit. The four-digit base bound follows from fitting at least two products into nine digits. Structural `Equiv` checking remains pending.
 
 Problem 39’s source-level equivalence proof connects primitive Pythagorean triples and their multiples to the reference’s triangle counts, including first-on-tie perimeter selection, for every nonnegative limit.
 
-Problem 40’s source-level equivalence proof covers one-based decimal block indexing, string-to-integer conversion, and the seven-position product. The reference’s digit-stream construction terminates for every nonnegative limit; the optimized digit lookup is proved correct at every positive position. These proofs use only standard Lean axioms.
+Problem 40 now generalizes over a tuple of positive digit positions, with the same interface on both sides. The reference generates enough decimal digits for those positions, without a separate stream-exhaustion limit. The previous fixed-position source proof is retained as an attempt pending a generalized `Equiv` proof.
 
 Problem 41’s source-level equivalence proof covers trial division, tuple-to-integer conversion, permutation enumeration, digit-sum and last-digit pruning, and the descending search’s early return for bounds from zero through nine digits. The reference constructs every permutation and terminates for every nonnegative width. The proofs use only standard Lean axioms.
 
@@ -552,9 +554,9 @@ Problem 43’s source-level equivalence proof covers the complete tuple-key tabl
 
 Problem 44’s source-level equivalence proof covers pentagonal-table allocation and writes, the exhaustive and integer-square-root predicates, pair enumeration, the descending scan’s early break, and bounded minimum selection for every nonnegative limit. Both implementations terminate; the reference also handles negative limits. The contract uses positive indices and returns `10**30` when no qualifying pair improves that bound. The proofs use only standard Lean axioms.
 
-Problem 45’s source-level equivalence proof connects exhaustive triangular enumeration with the optimized unbounded hexagonal search. It covers both membership loops, the integer-square-root test, early returns, and termination. Small kernel certificates exclude earlier matches and prove that the reference window contains the least common value beyond the given example. The reference also terminates for every integer start and bound, including negative and empty ranges. The proofs use only standard Lean axioms.
+Problem 45 now generalizes over an integer threshold `after` on both sides. The reference merges increasing triangular, pentagonal, and hexagonal sequences, while the optimized solver searches hexagonal values. Neither uses a numeric cutoff. The earlier fixed-instance source proof is retained as an attempt pending a generalized `Equiv` proof.
 
-Problem 46’s source-level equivalence proof covers the shared mutable prime list, trial division, list growth, remainder checks, integer square roots, and both early returns. Prime infinitude proves that list extension terminates; small kernel certificates establish the least counterexample and show that it lies inside the reference window. The reference’s two lazy generators and bounded search terminate for every integer input. The proofs use only standard Lean axioms.
+Problem 46’s public naive reference now searches for the first counterexample without a numeric cutoff. The earlier bounded-reference source proof is retained as an attempt pending structural `Equiv` checking of the fixed problem.
 
 Problem 47’s source-level equivalence proof covers guarded primality calls, filtered sums, mutable sieve allocation and updates, streak counting, early return, and repeated sieve rebuilding after doubling. The contract covers every positive factor count with an equal run length and every positive initial bound. Reference termination and the least-run argument are conditional on the existing `ProjectEulerStatements.P47.exists_consecutive_with_n_factors` axiom; the sieve proof itself uses only standard Lean axioms. No new axiom is introduced.
 
@@ -564,9 +566,9 @@ Problem 49’s source-level equivalence proof covers the Boolean sieve, decimal 
 
 Problem 50’s source-level equivalence proof covers the bytearray sieve, prime filtering, prefix sums, maximum-length discovery, descending window search, early breaks and returns, and the reference’s exhaustive tuple collection and keyed maximum. The contract covers every integer limit and preserves first-on-tie selection. The proofs use only standard Lean axioms.
 
-Problem 51’s source-level equivalence proof covers the signed bytearray sieve, decimal conversion, mutable digit-position groups, bit-mask enumeration, replacement counting, and the complete search across digit widths. For every integer target at most eight, a checked prime-family witness bounds termination to six widths, and sorted prime scans establish the least answer. The proofs use only standard Lean axioms.
+Problem 51’s optimized search now expands digit widths without a fixed cutoff, matching its unbounded naive reference. The previous proof restricted to targets through eight is retained as an attempt; there is no unconditional termination claim for targets without a matching family.
 
-Problem 52’s source-level equivalence proof covers decimal digit counters, tuple comparison, early breaks, positive candidate windows, and the complete width search for targets two through six. A kernel-checked `142857` witness bounds both searches and establishes a least positive answer. The reference search starts at one to exclude zero; the proofs use only standard Lean axioms.
+Problem 52’s implementations now have no artificial upper multiplier cap. The previous proof for multipliers through six is retained as an attempt, and larger checked witnesses demonstrate why that restriction was insufficient. A generalized `Equiv` proof remains pending.
 
 Problem 53’s source-level equivalence proof covers every integer bound and threshold. Exact binomial updates, symmetry, and monotonicity justify the early break; the reference’s nested generator sum terminates for all inputs. The nonpositive-threshold shortcut counts both row endpoints. The proofs use only standard Lean axioms.
 
@@ -582,13 +584,11 @@ Reproduce the prime lists and exact cache with `python3 generate_prime_pair_cert
 
 New rows use a proved natural-number evaluator; possible-edge certificates may also check only excluded edges, with the selected result verified separately. The larger certificate can omit explicit rejection checks for pairs outside its seeded sum budget. A proved search equality lets that certificate use sparse adjacency lookup directly, preserving the selected list and strict tie behavior. Small divisors checked by the actual source scan provide shorter rejection certificates.
 
-Problem 61’s source-level equivalence proof connects the complete optimized solver to the exhaustive reference, which considers every polygonal-type order and requires distinct numbers. It covers polygonal arithmetic, ordered prefix buckets, recursive searches, the reference’s outer start loop, and all heap allocations while preserving caller objects. The reference terminates for every signed limit; its default window and the optimized search have kernel-checked results of 28684. The public equivalence, Returns, and Supported contracts cover every independent set-choice schedule. The proofs use only standard Lean axioms. Reproduce the bounded certificate sources with `python3 generate_polygonal_cycle_certificates.py`, or compare them without writing using `--check`; generation itself is not proof verification.
+Problem 61’s public naive reference now enumerates each polygonal family until reaching the four-digit value boundary, without a supplied index limit. The previous source proof is retained as an attempt pending structural `Equiv` checking of this fixed problem.
 
-Problem 62’s complete finite reference has source proofs for digit conversion, sorting, lazy permutation counting, and first-match selection. The search terminates for every signed limit and target, preserving caller objects; key and count helpers cover nonnegative queried values. The reference scans positive cube bases, agreeing with the optimized solver’s starting point. The optimized character-by-character counter is proved for every nonnegative input, including zero, and its keys agree with the reference’s sorted digits on positive values.
+Problem 62’s public reference now has the same single problem-level argument as the optimized solver: `naive(target)` corresponds to `solve(k)`. It expands complete digit widths without an externally supplied cutoff. The previous finite-window equivalence entry is archived as an attempt. The mathematical width invariants and root-partition certificates remain useful for proving the unbounded contract, but do not yet establish that contract.
 
-The optimized grouping step preserves a live-table invariant tying dictionary entries to their original tuple keys and shared count/minimum buckets. Updates and insertion realize the ordered logical group model, preserving caller objects, fresh-address bounds, and insertion order. Startup establishes this invariant, and unsuccessful digit-width transitions restore its empty-table case. Candidate collection and complete width transitions use the same logical table; successful transitions return the actual minimum matching cube. Split source helpers keep these checks separate. The complete optimized source function now executes for every finite successful model run, including the initial dictionary allocation, first iteration, all width branches, loop continuation, and final scalar return. It preserves every caller object. The proofs use only standard Lean axioms.
-
-The mathematical group model retains exact occurrence counts and attained class minima. Its minimum selection agrees with the actual exhaustive reference source for every signed bound and target, using any complete mathematical group summary. Equal signatures have equal decimal widths, and cubes from later widths do not change completed class counts. The width search now has a general closed-window correspondence: whenever the reference succeeds at a completed digit width, the optimized source terminates with exactly the same result, preserving caller objects. A proof-only list of completed groups establishes this without evaluating the entire live search table. The default numerical certificate and final contract binding remain unfinished, so problem 62 is not marked proven.
+The proof-domain cleanup and remaining restrictions are tracked in link:proof-domain-audit.adoc[]. Fixed-input functions should retain `Equiv`, using structural source proofs instead of whole-program computation; meaningful shared parameters are preferred whenever the problem admits them.
 
 ====== Problem 14: Collatz termination
 
@@ -701,27 +701,27 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/29.py[29.py] | link:solvers/29.md[29.md] | link:solvers/29.py.lean[29.py.lean] | 0.136 | 9183 |
 | link:solvers/30.py[30.py] | link:solvers/30.md[30.md] | link:solvers/30.py.lean[30.py.lean] | 0.103 | 443839 |
 | link:solvers/31.py[31.py] | link:solvers/31.md[31.md] | link:solvers/31.py.lean[31.py.lean] | 0.117 | 73682 |
-| link:solvers/32.py[32.py] | link:solvers/32.md[32.md] | link:solvers/32.py.lean[32.py.lean] | 0.153 | 45228 |
+| link:solvers/32.py[32.py] | link:solvers/32.md[32.md] |  | 0.153 | 45228 |
 | link:solvers/33.py[33.py] | link:solvers/33.md[33.md] | link:solvers/33.py.lean[33.py.lean] | 0.124 | 100 |
-| link:solvers/34.py[34.py] | link:solvers/34.md[34.md] | link:solvers/34.py.lean[34.py.lean] | 0.284 | 40730 |
+| link:solvers/34.py[34.py] | link:solvers/34.md[34.md] |  | 0.284 | 40730 |
 | link:solvers/35.py[35.py] | link:solvers/35.md[35.md] | link:solvers/35.py.lean[35.py.lean] | 0.161 | 55 |
-| link:solvers/36.py[36.py] | link:solvers/36.md[36.md] | link:solvers/36.py.lean[36.py.lean] | 0.127 | 872187 |
-| link:solvers/37.py[37.py] | link:solvers/37.md[37.md] | link:solvers/37.py.lean[37.py.lean] | 0.140 | 748317 |
-| link:solvers/38.py[38.py] | link:solvers/38.md[38.md] | link:solvers/38.py.lean[38.py.lean] | 0.141 | 932718654 |
+| link:solvers/36.py[36.py] | link:solvers/36.md[36.md] |  | 0.127 | 872187 |
+| link:solvers/37.py[37.py] | link:solvers/37.md[37.md] |  | 0.140 | 748317 |
+| link:solvers/38.py[38.py] | link:solvers/38.md[38.md] |  | 0.141 | 932718654 |
 | link:solvers/39.py[39.py] | link:solvers/39.md[39.md] | link:solvers/39.py.lean[39.py.lean] | 0.118 | 840 |
-| link:solvers/40.py[40.py] | link:solvers/40.md[40.md] | link:solvers/40.py.lean[40.py.lean] | 0.118 | 210 |
+| link:solvers/40.py[40.py] | link:solvers/40.md[40.md] |  | 0.118 | 210 |
 | link:solvers/41.py[41.py] | link:solvers/41.md[41.md] | link:solvers/41.py.lean[41.py.lean] | 0.143 | 7652413 |
 | link:solvers/42.py[42.py] | link:solvers/42.md[42.md] | link:solvers/42.py.lean[42.py.lean] | 0.178 | 162 |
 | link:solvers/43.py[43.py] | link:solvers/43.md[43.md] | link:solvers/43.py.lean[43.py.lean] | 0.121 | 16695334890 |
 | link:solvers/44.py[44.py] | link:solvers/44.md[44.md] | link:solvers/44.py.lean[44.py.lean] | 0.473 | 5482660 |
-| link:solvers/45.py[45.py] | link:solvers/45.md[45.md] | link:solvers/45.py.lean[45.py.lean] | 0.075 | 1533776805 |
-| link:solvers/46.py[46.py] | link:solvers/46.md[46.md] | link:solvers/46.py.lean[46.py.lean] | 0.163 | 5777 |
+| link:solvers/45.py[45.py] | link:solvers/45.md[45.md] |  | 0.075 | 1533776805 |
+| link:solvers/46.py[46.py] | link:solvers/46.md[46.md] |  | 0.163 | 5777 |
 | link:solvers/47.py[47.py] | link:solvers/47.md[47.md] | link:solvers/47.py.lean[47.py.lean] | 0.116 | 134043 |
 | link:solvers/48.py[48.py] | link:solvers/48.md[48.md] | link:solvers/48.py.lean[48.py.lean] | 0.114 | 9110846700 |
 | link:solvers/49.py[49.py] | link:solvers/49.md[49.md] | link:solvers/49.py.lean[49.py.lean] | 0.129 | 296962999629 |
 | link:solvers/50.py[50.py] | link:solvers/50.md[50.md] | link:solvers/50.py.lean[50.py.lean] | 0.150 | 997651 |
-| link:solvers/51.py[51.py] | link:solvers/51.md[51.md] | link:solvers/51.py.lean[51.py.lean] | 0.149 | 121313 |
-| link:solvers/52.py[52.py] | link:solvers/52.md[52.md] | link:solvers/52.py.lean[52.py.lean] | 0.123 | 142857 |
+| link:solvers/51.py[51.py] | link:solvers/51.md[51.md] |  | 0.149 | 121313 |
+| link:solvers/52.py[52.py] | link:solvers/52.md[52.md] |  | 0.123 | 142857 |
 | link:solvers/53.py[53.py] | link:solvers/53.md[53.md] | link:solvers/53.py.lean[53.py.lean] | 0.106 | 4075 |
 | link:solvers/54.py[54.py] | link:solvers/54.md[54.md] | link:solvers/54.py.lean[54.py.lean] | 0.198 | 376 |
 | link:solvers/55.py[55.py] | link:solvers/55.md[55.md] | link:solvers/55.py.lean[55.py.lean] | 0.166 | 249 |
@@ -730,7 +730,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/58.py[58.py] | link:solvers/58.md[58.md] | link:solvers/58.py.lean[58.py.lean] | 0.097 | 26241 |
 | link:solvers/59.py[59.py] | link:solvers/59.md[59.md] | link:solvers/59.py.lean[59.py.lean] | 0.086 | 129448 |
 | link:solvers/60.py[60.py] | link:solvers/60.md[60.md] | link:solvers/60.py.lean[60.py.lean] | 0.471 | 26033 |
-| link:solvers/61.py[61.py] | link:solvers/61.md[61.md] | link:solvers/61.py.lean[61.py.lean] | 0.057 | 28684 |
+| link:solvers/61.py[61.py] | link:solvers/61.md[61.md] |  | 0.057 | 28684 |
 | link:solvers/62.py[62.py] | link:solvers/62.md[62.md] |  | 0.145 | 127035954683 |
 | link:solvers/63.py[63.py] | link:solvers/63.md[63.md] |  | 0.070 | 49 |
 | link:solvers/64.py[64.py] | link:solvers/64.md[64.md] |  | 0.132 | 1322 |

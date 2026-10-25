@@ -57,11 +57,11 @@ def solve(target: int = 8) -> int:
     families, exclude the last digit and require a multiple of three positions.
     For each subset, count primes in the family.
 
-    @formalsw: Requires(target <= 8)
     @formalsw: Py from project_euler_statements.p51 import naive
     @formalsw: Equiv(naive)
     """
-    for ndigits in range(1, 10):
+    ndigits = 1
+    while True:
         upper = 10**ndigits - 1
         lower = 10 ** (ndigits - 1)
         is_prime, primes = sieve(upper)
@@ -115,7 +115,7 @@ def solve(target: int = 8) -> int:
                     if cnt >= target:
                         return p
 
-    raise ValueError("Not found within searched digit range")
+        ndigits += 1
 
 
 if __name__ == "__main__":

@@ -48,30 +48,16 @@ def solve() -> int:
     @formalsw: Py from project_euler_statements.p37 import naive_default
     @formalsw: Equiv(naive_default)
     """
-    # Known to be < 1,000,000; 739397 is the largest truncatable prime.
-    LIMIT = 1_000_000
-    is_prime = sieve(LIMIT)
-
-    # Basic sanity checks from the statement
-    assert is_prime[3797] == 1
-    assert is_truncatable_prime(3797, is_prime)
-    assert not is_truncatable_prime(2, is_prime)
-    assert not is_truncatable_prime(3, is_prime)
-    assert not is_truncatable_prime(5, is_prime)
-    assert not is_truncatable_prime(7, is_prime)
-
-    truncatable: List[int] = []
-    for n in range(11, LIMIT + 1, 2):  # only odd candidates >= 11
-        if is_prime[n] and is_truncatable_prime(n, is_prime):
-            truncatable.append(n)
-            if len(truncatable) == 11:
-                break
-
-    assert (
-        len(truncatable) == 11
-    ), "Increase LIMIT; did not find all 11 truncatable primes."
-    result = sum(truncatable)
-    return result
+    limit = 1000
+    while True:
+        is_prime = sieve(limit)
+        truncatable = []
+        for n in range(11, limit + 1, 2):
+            if is_prime[n] and is_truncatable_prime(n, is_prime):
+                truncatable.append(n)
+                if len(truncatable) == 11:
+                    return sum(truncatable)
+        limit *= 2
 
 
 if __name__ == "__main__":

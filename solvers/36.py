@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from typing import List
 
 
 def is_palindrome_base2(n: int) -> bool:
@@ -7,29 +6,25 @@ def is_palindrome_base2(n: int) -> bool:
     return s == s[::-1]
 
 
-def generate_decimal_palindromes(limit: int) -> List[int]:
-    pals: List[int] = []
-    # For limit < 1_000_000, generating from i in [1..999] covers all palindromes up to 6 digits.
-    for i in range(1, 1000):
-        s = str(i)
-
-        # Odd-length palindrome: mirror all but last digit
-        odd = int(s + s[-2::-1])
-        if odd < limit:
-            pals.append(odd)
-
-        # Even-length palindrome: mirror all digits
-        even = int(s + s[::-1])
+def generate_decimal_palindromes(limit: int) -> list[int]:
+    pals = []
+    prefix = 1
+    while True:
+        text = str(prefix)
+        odd = int(text + text[-2::-1])
+        if odd >= limit:
+            return pals
+        pals.append(odd)
+        even = int(text + text[::-1])
         if even < limit:
             pals.append(even)
-
-    return pals
+        prefix += 1
 
 
 def solve(limit: int = 1_000_000) -> int:
     """
     @formalsw: Py from project_euler_statements.p36 import naive
-    @formalsw: Requires(0 <= limit <= 1_000_000)
+    @formalsw: Requires(limit >= 0)
     @formalsw: Equiv(naive)
     """
     total = 0

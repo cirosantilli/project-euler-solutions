@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from typing import List
 
 
 def digit_at(n: int) -> int:
@@ -28,16 +27,18 @@ def digit_at(n: int) -> int:
             return int(str(num)[pos])
 
 
-def solve() -> int:
+def solve(positions: tuple[int, ...] = (1, 10, 100, 1000, 10000, 100000, 1000000)) -> int:
     """
-    @formalsw: Py from project_euler_statements.p40 import naive_default
-    @formalsw: Equiv(naive_default)
+    Multiply the digits at the supplied positive one-based positions.
+
+    @formalsw: Py from project_euler_statements.p40 import naive
+    @formalsw: Requires(all(position >= 1 for position in positions))
+    @formalsw: Equiv(naive)
     """
-    positions: List[int] = [1, 10, 100, 1000, 10000, 100000, 1000000]
-    prod = 1
-    for p in positions:
-        prod *= digit_at(p)
-    return prod
+    product = 1
+    for position in positions:
+        product *= digit_at(position)
+    return product
 
 
 if __name__ == "__main__":

@@ -53,26 +53,6 @@
     [.scalar (.int target)] caller (.scalar (.int answer)) finalHeap ∧
     finalHeap.take caller.length = caller
 
-@formalsw: theorem grouped_reference_source_result
-  (limit target : Int) (caller : FormalSW.PyAst.Mutable.Heap)
-  (groups : List ProjectEulerSolutions.CubicGroups.Group)
-  (summary : ProjectEulerSolutions.CubicGroupCounts.Summary
-    (solvers.«62».reference_model.cubes limit) groups) :
-  ∃ extra, FormalSW.PyAst.HeapCalls.ReturnsValue P62Ast.module "naive"
-    [.scalar (.int limit), .scalar (.int target)] caller
-    (.scalar (.int (ProjectEulerSolutions.CubicGroupCounts.choose target groups))) (caller ++ extra)
-
-@formalsw: theorem closed_window_source_equivalence
-  (limit : Nat) (target : Int) (caller : FormalSW.PyAst.Mutable.Heap)
-  (closed : ProjectEulerSolutions.CubicSearch.width limit < ProjectEulerSolutions.CubicSearch.width (limit + 1))
-  (success : data.«project-euler-statements».data.py.project_euler_statements.p62.naive.answer limit target ≠ 0) :
-  ∃ finalHeap extra,
-    FormalSW.PyAst.HeapCalls.ReturnsValue Solvers.P62Ast.module "solve" [.scalar (.int target)] caller
-      (.scalar (.int (data.«project-euler-statements».data.py.project_euler_statements.p62.naive.answer limit target)))
-      finalHeap ∧ finalHeap.take caller.length = caller ∧
-    FormalSW.PyAst.HeapCalls.ReturnsValue P62Ast.module "naive" [.scalar (.int limit), .scalar (.int target)] caller
-      (.scalar (.int (data.«project-euler-statements».data.py.project_euler_statements.p62.naive.answer limit target)))
-      (caller ++ extra)
 """
 from __future__ import annotations
 
@@ -89,6 +69,9 @@ def digit_signature(x: int) -> Signature:
 def solve(k: int) -> int:
     """
     Returns the smallest cube for which exactly k permutations of its digits are cubes.
+
+    @formalsw: Py from project_euler_statements.p62 import naive
+    @formalsw: Equiv(naive)
     """
     groups: dict[Signature, list[int]] = {}  # sig -> [count, min_cube]
     current_len = 1
