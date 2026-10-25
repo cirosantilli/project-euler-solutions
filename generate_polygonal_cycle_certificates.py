@@ -90,6 +90,7 @@ def certificate_files() -> dict[Path, str]:
         "  | nil => rfl",
         "  | cons value rest ih => exact ih (max bound (visit value))",
         "",
+        "set_option maxRecDepth 4096 in",
         "theorem reference_checked : reference 140 = 28684 := by",
         "  unfold reference",
         "  rw [← starts_checked]",
