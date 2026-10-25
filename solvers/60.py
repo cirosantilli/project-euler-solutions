@@ -5,6 +5,9 @@ from math import isqrt
 
 
 def primes_up_to(limit: int) -> list[int]:
+    """
+    @formalsw: Returns
+    """
     if limit < 2:
         return []
     sieve = bytearray(b"\x01") * (limit + 1)
