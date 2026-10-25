@@ -56,6 +56,10 @@ def solve(target: int = 8) -> int:
     containing the same digit (so that p is in the family). For eight-prime
     families, exclude the last digit and require a multiple of three positions.
     For each subset, count primes in the family.
+
+    @formalsw: Requires(target <= 8)
+    @formalsw: Py from project_euler_statements.p51 import naive
+    @formalsw: Equiv(naive)
     """
     for ndigits in range(1, 10):
         upper = 10**ndigits - 1
