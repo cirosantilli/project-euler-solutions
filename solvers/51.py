@@ -53,10 +53,11 @@ def count_prime_family_for_positions(p: int, idxs: list[int]) -> int:
 def solve(target: int = 8) -> int:
     """
     Search by number of digits. For each prime p, consider subsets of positions
-    containing the same digit (so that p is in the family), excluding the last digit
-    (otherwise you can't reach 8 primes). For each subset, count primes in the family.
+    containing the same digit (so that p is in the family). For eight-prime
+    families, exclude the last digit and require a multiple of three positions.
+    For each subset, count primes in the family.
     """
-    for ndigits in range(2, 10):
+    for ndigits in range(1, 10):
         upper = 10**ndigits - 1
         lower = 10 ** (ndigits - 1)
         is_prime, primes = sieve(upper)
@@ -69,9 +70,9 @@ def solve(target: int = 8) -> int:
             s = str(p)
             ds = [ord(c) - 48 for c in s]
 
-            # group positions by digit, excluding the last digit (can't get family size 8 otherwise)
+            # Eight-prime families cannot replace the last digit.
             pos_lists: list[list[int]] = [[] for _ in range(10)]
-            for i, dig in enumerate(ds[:-1]):
+            for i, dig in enumerate(ds[:-1] if target >= 8 else ds):
                 pos_lists[dig].append(i)
 
             for d, pos in enumerate(pos_lists):
@@ -88,7 +89,7 @@ def solve(target: int = 8) -> int:
 
                 for mask in range(1, 1 << m):
                     k = mask.bit_count()
-                    if k % 3 != 0:
+                    if target >= 8 and k % 3 != 0:
                         continue
 
                     shift = 0
@@ -117,5 +118,7 @@ if __name__ == "__main__":
     # Examples from the statement:
     assert count_prime_family_for_positions(13, [0]) == 6
     assert count_prime_family_for_positions(56003, [2, 3]) == 7
+    assert solve(6) == 13
+    assert solve(7) == 56003
 
     print(solve(8))
