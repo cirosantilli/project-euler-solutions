@@ -13,9 +13,9 @@ deriving DecidableEq, Repr
 def improve (clique : List Nat) (sum : Int) (best : Best) : Best :=
   if sum < best.bound then ⟨sum, clique⟩ else best
 
-def candidates (relation : Nat → Nat → Bool) (need : Nat) (sum : Int) (q : Nat)
+def candidates (relation : Nat → Nat → Bool) (_need : Nat) (sum : Int) (q : Nat)
     (remaining : List Nat) (bound : Int) : List Nat :=
-  (remaining.takeWhile (fun (r : Nat) => decide (sum + (q : Int) + (r : Int) * ((need : Int) - 1) < bound))).filter (relation q)
+  (remaining.takeWhile (fun (r : Nat) => decide (sum + (q : Int) + (r : Int) < bound))).filter (relation q)
 
 def scan (relation : Nat → Nat → Bool) (recurse : List Nat → List Nat → Int → Best → Best)
     (need : Nat) (clique : List Nat) (sum : Int) : List Nat → Best → Best
@@ -155,8 +155,8 @@ theorem sum_lower_bound (values : List Nat) (lower : Nat) (bounded : ∀ value �
       have tail := ih (fun item member => bounded item (by simp [member]))
       simpa [Nat.mul_add, Nat.add_comm] using Nat.add_le_add head tail
 
-/-- The same inequality justifies both source breaks: first for every remaining
-pick, then for the picks still needed after selecting the current vertex. -/
+/-- Lower bound for entering a branch whose next vertex is the smallest
+remaining pick. Candidate collection separately bounds individual contributions. -/
 theorem bound_prunes (values : List Nat) (count lower : Nat) (base bound : Int)
     (size : values.length = count) (bounded : ∀ value ∈ values, lower ≤ value)
     (cut : bound ≤ base + (lower : Int) * count) : bound ≤ base + (values.sum : Int) := by
@@ -164,5 +164,63 @@ theorem bound_prunes (values : List Nat) (count lower : Nat) (base bound : Int)
   rw [size] at natural
   have integer : (lower : Int) * count ≤ (values.sum : Int) := by exact_mod_cast natural
   omega
+
+/-- On an ordered list, the bound break removes exactly the vertices whose
+individual contribution is already too large. -/
+theorem bounded_prefix_mem (values : List Nat) (ordered : values.Pairwise (· ≤ ·))
+    (base bound : Int) (r : Nat) :
+    r ∈ values.takeWhile (fun (value : Nat) => decide (base + value < bound)) ↔
+      r ∈ values ∧ base + (r : Int) < bound := by
+  induction values with
+  | nil => simp
+  | cons first rest ih =>
+    have sorted := List.pairwise_cons.mp ordered
+    by_cases passes : base + (first : Int) < bound
+    · simp only [List.takeWhile_cons, decide_eq_true_eq, passes, if_true, List.mem_cons, ih sorted.2]
+      constructor
+      · rintro (same | ⟨member, small⟩)
+        · subst r
+          exact ⟨Or.inl rfl, passes⟩
+        · exact ⟨Or.inr member, small⟩
+      · rintro ⟨same | member, small⟩
+        · exact Or.inl same
+        · exact Or.inr ⟨member, small⟩
+    · simp only [List.takeWhile_cons, decide_eq_true_eq, passes, if_false, List.not_mem_nil, false_iff]
+      rintro ⟨member, small⟩
+      rcases List.mem_cons.mp member with same | member
+      · subst r
+        exact passes small
+      · have lower := sorted.1 r member
+        omega
+
+theorem candidates_mem_iff (relation : Nat → Nat → Bool) (need : Nat) (sum : Int) (q : Nat)
+    (remaining : List Nat) (bound : Int) (ordered : remaining.Pairwise (· ≤ ·)) (r : Nat) :
+    r ∈ candidates relation need sum q remaining bound ↔
+      r ∈ remaining ∧ sum + (q : Int) + (r : Int) < bound ∧ relation q r = true := by
+  simp only [candidates, List.mem_filter, bounded_prefix_mem remaining ordered, and_assoc]
+
+private theorem member_le_sum (values : List Nat) (r : Nat) (member : r ∈ values) : r ≤ values.sum := by
+  induction values with
+  | nil => simp at member
+  | cons first rest ih =>
+    simp only [List.sum_cons]
+    rcases List.mem_cons.mp member with same | tail
+    · subst r
+      omega
+    · have lower := ih tail
+      omega
+
+/-- Every vertex of a compatible improving completion survives candidate
+building, including vertices that occur later than the smallest next pick. -/
+theorem completion_survives_candidates (relation : Nat → Nat → Bool) (need : Nat) (sum : Int) (q : Nat)
+    (remaining completion : List Nat) (bound : Int) (ordered : remaining.Pairwise (· ≤ ·))
+    (members : ∀ r ∈ completion, r ∈ remaining)
+    (compatible : ∀ r ∈ completion, relation q r = true)
+    (improves : sum + (q : Int) + (completion.sum : Int) < bound) :
+    ∀ r ∈ completion, r ∈ candidates relation need sum q remaining bound := by
+  intro r member
+  apply (candidates_mem_iff relation need sum q remaining bound ordered r).mpr
+  have lower : (r : Int) ≤ (completion.sum : Int) := by exact_mod_cast member_le_sum completion r member
+  exact ⟨members r member, by omega, compatible r member⟩
 
 end ProjectEulerSolutions.CliqueSearch

@@ -124,8 +124,8 @@ def solve(limit: int = 10000) -> tuple[int, list[int]]:
             new_candidates: list[int] = []
             for j in range(idx + 1, len(candidates)):
                 r = candidates[j]
-                # Lower bound after choosing q, with r the smallest possible next pick
-                if curr_sum + q + r * (need - 1) >= best_sum:
+                # r may be a later pick, so count it only once here.
+                if curr_sum + q + r >= best_sum:
                     break
                 if pair_ok(q, r):
                     new_candidates.append(r)
@@ -142,7 +142,7 @@ def solve(limit: int = 10000) -> tuple[int, list[int]]:
         candidates: list[int] = []
         for j in range(i + 1, n):
             q = primes[j]
-            if p + q * 4 >= best_sum:
+            if p + q >= best_sum:
                 break
             if pair_ok(p, q):
                 candidates.append(q)

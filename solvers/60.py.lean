@@ -3031,8 +3031,7 @@ def innerBody : List Stmt := match (outerBody[3]? : Option Stmt) with
   | _ => []
 
 def innerGuard : Expr :=
-  .compare (.binOp (.binOp (.name "curr_sum") .add (.name "q")) .add
-    (.binOp (.name "r") .mult (.binOp (.name "need") .sub (.constant (.int 1))))) [(.gtE, sumExpression)]
+  .compare (.binOp (.binOp (.name "curr_sum") .add (.name "q")) .add (.name "r")) [(.gtE, sumExpression)]
 
 def pairExpression : Expr := .call (.name "__formalsw_local_solve_pair_ok")
   [.name "q", .name "r", .name "__formalsw_cell_solve_cache_local", .name "__formalsw_cell_solve_pow10_local"]
@@ -3292,12 +3291,11 @@ theorem inner_guard_evaluates (state : CandidateState heap globals sumCell setCe
     (environment : CandidateEnv env sumCell cacheCell powerCell candidateAddress collector sum q need)
     (getR : env "r" = some (number r)) :
     Evaluates program env innerGuard heap
-      (flag (decide (bound ≤ sum + (q : Int) + (r : Int) * ((need : Int) - 1)))) heap globals := by
+      (flag (decide (bound ≤ sum + (q : Int) + (r : Int)))) heap globals := by
   apply Evaluates.compare
     (Evaluates.binary
       (Evaluates.binary (Evaluates.lookup environment.getSum) (Evaluates.lookup environment.getQ) rfl)
-      (Evaluates.binary (Evaluates.lookup getR)
-        (Evaluates.binary (Evaluates.lookup environment.getNeed) Evaluates.constant rfl) rfl) rfl)
+      (Evaluates.lookup getR) rfl)
   · apply Evaluates.subscript (by intros; simp) (Evaluates.lookup environment.getSumCell) Evaluates.constant
     exact Mutable.getItem_list heap sumCell 0 [number bound] state.incumbent.sumFound (by simp)
   · rfl
@@ -3350,7 +3348,7 @@ private theorem inner_pruned (state : CandidateState heap globals sumCell setCel
     bound selected candidates accepted) (env : HeapCalls.Env) (sum : Int) (q need r : Nat)
     (environment : CandidateEnv env sumCell cacheCell powerCell candidateAddress collector sum q need)
     (getR : env "r" = some (number r)) (next stop : Int)
-    (cut : bound ≤ sum + (q : Int) + (r : Int) * ((need : Int) - 1)) :
+    (cut : bound ≤ sum + (q : Int) + (r : Int)) :
     BlockContinues program env
       [.ifThen innerGuard [.breakLoop] [], .ifThen pairExpression emitCode [],
        Calls.loopContinuation innerBody (.rangeStepLoop "j" next stop 1 innerBody [])]
@@ -3410,7 +3408,7 @@ theorem inner_range_result (remaining : List Nat) (first : Nat)
           (by simpa [numbers, primes_up_to.numbers] using continues)
     have assigned : BlockContinues program indexed [innerBody[0]'(by decide)] heap chosen heap globals :=
       BlockContinues.assign readR
-    by_cases cut : bound ≤ sum + (q : Int) + (r : Int) * ((need : Int) - 1)
+    by_cases cut : bound ≤ sum + (q : Int) + (r : Int)
     · have resultEmpty : CliqueSearch.candidates (fun q r => pair_ok.answer q r) need sum q (r :: rest) bound = [] := by
         simp [CliqueSearch.candidates, Int.not_lt.mpr cut]
       refine ⟨heap, chosen, state.reindex heap _ rfl (by rw [resultEmpty, List.append_nil]), ?_, ?_,
