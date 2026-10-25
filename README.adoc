@@ -554,7 +554,7 @@ Problem 45’s source-level equivalence proof connects exhaustive triangular enu
 
 Problem 46’s source-level equivalence proof covers the shared mutable prime list, trial division, list growth, remainder checks, integer square roots, and both early returns. Prime infinitude proves that list extension terminates; small kernel certificates establish the least counterexample and show that it lies inside the reference window. The reference’s two lazy generators and bounded search terminate for every integer input. The proofs use only standard Lean axioms.
 
-Problem 47’s mathematical foundations prove the distinct-prime-factor sieve invariant and connect all-true windows to the streak counter. The least-run argument is conditional on the existing `ProjectEulerStatements.P47.exists_consecutive_with_n_factors` axiom; the sieve proof itself uses only standard Lean axioms. The source-level equivalence proof is in progress.
+Problem 47’s source-level equivalence proof covers guarded primality calls, filtered sums, mutable sieve allocation and updates, streak counting, early return, and repeated sieve rebuilding after doubling. The contract covers every positive factor count with an equal run length and every positive initial bound. Reference termination and the least-run argument are conditional on the existing `ProjectEulerStatements.P47.exists_consecutive_with_n_factors` axiom; the sieve proof itself uses only standard Lean axioms. No new axiom is introduced.
 
 ====== Problem 14: Collatz termination
 
@@ -682,7 +682,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/44.py[44.py] | link:solvers/44.md[44.md] | link:solvers/44.py.lean[44.py.lean] | 0.473 | 5482660 |
 | link:solvers/45.py[45.py] | link:solvers/45.md[45.md] | link:solvers/45.py.lean[45.py.lean] | 0.075 | 1533776805 |
 | link:solvers/46.py[46.py] | link:solvers/46.md[46.md] | link:solvers/46.py.lean[46.py.lean] | 0.163 | 5777 |
-| link:solvers/47.py[47.py] | link:solvers/47.md[47.md] |  | 0.116 | 134043 |
+| link:solvers/47.py[47.py] | link:solvers/47.md[47.md] | link:solvers/47.py.lean[47.py.lean] | 0.116 | 134043 |
 | link:solvers/48.py[48.py] | link:solvers/48.md[48.md] |  | 0.114 | 9110846700 |
 | link:solvers/49.py[49.py] | link:solvers/49.md[49.md] |  | 0.129 | 296962999629 |
 | link:solvers/50.py[50.py] | link:solvers/50.md[50.md] |  | 0.150 | 997651 |

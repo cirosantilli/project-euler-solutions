@@ -1,8 +1,7 @@
 #!/usr/bin/env python
-from typing import List
 
 
-def distinct_prime_factor_counts(limit: int) -> List[int]:
+def distinct_prime_factor_counts(limit: int) -> list[int]:
     """
     Returns an array cnt where cnt[n] = number of distinct prime factors of n, for 0 <= n <= limit.
     Uses a sieve-like process: for each prime p, increment all multiples of p.
@@ -18,6 +17,10 @@ def distinct_prime_factor_counts(limit: int) -> List[int]:
 def solve(k: int, run_len: int, start_limit: int) -> int:
     """
     Finds the first integer n such that n..n+run_len-1 each have exactly k distinct prime factors.
+
+    @formalsw: Requires(k >= 1 and run_len == k and start_limit >= 1)
+    @formalsw: Py from project_euler_statements.p47 import naive_solver
+    @formalsw: Equiv(naive_solver)
     """
     limit = start_limit
     while True:
@@ -39,5 +42,4 @@ if __name__ == "__main__":
     assert solve(3, 3, 2000) == 644
 
     # Target problem
-
     print(solve(4, 4, 200_000))
