@@ -2,6 +2,7 @@ import ProjectEulerSolutions.Lib.MillerRabin
 import ProjectEulerSolutions.Lib.MillerRabinPrimes
 import «.formalsw».solvers.«60.py.ast»
 import lang.py.FormalSW.HeapCalls
+import lang.py.FormalSW.MutableRelocation
 import ProjectEulerSolutions.Lib.DecimalShift
 import ProjectEulerSolutions.Lib.PrimeSieve
 import ProjectEulerSolutions.Lib.IntPairCache
@@ -5344,3 +5345,63 @@ theorem small_model_eq_cached_search (graph : PrimePairCertificate.Graph)
     graph agrees covered ordered 5 ⟨solve_setup.sentinel, []⟩
 
 end solvers.«60».certificate
+
+
+namespace solvers.«60».observational
+open FormalSW.PyAst FormalSW.PyAst.HeapCalls
+
+private abbrev referenceModel :=
+  data.«project-euler-statements».data.py.project_euler_statements.p60.naive.answerModel
+
+/-- Equality of the exact models gives equivalence of the complete source calls,
+including the freshly allocated tuple and list and all caller-visible objects. -/
+theorem equiv_of_models (limit : Int) (caller : Mutable.Heap) (globals : Mutable.Globals)
+    (valid : caller.Valid)
+    (globalsWithin : ∀ entry ∈ globals, entry.2.edge.Within caller.length)
+    (context : is_prime.SourceGlobals caller globals)
+    (modelsEqual : solve_search.answerModel limit = referenceModel limit) :
+    (HeapCalls.call Solvers.P60Ast.module "solve" [.scalar (.int limit)] (globals := globals) caller).Equiv
+      (HeapCalls.call P60Ast.module "naive" [.scalar (.int limit)] (globals := globals) caller) := by
+  obtain ⟨leftHeap, leftList, leftReturn, leftSelected, _, preserved, leftFresh⟩ :=
+    solve_search.result limit caller globals context
+  obtain ⟨rightHeap, rightList, rightReturn, rightSelected, ⟨rightExtra, rightExtension⟩, rightFresh⟩ :=
+    data.«project-euler-statements».data.py.project_euler_statements.p60.naive.result limit caller globals
+  have leftBound : leftList < leftHeap.length := (List.getElem?_eq_some_iff.mp leftSelected).1
+  have rightBound : rightList < rightHeap.length := (List.getElem?_eq_some_iff.mp rightSelected).1
+  change rightHeap[rightList]? = some (.list ((referenceModel limit).chosen.map
+    (fun (value : Nat) => Mutable.Value.scalar (.int value)))) at rightSelected
+  rw [← modelsEqual] at rightSelected
+  change leftHeap[leftList]? = some (.list ((solve_search.answerModel limit).chosen.map
+    (fun (value : Nat) => Mutable.Value.scalar (.int value)))) at leftSelected
+  have equivalent := Mutable.Relocation.equivalent_tuple_list caller
+    (leftHeap ++ [.tuple [.scalar (.int (solve_search.answerModel limit).bound), .ref leftList]])
+    (rightHeap ++ [.tuple [.scalar (.int (solve_search.answerModel limit).bound), .ref rightList]])
+    globals (.int (solve_search.answerModel limit).bound)
+    ((solve_search.answerModel limit).chosen.map fun (value : Nat) => Constant.int value)
+    leftHeap.length leftList rightHeap.length rightList valid globalsWithin
+    (List.prefix_iff_getElem?.mpr (fun index inside => preserved index caller[index] (List.getElem?_eq_getElem inside)))
+    (by rw [rightExtension]; exact ⟨rightExtra ++ [.tuple [.scalar (.int (solve_search.answerModel limit).bound), .ref rightList]], (List.append_assoc _ _ _).symm⟩)
+    (by omega) leftFresh (by omega) rightFresh (by omega) (by omega)
+    (by simp) (by simp)
+    (by simpa only [List.getElem?_append, if_pos leftBound, List.map_map, Function.comp_def] using leftSelected)
+    (by simpa only [List.getElem?_append, if_pos rightBound, List.map_map, Function.comp_def] using rightSelected)
+  exact Mutable.Call.equiv_of_finishes leftReturn.finishes rightReturn.finishes
+    (by simpa only [modelsEqual] using equivalent)
+
+
+/-- The two outstanding finite search checks suffice for actual source-call
+equivalence at every signed limit, with no artificial bound on the input. -/
+theorem equiv_of_finite_checks
+    (smallChecked : ProjectEulerSolutions.CliqueSearch.search ProjectEulerSolutions.PrimePairCertificate.relation
+      5 [] ProjectEulerSolutions.PrimePairVertices.small 0 ⟨solve_setup.sentinel, []⟩ = ⟨solve_setup.sentinel, []⟩)
+    (largeChecked : ProjectEulerSolutions.CliqueSearch.search ProjectEulerSolutions.PrimePairCertificate.relation
+      5 [] ProjectEulerSolutions.PrimePairVertices.large 0 ⟨26034, []⟩ = ⟨26033, competitive.witness⟩)
+    (limit : Int) (caller : Mutable.Heap) (globals : Mutable.Globals) (valid : caller.Valid)
+    (globalsWithin : ∀ entry ∈ globals, entry.2.edge.Within caller.length)
+    (context : is_prime.SourceGlobals caller globals) :
+    (HeapCalls.call Solvers.P60Ast.module "solve" [.scalar (.int limit)] (globals := globals) caller).Equiv
+      (HeapCalls.call P60Ast.module "naive" [.scalar (.int limit)] (globals := globals) caller) :=
+  equiv_of_models limit caller globals valid globalsWithin context
+    (certificate.models_eq_of_finite_checks smallChecked largeChecked limit)
+
+end solvers.«60».observational
