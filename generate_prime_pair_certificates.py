@@ -18,7 +18,9 @@ SMALL_END = 8389
 LARGE_END = 26034
 INTERVAL_SIZE = 128
 INTERVALS_PER_FILE = 16
-SMALL_CACHE_ROWS = 256
+SMALL_CACHE_ROWS = 384
+# Rows from this offset use the proved natural-number evaluator.
+FAST_CACHE_START = 256
 CACHE_ROWS_PER_FILE = 8
 
 
@@ -228,13 +230,22 @@ def cached_small_rows(
             "open PrimePairCertificate",
             "",
         ]
+        fast = index * CACHE_ROWS_PER_FILE >= FAST_CACHE_START
+        if fast:
+            lines.insert(1, "import ProjectEulerSolutions.Lib.PrimePairFast")
         for p in group:
             for name, start, end in blocks:
                 neighbors = [q for q in domain if start <= q < end and p < q and source_pair_check(p, q)]
                 lines.extend([
                     f"def smallRow{p}_{name} : List Nat := {neighbors}",
                     "set_option maxRecDepth 2048 in",
-                    f"theorem smallRow{p}_{name}_checked : upperNeighbors PrimePairVertices.tree_{name} {p} = smallRow{p}_{name} := by decide",
+                    *([
+                        f"theorem smallRow{p}_{name}_checked : upperNeighbors PrimePairVertices.tree_{name} {p} = smallRow{p}_{name} := by",
+                        "  rw [← Fast.upperNeighbors_eq_source]",
+                        "  decide",
+                    ] if fast else [
+                        f"theorem smallRow{p}_{name}_checked : upperNeighbors PrimePairVertices.tree_{name} {p} = smallRow{p}_{name} := by decide",
+                    ]),
                     "",
                 ])
             for name, left, right in merges:
