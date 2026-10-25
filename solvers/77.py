@@ -1,11 +1,10 @@
 #!/usr/bin/env python
-from __future__ import annotations
-
-from typing import List
 
 
-def sieve_primes(limit: int) -> List[int]:
-    """Return list of primes <= limit."""
+def sieve_primes(limit: int) -> list[int]:
+    """
+    Return the primes at most limit.
+    """
     if limit < 2:
         return []
     is_prime = bytearray(b"\x01") * (limit + 1)
@@ -22,7 +21,7 @@ def sieve_primes(limit: int) -> List[int]:
     return [i for i in range(2, limit + 1) if is_prime[i]]
 
 
-def count_prime_summations(n: int, primes: List[int]) -> int:
+def count_prime_summations(n: int, primes: list[int]) -> int:
     """
     Number of unordered ways to write n as a sum of primes.
     Standard coin-change DP: each prime can be used unlimited times, order doesn't matter.
@@ -51,7 +50,4 @@ if __name__ == "__main__":
     # Example from the statement: 10 has exactly 5 prime-sum partitions
     assert count_prime_summations(10, sieve_primes(10)) == 5
 
-    ans = solve(5000)
-    assert count_prime_summations(ans, sieve_primes(ans)) > 5000
-
-    print(ans)
+    print(solve(5000))

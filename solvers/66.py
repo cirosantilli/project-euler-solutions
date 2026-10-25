@@ -1,11 +1,8 @@
 #!/usr/bin/env python
-from __future__ import annotations
-
 import math
-from typing import Optional
 
 
-def minimal_pell_x(D: int) -> Optional[int]:
+def minimal_pell_x(D: int) -> int | None:
     """
     Returns the minimal x > 0 solving x^2 - D*y^2 = 1 for some y > 0,
     or None if D is a perfect square.
@@ -39,8 +36,8 @@ def minimal_pell_x(D: int) -> Optional[int]:
 
 
 def solve(limit: int = 1000) -> int:
-    best_d = -1
-    best_x = -1
+    best_d = 0
+    best_x = 0
 
     for D in range(2, limit + 1):
         x = minimal_pell_x(D)

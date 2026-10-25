@@ -1,15 +1,12 @@
 #!/usr/bin/env python
-from __future__ import annotations
-
-from typing import List
 
 
-def partitions_upto(n: int) -> List[int]:
+def partitions_upto(n: int) -> list[int]:
     """
     Exact partition numbers p(0..n) using Euler's pentagonal recurrence.
     Suitable for small n (uses Python big integers).
     """
-    p: List[int] = [0] * (n + 1)
+    p: list[int] = [0] * (n + 1)
     p[0] = 1
     for i in range(1, n + 1):
         total = 0
@@ -34,7 +31,7 @@ def solve(mod: int) -> int:
     Returns the least n such that p(n) % mod == 0.
     Computes p(n) modulo mod via pentagonal recurrence.
     """
-    p: List[int] = [1]  # p[0] = 1 (mod mod)
+    p: list[int] = [1]  # p[0] = 1 (mod mod)
     n = 1
     while True:
         total = 0

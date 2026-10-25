@@ -66,3 +66,34 @@ Other explicit bounds were checked for their role: the quadratic coefficient ran
 Further useful shared parameters include coefficient ranges in problem 27, the digit-power exponent in problem 30, arbitrary target digit subsets in problems 32 and 38, the substring divisors in problem 43, and the diagonal-prime ratio in problem 58. Existing fixed-input proofs do not replace these prospective generalized results. Problems 34, 40, 45, and 46 have shared base, position, and threshold parameters.
 
 The default root-partition certificate for problem 62 is numerical evidence toward a termination witness, not an execution cap. Its class batches were checked, but final assembly has not passed and is not a completed proof.
+
+== Additional Python reference corrections through problem 100
+
+The following interfaces have matching Python arguments and passing numerical regression checks. Their generalized structural source proofs remain pending; the separate Lean statements and solver models also need reconciliation before they can certify these contracts.
+
+[cols="1,3"]
+|===
+| Problem | Current design
+| 66 | Search positive Pell y values until an exact solution, with no polynomial cutoff. Both public functions return zero for empty candidate ranges.
+| 74 | Share the exclusive starting bound and desired chain length. The reference walks until repetition; the optimized solver memoizes tails and cycles without fixed arrays or iteration limits. Zero has digit-factorial successor one and is excluded as a starting value.
+| 77 | Share only the prime-partition threshold and search integers from two until it is exceeded.
+| 78 | Share the positive partition divisor and search positive indices until divisible. No universal existence claim is assumed.
+| 85 | Share only the desired rectangle count. Increasing counts and the incumbent distance bound the search; the optimized row search uses an exact integer square root. Ties choose the least positive pair (m, n), with m <= n.
+| 88 | Both sentinels are one above the complete product bound 2*k_max. Factors 2 and k with k-2 ones witness that bound for every k >= 2.
+| 92 | Share the exclusive starting bound. The reference walks complete chains; the optimized solver groups arbitrary bound prefixes by digit-square sum. No fixed seven-digit domain is assumed.
+| 100 | Search arrangements with at least two discs, starting at three blue out of four total. Both implementations advance their recurrence until the total strictly exceeds the supplied bound, without an iteration budget.
+|===
+
+== Further reference defects awaiting implementation
+
+[cols="1,3"]
+|===
+| Problem | Finding
+| 80 | The decimal scaling does not truncate the integer part when counting a requested number of leading square-root digits for larger inputs.
+| 84 | The Python reference returns stored answers for two dice sizes and zero otherwise; it does not implement the board model.
+| 86 | The reference counts cuboids for a supplied maximum side, while the optimized solver searches for the first maximum side exceeding a supplied count threshold.
+| 93 | The reference uses integer division and only successive left-associated operations. Exact rational arithmetic and all binary expression shapes are needed.
+| 94 | The reference bounds the equal side instead of the perimeter and admits a degenerate triangle. The contract and positivity checks need correction.
+| 96 | The Python reference returns the number of grids instead of solving Sudoku and summing the requested leading entries.
+| 98 | The Python reference counts anagram pairs instead of finding valid anagram-square assignments.
+|===
