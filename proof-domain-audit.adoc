@@ -24,6 +24,8 @@ Source proofs still awaiting replacement are retained as `.py.lean.attempt`; the
 
 Problem 62 has structural equivalence and support proofs for every signed class size. Both unbounded source searches return exactly when a completed digit width contains a matching class, with the same result; otherwise both diverge. The reference root boundaries are derived from the requested digit width. No external search limit or assumption that every class size exists is needed.
 
+Problem 45 has structural termination and equivalence proofs for every signed `after` threshold. A recurrence supplies arbitrarily large common pentagonal and hexagonal values. Both source loops reach the least common value above the threshold; the three-way merge advances its least cursor without passing that answer.
+
 == Remaining implementation and proof restrictions
 
 [cols="1,3,3"]

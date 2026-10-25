@@ -30,6 +30,7 @@ def solve(after: int = 40755) -> int:
     """
     Find the least positive triangular, pentagonal, and hexagonal value above after.
 
+    @formalsw: Returns
     @formalsw: Py from project_euler_statements.p45 import naive
     @formalsw: Equiv(naive)
     """

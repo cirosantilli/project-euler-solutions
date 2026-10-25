@@ -1,12 +1,12 @@
 import «.formalsw».solvers.«45.py.ast»
 import data.«project-euler-statements».data.py.project_euler_statements.«p45.py»
-import ProjectEulerSolutions.Lib.TriPentHexSearch
+import ProjectEulerSolutions.Lib.TriPentHexUnbounded
 
 set_option Elab.async false
 
 namespace solvers.«45»
 open FormalSW.PyAst FormalSW.PyAst.Calls
-open ProjectEulerSolutions.TriPentHex ProjectEulerSolutions.TriPentHexSearch
+open ProjectEulerSolutions.TriPentHex ProjectEulerSolutions.TriPentHexUnbounded
 open data.«project-euler-statements».data.py.project_euler_statements.p45 (hexPolynomial hex_nat)
 private abbrev program := Solvers.P45Ast.module
 private abbrev number (n : Int) : Constant := .int n
@@ -86,78 +86,85 @@ theorem result (x : Nat) :
 end is_pentagonal
 
 namespace solve
+private def predicate : Expr := .boolOp .and
+  [.compare (.name "value") [(.gt, .name "after")], .call (.name "is_pentagonal") [.name "value"]]
 private def body : List Stmt :=
-  [.assign [.name "h"] (.call (.name "hexagonal") [.name "n"]),
-   .ifThen (.call (.name "is_pentagonal") [.name "h"]) [.return (.name "h")] [],
-   .augAssign (.name "n") .add (.constant (.int 1))]
+  [.assign [.name "value"] (.call (.name "hexagonal") [.name "n"]),
+    .ifThen predicate [.return (.name "value")] [],
+    .augAssign (.name "n") .add (.constant (.int 1))]
 private def searchLoop : Stmt := .whileDo (.constant (.bool true)) body []
 
-def sourceBody : List Stmt :=
-  match (executableBody ((findFunctionIn program.body "solve").getD ([], [])).2).drop 1 with
-  | .whileDo _ body _ :: _ => body
-  | _ => []
+private theorem predicate_result (after : Int) (n : Nat) (env : ScalarEnv)
+    (getAfter : env "after" = some (number after)) (getValue : env "value" = some (natural (hexagonal n))) :
+    Evaluates program env predicate (flag (decide (after < (hexagonal n : Int) ∧ hexTest n = true))) := by
+  have first : Evaluates program env (.compare (.name "value") [(.gt, .name "after")])
+      (flag (decide (after < (hexagonal n : Int)))) :=
+    Evaluates.compare (Evaluates.lookup getValue) (Evaluates.lookup getAfter) (by simp [scalarCompare, evalCmpOp])
+  have second : Evaluates program env (.call (.name "is_pentagonal") [.name "value"]) (flag (hexTest n)) :=
+    Evaluates.call (.cons (Evaluates.lookup getValue) .nil) (is_pentagonal.result (hexagonal n))
+  by_cases later : after < (hexagonal n : Int)
+  · apply Evaluates.boolean_continue (by simpa only [later, decide_true] using first) rfl
+    apply Evaluates.boolean_last
+    simpa [later] using second
+  · simp only [later, false_and, decide_false]
+    exact Evaluates.boolean_stop (by simpa only [later, decide_false] using first) rfl
 
-theorem body_source : body=sourceBody := rfl
+/-- The search reaches the least accepted index, whose existence follows from the recurrence. -/
+theorem loop (after : Int) (n : Nat) (positive : 0 < n) (bounded : n ≤ winner after)
+    (env : ScalarEnv) (getAfter : env "after" = some (number after)) (getN : env "n" = some (natural n)) :
+    BlockReturns program env [searchLoop] (natural (answer after)) := by
+  let ready := env.set "value" (natural (hexagonal n))
+  have assigned : Evaluates program env (.call (.name "hexagonal") [.name "n"]) (natural (hexagonal n)) :=
+    Evaluates.call (.cons (Evaluates.lookup getN) .nil) (by simpa only [hex_nat] using hexagonal.result (n : Int))
+  have tested := predicate_result after n ready (by simpa [ready, ScalarEnv.set] using getAfter)
+    (by simp [ready, ScalarEnv.set])
+  by_cases selected : after < (hexagonal n : Int) ∧ hexTest n = true
+  · rw [decide_eq_true selected] at tested
+    have least := winner_minimal after n ⟨positive, selected⟩
+    have same : n = winner after := by omega
+    apply BlockReturns.while_loop (value := .bool true) Evaluates.constant
+    apply BlockReturns.assign assigned
+    apply BlockReturns.branch tested
+    apply BlockReturns.return_value
+    apply Evaluates.lookup
+    simp [ready, ScalarEnv.set, answer, same]
+  · rw [decide_eq_false selected] at tested
+    have before : n < winner after := by
+      by_contra late
+      have same : n = winner after := by omega
+      exact selected (by simpa only [same] using (winner_spec after).2)
+    have rest := loop after (n + 1) (by omega) (by omega) (ready.set "n" (natural (n + 1)))
+      (by simpa [ready, ScalarEnv.set] using getAfter) (by simp [ScalarEnv.set])
+    apply BlockReturns.while_loop (value := .bool true) Evaluates.constant
+    apply BlockReturns.assign assigned
+    apply BlockReturns.branch tested
+    apply BlockReturns.augAssign (value := natural (n + 1))
+      (Evaluates.binary (Evaluates.lookup (by simpa [ready, ScalarEnv.set] using getN)) Evaluates.constant
+        (by simp [scalarBinary]))
+    simpa only [loopContinuation, show loopControl body = false from rfl, Bool.false_eq_true, if_false] using rest
+termination_by winner after - n
+decreasing_by omega
 
-/-- A decreasing distance to the certified witness proves termination of the actual unbounded while loop. -/
-theorem loop (next count : Nat) (equation : next+count=winner) (lower : firstHex≤next)
-    (env : ScalarEnv) (getN : env "n"=some (natural next)) :
-    BlockReturns program env [searchLoop] (natural (hexagonal winner)) := by
-  induction count generalizing next env with
-  | zero =>
-      have equal : next=winner := by omega
-      subst next
-      let ready := env.set "h" (natural (hexagonal winner))
-      have assigned : Evaluates program env (.call (.name "hexagonal") [.name "n"]) (natural (hexagonal winner)) :=
-        Evaluates.call (.cons (Evaluates.lookup getN) .nil) (by simpa only [hex_nat] using hexagonal.result (winner : Int))
-      have tested : Evaluates program ready (.call (.name "is_pentagonal") [.name "h"]) (flag (hexTest winner)) :=
-        Evaluates.call (values := [natural (hexagonal winner)]) (.cons (Evaluates.lookup (by simp [ready, ScalarEnv.set])) .nil)
-          (is_pentagonal.result (hexagonal winner))
-      apply BlockReturns.while_loop (value := .bool true) Evaluates.constant
-      apply BlockReturns.assign assigned
-      apply BlockReturns.branch tested
-      simp only [winner_accepted, scalarTruth, if_true, List.singleton_append]
-      exact BlockReturns.return_value (Evaluates.lookup (by simp [ready, ScalarEnv.set]))
-  | succ count ih =>
-      let ready := env.set "h" (natural (hexagonal next))
-      have assigned : Evaluates program env (.call (.name "hexagonal") [.name "n"]) (natural (hexagonal next)) :=
-        Evaluates.call (.cons (Evaluates.lookup getN) .nil) (by simpa only [hex_nat] using hexagonal.result (next : Int))
-      have tested : Evaluates program ready (.call (.name "is_pentagonal") [.name "h"]) (flag (hexTest next)) :=
-        Evaluates.call (values := [natural (hexagonal next)]) (.cons (Evaluates.lookup (by simp [ready, ScalarEnv.set])) .nil)
-          (is_pentagonal.result (hexagonal next))
-      have rejected := no_earlier next lower (by omega)
-      apply BlockReturns.while_loop (value := .bool true) Evaluates.constant
-      apply BlockReturns.assign assigned
-      apply BlockReturns.branch tested
-      simp only [rejected, scalarTruth, Bool.false_eq_true, if_false, List.nil_append]
-      apply BlockReturns.augAssign (value := natural (next+1))
-        (Evaluates.binary (Evaluates.lookup (by simpa [ready, ScalarEnv.set] using getN)) Evaluates.constant (by simp [scalarBinary]))
-      have rest := ih (next+1) (by omega) (by omega) (ready.set "n" (natural (next+1))) (by simp [ScalarEnv.set])
-      simpa only [loopContinuation, show loopControl body=false from rfl, Bool.false_eq_true, if_false] using rest
-
-/-- The optimized Python source returns the certified least common polygonal value. -/
-theorem result : ReturnsValue program "solve" [] (natural (hexagonal winner)) := by
+/-- The complete optimized source terminates for every signed threshold. -/
+theorem result (after : Int) : ReturnsValue program "solve" [number after] (natural (answer after)) := by
   apply BlockReturns.function rfl rfl
   apply BlockReturns.assign Evaluates.constant
-  exact loop firstHex (winner-firstHex) rfl (by omega) _ rfl
-/-- The returned value is least among all common triangular values beyond the problem's given example. -/
-theorem least (index : Nat) (later : 285<index) (accepted : common index=true) :
-    hexagonal winner ≤ triangular index := by
-  have bound : triangleIndex≤index := by
-    by_contra earlier
-    have rejected := common_rejected index (by omega) (by omega)
-    rw [rejected] at accepted
-    cases accepted
-  have lower := triangular_strictMono.monotone bound
-  have same : triangular triangleIndex=hexagonal winner := hex_triangular winner (by decide)
-  simpa only [same] using lower
-end solve
+  exact loop after 1 (by decide) (winner_spec after).1 _ rfl rfl
 
-theorem solve.«Equiv(naive_default)» :
-    (Calls.function program "solve" []).Equiv (HeapCalls.scalarFunction P45Ast.module "naive_default" []) := by
-  have optimized := solve.result.finishes
-  have reference := HeapCalls.ReturnsValue.scalar_finishes (values := [])
-    (data.«project-euler-statements».data.py.project_euler_statements.p45.naive_default.search_result [])
+theorem «Returns» (after : Int) : (Calls.function program "solve" [number after]).Returns := (result after).returns
+
+end solve
+end solvers.«45»
+
+namespace solvers.«45».solve
+open FormalSW.PyAst
+open ProjectEulerSolutions.TriPentHexUnbounded
+
+theorem «Equiv(naive)» (after : Int) :
+    (Calls.function Solvers.P45Ast.module "solve" [.int after]).Equiv
+      (Calls.function P45Ast.module "naive" [.int after]) := by
+  have optimized := (result after).finishes
+  have reference := (data.«project-euler-statements».data.py.project_euler_statements.p45.naive.result after).finishes
   intro outcome
   constructor
   · intro finished
@@ -167,8 +174,10 @@ theorem solve.«Equiv(naive_default)» :
     rw [finished.unique reference]
     exact optimized
 
-theorem solve.«Supported» :
-    (Calls.function program "solve" []).Supported ∧ (HeapCalls.scalarFunction P45Ast.module "naive_default" []).Supported :=
-  ⟨solve.result.returns.supported, data.«project-euler-statements».data.py.project_euler_statements.p45.naive_default.«Supported»⟩
+theorem «Supported» :
+    (∀ after : Int, (Calls.function Solvers.P45Ast.module "solve" [.int after]).Supported) ∧
+      (∀ after : Int, (Calls.function P45Ast.module "naive" [.int after]).Supported) :=
+  ⟨fun after => («Returns» after).supported,
+    fun after => data.«project-euler-statements».data.py.project_euler_statements.p45.naive.«Supported» after⟩
 
-end solvers.«45»
+end solvers.«45».solve
