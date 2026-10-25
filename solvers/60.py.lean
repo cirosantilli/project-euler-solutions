@@ -3025,4 +3025,525 @@ def globals_after_improve (incumbent : Incumbent heap sumCell setCell bound sele
   basesTuple := improved_preserves heap sumCell setCell sum clique _ _ context.basesTuple
     (list_ne_tuple incumbent.sumFound context.basesTuple) (list_ne_tuple incumbent.setFound context.basesTuple)
 
+
+def innerBody : List Stmt := match (outerBody[3]? : Option Stmt) with
+  | some (.forIn _ _ body _) => body
+  | _ => []
+
+def innerGuard : Expr :=
+  .compare (.binOp (.binOp (.name "curr_sum") .add (.name "q")) .add
+    (.binOp (.name "r") .mult (.binOp (.name "need") .sub (.constant (.int 1))))) [(.gtE, sumExpression)]
+
+def pairExpression : Expr := .call (.name "__formalsw_local_solve_pair_ok")
+  [.name "q", .name "r", .name "__formalsw_cell_solve_cache_local", .name "__formalsw_cell_solve_pow10_local"]
+
+def emitCode : List Stmt :=
+  [.expr (.call (.attribute (.name "new_candidates") "append") [.name "r"])]
+
+theorem innerBody_source : innerBody =
+    [.assign [.name "r"] (.subscript (.name "candidates") (.name "j")),
+     .ifThen innerGuard [.breakLoop] [], .ifThen pairExpression emitCode []] := rfl
+
+/-- The growing candidate collector is separate from the original candidate
+list and from the captured state that the source must retain. -/
+structure CandidateState (heap : Mutable.Heap) (globals : Mutable.Globals)
+    (sumCell setCell cacheCell powerCell candidateAddress collector : Nat)
+    (bound : Int) (selected candidates accepted : List Nat) where
+  entries : List IntPairCache.Entry
+  store : pair_ok.Store heap entries cacheCell powerCell
+  correct : IntPairCache.Correct pair_ok.answer entries
+  context : is_prime.SourceGlobals heap globals
+  incumbent : Incumbent heap sumCell setCell bound selected
+  candidateFound : heap[candidateAddress]? = some (.list (numbers candidates))
+  collectorFound : heap[collector]? = some (.list (numbers accepted))
+  notCandidates : collector ≠ candidateAddress
+  notSum : collector ≠ sumCell
+  notSet : collector ≠ setCell
+  notSelected : collector ≠ incumbent.selectedAddress
+  notCacheCell : collector ≠ cacheCell
+  notPowerCell : collector ≠ powerCell
+
+variable {heap : Mutable.Heap} {globals : Mutable.Globals}
+  {sumCell setCell cacheCell powerCell candidateAddress collector : Nat}
+  {bound : Int} {selected candidates accepted : List Nat}
+
+def CandidateState.after_pair
+    (state : CandidateState heap globals sumCell setCell cacheCell powerCell candidateAddress collector
+      bound selected candidates accepted) (q r : Int) :
+    CandidateState (pair_ok.resultHeap heap state.store.cacheAddress state.entries q r) globals
+      sumCell setCell cacheCell powerCell candidateAddress collector bound selected candidates accepted where
+  entries := pair_ok.resultEntries heap state.entries q r
+  store := state.store.result q r
+  correct := pair_ok.resultEntries_correct state.correct heap q r
+  context := state.store.result_globals q r state.context
+  incumbent := state.incumbent.after_pair cacheCell powerCell state.entries state.store q r
+  candidateFound := pair_ok.resultHeap_preserves state.candidateFound _
+    (state.store.cache_ne_list state.candidateFound) _ q r
+  collectorFound := pair_ok.resultHeap_preserves state.collectorFound _
+    (state.store.cache_ne_list state.collectorFound) _ q r
+  notCandidates := state.notCandidates
+  notSum := state.notSum
+  notSet := state.notSet
+  notSelected := state.notSelected
+  notCacheCell := state.notCacheCell
+  notPowerCell := state.notPowerCell
+
+private theorem dictionary_ne_list {heap : Mutable.Heap} {left right : Nat}
+    {entries : List (Constant × Mutable.Value)} {values : List Mutable.Value}
+    (dictFound : heap[left]? = some (.dict entries)) (listFound : heap[right]? = some (.list values)) :
+    left ≠ right := by
+  intro same
+  rw [same, listFound] at dictFound
+  cases dictFound
+
+private theorem tuple_ne_list {heap : Mutable.Heap} {left right : Nat}
+    {items values : List Mutable.Value}
+    (tupleFound : heap[left]? = some (.tuple items)) (listFound : heap[right]? = some (.list values)) :
+    left ≠ right := by
+  intro same
+  rw [same, listFound] at tupleFound
+  cases tupleFound
+
+def CandidateState.emit
+    (state : CandidateState heap globals sumCell setCell cacheCell powerCell candidateAddress collector
+      bound selected candidates accepted) (r : Nat) :
+    CandidateState (heap.set collector (.list (numbers (accepted ++ [r])))) globals
+      sumCell setCell cacheCell powerCell candidateAddress collector bound selected candidates (accepted ++ [r]) where
+  entries := state.entries
+  store := {
+    cacheAddress := state.store.cacheAddress
+    powerAddress := state.store.powerAddress
+    powers := state.store.powers
+    cacheCellFound := by rw [List.getElem?_set_ne state.notCacheCell]; exact state.store.cacheCellFound
+    powerCellFound := by rw [List.getElem?_set_ne state.notPowerCell]; exact state.store.powerCellFound
+    cacheFound := by
+      rw [List.getElem?_set_ne (Ne.symm (state.store.cache_ne_list state.collectorFound))]
+      exact state.store.cacheFound
+    powerFound := by
+      rw [List.getElem?_set_ne (Ne.symm (dictionary_ne_list state.store.powerFound state.collectorFound))]
+      exact state.store.powerFound
+    separate := state.store.separate }
+  correct := state.correct
+  context := {
+    smallAddress := state.context.smallAddress
+    basesAddress := state.context.basesAddress
+    smallBinding := state.context.smallBinding
+    basesBinding := state.context.basesBinding
+    smallTuple := by
+      rw [List.getElem?_set_ne (Ne.symm (tuple_ne_list state.context.smallTuple state.collectorFound))]
+      exact state.context.smallTuple
+    basesTuple := by
+      rw [List.getElem?_set_ne (Ne.symm (tuple_ne_list state.context.basesTuple state.collectorFound))]
+      exact state.context.basesTuple }
+  incumbent := {
+    selectedAddress := state.incumbent.selectedAddress
+    sumFound := by rw [List.getElem?_set_ne state.notSum]; exact state.incumbent.sumFound
+    setFound := by rw [List.getElem?_set_ne state.notSet]; exact state.incumbent.setFound
+    selectedFound := by rw [List.getElem?_set_ne state.notSelected]; exact state.incumbent.selectedFound }
+  candidateFound := by rw [List.getElem?_set_ne state.notCandidates]; exact state.candidateFound
+  collectorFound := List.getElem?_set_self ((List.getElem?_eq_some_iff.mp state.collectorFound).1)
+  notCandidates := state.notCandidates
+  notSum := state.notSum
+  notSet := state.notSet
+  notSelected := state.notSelected
+  notCacheCell := state.notCacheCell
+  notPowerCell := state.notPowerCell
+
+def pairEmitHeap (state : CandidateState heap globals sumCell setCell cacheCell powerCell candidateAddress collector
+    bound selected candidates accepted) (q r : Nat) : Mutable.Heap :=
+  let tested := pair_ok.resultHeap heap state.store.cacheAddress state.entries q r
+  if pair_ok.answer q r then tested.set collector (.list (numbers (accepted ++ [r]))) else tested
+
+/-- Rebuild the data fields explicitly when changing indices, so subsequent
+heap frames do not depend on projections through equality transports. -/
+def CandidateState.reindex
+    (state : CandidateState heap globals sumCell setCell cacheCell powerCell candidateAddress collector
+      bound selected candidates accepted) (nextHeap : Mutable.Heap) (nextAccepted : List Nat)
+    (sameHeap : heap = nextHeap) (sameAccepted : accepted = nextAccepted) :
+    CandidateState nextHeap globals sumCell setCell cacheCell powerCell candidateAddress collector
+      bound selected candidates nextAccepted where
+  entries := state.entries
+  store := {
+    cacheAddress := state.store.cacheAddress
+    powerAddress := state.store.powerAddress
+    powers := state.store.powers
+    cacheCellFound := by simpa only [← sameHeap] using state.store.cacheCellFound
+    powerCellFound := by simpa only [← sameHeap] using state.store.powerCellFound
+    cacheFound := by simpa only [← sameHeap] using state.store.cacheFound
+    powerFound := by simpa only [← sameHeap] using state.store.powerFound
+    separate := state.store.separate }
+  correct := state.correct
+  context := {
+    smallAddress := state.context.smallAddress
+    basesAddress := state.context.basesAddress
+    smallBinding := state.context.smallBinding
+    basesBinding := state.context.basesBinding
+    smallTuple := by simpa only [← sameHeap] using state.context.smallTuple
+    basesTuple := by simpa only [← sameHeap] using state.context.basesTuple }
+  incumbent := {
+    selectedAddress := state.incumbent.selectedAddress
+    sumFound := by simpa only [← sameHeap] using state.incumbent.sumFound
+    setFound := by simpa only [← sameHeap] using state.incumbent.setFound
+    selectedFound := by simpa only [← sameHeap] using state.incumbent.selectedFound }
+  candidateFound := by simpa only [← sameHeap] using state.candidateFound
+  collectorFound := by simpa only [← sameHeap, ← sameAccepted] using state.collectorFound
+  notCandidates := state.notCandidates
+  notSum := state.notSum
+  notSet := state.notSet
+  notSelected := state.notSelected
+  notCacheCell := state.notCacheCell
+  notPowerCell := state.notPowerCell
+
+def pairEmitStateData (state : CandidateState heap globals sumCell setCell cacheCell powerCell candidateAddress collector
+    bound selected candidates accepted) (q r : Nat) :
+    { next : CandidateState (pairEmitHeap state q r) globals sumCell setCell cacheCell powerCell candidateAddress collector
+      bound selected candidates (if pair_ok.answer q r then accepted ++ [r] else accepted) //
+      next.store.powers = state.store.powers ∧ next.store.cacheAddress = state.store.cacheAddress } :=
+  if result : pair_ok.answer q r = true then
+    ⟨((state.after_pair q r).emit r).reindex _ _
+      (by simp only [pairEmitHeap, result, if_true]) (by simp only [result, if_true]), rfl, rfl⟩
+  else
+    ⟨(state.after_pair q r).reindex _ _
+      (by simp [pairEmitHeap, result]) (by simp [result]), rfl, rfl⟩
+
+def pairEmitState (state : CandidateState heap globals sumCell setCell cacheCell powerCell candidateAddress collector
+    bound selected candidates accepted) (q r : Nat) :
+    CandidateState (pairEmitHeap state q r) globals sumCell setCell cacheCell powerCell candidateAddress collector
+      bound selected candidates (if pair_ok.answer q r then accepted ++ [r] else accepted) :=
+  (pairEmitStateData state q r).val
+
+theorem pair_emit_executes (state : CandidateState heap globals sumCell setCell cacheCell powerCell candidateAddress collector
+    bound selected candidates accepted) (env : HeapCalls.Env) (q r : Nat)
+    (leftPower : ScalarDict.lookup state.store.powers (.int q) = some (number (DecimalShift.decimalShift q)))
+    (rightPower : ScalarDict.lookup state.store.powers (.int r) = some (number (DecimalShift.decimalShift r)))
+    (getQ : env "q" = some (number q)) (getR : env "r" = some (number r))
+    (getCache : env "__formalsw_cell_solve_cache_local" = some (.ref cacheCell))
+    (getPower : env "__formalsw_cell_solve_pow10_local" = some (.ref powerCell))
+    (getCollector : env "new_candidates" = some (.ref collector)) :
+    BlockContinues program env [.ifThen pairExpression emitCode []] heap env (pairEmitHeap state q r) globals := by
+  have tested : Evaluates program env pairExpression heap (flag (pair_ok.answer q r))
+      (pair_ok.resultHeap heap state.store.cacheAddress state.entries q r) globals :=
+    Evaluates.call (.cons (Evaluates.lookup getQ) (.cons (Evaluates.lookup getR)
+      (.cons (Evaluates.lookup getCache) (.cons (Evaluates.lookup getPower) .nil))))
+      (pair_ok.result q r heap cacheCell powerCell state.entries state.store leftPower rightPower
+        state.correct globals state.context)
+  cases result : pair_ok.answer q r with
+  | false =>
+    unfold pairEmitHeap
+    rw [result]
+    exact BlockContinues.branch (by simpa only [result] using tested) rfl BlockContinues.nil
+  | true =>
+    unfold pairEmitHeap
+    rw [result]
+    apply BlockContinues.branch (by simpa only [result] using tested) rfl
+    apply BlockContinues.discard
+    have found := (state.after_pair q r).collectorFound
+    simpa only [numbers, primes_up_to.numbers, List.map_append, List.map_cons, List.map_nil] using
+      Evaluates.append (Evaluates.lookup getCollector) found (Evaluates.lookup getR) found
+
+theorem pairEmit_powers (state : CandidateState heap globals sumCell setCell cacheCell powerCell candidateAddress collector
+    bound selected candidates accepted) (q r : Nat) :
+    (pairEmitState state q r).store.powers = state.store.powers :=
+  (pairEmitStateData state q r).property.1
+
+theorem pairEmit_cacheAddress (state : CandidateState heap globals sumCell setCell cacheCell powerCell candidateAddress collector
+    bound selected candidates accepted) (q r : Nat) :
+    (pairEmitState state q r).store.cacheAddress = state.store.cacheAddress :=
+  (pairEmitStateData state q r).property.2
+
+theorem pairEmit_preserves (state : CandidateState heap globals sumCell setCell cacheCell powerCell candidateAddress collector
+    bound selected candidates accepted) (q r : Nat) (address : Nat) (object : Mutable.Object)
+    (found : heap[address]? = some object) (notCache : state.store.cacheAddress ≠ address)
+    (notCollector : collector ≠ address) : (pairEmitHeap state q r)[address]? = some object := by
+  have kept := pair_ok.resultHeap_preserves found _ notCache state.entries (q : Int) (r : Int)
+  unfold pairEmitHeap
+  split
+  · rw [List.getElem?_set_ne notCollector]
+    exact kept
+  · exact kept
+
+structure CandidateEnv (env : HeapCalls.Env)
+    (sumCell cacheCell powerCell candidateAddress collector : Nat) (sum : Int) (q need : Nat) : Prop where
+  getSum : env "curr_sum" = some (number sum)
+  getQ : env "q" = some (number q)
+  getNeed : env "need" = some (number need)
+  getSumCell : env "__formalsw_cell_solve_best_sum" = some (.ref sumCell)
+  getCache : env "__formalsw_cell_solve_cache_local" = some (.ref cacheCell)
+  getPower : env "__formalsw_cell_solve_pow10_local" = some (.ref powerCell)
+  getCandidates : env "candidates" = some (.ref candidateAddress)
+  getCollector : env "new_candidates" = some (.ref collector)
+
+theorem CandidateEnv.bind {env : HeapCalls.Env} {sum : Int} {q need : Nat}
+    (environment : CandidateEnv env sumCell cacheCell powerCell candidateAddress collector sum q need)
+    (name : String) (value : Mutable.Value) (allowed : name ∈ ["j", "r"]) :
+    CandidateEnv (setLocal env name value) sumCell cacheCell powerCell candidateAddress collector sum q need := by
+  rcases (by simpa using allowed : name = "j" ∨ name = "r") with rfl | rfl <;>
+    exact ⟨by simpa [setLocal] using environment.getSum,
+      by simpa [setLocal] using environment.getQ,
+      by simpa [setLocal] using environment.getNeed,
+      by simpa [setLocal] using environment.getSumCell,
+      by simpa [setLocal] using environment.getCache,
+      by simpa [setLocal] using environment.getPower,
+      by simpa [setLocal] using environment.getCandidates,
+      by simpa [setLocal] using environment.getCollector⟩
+
+theorem inner_guard_evaluates (state : CandidateState heap globals sumCell setCell cacheCell powerCell candidateAddress collector
+    bound selected candidates accepted) (env : HeapCalls.Env) (sum : Int) (q need r : Nat)
+    (environment : CandidateEnv env sumCell cacheCell powerCell candidateAddress collector sum q need)
+    (getR : env "r" = some (number r)) :
+    Evaluates program env innerGuard heap
+      (flag (decide (bound ≤ sum + (q : Int) + (r : Int) * ((need : Int) - 1)))) heap globals := by
+  apply Evaluates.compare
+    (Evaluates.binary
+      (Evaluates.binary (Evaluates.lookup environment.getSum) (Evaluates.lookup environment.getQ) rfl)
+      (Evaluates.binary (Evaluates.lookup getR)
+        (Evaluates.binary (Evaluates.lookup environment.getNeed) Evaluates.constant rfl) rfl) rfl)
+  · apply Evaluates.subscript (by intros; simp) (Evaluates.lookup environment.getSumCell) Evaluates.constant
+    exact Mutable.getItem_list heap sumCell 0 [number bound] state.incumbent.sumFound (by simp)
+  · rfl
+
+structure CandidateTransition
+    (before : CandidateState heap globals sumCell setCell cacheCell powerCell candidateAddress collector
+      bound selected candidates accepted)
+    {finalHeap : Mutable.Heap} {finalAccepted : List Nat}
+    (after : CandidateState finalHeap globals sumCell setCell cacheCell powerCell candidateAddress collector
+      bound selected candidates finalAccepted) : Prop where
+  powers : after.store.powers = before.store.powers
+  cacheAddress : after.store.cacheAddress = before.store.cacheAddress
+  frame : ∀ address object, heap[address]? = some object → before.store.cacheAddress ≠ address →
+    collector ≠ address → finalHeap[address]? = some object
+
+theorem CandidateTransition.refl (state : CandidateState heap globals sumCell setCell cacheCell powerCell
+    candidateAddress collector bound selected candidates accepted) : CandidateTransition state state :=
+  ⟨rfl, rfl, fun _ _ found _ _ => found⟩
+
+theorem CandidateTransition.trans
+    (before : CandidateState heap globals sumCell setCell cacheCell powerCell candidateAddress collector
+      bound selected candidates accepted)
+    {middleHeap finalHeap : Mutable.Heap} {middleAccepted finalAccepted : List Nat}
+    (middle : CandidateState middleHeap globals sumCell setCell cacheCell powerCell candidateAddress collector
+      bound selected candidates middleAccepted)
+    (after : CandidateState finalHeap globals sumCell setCell cacheCell powerCell candidateAddress collector
+      bound selected candidates finalAccepted)
+    (first : CandidateTransition before middle) (second : CandidateTransition middle after) :
+    CandidateTransition before after where
+  powers := second.powers.trans first.powers
+  cacheAddress := second.cacheAddress.trans first.cacheAddress
+  frame := fun address object found notCache notCollector => second.frame address object
+    (first.frame address object found notCache notCollector)
+    (by simpa only [first.cacheAddress] using notCache) notCollector
+
+theorem pairEmit_transition (state : CandidateState heap globals sumCell setCell cacheCell powerCell
+    candidateAddress collector bound selected candidates accepted) (q r : Nat) :
+    CandidateTransition state (pairEmitState state q r) :=
+  ⟨pairEmit_powers state q r, pairEmit_cacheAddress state q r, pairEmit_preserves state q r⟩
+
+def CandidateLocals (before after : HeapCalls.Env) : Prop :=
+  ∀ name, name ≠ "j" → name ≠ "r" → after name = before name
+
+private theorem candidate_locals_bind (env : HeapCalls.Env) (first r : Nat) :
+    CandidateLocals env (setLocal (setLocal env "j" (number first)) "r" (number r)) := by
+  intro name notJ notR
+  simp [setLocal, notJ, notR]
+
+private theorem inner_pruned (state : CandidateState heap globals sumCell setCell cacheCell powerCell candidateAddress collector
+    bound selected candidates accepted) (env : HeapCalls.Env) (sum : Int) (q need r : Nat)
+    (environment : CandidateEnv env sumCell cacheCell powerCell candidateAddress collector sum q need)
+    (getR : env "r" = some (number r)) (next stop : Int)
+    (cut : bound ≤ sum + (q : Int) + (r : Int) * ((need : Int) - 1)) :
+    BlockContinues program env
+      [.ifThen innerGuard [.breakLoop] [], .ifThen pairExpression emitCode [],
+       Calls.loopContinuation innerBody (.rangeStepLoop "j" next stop 1 innerBody [])]
+      heap env heap globals := by
+  intro following anchors stack
+  apply Reaches.next rfl
+  apply ((inner_guard_evaluates state env sum q need r environment getR) anchors _).trans
+  apply Reaches.next (following := ⟨.block
+    (.breakLoop :: .ifThen pairExpression emitCode [] ::
+      Calls.loopContinuation innerBody (.rangeStepLoop "j" next stop 1 innerBody []) :: following) env,
+      stack, heap⟩)
+  · simp [step, run, cut, Mutable.truth, scalarTruth]
+  · exact .next (by simp [step, Calls.loopContinuation, innerBody_source, Calls.loopControl,
+      Calls.loopControlStmt, Calls.loopTarget]) .refl
+
+/-- Execute the actual indexed candidate loop, retaining its early break,
+pair-cache effects, and the append order of the selected candidates. -/
+theorem inner_range_result (remaining : List Nat) (first : Nat)
+    (suffix : candidates.drop first = remaining) (within : first ≤ candidates.length)
+    (state : CandidateState heap globals sumCell setCell cacheCell powerCell candidateAddress collector
+      bound selected candidates accepted) (env : HeapCalls.Env) (sum : Int) (q need : Nat)
+    (environment : CandidateEnv env sumCell cacheCell powerCell candidateAddress collector sum q need)
+    (leftPower : ScalarDict.lookup state.store.powers (.int q) = some (number (DecimalShift.decimalShift q)))
+    (powers : ∀ r ∈ remaining, ScalarDict.lookup state.store.powers (.int r) = some (number (DecimalShift.decimalShift r))) :
+    ∃ finalHeap finalEnv,
+      ∃ finalState : CandidateState finalHeap globals sumCell setCell cacheCell powerCell candidateAddress collector
+        bound selected candidates
+        (accepted ++ CliqueSearch.candidates (fun q r => pair_ok.answer q r) need sum q remaining bound),
+        BlockContinues program env [.rangeStepLoop "j" first candidates.length 1 innerBody []]
+          heap finalEnv finalHeap globals ∧
+        CandidateTransition state finalState ∧ CandidateLocals env finalEnv := by
+  induction remaining generalizing first heap accepted env with
+  | nil =>
+    have emptyLength := congrArg List.length suffix
+    simp only [List.length_drop, List.length_nil] at emptyLength
+    refine ⟨heap, env, state.reindex heap _ rfl (by simp [CliqueSearch.candidates]), ?_, ?_, ?_⟩
+    · exact BlockContinues.range_done (by simp [Calls.rangeContinues]; omega) .nil
+    · exact ⟨rfl, rfl, fun _ _ found _ _ => found⟩
+    · exact fun _ _ _ => rfl
+  | cons r rest ih =>
+    let indexed := setLocal env "j" (number first)
+    let chosen := setLocal indexed "r" (number r)
+    have chosenEnvironment := (environment.bind "j" (number first) (by simp)).bind "r" (number r) (by simp)
+    have getJ : indexed "j" = some (number first) := by simp [indexed, setLocal]
+    have getR : chosen "r" = some (number r) := by simp [chosen, setLocal]
+    have getCandidates : indexed "candidates" = some (.ref candidateAddress) := by
+      simpa [indexed, setLocal] using environment.getCandidates
+    have item : candidates[first]? = some r := by
+      have head : (candidates.drop first)[0]? = some r := by rw [suffix]; rfl
+      simpa using head
+    have continues : first < candidates.length := (List.getElem?_eq_some_iff.mp item).1
+    have readR : Evaluates program indexed (.subscript (.name "candidates") (.name "j"))
+        heap (number r) heap globals := by
+      apply Evaluates.subscript (by intros; simp) (Evaluates.lookup getCandidates) (Evaluates.lookup getJ)
+      simpa [numbers, primes_up_to.numbers, (List.getElem?_eq_some_iff.mp item).2] using
+        Mutable.getItem_list heap candidateAddress first (numbers candidates) state.candidateFound
+          (by simpa [numbers, primes_up_to.numbers] using continues)
+    have assigned : BlockContinues program indexed [innerBody[0]'(by decide)] heap chosen heap globals :=
+      BlockContinues.assign readR
+    by_cases cut : bound ≤ sum + (q : Int) + (r : Int) * ((need : Int) - 1)
+    · have resultEmpty : CliqueSearch.candidates (fun q r => pair_ok.answer q r) need sum q (r :: rest) bound = [] := by
+        simp [CliqueSearch.candidates, Int.not_lt.mpr cut]
+      refine ⟨heap, chosen, state.reindex heap _ rfl (by rw [resultEmpty, List.append_nil]), ?_, ?_,
+        candidate_locals_bind env first r⟩
+      · apply BlockContinues.range_step (by simp [Calls.rangeContinues]; omega)
+        simpa only [innerBody_source, List.cons_append, List.nil_append, Int.natCast_add, Int.natCast_one] using
+          assigned.append (inner_pruned state chosen sum q need r chosenEnvironment getR (first+1) candidates.length cut)
+      · exact ⟨rfl, rfl, fun _ _ found _ _ => found⟩
+    · let tested := pairEmitState state q r
+      have tailSuffix : candidates.drop (first + 1) = rest := by
+        simpa [List.drop_drop, Nat.add_comm] using congrArg (List.drop 1) suffix
+      have nextPowers : ∀ value ∈ rest,
+          ScalarDict.lookup tested.store.powers (.int value) = some (number (DecimalShift.decimalShift value)) := by
+        intro value member
+        rw [pairEmit_powers]
+        exact powers value (by simp [member])
+      obtain ⟨finalHeap, finalEnv, finalState, executed, transition, locals⟩ := ih (first+1) tailSuffix (by omega)
+        tested chosen chosenEnvironment (by rw [pairEmit_powers]; exact leftPower) nextPowers
+      have acceptedResult :
+          (if pair_ok.answer q r then accepted ++ [r] else accepted) ++
+              CliqueSearch.candidates (fun q r => pair_ok.answer q r) need sum q rest bound =
+          accepted ++ CliqueSearch.candidates (fun q r => pair_ok.answer q r) need sum q (r :: rest) bound := by
+        simp only [CliqueSearch.candidates, List.takeWhile_cons, decide_eq_true_eq,
+          Int.lt_of_not_ge cut, if_true, List.filter_cons]
+        split <;> simp [List.append_assoc]
+      refine ⟨finalHeap, finalEnv, finalState.reindex finalHeap _ rfl acceptedResult, ?_, ?_, ?_⟩
+      · apply BlockContinues.range_step (by simp [Calls.rangeContinues]; omega)
+        have guard : BlockContinues program chosen [.ifThen innerGuard [.breakLoop] []] heap chosen heap globals :=
+          BlockContinues.branch (by simpa only [cut, decide_false] using
+            (inner_guard_evaluates state chosen sum q need r chosenEnvironment getR)) rfl .nil
+        have testedRun := pair_emit_executes state chosen q r leftPower (powers r (by simp))
+          chosenEnvironment.getQ getR chosenEnvironment.getCache chosenEnvironment.getPower chosenEnvironment.getCollector
+        have resumed := BlockContinues.loop_resume executed
+        simpa only [innerBody_source, List.cons_append, List.nil_append, Calls.loopContinuation,
+          Calls.loopControl, Calls.loopControlStmt, Bool.true_or, if_true,
+          Int.natCast_add, Int.natCast_one] using assigned.append (guard.append (testedRun.append resumed))
+      · have composed := CandidateTransition.trans state tested finalState (pairEmit_transition state q r) transition
+        exact ⟨composed.powers, composed.cacheAddress, composed.frame⟩
+      · intro name notJ notR
+        exact (locals name notJ notR).trans (candidate_locals_bind env first r name notJ notR)
+
+def candidateCode : List Stmt := (outerBody.drop 2).take 2
+
+theorem candidateCode_source : candidateCode =
+    [.annAssign (.name "new_candidates") (.subscript (.name "list") (.name "int")) (some (.list [])),
+     .forIn (.name "j") (.call (.name "range")
+       [.binOp (.name "idx") .add (.constant (.int 1)), .builtinCall .len [.name "candidates"]]) innerBody []] := rfl
+
+def CandidateState.fresh (heap : Mutable.Heap) (globals : Mutable.Globals)
+    (sumCell setCell cacheCell powerCell candidateAddress : Nat) (bound : Int) (selected candidates : List Nat)
+    (entries : List IntPairCache.Entry) (store : pair_ok.Store heap entries cacheCell powerCell)
+    (correct : IntPairCache.Correct pair_ok.answer entries)
+    (context : is_prime.SourceGlobals heap globals)
+    (incumbent : Incumbent heap sumCell setCell bound selected)
+    (candidateFound : heap[candidateAddress]? = some (.list (numbers candidates))) :
+    CandidateState (heap ++ [.list []]) globals sumCell setCell cacheCell powerCell candidateAddress heap.length
+      bound selected candidates [] where
+  entries := entries
+  store := store.append [.list []]
+  correct := correct
+  context := context.append [.list []]
+  incumbent := incumbent.append [.list []]
+  candidateFound := HeapCollection.prefix_found heap _ _ _ candidateFound
+  collectorFound := by simp [numbers, primes_up_to.numbers]
+  notCandidates := by have old := (List.getElem?_eq_some_iff.mp candidateFound).1; omega
+  notSum := by have old := (List.getElem?_eq_some_iff.mp incumbent.sumFound).1; omega
+  notSet := by have old := (List.getElem?_eq_some_iff.mp incumbent.setFound).1; omega
+  notSelected := by
+    change heap.length ≠ incumbent.selectedAddress
+    have old := (List.getElem?_eq_some_iff.mp incumbent.selectedFound).1
+    omega
+  notCacheCell := by have old := (List.getElem?_eq_some_iff.mp store.cacheCellFound).1; omega
+  notPowerCell := by have old := (List.getElem?_eq_some_iff.mp store.powerCellFound).1; omega
+
+/-- The complete source candidate-building fragment, starting before its fresh
+list allocation. The result is the finite search model's candidate list, with
+all cache effects performed and the original incumbent retained. -/
+theorem candidate_code_result (heap : Mutable.Heap) (globals : Mutable.Globals)
+    (sumCell setCell cacheCell powerCell candidateAddress : Nat) (bound sum : Int)
+    (selected candidates : List Nat) (q need index : Nat) (within : index < candidates.length)
+    (entries : List IntPairCache.Entry) (store : pair_ok.Store heap entries cacheCell powerCell)
+    (correct : IntPairCache.Correct pair_ok.answer entries)
+    (context : is_prime.SourceGlobals heap globals)
+    (incumbent : Incumbent heap sumCell setCell bound selected)
+    (candidateFound : heap[candidateAddress]? = some (.list (numbers candidates)))
+    (env : HeapCalls.Env)
+    (environment : CandidateEnv (setLocal env "new_candidates" (.ref heap.length))
+      sumCell cacheCell powerCell candidateAddress heap.length sum q need)
+    (getIndex : env "idx" = some (number index))
+    (leftPower : ScalarDict.lookup store.powers (.int q) = some (number (DecimalShift.decimalShift q)))
+    (powers : ∀ r ∈ candidates.drop (index+1),
+      ScalarDict.lookup store.powers (.int r) = some (number (DecimalShift.decimalShift r))) :
+    ∃ finalHeap finalEnv,
+      ∃ finalState : CandidateState finalHeap globals sumCell setCell cacheCell powerCell candidateAddress heap.length
+        bound selected candidates
+        (CliqueSearch.candidates (fun q r => pair_ok.answer q r) need sum q (candidates.drop (index+1)) bound),
+        BlockContinues program env candidateCode heap finalEnv finalHeap globals ∧
+        finalState.store.powers = store.powers ∧ finalState.store.cacheAddress = store.cacheAddress ∧
+        finalEnv "new_candidates" = some (.ref heap.length) ∧
+        (∀ name, name ≠ "new_candidates" → name ≠ "j" → name ≠ "r" → finalEnv name = env name) ∧
+        (∀ address object, heap[address]? = some object → store.cacheAddress ≠ address →
+          finalHeap[address]? = some object) := by
+  let allocated := heap ++ [Mutable.Object.list []]
+  let ready := setLocal env "new_candidates" (.ref heap.length)
+  let state := CandidateState.fresh heap globals sumCell setCell cacheCell powerCell candidateAddress
+    bound selected candidates entries store correct context incumbent candidateFound
+  have allocationRun : BlockContinues program env [candidateCode[0]'(by decide)] heap ready allocated globals :=
+    BlockContinues.annAssign (Evaluates.list .nil)
+  obtain ⟨finalHeap, finalEnv, finalState, executed, transition, locals⟩ :=
+    inner_range_result (candidates.drop (index+1)) (index+1) rfl (by omega)
+      state ready sum q need environment leftPower powers
+  have getReadyIndex : ready "idx" = some (number index) := by simpa [ready, setLocal] using getIndex
+  have candidateLength : Evaluates program ready (.builtinCall .len [.name "candidates"])
+      allocated (number candidates.length) allocated globals := by
+    apply Evaluates.builtin (.cons (Evaluates.lookup environment.getCandidates) .nil)
+    have allocatedFound : allocated[candidateAddress]? = some (.list (numbers candidates)) := state.candidateFound
+    simp [primitive, Mutable.length, allocatedFound, numbers, primes_up_to.numbers]
+  have loopRun : BlockContinues program ready [candidateCode[1]'(by decide)] allocated finalEnv finalHeap globals := by
+    apply BlockContinues.for_range
+      (.cons (Evaluates.binary (Evaluates.lookup getReadyIndex) Evaluates.constant rfl)
+        (.cons candidateLength .nil))
+    · rfl
+    · simpa only [Int.natCast_add, Int.natCast_one] using executed
+  refine ⟨finalHeap, finalEnv, finalState.reindex finalHeap _ rfl (by simp), ?_,
+    transition.powers, transition.cacheAddress, ?_, ?_, ?_⟩
+  · simpa only [candidateCode_source] using allocationRun.append loopRun
+  · rw [locals "new_candidates" (by decide) (by decide)]
+    exact environment.getCollector
+  · intro name notCollector notJ notR
+    rw [locals name notJ notR]
+    simp [ready, setLocal, notCollector]
+  · intro address object found notCache
+    have old := (List.getElem?_eq_some_iff.mp found).1
+    exact transition.frame address object (HeapCollection.prefix_found heap _ _ _ found) notCache (by omega)
+
 end solvers.«60».dfs
