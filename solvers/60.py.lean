@@ -14,6 +14,7 @@ import ProjectEulerSolutions.Lib.TrialPrimeCertificate
 import ProjectEulerSolutions.Lib.PrimePairCertificate
 import ProjectEulerSolutions.Lib.PrimePairUpperBound
 import ProjectEulerSolutions.Lib.PrimePairBudget
+import ProjectEulerSolutions.Lib.PrimePairBudgetSearch
 import ProjectEulerSolutions.Lib.PrimePairVertices.All
 import ProjectEulerSolutions.Lib.PrimePairCache.SmallPrefix
 import data.«project-euler-statements».data.py.project_euler_statements.«p60.py»
@@ -5551,5 +5552,18 @@ theorem large_model_of_budget_certificate (graph : PrimePairCertificate.Graph)
   · simpa only [PrimePairVertices.largeTree_values] using PrimePairCertificate.Budget.included covers
       (by simpa only [PrimePairVertices.largeTree_values] using coverage)
   · exact checked
+
+/-- The finite seeded check may run on the sparse graph directly; the
+budget relaxation and source model are related by proved search equality. -/
+theorem large_model_of_budget_lookup_certificate (graph : PrimePairCertificate.Graph)
+    (covers : PrimePairCertificate.Budget.Covers PrimePairVertices.largeTree 26034 graph)
+    (coverage : ∀ p ∈ PrimePairVertices.large, 2 * p < 26034 → p ∈ graph.vertices)
+    (checked : CliqueSearch.search graph.lookupEdge 5 [] PrimePairVertices.large 0
+      ⟨26034, []⟩ = ⟨26033, competitive.witness⟩) :
+    solve_search.answerModel 26033 = ⟨26033, competitive.witness⟩ := by
+  apply large_model_of_budget_certificate graph covers coverage
+  rw [PrimePairCertificate.Budget.search_eq_lookup graph 26034 5 [] PrimePairVertices.large 0
+    ⟨26034, []⟩ (by decide) (by decide)]
+  exact checked
 
 end solvers.«60».certificate

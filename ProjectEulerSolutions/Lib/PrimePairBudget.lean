@@ -1,5 +1,6 @@
 import ProjectEulerSolutions.Lib.PrimePairUpperBound
 import ProjectEulerSolutions.Lib.PrimePairLookup
+import ProjectEulerSolutions.Lib.MillerRabinFactor
 
 namespace ProjectEulerSolutions.PrimePairCertificate.Budget
 
@@ -9,6 +10,15 @@ inductive Choice where
   | possible
   | first
   | second
+  | firstFactor (divisor : Nat)
+  | secondFactor (divisor : Nat)
+
+private def checkFactor (n divisor : Nat) : Bool :=
+  MillerRabin.smallPrimes.contains divisor && (decide (37 < n) && decide (n % divisor = 0))
+
+private theorem checkFactor_sound {n divisor : Nat} (checked : checkFactor n divisor = true) : MillerRabin.Fast.model n = false := by
+  simp only [checkFactor, Bool.and_eq_true, List.contains_iff_mem, decide_eq_true_eq] at checked
+  exact MillerRabin.smallFactor_rejects n divisor checked.2.1 checked.1 checked.2.2
 
 private def Choice.check (choice : Choice) (bound p q : Nat) : Bool :=
   match choice with
@@ -16,6 +26,8 @@ private def Choice.check (choice : Choice) (bound p q : Nat) : Bool :=
   | .possible => true
   | .first => rejectionCheck p q [] []
   | .second => rejectionCheck p q [] [q]
+  | .firstFactor divisor => checkFactor (p * DecimalShift.fiveDigits q + q) divisor
+  | .secondFactor divisor => checkFactor (q * DecimalShift.fiveDigits p + p) divisor
 
 private theorem Choice.possible_of_checked (choice : Choice) (bound p q : Nat)
     (checked : choice.check bound p q = true) (ordered : p < q) (within : p + q < bound)
@@ -27,6 +39,14 @@ private theorem Choice.possible_of_checked (choice : Choice) (bound p q : Nat)
   | possible => rfl
   | first => exact False.elim (by simpa using rejectionCheck_sound p q [] [] checked ordered accepted)
   | second => exact False.elim (by simpa using rejectionCheck_sound p q [] [q] checked ordered accepted)
+  | firstFactor divisor =>
+    have failed := checkFactor_sound checked
+    have rejected : rejectionCheck p q [] [] = true := by simp [rejectionCheck, ordered, failed]
+    exact False.elim (by simpa using rejectionCheck_sound p q [] [] rejected ordered accepted)
+  | secondFactor divisor =>
+    have failed := checkFactor_sound checked
+    have rejected : rejectionCheck p q [] [q] = true := by simp [rejectionCheck, ordered, failed]
+    exact False.elim (by simpa using rejectionCheck_sound p q [] [q] rejected ordered accepted)
 
 def checkPlan (bound p : Nat) : List Nat → List Choice → Bool
   | [], [] => true
