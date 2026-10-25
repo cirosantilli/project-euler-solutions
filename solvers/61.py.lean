@@ -1606,4 +1606,462 @@ theorem next_values_evaluate (world : World heap prefixCell typesCell) (kind suf
         rfl
       · exact build_prefix_map.found_append _ _ _ _ (buckets.present suffix result selected).2
 
+/-- All five source parameters describe one logical search state. -/
+structure SearchState (heap : Mutable.Heap) (path typesAddress numbersAddress prefixCell typesCell : Nat)
+    (nodes : List (Nat × Node)) where
+  world : World heap prefixCell typesCell
+  pathView : PathView heap path nodes
+  typesFound : heap[typesAddress]? = some (integerSet (usedKinds nodes))
+  numbersFound : heap[numbersAddress]? = some (integerSet (usedNumbers nodes))
+
+def SearchState.append (state : SearchState heap path typesAddress numbersAddress prefixCell typesCell nodes)
+    (extra : Mutable.Heap) :
+    SearchState (heap ++ extra) path typesAddress numbersAddress prefixCell typesCell nodes where
+  world := state.world.append extra
+  pathView := state.pathView.append extra
+  typesFound := build_prefix_map.found_append _ _ _ _ state.typesFound
+  numbersFound := build_prefix_map.found_append _ _ _ _ state.numbersFound
+
+/-- The child uses fresh path and set objects while retaining its parent's captured tables. -/
+def SearchState.arguments (state : SearchState heap path typesAddress numbersAddress prefixCell typesCell nodes)
+    (value kind : Int) :
+    SearchState (argumentHeap heap nodes value kind) (heap.length + 2) (heap.length + 4)
+      (heap.length + 6) prefixCell typesCell (nodes ++ [(heap.length, (value, kind))]) where
+  world := by
+    simpa only [argumentHeap, pathHeap, List.append_assoc, List.singleton_append] using state.world.append
+      [.tuple [number value, number kind], .list [.ref heap.length],
+       .list (references nodes ++ [Mutable.Value.ref heap.length]),
+       .set [.int kind], integerSet (usedKinds nodes ++ [kind]),
+       .set [.int value], integerSet (usedNumbers nodes ++ [value])]
+  pathView := state.pathView.arguments value kind
+  typesFound := argument_types heap nodes value kind
+  numbersFound := argument_numbers heap nodes value kind
+
+/-- Local loop variables do not replace the recursive call's five parameters. -/
+structure Bindings (env : HeapCalls.Env) (path typesAddress numbersAddress prefixCell typesCell : Nat) : Prop where
+  getPath : env "path" = some (.ref path)
+  getTypes : env "used_types" = some (.ref typesAddress)
+  getNumbers : env "used_nums" = some (.ref numbersAddress)
+  getPrefixCell : env "__formalsw_cell_solve_pref_map" = some (.ref prefixCell)
+  getTypesCell : env "__formalsw_cell_solve_types" = some (.ref typesCell)
+
+theorem Bindings.local (bound : Bindings env path typesAddress numbersAddress prefixCell typesCell)
+    (name : String) (value : Mutable.Value)
+    (fresh : name ∉ ["path", "used_types", "used_nums",
+      "__formalsw_cell_solve_pref_map", "__formalsw_cell_solve_types"]) :
+    Bindings (setLocal env name value) path typesAddress numbersAddress prefixCell typesCell := by
+  simp only [List.mem_cons, not_or] at fresh
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;>
+    simp_all [setLocal, eq_comm, bound.getPath, bound.getTypes, bound.getNumbers,
+      bound.getPrefixCell, bound.getTypesCell]
+
+theorem Bindings.function (path typesAddress numbersAddress prefixCell typesCell : Nat)
+    (globals : Mutable.Globals) :
+    Bindings (functionEnv
+      ((findFunctionIn program.body "__formalsw_local_solve_dfs").getD ([], [])).1
+      ((findFunctionIn program.body "__formalsw_local_solve_dfs").getD ([], [])).2
+      [.ref path, .ref typesAddress, .ref numbersAddress, .ref prefixCell, .ref typesCell] globals)
+      path typesAddress numbersAddress prefixCell typesCell := by
+  constructor <;> cases globals <;> rfl
+
+theorem path_length_evaluate (view : PathView heap path nodes) (env : HeapCalls.Env)
+    (getPath : env "path" = some (.ref path)) (globals : Mutable.Globals := []) :
+    Evaluates program env condition heap (flag (decide (nodes.length = 6))) heap globals := by
+  apply Evaluates.compare (middle := heap) (afterRight := heap) (finalHeap := heap)
+    (av := number nodes.length) (bv := number 6)
+  · apply Evaluates.builtin (.cons (Evaluates.lookup getPath) .nil)
+    simp [primitive, Mutable.length, view.found, references, number]
+  · exact Evaluates.constant
+  · simp [HeapCalls.compare, scalarCompare, evalCmpOp, flag]
+    omega
+
+theorem set_membership_evaluate (heap : Mutable.Heap) (address : Nat) (items : List Int)
+    (found : heap[address]? = some (integerSet items)) (setName itemName : String) (value : Int)
+    (env : HeapCalls.Env) (getSet : env setName = some (.ref address))
+    (getItem : env itemName = some (number value)) (globals : Mutable.Globals := []) :
+    Evaluates program env (.membership (.name itemName) (.name setName) false) heap
+      (flag (decide (value ∈ items))) heap globals := by
+  apply Evaluates.membership (.cons (Evaluates.lookup getItem) (.cons (Evaluates.lookup getSet) .nil))
+  simp [HeapCalls.membership, found, integerSet, ScalarSet.contains_ints, number, flag]
+
+/-- The concrete return object represents the exact ordered result of the search model. -/
+def ResultView (heap : Mutable.Heap) (result : Option ProjectEulerSolutions.PolygonalCycle.Path)
+    (value : Mutable.Value) : Prop :=
+  match result with
+  | none => value = .scalar .none
+  | some path => ∃ address nodes, value = .ref address ∧ Nonempty (PathView heap address nodes) ∧
+      nodes.map Prod.snd = path
+
+variable {result : Option ProjectEulerSolutions.PolygonalCycle.Path}
+
+theorem ResultView.append (view : ResultView heap result value) (extra : Mutable.Heap) :
+    ResultView (heap ++ extra) result value := by
+  cases result with
+  | none => exact view
+  | some path =>
+      obtain ⟨address, nodes, equal, ⟨pathView⟩, logical⟩ := view
+      exact ⟨address, nodes, equal, ⟨pathView.append extra⟩, logical⟩
+
+theorem result_condition_evaluate (view : ResultView heap result value) (env : HeapCalls.Env)
+    (getResult : env "res" = some value) (globals : Mutable.Globals := []) :
+    Evaluates program env resultCondition heap (flag result.isSome) heap globals := by
+  apply Evaluates.unary (middle := heap) (finalHeap := heap)
+    (value := flag (!result.isSome))
+  · apply Evaluates.builtin (.cons (Evaluates.lookup getResult) (.cons Evaluates.constant .nil))
+    cases result with
+    | none => simp [ResultView] at view; subst value; rfl
+    | some path => obtain ⟨address, _, rfl, _, _⟩ := view; rfl
+  · cases result <;> rfl
+
+def PathView.ends (view : PathView heap path nodes) (size : nodes.length = 6) :
+    Ends heap path (nodes[0]'(by omega)).2.1 (nodes[5]'(by omega)).2.1 where
+  items := references nodes
+  size := by simp [references, size]
+  pathFound := view.found
+  firstAddress := (nodes[0]'(by omega)).1
+  lastAddress := (nodes[5]'(by omega)).1
+  firstKind := number (nodes[0]'(by omega)).2.2
+  lastKind := number (nodes[5]'(by omega)).2.2
+  head := by simp [references, List.getElem?_eq_getElem (show 0 < nodes.length by omega)]
+  tail := by simp [references, List.getElem?_eq_getElem (show 5 < nodes.length by omega)]
+  firstFound := view.contents _ _ (List.getElem_mem (by omega))
+  lastFound := view.contents _ _ (List.getElem_mem (by omega))
+
+/-- The source's six-node return is the model's closure test, including the failed case. -/
+theorem finish_result (view : PathView heap path nodes) (size : nodes.length = 6)
+    (usedTypes usedNums prefixCell typesCell : Mutable.Value) (globals : Mutable.Globals := []) :
+    ∃ value, ReturnsValue program "__formalsw_local_solve_dfs"
+      [.ref path, usedTypes, usedNums, prefixCell, typesCell] heap value heap globals ∧
+      ResultView heap (ProjectEulerSolutions.PolygonalCycle.finish (nodes.map Prod.snd)) value := by
+  let first := (nodes[0]'(by omega)).2.1
+  let last := (nodes[5]'(by omega)).2.1
+  have closed : ProjectEulerSolutions.PolygonalCycle.closed ((nodes.map Prod.snd).map Prod.fst) =
+      decide (last % 100 = first / 100) := by
+    simp [ProjectEulerSolutions.PolygonalCycle.closed, ProjectEulerSolutions.PolygonalCycle.links,
+      List.getLast?_eq_getElem?, List.head?_eq_getElem?, size, first, last]
+  refine ⟨if last % 100 = first / 100 then .ref path else .scalar .none,
+    closed_result heap path first last (view.ends size) usedTypes usedNums prefixCell typesCell globals, ?_⟩
+  by_cases closes : last % 100 = first / 100
+  · simp only [ProjectEulerSolutions.PolygonalCycle.finish, closed, closes, decide_true, if_true]
+    exact ⟨path, nodes, rfl, ⟨view⟩, rfl⟩
+  · simp only [ProjectEulerSolutions.PolygonalCycle.finish, closed, closes, decide_false,
+      Bool.false_eq_true, if_false]
+    rfl
+
+/-- A nonempty source path reads the same final number as the search model. -/
+theorem path_last_evaluate (view : PathView heap path nodes) (target : Nat) (value kind : Int)
+    (last : nodes.getLast? = some (target, (value, kind))) (env : HeapCalls.Env)
+    (getPath : env "path" = some (.ref path)) (globals : Mutable.Globals := []) :
+    Evaluates program env lastExpression heap (number value) heap globals := by
+  have nonempty : nodes ≠ [] := by intro empty; simp [empty] at last
+  have positive : 0 < nodes.length := List.length_pos_iff.mpr nonempty
+  have tail : (references nodes)[nodes.length - 1]? = some (.ref target) := by
+    simpa [references, List.getLast?_eq_getElem?] using
+      congrArg (Option.map (fun node : Nat × Node => Mutable.Value.ref node.1)) last
+  have offset : ((-1 : Int) + nodes.length).toNat = nodes.length - 1 := by omega
+  have inner : Evaluates program env
+      (.subscript (.name "path") (.unaryOp .uSub (.constant (.int 1)))) heap (.ref target) heap globals := by
+    apply Evaluates.subscript (middle := heap) (afterIndex := heap) (finalHeap := heap)
+      (by intros; intro impossible; cases impossible) (Evaluates.lookup getPath)
+      (Evaluates.unary (middle := heap) (finalHeap := heap) (value := number 1) Evaluates.constant rfl)
+    have indexed : Mutable.index (references nodes) (number (-1)) heap =
+        some (.ok (nodes.length - 1), heap) := by
+      simp [Mutable.index, references, nonempty, offset]
+    simp [Mutable.getItem, view.found, indexed, Except.map, tail]
+  apply Evaluates.subscript (middle := heap) (afterIndex := heap) (finalHeap := heap)
+    (by intros; intro impossible; cases impossible) inner Evaluates.constant
+  have tuple := view.contents target (value, kind) (List.mem_of_getLast? last)
+  simp [Mutable.getItem, tuple, Mutable.index, Except.map]
+
+theorem suffix_evaluate (view : PathView heap path nodes) (target : Nat) (value kind : Int)
+    (last : nodes.getLast? = some (target, (value, kind))) (env : HeapCalls.Env)
+    (getPath : env "path" = some (.ref path)) (globals : Mutable.Globals := []) :
+    Evaluates program env (.binOp lastExpression .mod (.constant (.int 100))) heap
+      (number (value % 100)) heap globals := by
+  apply Evaluates.binary (middle := heap) (afterRight := heap) (finalHeap := heap)
+    (path_last_evaluate view target value kind last env getPath globals) Evaluates.constant
+  simp [Mutable.binary, scalarBinary, number]
+
+/-- A loop body resumes at its own boundary, including an explicit `continue`. -/
+def IterationContinues (env : HeapCalls.Env) (body : List Stmt) (heap : Mutable.Heap)
+    (finalEnv : HeapCalls.Env) (finalHeap : Mutable.Heap) (globals : Mutable.Globals := []) : Prop :=
+  ∀ next following anchors stack, Reaches program anchors
+    ⟨.block (body ++ [.loopResume next] ++ following) env, stack, heap⟩
+    ⟨.block (next :: following) finalEnv, stack, finalHeap⟩ globals
+
+theorem IterationContinues.nil (env : HeapCalls.Env) (heap : Mutable.Heap) (globals : Mutable.Globals := []) :
+    IterationContinues env [] heap env heap globals :=
+  fun _ _ _ _ => .next rfl .refl
+
+theorem IterationContinues.prepend
+    (first : BlockContinues program env body heap middleEnv middleHeap globals)
+    (rest : IterationContinues middleEnv tail middleHeap finalEnv finalHeap globals) :
+    IterationContinues env (body ++ tail) heap finalEnv finalHeap globals := by
+  intro next following anchors stack
+  have joined :=
+    (first (tail ++ [.loopResume next] ++ following) anchors stack).trans (rest next following anchors stack)
+  simpa only [List.append_assoc] using joined
+
+theorem IterationContinues.branch (flag : Bool)
+    (evaluated : Evaluates program env test heap value middle globals)
+    (truth : Mutable.truth value middle = some (.ok flag, middle))
+    (rest : IterationContinues env ((if flag then yes else no) ++ body) middle finalEnv finalHeap globals) :
+    IterationContinues env (.ifThen test yes no :: body) heap finalEnv finalHeap globals := by
+  intro next following anchors stack
+  have resumed : Reaches program anchors
+      ⟨.block ((if flag then yes else no) ++ (body ++ [.loopResume next] ++ following)) env, stack, middle⟩
+      ⟨.block (next :: following) finalEnv, stack, finalHeap⟩ globals := by
+    have executed := rest next following anchors stack
+    simpa only [List.append_assoc] using executed
+  exact .next rfl ((evaluated anchors _).trans (.next (by simp [step, run, truth]) resumed))
+
+theorem IterationContinues.skip (env : HeapCalls.Env) (body : List Stmt) (heap : Mutable.Heap)
+    (target : ∀ next following, Calls.loopTarget (body ++ [.loopResume next] ++ following) = some (next, following))
+    (globals : Mutable.Globals := []) :
+    IterationContinues env (.continueLoop :: body) heap env heap globals := by
+  intro next following anchors stack
+  have selected : Calls.loopTarget (body ++ .loopResume next :: following) = some (next, following) := by
+    simpa using target next following
+  exact .next (by simp [step, selected]) .refl
+
+theorem recursive_evaluate (state : SearchState heap path typesAddress numbersAddress prefixCell typesCell nodes)
+    (bound : Bindings env path typesAddress numbersAddress prefixCell typesCell) (value kind : Int)
+    (freshKind : kind ∉ usedKinds nodes) (freshValue : value ∉ usedNumbers nodes)
+    (getValue : env "nxt" = some (number value)) (getKind : env "t" = some (number kind))
+    (returned : ReturnsValue program "__formalsw_local_solve_dfs"
+      [.ref (heap.length + 2), .ref (heap.length + 4), .ref (heap.length + 6), .ref prefixCell, .ref typesCell]
+      (argumentHeap heap nodes value kind) answer finalHeap globals) :
+    Evaluates program env recursiveCall heap answer finalHeap globals :=
+  Evaluates.call (arguments_evaluate state.pathView value kind typesAddress numbersAddress
+    state.typesFound state.numbersFound freshKind freshValue env (.ref prefixCell) (.ref typesCell)
+    bound.getPath bound.getTypes bound.getNumbers getValue getKind bound.getPrefixCell bound.getTypesCell globals)
+    returned
+
+theorem inner_skip (state : SearchState heap path typesAddress numbersAddress prefixCell typesCell nodes)
+    (bound : Bindings env path typesAddress numbersAddress prefixCell typesCell) (value : Int)
+    (used : value ∈ usedNumbers nodes) (getValue : env "nxt" = some (number value))
+    (globals : Mutable.Globals := []) :
+    IterationContinues env innerBody heap env heap globals := by
+  have tested := set_membership_evaluate heap numbersAddress (usedNumbers nodes) state.numbersFound
+    "used_nums" "nxt" value env bound.getNumbers getValue globals
+  apply IterationContinues.branch (flag := true) (by simpa [used] using tested) rfl
+  apply IterationContinues.skip
+  intros
+  rfl
+
+theorem inner_continues (state : SearchState heap path typesAddress numbersAddress prefixCell typesCell nodes)
+    (bound : Bindings env path typesAddress numbersAddress prefixCell typesCell) (value kind : Int)
+    (freshKind : kind ∉ usedKinds nodes) (freshValue : value ∉ usedNumbers nodes)
+    (getValue : env "nxt" = some (number value)) (getKind : env "t" = some (number kind))
+    (returned : ReturnsValue program "__formalsw_local_solve_dfs"
+      [.ref (heap.length + 2), .ref (heap.length + 4), .ref (heap.length + 6), .ref prefixCell, .ref typesCell]
+      (argumentHeap heap nodes value kind) (.scalar .none) finalHeap globals) :
+    IterationContinues env innerBody heap (setLocal env "res" (.scalar .none)) finalHeap globals := by
+  have tested := set_membership_evaluate heap numbersAddress (usedNumbers nodes) state.numbersFound
+    "used_nums" "nxt" value env bound.getNumbers getValue globals
+  apply IterationContinues.branch (flag := false) (by simpa [freshValue] using tested) rfl
+  apply IterationContinues.prepend (BlockContinues.assign
+    (recursive_evaluate state bound value kind freshKind freshValue getValue getKind returned))
+  apply IterationContinues.branch (flag := false)
+    (result_condition_evaluate (result := none) (value := .scalar .none) rfl
+      (setLocal env "res" (.scalar .none)) rfl globals) rfl
+  exact IterationContinues.nil _ _ _
+
+theorem inner_returns (state : SearchState heap path typesAddress numbersAddress prefixCell typesCell nodes)
+    (bound : Bindings env path typesAddress numbersAddress prefixCell typesCell) (value kind : Int)
+    (freshKind : kind ∉ usedKinds nodes) (freshValue : value ∉ usedNumbers nodes)
+    (getValue : env "nxt" = some (number value)) (getKind : env "t" = some (number kind))
+    (returned : ReturnsValue program "__formalsw_local_solve_dfs"
+      [.ref (heap.length + 2), .ref (heap.length + 4), .ref (heap.length + 6), .ref prefixCell, .ref typesCell]
+      (argumentHeap heap nodes value kind) answer finalHeap globals)
+    (view : ResultView finalHeap (some logical) answer) (following : List Stmt) :
+    BlockReturns program env (innerBody ++ following) heap answer finalHeap globals := by
+  have tested := set_membership_evaluate heap numbersAddress (usedNumbers nodes) state.numbersFound
+    "used_nums" "nxt" value env bound.getNumbers getValue globals
+  apply BlockReturns.branch (flag := false) (by simpa [freshValue] using tested) rfl
+  apply BlockReturns.assign (recursive_evaluate state bound value kind freshKind freshValue getValue getKind returned)
+  apply BlockReturns.branch (flag := true)
+    (result_condition_evaluate view (setLocal env "res" answer) rfl globals) rfl
+  exact BlockReturns.return_value (Evaluates.lookup rfl)
+
+/-- Exhausting a search block continues; finding a path returns before any following code. -/
+def BlockOutcome (env : HeapCalls.Env) (body : List Stmt) (heap : Mutable.Heap)
+    (finalEnv : HeapCalls.Env) (finalHeap : Mutable.Heap)
+    (result : Option ProjectEulerSolutions.PolygonalCycle.Path) (answer : Mutable.Value)
+    (globals : Mutable.Globals := []) : Prop :=
+  match result with
+  | none => BlockContinues program env body heap finalEnv finalHeap globals
+  | some _ => ∀ following, BlockReturns program env (body ++ following) heap answer finalHeap globals
+
+def IterationOutcome (env : HeapCalls.Env) (body : List Stmt) (heap : Mutable.Heap)
+    (finalEnv : HeapCalls.Env) (finalHeap : Mutable.Heap)
+    (result : Option ProjectEulerSolutions.PolygonalCycle.Path) (answer : Mutable.Value)
+    (globals : Mutable.Globals := []) : Prop :=
+  match result with
+  | none => IterationContinues env body heap finalEnv finalHeap globals
+  | some _ => ∀ following, BlockReturns program env (body ++ following) heap answer finalHeap globals
+
+/-- Source iteration implements the model's ordered first-result operator, retaining heap effects. -/
+theorem ordered_loop (all remaining : List Int) (position : Nat) (suffix : all.drop position = remaining)
+    (source : Nat) (name : String) (body : List Stmt) (hasContinue : Calls.loopControl body = true)
+    (visit : Int → Option ProjectEulerSolutions.PolygonalCycle.Path)
+    (invariant : HeapCalls.Env → Mutable.Heap → Prop)
+    (read : ∀ env heap, invariant env heap → heap[source]? = some (.list (numbers all)))
+    (iterate : ∀ env heap value, invariant env heap → value ∈ all →
+      ∃ extra finalEnv answer, invariant finalEnv (heap ++ extra) ∧
+        ResultView (heap ++ extra) (visit value) answer ∧
+        IterationOutcome (setLocal env name (number value)) body heap finalEnv (heap ++ extra)
+          (visit value) answer globals)
+    (env : HeapCalls.Env) (heap : Mutable.Heap) (good : invariant env heap) :
+    ∃ extra finalEnv answer, invariant finalEnv (heap ++ extra) ∧
+      ResultView (heap ++ extra) (ProjectEulerSolutions.PolygonalCycle.firstResult remaining visit) answer ∧
+      BlockOutcome env [.sequenceStepLoop name (.ref source) position body []] heap finalEnv (heap ++ extra)
+        (ProjectEulerSolutions.PolygonalCycle.firstResult remaining visit) answer globals := by
+  induction remaining generalizing position env heap with
+  | nil =>
+      have sequence : Mutable.sequence (sequenceValue (.ref source)) heap = some (.ok (numbers all), heap) := by
+        simp [sequenceValue, Mutable.sequence, read env heap good]
+      have exhausted : all[position]? = none := by rw [← List.head?_drop, suffix]; rfl
+      refine ⟨[], env, .scalar .none, by simpa using good, rfl, ?_⟩
+      apply BlockContinues.sequence_done sequence
+      · simp [numbers, List.getElem?_map, exhausted]
+      · simpa using (BlockContinues.nil (module := program) (env := env) (heap := heap) (globals := globals))
+  | cons value rest ih =>
+      have selected : all[position]? = some value := by rw [← List.head?_drop, suffix]; rfl
+      have member : value ∈ all := List.mem_of_getElem? selected
+      have sequence : Mutable.sequence (sequenceValue (.ref source)) heap = some (.ok (numbers all), heap) := by
+        simp [sequenceValue, Mutable.sequence, read env heap good]
+      have item : (numbers all)[position]? = some (number value) := by
+        simp [numbers, List.getElem?_map, selected]
+      obtain ⟨extra, nextEnv, answer, nextGood, represented, executed⟩ := iterate env heap value good member
+      cases outcome : visit value with
+      | some logical =>
+          refine ⟨extra, nextEnv, answer, nextGood, ?_, ?_⟩
+          · simpa only [ProjectEulerSolutions.PolygonalCycle.firstResult, outcome] using represented
+          · simp only [ProjectEulerSolutions.PolygonalCycle.firstResult, outcome, BlockOutcome]
+            intro following
+            apply BlockReturns.sequence_step sequence item
+            have run := executed
+            simp only [outcome, IterationOutcome] at run
+            have returned := run
+              ([Calls.loopContinuation body (.sequenceStepLoop name (.ref source) (position + 1) body [])] ++ following)
+            simpa only [List.append_assoc, List.nil_append] using returned
+      | none =>
+          have nextSuffix : all.drop (position + 1) = rest := by
+            simp only [List.drop_add_one_eq_tail_drop, suffix, List.tail_cons]
+          obtain ⟨later, finalEnv, finalAnswer, finalGood, finalView, finalRun⟩ :=
+            ih (position + 1) nextSuffix nextEnv (heap ++ extra) nextGood
+          refine ⟨extra ++ later, finalEnv, finalAnswer, ?_, ?_, ?_⟩
+          · simpa only [List.append_assoc] using finalGood
+          · simpa only [List.append_assoc, ProjectEulerSolutions.PolygonalCycle.firstResult, outcome] using finalView
+          · simp only [ProjectEulerSolutions.PolygonalCycle.firstResult, outcome]
+            have iteration : IterationContinues (setLocal env name (number value)) body heap nextEnv (heap ++ extra)
+                globals := by simpa only [outcome, IterationOutcome] using executed
+            cases result : ProjectEulerSolutions.PolygonalCycle.firstResult rest visit with
+            | none =>
+                simp only [BlockOutcome]
+                have finished : BlockContinues program nextEnv
+                    [.sequenceStepLoop name (.ref source) (position + 1) body []]
+                    (heap ++ extra) finalEnv ((heap ++ extra) ++ later) globals := by
+                  simpa only [result, BlockOutcome] using finalRun
+                intro following anchors stack
+                let next := Stmt.sequenceStepLoop name (.ref source) (position + 1) body []
+                have traversal := (iteration next following anchors stack).trans (finished following anchors stack)
+                have stepped : Reaches program anchors
+                    ⟨.block (.sequenceStepLoop name (.ref source) position body [] :: following) env, stack, heap⟩
+                    ⟨.block following finalEnv, stack, (heap ++ extra) ++ later⟩ globals :=
+                  .next (by simp [step, run, sequence, item, Calls.loopContinuation, hasContinue, next]) traversal
+                simpa only [List.append_assoc] using stepped
+            | some logical =>
+                simp only [BlockOutcome]
+                have finished : ∀ following, BlockReturns program nextEnv
+                    ([.sequenceStepLoop name (.ref source) (position + 1) body []] ++ following)
+                    (heap ++ extra) finalAnswer ((heap ++ extra) ++ later) globals := by
+                  simpa only [result, BlockOutcome] using finalRun
+                intro following anchors stack
+                let next := Stmt.sequenceStepLoop name (.ref source) (position + 1) body []
+                have traversal := (iteration next following anchors stack).trans (finished following anchors stack)
+                have stepped : Reaches program anchors
+                    ⟨.block (.sequenceStepLoop name (.ref source) position body [] :: following) env, stack, heap⟩
+                    ⟨.value finalAnswer, stack, (heap ++ extra) ++ later⟩ globals :=
+                  .next (by simp [step, run, sequence, item, Calls.loopContinuation, hasContinue, next]) traversal
+                simpa only [List.append_assoc] using stepped
+
+/-- A candidate scan calls the real recursive function and skips exactly the already-used numbers. -/
+theorem inner_loop (state : SearchState heap path typesAddress numbersAddress prefixCell typesCell nodes)
+    (bound : Bindings env path typesAddress numbersAddress prefixCell typesCell)
+    (kind suffix : Int) (freshKind : kind ∉ usedKinds nodes)
+    (getKind : env "t" = some (number kind)) (getSuffix : env "suffix" = some (number suffix))
+    (all : List Int) (source : Nat) (found : heap[source]? = some (.list (numbers all)))
+    (visit : Int → Option ProjectEulerSolutions.PolygonalCycle.Path)
+    (child : ∀ currentHeap value, SearchState currentHeap path typesAddress numbersAddress prefixCell typesCell nodes →
+      value ∈ all → value ∉ usedNumbers nodes →
+      ∃ extra answer, ReturnsValue program "__formalsw_local_solve_dfs"
+        [.ref (currentHeap.length + 2), .ref (currentHeap.length + 4), .ref (currentHeap.length + 6),
+         .ref prefixCell, .ref typesCell]
+        (argumentHeap currentHeap nodes value kind) answer (argumentHeap currentHeap nodes value kind ++ extra) globals ∧
+        ResultView (argumentHeap currentHeap nodes value kind ++ extra) (visit value) answer) :
+    ∃ extra finalEnv answer, Bindings finalEnv path typesAddress numbersAddress prefixCell typesCell ∧
+      finalEnv "suffix" = some (number suffix) ∧
+      ResultView (heap ++ extra)
+        (ProjectEulerSolutions.PolygonalCycle.firstResult all
+          (fun value => if value ∈ usedNumbers nodes then none else visit value)) answer ∧
+      BlockOutcome env [.sequenceStepLoop "nxt" (.ref source) 0 innerBody []] heap finalEnv (heap ++ extra)
+        (ProjectEulerSolutions.PolygonalCycle.firstResult all
+          (fun value => if value ∈ usedNumbers nodes then none else visit value)) answer globals := by
+  let invariant := fun currentEnv currentHeap =>
+    Nonempty (SearchState currentHeap path typesAddress numbersAddress prefixCell typesCell nodes) ∧
+      Bindings currentEnv path typesAddress numbersAddress prefixCell typesCell ∧
+      currentEnv "t" = some (number kind) ∧ currentEnv "suffix" = some (number suffix) ∧
+      currentHeap[source]? = some (.list (numbers all))
+  have iterate : ∀ currentEnv currentHeap value, invariant currentEnv currentHeap → value ∈ all →
+      ∃ extra finalEnv answer, invariant finalEnv (currentHeap ++ extra) ∧
+        ResultView (currentHeap ++ extra) (if value ∈ usedNumbers nodes then none else visit value) answer ∧
+        IterationOutcome (setLocal currentEnv "nxt" (number value)) innerBody currentHeap finalEnv
+          (currentHeap ++ extra) (if value ∈ usedNumbers nodes then none else visit value) answer globals := by
+    intro currentEnv currentHeap value good member
+    obtain ⟨⟨current⟩, currentBound, currentKind, currentSuffix, currentFound⟩ := good
+    let chosenEnv := setLocal currentEnv "nxt" (number value)
+    have chosenBound : Bindings chosenEnv path typesAddress numbersAddress prefixCell typesCell :=
+      currentBound.local "nxt" (number value) (by decide)
+    have chosenKind : chosenEnv "t" = some (number kind) := by simpa [chosenEnv, setLocal] using currentKind
+    have chosenSuffix : chosenEnv "suffix" = some (number suffix) := by simpa [chosenEnv, setLocal] using currentSuffix
+    by_cases used : value ∈ usedNumbers nodes
+    · refine ⟨[], chosenEnv, .scalar .none, ?_, ?_, ?_⟩
+      · exact ⟨⟨by simpa using current⟩, chosenBound, chosenKind, chosenSuffix, by simpa using currentFound⟩
+      · simp only [if_pos used]; rfl
+      · simp only [if_pos used, IterationOutcome]
+        simpa only [List.append_nil] using inner_skip current chosenBound value used (by rfl) globals
+    · obtain ⟨extra, answer, returned, represented⟩ := child currentHeap value current member used
+      let allocations : Mutable.Heap :=
+        [.tuple [number value, number kind], .list [.ref currentHeap.length],
+         .list (references nodes ++ [.ref currentHeap.length]),
+         .set [.int kind], integerSet (usedKinds nodes ++ [kind]),
+         .set [.int value], integerSet (usedNumbers nodes ++ [value])]
+      let total := allocations ++ extra
+      have layout : argumentHeap currentHeap nodes value kind ++ extra = currentHeap ++ total := by
+        simp [argumentHeap, pathHeap, total, allocations, List.append_assoc]
+      rw [layout] at returned represented
+      have finalGood : invariant (setLocal chosenEnv "res" answer) (currentHeap ++ total) := by
+        refine ⟨⟨current.append total⟩, chosenBound.local "res" answer (by decide), ?_, ?_, ?_⟩
+        · simpa [setLocal] using chosenKind
+        · simpa [setLocal] using chosenSuffix
+        · exact build_prefix_map.found_append _ _ _ _ currentFound
+      refine ⟨total, setLocal chosenEnv "res" answer, answer, finalGood, ?_, ?_⟩
+      · simpa only [if_neg used] using represented
+      · simp only [if_neg used]
+        cases outcome : visit value with
+        | none =>
+            have failed : answer = .scalar .none := by simpa only [outcome, ResultView] using represented
+            subst answer
+            exact inner_continues current chosenBound value kind freshKind used rfl chosenKind returned
+        | some logical =>
+            intro following
+            exact inner_returns current chosenBound value kind freshKind used rfl chosenKind returned
+              (by simpa only [outcome] using represented) following
+  obtain ⟨extra, finalEnv, answer, good, represented, executed⟩ := ordered_loop all all 0 rfl source "nxt"
+    innerBody (by rfl) (fun value => if value ∈ usedNumbers nodes then none else visit value) invariant
+    (fun _ _ good => good.2.2.2.2) iterate env heap ⟨⟨state⟩, bound, getKind, getSuffix, found⟩
+  exact ⟨extra, finalEnv, answer, good.2.1, good.2.2.2.1, represented, executed⟩
+
 end solvers.«61».dfs
