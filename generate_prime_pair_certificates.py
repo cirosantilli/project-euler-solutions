@@ -18,7 +18,7 @@ SMALL_END = 8389
 LARGE_END = 26034
 INTERVAL_SIZE = 128
 INTERVALS_PER_FILE = 16
-SMALL_CACHE_ROWS = 32
+SMALL_CACHE_ROWS = 128
 CACHE_ROWS_PER_FILE = 8
 
 
@@ -274,6 +274,7 @@ def cached_small_rows(
         name = f"smallNode{p}"
         lines.extend([
             f"def {name} : Graph := .node {p} smallRow{p} {left} {right}",
+            "set_option maxRecDepth 4096 in",
             f"theorem {name}_agrees : Graph.Agrees PrimePairVertices.smallTree {name} :=",
             f"  Graph.node_agrees _ {p} smallRow{p} {left} {right}",
             f"    {left}_agrees {right}_agrees (by decide) (by decide) smallRow{p}_checked",
@@ -285,6 +286,7 @@ def cached_small_rows(
     lines.extend([
         f"def smallPrefix : Graph := {name}",
         f"theorem smallPrefix_agrees : Graph.Agrees PrimePairVertices.smallTree smallPrefix := {name}_agrees",
+        "set_option maxRecDepth 4096 in",
         f"theorem smallPrefix_vertices : smallPrefix.vertices = PrimePairVertices.small.take {len(selected)} := rfl",
         "",
         "theorem smallPrefix_vertices_subset (p : Nat) (member : p ∈ smallPrefix.vertices) : p ∈ PrimePairVertices.small := by",
