@@ -92,6 +92,8 @@ Further useful shared parameters include coefficient ranges in problem 27, the d
 
 The following interfaces have matching Python arguments and passing numerical regression checks. Their generalized structural source proofs remain pending; the separate Lean statements and solver models also need reconciliation before they can certify these contracts.
 
+Problem 74's Lean reference has a proved first-repeat walk for every natural start. Decimal digit growth keeps each orbit inside `max(start, 7 * 9!)`; this is an invariant containing the start, rather than a supplied iteration budget. The model handles the successor of zero and excludes zero from the starting range. Structural orbit and cache lemmas justify complete cycle batches and reverse tail writes. A signed result model covers both problem arguments and agrees with the natural-number adapter. The optimized standalone Lean model and the Python heap executions still need to be connected to these results; problem 74 is not yet marked source-proven.
+
 
 [cols="1,3"]
 |===
