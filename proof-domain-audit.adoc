@@ -1,6 +1,6 @@
 = Python proof-domain audit
 
-This audit covers the Python solver and reference interfaces for problems 1 through 64, their `Requires` annotations, default adapters, and the documented proof claims.
+This audit covers the Python solver and reference interfaces for problems 1 through 65, their `Requires` annotations, default adapters, and the documented proof claims.
 
 Prefer a meaningful argument shared by both implementations. A reference-only search limit changes an unbounded problem into a bounded one and is not an acceptable substitute. A mathematical bound derived from the inputs or the problem definition is acceptable. For a fixed problem without a useful parameter, retain `Equiv` and prefer structural proofs through shared mathematical models. A completed interpreter observation can establish termination; running out of observation fuel cannot.
 
@@ -47,6 +47,8 @@ Problem 51 has structural equivalence and support proofs for every signed family
 Problem 61 has structural source termination and equivalence proofs for every signed maximum polygonal type. Both implementations search types three through that argument and return the greatest cycle sum, or zero if absent. Polygonal growth justifies complete family generation without an index argument. Prefix-map construction, eager default allocation, duplicate rejection, decreasing remaining-type recursion, and maximum selection all preserve the common exhaustive model. Both omitted-argument default calls inherit termination from the general proof. No whole-program evaluation or fixed-instance search certificate is used.
 
 Problem 63 has structural source termination and equivalence proofs for every numeral base at least two. The optimized seed traversal and the reference exponent traversal count the same complete set of positive powers. Digit-list conversion gives the reference width test, while power-growth inequalities bound every successful exponent and justify both early stops. Neither source takes an exponent limit. Both omitted-argument default calls inherit termination from the generalized proof.
+
+Problem 65 has structural source termination and equivalence proofs for every positive convergent index. Both coefficient generation methods implement the same infinite pattern, and each finite numerator recurrence consumes exactly the requested number of coefficients. The proof tracks the reference's coefficient-list allocation and tuple swaps and connects string-character digit summation to the reference's positional digits. The default index 100 uses the universal termination theorem rather than a whole-program computation.
 
 == Remaining implementation and proof restrictions
 

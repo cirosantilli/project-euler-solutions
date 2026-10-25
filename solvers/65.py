@@ -1,8 +1,7 @@
 #!/usr/bin/env python
-from typing import List, Tuple
 
 
-def e_continued_fraction_coeffs(n: int) -> List[int]:
+def e_continued_fraction_coeffs(n: int) -> list[int]:
     """
     Returns the first n continued fraction coefficients for e:
     e = [2; 1, 2, 1, 1, 4, 1, 1, 6, 1, ...]
@@ -17,7 +16,7 @@ def e_continued_fraction_coeffs(n: int) -> List[int]:
     return coeffs
 
 
-def convergent_numerator_denominator(coeffs: List[int]) -> Tuple[int, int]:
+def convergent_numerator_denominator(coeffs: list[int]) -> tuple[int, int]:
     """
     Given continued fraction coefficients [a0, a1, ..., a_{n-1}],
     compute the convergent p/q using standard recurrence:
@@ -41,10 +40,28 @@ def digit_sum(x: int) -> int:
     return sum(int(c) for c in str(x))
 
 
-def solve() -> int:
-    coeffs_100 = e_continued_fraction_coeffs(100)
-    p100, _ = convergent_numerator_denominator(coeffs_100)
-    return digit_sum(p100)
+def solve(n: int = 100) -> int:
+    """
+    Sum the numerator digits of the nth convergent of e.
+
+    @formalsw: Requires(n >= 1)
+    @formalsw: Py from project_euler_statements.p65 import naive
+    @formalsw: Returns
+    @formalsw: Equiv(naive)
+    """
+    older = 0
+    numerator = 1
+    for k in range(n):
+        if k == 0:
+            coefficient = 2
+        elif k % 3 == 2:
+            coefficient = 2 * (k // 3 + 1)
+        else:
+            coefficient = 1
+        previous = numerator
+        numerator = coefficient * numerator + older
+        older = previous
+    return digit_sum(numerator)
 
 
 if __name__ == "__main__":

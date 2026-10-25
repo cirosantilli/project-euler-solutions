@@ -594,6 +594,8 @@ Problem 63 has structural source termination and equivalence proofs for every nu
 
 Problem 64's reference detects the repeated continued-fraction state and measures its period, without an iteration cutoff. The optimized solver uses the terminal coefficient test. Both accept an arbitrary signed upper bound and return zero below two. Their generalized structural source equivalence and termination proofs remain pending.
 
+Problem 65 has structural source termination and equivalence proofs for every positive convergent index. The optimized solver streams coefficients while retaining two consecutive numerators; the reference constructs the coefficient list and swaps numerator pairs while traversing it. A common recurrence connects both orders of source operations. The proofs cover list-comprehension allocation, shared-list iteration, tuple unpacking, and both decimal-character and positional-digit summation. Both omitted-argument default calls inherit termination from the generalized proof, without evaluating either complete program.
+
 The proof-domain cleanup and remaining restrictions are tracked in link:proof-domain-audit.adoc[]. Fixed-input functions should retain `Equiv`, using structural source proofs instead of whole-program computation; meaningful shared parameters are preferred whenever the problem admits them.
 
 ====== Problem 14: Collatz termination
@@ -740,7 +742,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/62.py[62.py] | link:solvers/62.md[62.md] | link:solvers/62.py.lean[62.py.lean] | 0.145 | 127035954683 |
 | link:solvers/63.py[63.py] | link:solvers/63.md[63.md] | link:solvers/63.py.lean[63.py.lean] | 0.070 | 49 |
 | link:solvers/64.py[64.py] | link:solvers/64.md[64.md] |  | 0.132 | 1322 |
-| link:solvers/65.py[65.py] | link:solvers/65.md[65.md] |  | 0.113 | 272 |
+| link:solvers/65.py[65.py] | link:solvers/65.md[65.md] | link:solvers/65.py.lean[65.py.lean] | 0.113 | 272 |
 | link:solvers/66.py[66.py] | link:solvers/66.md[66.md] |  | 0.135 | 661 |
 | link:solvers/67.py[67.py] | link:solvers/67.md[67.md] |  | 0.155 | 7273 |
 | link:solvers/68.py[68.py] | link:solvers/68.md[68.md] |  | 0.124 | 6531031914842725 |
