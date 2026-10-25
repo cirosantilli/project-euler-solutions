@@ -2,36 +2,49 @@
 from __future__ import annotations
 
 from math import gcd
-from typing import Final
 
 
-def solve(limit: int) -> int:
+def count_between(d: int, lower_num: int, lower_den: int, upper_num: int, upper_den: int) -> int:
     """
-    Count reduced proper fractions n/d with:
-      1/3 < n/d < 1/2, 1 <= d <= limit, gcd(n,d)=1
+    Count positive reduced proper fractions at denominator d inside the open interval.
+
+    @formalsw: Requires(lower_den > 0)
+    @formalsw: Requires(upper_den > 0)
+    @formalsw: Returns
+    """
+    n_start = max(1, lower_num * d // lower_den + 1)
+    n_end = min(d - 1, (upper_num * d - 1) // upper_den)
+    if n_start > n_end:
+        return 0
+    total = 0
+    for n in range(n_start, n_end + 1):
+        if gcd(n, d) == 1:
+            total += 1
+    return total
+
+
+def solve(
+    limit: int,
+    lower_num: int = 1,
+    lower_den: int = 3,
+    upper_num: int = 1,
+    upper_den: int = 2,
+) -> int:
+    """
+    Count positive reduced proper fractions inside the supplied open rational interval.
+
+    @formalsw: Py from project_euler_statements.p73 import naive
+    @formalsw: Requires(lower_den > 0)
+    @formalsw: Requires(upper_den > 0)
+    @formalsw: Returns
+    @formalsw: Equiv(naive)
     """
     total = 0
-    g = gcd  # local alias for speed
-
     for d in range(2, limit + 1):
-        # strict: n/d > 1/3  => n > d/3 => n >= floor(d/3) + 1
-        n_start = d // 3 + 1
-        # strict: n/d < 1/2  => n < d/2 => n <= floor((d-1)/2)
-        n_end = (d - 1) // 2
-
-        if n_start > n_end:
-            continue
-
-        for n in range(n_start, n_end + 1):
-            if g(n, d) == 1:
-                total += 1
-
+        total += count_between(d, lower_num, lower_den, upper_num, upper_den)
     return total
 
 
 if __name__ == "__main__":
-    # Example from the statement: d <= 8 has exactly 3 fractions in (1/3, 1/2)
     assert solve(8) == 3
-
-    LIMIT: Final[int] = 12_000
-    print(solve(LIMIT))
+    print(solve(12_000))
