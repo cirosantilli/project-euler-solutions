@@ -12,6 +12,7 @@ import ProjectEulerSolutions.Lib.CliqueSearchAgreement
 import ProjectEulerSolutions.Lib.TrialPrimeCertificate
 import ProjectEulerSolutions.Lib.PrimePairCertificate
 import ProjectEulerSolutions.Lib.PrimePairVertices.All
+import ProjectEulerSolutions.Lib.PrimePairCache.SmallPrefix
 import data.«project-euler-statements».data.py.project_euler_statements.«p60.py»
 import Mathlib.Data.List.Sort
 import lang.py.FormalSW.ComprehensionCalls
@@ -4740,6 +4741,40 @@ theorem result (limit : Int) (caller : Mutable.Heap) (globals : Mutable.Globals)
 end solvers.«60».solve_search
 
 
+namespace solvers.«60».initialized
+open FormalSW.PyAst FormalSW.PyAst.HeapCalls
+
+private abbrev program := Solvers.P60Ast.module
+private abbrev number (value : Int) : Mutable.Value := .scalar (.int value)
+private abbrev numbers := primes_up_to.numbers
+
+/-- Execute the actual table assignments, export their resulting addresses,
+and run the complete solve source. Every signed limit and arbitrary caller
+heap is covered; the caller's original objects retain their identities. -/
+theorem result (limit : Int) (caller : Mutable.Heap) :
+    ∃ finalHeap selectedAddress,
+      BlockContinues program (fun _ => none) is_prime.initialization.code caller
+        (is_prime.initialization.env caller) (is_prime.initialization.heap caller) [] ∧
+      (∀ name, is_prime.initialization.env caller name = (is_prime.initialization.globals caller).lookup name) ∧
+      ReturnsValue program "solve" [number limit] (is_prime.initialization.heap caller) (.ref finalHeap.length)
+        (finalHeap ++ [.tuple [number (solve_search.answerModel limit).bound, .ref selectedAddress]])
+        (is_prime.initialization.globals caller) ∧
+      finalHeap[selectedAddress]? = some (.list (numbers (solve_search.answerModel limit).chosen)) ∧
+      Nonempty (is_prime.SourceGlobals
+        (finalHeap ++ [.tuple [number (solve_search.answerModel limit).bound, .ref selectedAddress]])
+        (is_prime.initialization.globals caller)) ∧
+      (∀ (address : Nat) (object : Mutable.Object), caller[address]? = some object →
+        (finalHeap ++ [.tuple [number (solve_search.answerModel limit).bound, .ref selectedAddress]])[address]? = some object) := by
+  obtain ⟨finalHeap, selectedAddress, returned, selected, tables, preserved⟩ := solve_search.result limit
+    (is_prime.initialization.heap caller) (is_prime.initialization.globals caller) (is_prime.initialization.context caller)
+  refine ⟨finalHeap, selectedAddress, is_prime.initialization.executes caller,
+    is_prime.initialization.exports caller, returned, selected, tables, ?_⟩
+  intro address object found
+  exact preserved address object (is_prime.initialization.caller_preserved caller address object found)
+
+end solvers.«60».initialized
+
+
 namespace solvers.«60».reference
 open ProjectEulerSolutions
 open data.«project-euler-statements».data.py.project_euler_statements.p60.naive
@@ -5261,5 +5296,37 @@ theorem models_eq_of_finite_checks
       data.«project-euler-statements».data.py.project_euler_statements.p60.naive.answerModel limit :=
   competitive.models_eq_of_search_certificates (small_model_of_certificate smallChecked)
     (large_model_of_seeded_certificate largeChecked) limit
+
+
+theorem small_cached_pair_eq (p q : Nat) (memberP : p ∈ PrimePairCache.smallPrefix.vertices)
+    (memberQ : q ∈ solve_setup.vertices 8388) (order : p < q) :
+    pair_ok.answer p q = PrimePairCache.smallPrefix.edge p q := by
+  have sourceP : p ∈ solve_setup.vertices 8388 := by
+    rw [small_vertices]
+    exact PrimePairCache.smallPrefix_vertices_subset p memberP
+  have upperP := ((solve_setup.mem_vertices 8388 p).mp sourceP).2.2.1
+  have upperQ := ((solve_setup.mem_vertices 8388 q).mp memberQ).2.2.1
+  have cached := PrimePairCache.smallPrefix_agrees p memberP q (by
+    rw [PrimePairVertices.smallTree_values, ← small_vertices]
+    exact memberQ) order
+  exact (relation_eq p q (by omega) (by omega)).trans cached.symm
+
+/-- Any complete certified cache transfers the exact source result. The
+current cache prefix is useful independently through small_cached_pair_eq. -/
+theorem small_model_eq_cached_search (graph : PrimePairCertificate.Graph)
+    (agrees : PrimePairCertificate.Graph.Agrees PrimePairVertices.smallTree graph)
+    (coverage : ∀ p ∈ solve_setup.vertices 8388, p ∈ graph.vertices) :
+    solve_search.answerModel 8388 = CliqueSearch.search graph.edge 5 []
+      (solve_setup.vertices 8388) 0 ⟨solve_setup.sentinel, []⟩ := by
+  have vertices : PrimePairVertices.smallTree.values = solve_setup.vertices 8388 := by
+    rw [PrimePairVertices.smallTree_values, small_vertices]
+  have ordered : PrimePairVertices.smallTree.values.Pairwise (· < ·) := by
+    rw [vertices]
+    exact solve_setup.vertices_increasing 8388
+  have covered : ∀ p ∈ PrimePairVertices.smallTree.values, p ∈ graph.vertices := by
+    simpa only [vertices] using coverage
+  rw [answerModel_eq_search 8388 (by decide)]
+  simpa only [vertices] using PrimePairCertificate.Graph.search_eq PrimePairVertices.smallTree
+    graph agrees covered ordered 5 ⟨solve_setup.sentinel, []⟩
 
 end solvers.«60».certificate
