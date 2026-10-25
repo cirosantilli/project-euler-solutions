@@ -79,7 +79,7 @@ The default root-partition certificate for problem 62 is numerical evidence towa
 
 The following interfaces have matching Python arguments and passing numerical regression checks. Their generalized structural source proofs remain pending; the separate Lean statements and solver models also need reconciliation before they can certify these contracts.
 
-For problem 68, universal ring identities prove both the line-sum formula and the representation length from repeated inner labels. The source framework models positional combinations and proves their membership characterization and loop rules. Candidate-set completeness, canonical rotation, and the full solver/reference source equivalence remain pending.
+For problem 68, universal ring identities prove the line-sum formula and representation length. Canonical rotation preserves magic rings, and positional combination/permutation membership proves that the forced-outer search reaches every magic ring. The two finite mathematical searches have equal maxima for every ring size at least two and every requested length. Both actual Python string helpers have source-execution proofs; the reference's line-checking loop, including its early break, agrees with the magic-ring predicate. The complete candidate scans, solver/reference source equivalence, and reconciliation with the older fixed-input Lean statement remain pending.
 
 [cols="1,3"]
 |===
