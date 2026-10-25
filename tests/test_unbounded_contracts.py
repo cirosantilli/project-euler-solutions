@@ -4,6 +4,7 @@ Check generalized solver contracts and regressions from truncated reference sear
 
 import importlib
 import inspect
+from itertools import product
 from pathlib import Path
 import runpy
 import sys
@@ -34,6 +35,26 @@ class UnboundedContractTests(unittest.TestCase):
         for bound, expected in ((-1, 0), (1, 0), (2, 2), (7, 5)):
             self.assertEqual(reference.naive(bound), expected)
             self.assertEqual(optimized["solve"](bound), expected)
+
+    def test_triangle_paths_preserve_signed_input(self):
+        reference, optimized = implementations(67)
+        for height in range(4):
+            size = height * (height + 1) // 2
+            for weights in product((-1, 0, 1), repeat=size):
+                triangle = []
+                offset = 0
+                for width in range(1, height + 1):
+                    triangle.append(list(weights[offset:offset + width]))
+                    offset += width
+                before = [row[:] for row in triangle]
+                expected = max((sum(triangle[level][sum(steps[:level])] for level in range(height))
+                                for steps in product((0, 1), repeat=max(0, height - 1))), default=0)
+                self.assertTrue(optimized["is_triangle"](triangle))
+                self.assertEqual(optimized["solve"](triangle), expected)
+                self.assertEqual(reference.naive(triangle), expected)
+                self.assertEqual(triangle, before)
+        self.assertFalse(optimized["is_triangle"]([[]]))
+        self.assertFalse(optimized["is_triangle"]([[1], [2]]))
 
     def test_factorial_chain_longer_than_its_start(self):
         reference, optimized = implementations(74)

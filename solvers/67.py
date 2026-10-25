@@ -1,13 +1,9 @@
 #!/usr/bin/env python
-from __future__ import annotations
-
-from dataclasses import dataclass
 from pathlib import Path
-from typing import List
 
 
-def parse_triangle(text: str) -> List[List[int]]:
-    rows: List[List[int]] = []
+def parse_triangle(text: str) -> list[list[int]]:
+    rows: list[list[int]] = []
     for line in text.strip().splitlines():
         line = line.strip()
         if not line:
@@ -16,7 +12,24 @@ def parse_triangle(text: str) -> List[List[int]]:
     return rows
 
 
-def solve(triangle: List[List[int]]) -> int:
+def is_triangle(triangle: list[list[int]]) -> bool:
+    size = 1
+    for row in triangle:
+        if len(row) != size:
+            return False
+        size += 1
+    return True
+
+
+def solve(triangle: list[list[int]]) -> int:
+    """
+    Compute the greatest path sum, returning zero for an empty triangle.
+
+    @formalsw: Py from project_euler_statements.p67 import naive
+    @formalsw: Requires(is_triangle(triangle))
+    @formalsw: Returns
+    @formalsw: Equiv(naive)
+    """
     if not triangle:
         return 0
     # Bottom-up DP: dp[j] holds best sum from current position to bottom.
@@ -42,7 +55,4 @@ if __name__ == "__main__":
     """
     assert solve(parse_triangle(sample)) == 23
 
-    text = read_triangle_file()
-    tri = parse_triangle(text)
-
-    print(solve(tri))
+    print(solve(parse_triangle(read_triangle_file())))

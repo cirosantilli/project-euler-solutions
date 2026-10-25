@@ -1,6 +1,6 @@
 = Python proof-domain audit
 
-This audit covers the Python solver and reference interfaces for problems 1 through 66, their `Requires` annotations, default adapters, and the documented proof claims.
+This audit covers the Python solver and reference interfaces for problems 1 through 67, their `Requires` annotations, default adapters, and the documented proof claims.
 
 Prefer a meaningful argument shared by both implementations. A reference-only search limit changes an unbounded problem into a bounded one and is not an acceptable substitute. A mathematical bound derived from the inputs or the problem definition is acceptable. For a fixed problem without a useful parameter, retain `Equiv` and prefer structural proofs through shared mathematical models. A completed interpreter observation can establish termination; running out of observation fuel cannot.
 
@@ -54,6 +54,8 @@ Problem 64 has structural source termination and equivalence proofs for every si
 Problem 65 has structural source termination and equivalence proofs for every positive convergent index. Both coefficient generation methods implement the same infinite pattern, and each finite numerator recurrence consumes exactly the requested number of coefficients. The proof tracks the reference's coefficient-list allocation and tuple swaps and connects string-character digit summation to the reference's positional digits. The default index 100 uses the universal termination theorem rather than a whole-program computation.
 
 Problem 66 has structural source termination and equivalence proofs for every signed upper bound. Pell existence justifies the reference's search over positive y, whose first accepted value also minimizes x. Integer continuant invariants and state periodicity prove a norm-one convergent exists within two periods; a decreasing integer remainder sum places every positive Pell solution among the convergents and proves the first such convergent is the reference minimum. The source proof tracks both recurrences, tuple swaps, square skipping, and strict record updates. Empty discriminant ranges return zero, ties retain the least discriminant, and the omitted-argument default inherits termination from the universal theorem. No whole-program computation or supplied search cutoff is used.
+
+Problem 67 has structural source termination and equivalence proofs for every finite triangle with signed integer weights, including the empty triangle. The checked shape predicate requires row i to have i + 1 entries. A prefix invariant proves that ascending in-place updates preserve both unread children; a private copy of the bottom row keeps the input heap unchanged. The active buffer prefix follows the shared bottom-up reference model for every row count. The reference re-exports problem 18's function, and the explicit Python contract resolves to that function's existing source proof. No fixed height or whole-program computation is used.
 
 == Remaining implementation and proof restrictions
 
