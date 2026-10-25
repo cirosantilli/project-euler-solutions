@@ -1941,3 +1941,159 @@ theorem high_orderedUnique_eq_reference (values : List Int) (five : values.lengt
   exact high_eq_reference_of_detected _ formed
 
 end solvers.«54».numeric_score.straight_detection
+
+namespace solvers.«54».numeric_score.simple_categories
+open FormalSW.PyAst FormalSW.PyAst.HeapCalls
+set_option Elab.async false
+
+private abbrev program := Solvers.P54Ast.module
+private abbrev number (value : Int) : Mutable.Value := .scalar (.int value)
+private abbrev numbers (values : List Int) : List Mutable.Value := values.map number
+private abbrev flag (value : Bool) : Mutable.Value := .scalar (.bool value)
+private def code : List Stmt := executableBody ((findFunctionIn program.body "_score_values").getD ([], [])).2
+
+private theorem equal_integer (heap : Heap) (env : HeapCalls.Env) (expression : Expr) (value wanted : Int)
+    (globals : Mutable.Globals) (evaluated : Evaluates program env expression heap (number value) heap globals) :
+    Evaluates program env (.compare expression [(.eq, .constant (.int wanted))])
+      heap (flag (decide (value = wanted))) heap globals := by
+  apply Evaluates.compare (av := number value) (bv := number wanted) (middle := heap) (afterRight := heap)
+    evaluated Evaluates.constant
+  simp [HeapCalls.compare, scalarCompare, evalCmpOp, flag]
+
+/-- A nonempty values buffer becomes one fresh tuple without changing any existing object. -/
+private theorem values_tuple (heap : Heap) (env : HeapCalls.Env) (address : Nat) (values : List Int)
+    (globals : Mutable.Globals) (nonempty : values ≠ [])
+    (bound : env "values" = some (.ref address)) (found : heap[address]? = some (.list (numbers values))) :
+    Evaluates program env (.builtinCall .tuple [.name "values"]) heap (.ref heap.length)
+      (heap ++ [.tuple (numbers values)]) globals := by
+  apply Evaluates.builtin (.cons (Evaluates.lookup bound) .nil)
+  have converted := primitive_tuple_list heap address (numbers values) found
+  cases values with
+  | nil => cases nonempty rfl
+  | cons first rest =>
+      simpa [Mutable.allocateTuple, numbers, Except.map] using converted
+
+/-- Flush and high-card returns allocate the copied values tuple before their outer rank tuple. -/
+private theorem nested_rank (heap : Heap) (env : HeapCalls.Env) (address : Nat) (values : List Int)
+    (category : Int) (globals : Mutable.Globals) (nonempty : values ≠ [])
+    (bound : env "values" = some (.ref address)) (found : heap[address]? = some (.list (numbers values))) :
+    Evaluates program env (.tuple [.constant (.int category), .builtinCall .tuple [.name "values"]]) heap
+      (.ref (heap.length+1))
+      (heap ++ [.tuple (numbers values), .tuple [number category, .ref heap.length]]) globals := by
+  have constructed : Evaluates program env (.tuple [.constant (.int category), .builtinCall .tuple [.name "values"]]) heap
+      (.ref (heap ++ [Mutable.Object.tuple (numbers values)]).length)
+      ((heap ++ [.tuple (numbers values)]) ++ [.tuple [number category, .ref heap.length]]) globals :=
+    Evaluates.tuple (.cons Evaluates.constant (.cons (values_tuple heap env address values globals nonempty bound found) .nil))
+      (by simp)
+  simpa only [List.length_append, List.length_singleton, List.append_assoc] using constructed
+
+def answer (heap : Heap) (flush straight : Bool) : Mutable.Value :=
+  if flush then .ref (heap.length+1) else if straight then .ref heap.length else .ref (heap.length+1)
+
+def output (heap : Heap) (values : List Int) (flush straight : Bool) (high : Int) : Heap :=
+  if flush then heap ++ [.tuple (numbers values), .tuple [number 5, .ref heap.length]]
+  else if straight then heap ++ [.tuple [number 4, number high]]
+  else heap ++ [.tuple (numbers values), .tuple [number 0, .ref heap.length]]
+
+/-- The actual no-pair/no-triple/no-quad suffix returns flush, straight, or high-card ranks. -/
+theorem result (heap : Heap) (env : HeapCalls.Env) (valuesAddress groupsAddress firstAddress : Nat)
+    (values : List Int) (groups : List Mutable.Value) (count rank high : Int) (flush straight : Bool)
+    (globals : Mutable.Globals) (nonempty : values ≠ [])
+    (getValues : env "values" = some (.ref valuesAddress))
+    (valuesFound : heap[valuesAddress]? = some (.list (numbers values)))
+    (getGroups : env "groups" = some (.ref groupsAddress))
+    (groupsFound : heap[groupsAddress]? = some (.list groups))
+    (first : groups[0]? = some (.ref firstAddress))
+    (pair : heap[firstAddress]? = some (.tuple [number count, number rank]))
+    (getFlush : env "is_flush" = some (flag flush))
+    (getStraight : env "is_straight" = some (flag straight))
+    (getHigh : env "straight_high" = some (number high))
+    (notTwo : count ≠ 2) (notThree : count ≠ 3) (notFour : count ≠ 4) :
+    BlockReturns program env (code.drop 9) heap (answer heap flush straight)
+      (output heap values flush straight high) globals := by
+  have counted := straight_detection.group_count heap env groupsAddress 0 firstAddress groups count rank globals
+    getGroups groupsFound first pair
+  have noFour : Evaluates program env
+      (.compare (straight_detection.groupExpression 0 0) [(.eq, .constant (.int 4))]) heap (flag false) heap globals := by
+    simpa only [notFour, decide_false] using
+      equal_integer heap env (straight_detection.groupExpression 0 0) count 4 globals counted
+  have noThree : Evaluates program env
+      (.compare (straight_detection.groupExpression 0 0) [(.eq, .constant (.int 3))]) heap (flag false) heap globals := by
+    simpa only [notThree, decide_false] using
+      equal_integer heap env (straight_detection.groupExpression 0 0) count 3 globals counted
+  have noTwo : Evaluates program env
+      (.compare (straight_detection.groupExpression 0 0) [(.eq, .constant (.int 2))]) heap (flag false) heap globals := by
+    simpa only [notTwo, decide_false] using
+      equal_integer heap env (straight_detection.groupExpression 0 0) count 2 globals counted
+  apply BlockReturns.branch (flag := false) (value := flag false) (middle := heap) noFour rfl
+  apply BlockReturns.branch (flag := false) (value := flag false) (middle := heap)
+    (Evaluates.boolean_stop (flag := false) noThree rfl rfl) rfl
+  cases flush with
+  | true =>
+      simp only [answer, output, ↓reduceIte]
+      apply BlockReturns.branch (flag := true) (value := flag true) (middle := heap) (Evaluates.lookup getFlush) rfl
+      exact BlockReturns.return_value (nested_rank heap env valuesAddress values 5 globals nonempty getValues valuesFound)
+  | false =>
+      apply BlockReturns.branch (flag := false) (value := flag false) (middle := heap) (Evaluates.lookup getFlush) rfl
+      cases straight with
+      | true =>
+          simp only [answer, output, ↓reduceIte]
+          apply BlockReturns.branch (flag := true) (value := flag true) (middle := heap) (Evaluates.lookup getStraight) rfl
+          apply BlockReturns.return_value
+          exact Evaluates.tuple (.cons Evaluates.constant (.cons (Evaluates.lookup getHigh) .nil)) (by simp)
+      | false =>
+          simp only [answer, output]
+          apply BlockReturns.branch (flag := false) (value := flag false) (middle := heap) (Evaluates.lookup getStraight) rfl
+          apply BlockReturns.branch (flag := false) (value := flag false) (middle := heap) noThree rfl
+          apply BlockReturns.branch (flag := false) (value := flag false) (middle := heap)
+            (Evaluates.boolean_stop (flag := false) noTwo rfl rfl) rfl
+          apply BlockReturns.branch (flag := false) (value := flag false) (middle := heap) noTwo rfl
+          exact BlockReturns.return_value (nested_rank heap env valuesAddress values 0 globals nonempty getValues valuesFound)
+
+end solvers.«54».numeric_score.simple_categories
+
+namespace solvers.«54».numeric_score.repeated_categories
+open FormalSW.PyAst FormalSW.PyAst.HeapCalls
+set_option Elab.async false
+
+private abbrev program := Solvers.P54Ast.module
+private abbrev number (n : Int) : Mutable.Value := .scalar (.int n)
+private abbrev numbers (values : List Int) : List Mutable.Value := values.map number
+private abbrev flag (b : Bool) : Mutable.Value := .scalar (.bool b)
+private def code : List Stmt := executableBody ((findFunctionIn program.body "_score_values").getD ([], [])).2
+
+/-- The actual full-house suffix skips the quad test, reads both source pairs, and returns its rank tuple. -/
+theorem full_house (heap : Heap) (env : HeapCalls.Env) (groupsAddress firstAddress secondAddress : Nat)
+    (groups : List Mutable.Value) (trip pair : Int) (globals : Mutable.Globals)
+    (getGroups : env "groups" = some (.ref groupsAddress))
+    (groupsFound : heap[groupsAddress]? = some (.list groups))
+    (first : groups[0]? = some (.ref firstAddress)) (second : groups[1]? = some (.ref secondAddress))
+    (tripFound : heap[firstAddress]? = some (.tuple [number 3, number trip]))
+    (pairFound : heap[secondAddress]? = some (.tuple [number 2, number pair])) :
+    BlockReturns program env (code.drop 9) heap (.ref heap.length)
+      (heap ++ [.tuple [number 6, number trip, number pair]]) globals := by
+  apply BlockReturns.branch (flag := false) (value := flag false) (middle := heap)
+  · exact Evaluates.compare
+      (straight_detection.group_count heap env groupsAddress 0 firstAddress groups 3 trip globals getGroups groupsFound first tripFound)
+      Evaluates.constant rfl
+  · rfl
+  · apply BlockReturns.branch (flag := true) (value := flag true) (middle := heap)
+    · exact Evaluates.boolean_next (flag := true)
+        (Evaluates.compare
+          (straight_detection.group_count heap env groupsAddress 0 firstAddress groups 3 trip globals getGroups groupsFound first tripFound)
+          Evaluates.constant rfl) rfl rfl
+        (Evaluates.boolean_last (flag := true)
+          (Evaluates.compare
+            (straight_detection.group_count heap env groupsAddress 1 secondAddress groups 2 pair globals getGroups groupsFound second pairFound)
+            Evaluates.constant rfl) rfl)
+    · rfl
+    · apply BlockReturns.assign
+        (straight_detection.group_rank heap env groupsAddress 0 firstAddress groups 3 trip globals getGroups groupsFound first tripFound)
+      apply BlockReturns.assign
+        (straight_detection.group_rank heap (setLocal env "trip_val" (number trip)) groupsAddress 1 secondAddress groups 2 pair globals
+          (by simpa [setLocal] using getGroups) groupsFound second pairFound)
+      apply BlockReturns.return_value
+      exact Evaluates.tuple (.cons Evaluates.constant
+        (.cons (Evaluates.lookup (by simp [setLocal])) (.cons (Evaluates.lookup rfl) .nil))) (by simp)
+
+end solvers.«54».numeric_score.repeated_categories
