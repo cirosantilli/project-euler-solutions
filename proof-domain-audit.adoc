@@ -1,6 +1,6 @@
 = Python proof-domain audit
 
-This audit covers the Python solver and reference interfaces for problems 1 through 65, the reference for problem 66, their `Requires` annotations, default adapters, and the documented proof claims.
+This audit covers the Python solver and reference interfaces for problems 1 through 66, their `Requires` annotations, default adapters, and the documented proof claims.
 
 Prefer a meaningful argument shared by both implementations. A reference-only search limit changes an unbounded problem into a bounded one and is not an acceptable substitute. A mathematical bound derived from the inputs or the problem definition is acceptable. For a fixed problem without a useful parameter, retain `Equiv` and prefer structural proofs through shared mathematical models. A completed interpreter observation can establish termination; running out of observation fuel cannot.
 
@@ -20,6 +20,7 @@ Prefer a meaningful argument shared by both implementations. A reference-only se
 | 62 | Supplied cube-root limit | Accept only the requested class size and expand complete digit widths until successful. Internal finite counting windows come from those widths.
 | 63 | Supplied exponent limit; optimized exponent cutoff 200 | Share the numeral base and stop when a power falls below its required digit width; power growth proves completeness and termination.
 | 64 | Reference period search capped at n + 1 steps | Record complete continued-fraction states and measure the distance between equal states; the optimized solver uses the terminal coefficient.
+| 66 | Pell y search capped at d^4 + 1 | Share the signed discriminant bound. Pell existence justifies the reference's positive-y search, and integer descent proves that the first norm-one convergent is its least positive solution.
 |===
 
 Source proofs still awaiting replacement are retained as `.py.lean.attempt`; their README proof links are removed, and they are not counted as current proofs. Problem 36 has structural equivalence and termination proofs for every nonnegative limit, with no fixed prefix cutoff. Problem 40 has a structural equivalence and termination proof for every finite tuple of positive positions, with no maximum position. Problem 52 has structural equivalence for every positive multiplier: both searches terminate at the least positive solution for multipliers one through nine and diverge for larger multipliers, where digit widths rule out a solution. Unchanged zero-argument `Equiv` proofs remain in place; they need not be discarded merely because they have no arguments.
@@ -52,7 +53,7 @@ Problem 64 has structural source termination and equivalence proofs for every si
 
 Problem 65 has structural source termination and equivalence proofs for every positive convergent index. Both coefficient generation methods implement the same infinite pattern, and each finite numerator recurrence consumes exactly the requested number of coefficients. The proof tracks the reference's coefficient-list allocation and tuple swaps and connects string-character digit summation to the reference's positional digits. The default index 100 uses the universal termination theorem rather than a whole-program computation.
 
-Problem 66's reference has structural source termination and result proofs for every signed upper bound. Pell existence justifies the search over positive y, and the least accepted y gives the least positive x. The corresponding Lean statement uses this minimum, proved to be Mathlib's fundamental Pell solution. Integer continuant invariants and square-root state periodicity prove a norm-one convergent exists within two periods. Its coordinates are positive, so its x is at least the reference minimum. The reverse inequality and the optimized source equivalence proof remain pending.
+Problem 66 has structural source termination and equivalence proofs for every signed upper bound. Pell existence justifies the reference's search over positive y, whose first accepted value also minimizes x. Integer continuant invariants and state periodicity prove a norm-one convergent exists within two periods; a decreasing integer remainder sum places every positive Pell solution among the convergents and proves the first such convergent is the reference minimum. The source proof tracks both recurrences, tuple swaps, square skipping, and strict record updates. Empty discriminant ranges return zero, ties retain the least discriminant, and the omitted-argument default inherits termination from the universal theorem. No whole-program computation or supplied search cutoff is used.
 
 == Remaining implementation and proof restrictions
 
@@ -74,12 +75,11 @@ The default root-partition certificate for problem 62 is numerical evidence towa
 
 == Additional Python reference corrections through problem 100
 
-The following interfaces have matching Python arguments and passing numerical regression checks. Problem 66 has the reference proof described above; its optimized source proof remains pending. The other generalized structural source proofs remain pending, and their separate Lean statements and solver models need reconciliation before they can certify these contracts.
+The following interfaces have matching Python arguments and passing numerical regression checks. Their generalized structural source proofs remain pending; the separate Lean statements and solver models also need reconciliation before they can certify these contracts.
 
 [cols="1,3"]
 |===
 | Problem | Current design
-| 66 | Search positive Pell y values until an exact solution. The reference and its Lean statement have proved existence and minimality. Both public Python functions return zero for empty candidate ranges.
 | 74 | Share the exclusive starting bound and desired chain length. The reference walks until repetition; the optimized solver memoizes tails and cycles without fixed arrays or iteration limits. Zero has digit-factorial successor one and is excluded as a starting value.
 | 77 | Share only the prime-partition threshold and search integers from two until it is exceeded.
 | 78 | Share the positive partition divisor and search positive indices until divisible. No universal existence claim is assumed.

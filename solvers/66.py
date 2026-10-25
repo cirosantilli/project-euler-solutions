@@ -36,6 +36,13 @@ def minimal_pell_x(D: int) -> int | None:
 
 
 def solve(limit: int = 1000) -> int:
+    """
+    Maximize the least positive Pell solution over the inclusive discriminant range.
+
+    @formalsw: Py from project_euler_statements.p66 import naive
+    @formalsw: Returns
+    @formalsw: Equiv(naive)
+    """
     best_d = 0
     best_x = 0
 
