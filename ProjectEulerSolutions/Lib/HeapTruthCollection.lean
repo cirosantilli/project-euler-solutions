@@ -85,6 +85,43 @@ theorem all_map {α : Type} (program : Module) (values : List α) (encode : α �
     (by simp [Mutable.sequence, found])
   simpa only [List.append_nil] using run
 
+/-- A lazy universal range consumer may allocate fresh objects in each predicate call. -/
+theorem all_range_loop (program : Module) (name : String) (element : Expr)
+    (invariant : HeapCalls.Env → Prop) (predicate : Nat → Bool)
+    (preserved : ∀ inner (n : Nat), invariant inner → invariant (setLocal inner name (.scalar (.int n))))
+    (callback : ∀ heap inner (n : Nat), invariant inner → inner name = some (.scalar (.int n)) →
+      ∃ extra, Evaluates (globals := globals) program inner element heap (.scalar (.bool (predicate n))) (heap ++ extra))
+    (first count stop : Nat) (length : first+count = stop) (env : HeapCalls.Env) (heap : Mutable.Heap)
+    (valid : invariant env) :
+    ∃ extra, BlockReturns (globals := globals) program env
+      [.rangeStepLoop name first stop 1 (truthBody true element) [], .return (.constant (.bool true))]
+      heap (.scalar (.bool ((List.range' first count).all predicate))) (heap ++ extra) := by
+  induction count generalizing first env heap with
+  | zero =>
+      refine ⟨[], ?_⟩
+      simp only [List.range'_zero, List.all_nil, List.append_nil]
+      apply BlockReturns.range_done (by simp [Calls.rangeContinues]; omega)
+      exact BlockReturns.return_value Evaluates.constant
+  | succ count ih =>
+      let bound := setLocal env name (.scalar (.int first))
+      have validBound : invariant bound := preserved env first valid
+      obtain ⟨allocated, tested⟩ := callback heap bound first validBound (by simp [bound, setLocal])
+      cases accepted : predicate first with
+      | false =>
+          refine ⟨allocated, ?_⟩
+          simp only [List.range'_succ, List.all_cons, accepted, Bool.false_and]
+          apply BlockReturns.range_step (by simp [Calls.rangeContinues]; omega)
+          apply BlockReturns.branch (flag := false) (by simpa only [accepted] using tested) rfl
+          exact BlockReturns.return_value Evaluates.constant
+      | true =>
+          obtain ⟨extra, rest⟩ := ih (first+1) (by omega) bound (heap ++ allocated) validBound
+          refine ⟨allocated ++ extra, ?_⟩
+          simp only [List.range'_succ, List.all_cons, accepted, Bool.true_and]
+          apply BlockReturns.range_step (by simp [Calls.rangeContinues]; omega)
+          apply BlockReturns.branch (flag := true) (by simpa only [accepted] using tested) rfl
+          simpa only [List.append_assoc, truthBody, Calls.loopContinuation, Calls.loopControl,
+            Calls.loopControlStmt, Bool.false_or, Bool.false_eq_true, if_false, List.nil_append] using rest
+
 /-- Pure Boolean prefixes retain Python's short circuit before an allocating final operand. -/
 theorem and_prefix (program : Module) (env : HeapCalls.Env) (heap : Mutable.Heap)
     (conditions : List (Expr×Bool)) (last : Expr) (answer : Bool)
