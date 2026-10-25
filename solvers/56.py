@@ -3,6 +3,10 @@ from __future__ import annotations
 
 
 def digit_sum(n: int) -> int:
+    """
+    @formalsw: Requires(n >= 0)
+    @formalsw: Returns
+    """
     return sum(ord(ch) - 48 for ch in str(n))
 
 
@@ -26,6 +30,11 @@ def max_digital_sum(limit: int) -> tuple[int, int, int]:
 
 
 def solve(limit: int) -> int:
+    """
+    @formalsw: Returns
+    @formalsw: Py from project_euler_statements.p56 import naive
+    @formalsw: Equiv(naive)
+    """
     return max_digital_sum(limit)[0]
 
 
