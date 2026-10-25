@@ -24,6 +24,11 @@
       ((FormalSW.PyAst.findFunctionIn Solvers.P61Ast.module.body "solve").getD ([], [])).2).take 2)
     caller (solvers.«61».solve_setup.generatedEnv env caller)
     (solvers.«61».solve_setup.generatedHeap caller) globals
+
+@formalsw: theorem prefix_setup_source_result
+  (caller : FormalSW.PyAst.Mutable.Heap) (env : FormalSW.PyAst.HeapCalls.Env)
+  (globals : FormalSW.PyAst.Mutable.Globals) :
+  solvers.«61».solve_setup.Prepared caller env globals
 """
 from __future__ import annotations
 

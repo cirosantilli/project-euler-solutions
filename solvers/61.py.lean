@@ -1039,7 +1039,250 @@ theorem result (values : List Int) (heap : Mutable.Heap) (input : Nat)
 
 end solvers.«61».build_prefix_map
 
+namespace solvers.«61».solve_setup
+open FormalSW.PyAst FormalSW.PyAst.HeapCalls
+
+private abbrev encode := build_prefix_map.encode
+private abbrev lookup := build_prefix_map.lookup
+private abbrev Buckets := build_prefix_map.Buckets
+
+/-- The outer prefix dictionary owns one correct nested map for every completed family. -/
+structure PrefixState (base heap : Mutable.Heap) (processed : List Int) where
+  entries : List (Int × Nat)
+  keys : entries.map Prod.fst = processed
+  extension : ∃ extra, heap = base ++ extra
+  table : heap[base.length]? = some (.dict (encode entries))
+  children : ∀ key address, (key, address) ∈ entries →
+    base.length < address ∧ Nonempty (Buckets heap address (candidates key))
+
+def PrefixState.initial (base : Mutable.Heap) : PrefixState base (base ++ [.dict []]) [] where
+  entries := []
+  keys := rfl
+  extension := ⟨[.dict []], rfl⟩
+  table := by simp [encode, build_prefix_map.encode]
+  children := by intro key address member; simp at member
+
+variable {base heap : Mutable.Heap} {processed : List Int}
+
+def PrefixState.append (world : PrefixState base heap processed) (extra : Mutable.Heap) :
+    PrefixState base (heap ++ extra) processed where
+  entries := world.entries
+  keys := world.keys
+  extension := by
+    obtain ⟨old, rfl⟩ := world.extension
+    exact ⟨old ++ extra, List.append_assoc _ _ _⟩
+  table := build_prefix_map.found_append heap extra _ _ world.table
+  children := by
+    intro key address member
+    obtain ⟨later, ⟨view⟩⟩ := world.children key address member
+    exact ⟨later, ⟨view.append extra⟩⟩
+
+variable {childHeap : Mutable.Heap}
+
+def PrefixState.insert_child (world : PrefixState base heap processed) (sides : Int)
+    (child : build_prefix_map.Store heap childHeap (candidates sides)) :
+    PrefixState base (childHeap.set base.length (.dict (encode (world.entries ++ [(sides, heap.length)]))))
+      (processed ++ [sides]) := by
+  have inside : base.length < heap.length := (List.getElem?_eq_some_iff.mp world.table).1
+  have larger : heap.length ≤ childHeap.length := by
+    obtain ⟨extra, extension⟩ := child.extension
+    simp [extension]
+  refine { entries := world.entries ++ [(sides, heap.length)]
+           keys := by simp [world.keys]
+           extension := ?_
+           table := ?_
+           children := ?_ }
+  · have combined : ∃ extra, childHeap = base ++ extra := by
+      obtain ⟨extra, extension⟩ := child.extension
+      obtain ⟨old, before⟩ := world.extension
+      exact ⟨old ++ extra, by rw [extension, before, List.append_assoc]⟩
+    exact build_prefix_map.extension_set base childHeap combined _ (Nat.le_refl _) _
+  · exact List.getElem?_set_self (by omega)
+  · intro key address member
+    obtain ⟨extra, extension⟩ := child.extension
+    rcases List.mem_append.mp member with old | fresh
+    · obtain ⟨later, ⟨view⟩⟩ := world.children key address old
+      have extended : Buckets childHeap address (candidates key) := by
+        rw [extension]
+        exact view.append extra
+      exact ⟨later, ⟨extended.set_before base.length later _⟩⟩
+    · obtain ⟨rfl, rfl⟩ := Prod.mk.inj (List.mem_singleton.mp fresh)
+      exact ⟨inside, ⟨child.view.set_before base.length inside _⟩⟩
+
+private def prefixValue : Expr :=
+  .call (.name "build_prefix_map") [.subscript (.name "nums_by_type") (.name "t")]
+
+private def prefixBody (collector : Nat) : List Stmt :=
+  [.comprehensionStore collector (.name "t") prefixValue]
+
+/-- One real callback builds its nested map, then stores that reference in the outer collector. -/
+theorem prefix_store (caller : Mutable.Heap) (world : PrefixState (generatedHeap caller) heap processed)
+    (sides : Int) (lower : 3 ≤ sides) (upper : sides ≤ 8) (absent : lookup world.entries sides = none)
+    (env : HeapCalls.Env) (getNumbers : env "nums_by_type" = some (.ref (initialHeap caller).length))
+    (getType : env "t" = some (number sides)) (globals : Mutable.Globals := []) :
+    ∃ (finalHeap : Mutable.Heap) (_next : PrefixState (generatedHeap caller) finalHeap (processed ++ [sides])),
+      BlockContinues program env (prefixBody (generatedHeap caller).length) heap env finalHeap globals := by
+  obtain ⟨before, extension⟩ := world.extension
+  have table : heap[(initialHeap caller).length]? = some (.dict (numberEntries caller)) := by
+    rw [extension]
+    exact build_prefix_map.found_append _ _ _ _ (generated_table caller)
+  have found : heap[caller.length + sides.toNat]? = some (.list (numbers (candidates sides))) := by
+    rw [extension]
+    exact build_prefix_map.found_append _ _ _ _ (generated_family caller sides lower upper)
+  have argument : Evaluates program env (.subscript (.name "nums_by_type") (.name "t")) heap
+      (.ref (caller.length + sides.toNat)) heap globals := by
+    apply Evaluates.subscript (middle := heap) (afterIndex := heap) (finalHeap := heap)
+      (by intros; intro impossible; cases impossible) (Evaluates.lookup getNumbers) (Evaluates.lookup getType)
+    exact Mutable.getItem_dictionary _ _ _ table (.int sides) (numberEntries_lookup caller sides lower upper)
+  obtain ⟨childHeap, child, returned⟩ := build_prefix_map.result (candidates sides) heap
+    (caller.length + sides.toNat) found globals
+  have evaluated : Evaluates program env prefixValue heap (.ref heap.length) childHeap globals :=
+    Evaluates.call (.cons argument .nil) returned
+  have collector : childHeap[(generatedHeap caller).length]? = some (.dict (encode world.entries)) := by
+    obtain ⟨extra, extension⟩ := child.extension
+    rw [extension]
+    exact build_prefix_map.found_append _ _ _ _ world.table
+  refine ⟨_, world.insert_child sides child, ?_⟩
+  apply BlockContinues.comprehension_store (.cons (Evaluates.lookup getType) (.cons evaluated .nil))
+  have stored := Mutable.setItem_dictionary _ _ _ collector (.int sides) (.ref heap.length)
+  simpa only [number, build_prefix_map.insert_encode world.entries sides heap.length absent] using stored
+
+private theorem lookup_missing (entries : List (Int × Nat)) (key : Int)
+    (absent : key ∉ entries.map Prod.fst) : lookup entries key = none := by
+  induction entries with
+  | nil => rfl
+  | cons entry rest ih =>
+      obtain ⟨stored, address⟩ := entry
+      have different : stored ≠ key := by intro equal; simp [equal] at absent
+      have tail : key ∉ rest.map Prod.fst := by simpa [different, Ne.symm different] using absent
+      simpa [lookup, build_prefix_map.lookup, different] using ih tail
+
+/-- The source comprehension builds all remaining maps without changing earlier families. -/
+theorem prefix_loop (caller : Mutable.Heap) (remaining : List Int) (position : Nat)
+    (suffix : types.drop position = remaining) (distinct : remaining.Nodup)
+    (fresh : ∀ key ∈ remaining, key ∉ processed)
+    (valid : ∀ key ∈ remaining, (3 : Int) ≤ key ∧ key ≤ 8)
+    (world : PrefixState (generatedHeap caller) heap processed)
+    (env : HeapCalls.Env) (getNumbers : env "nums_by_type" = some (.ref (initialHeap caller).length))
+    (globals : Mutable.Globals := []) :
+    ∃ (finalHeap : Mutable.Heap) (finalEnv : HeapCalls.Env)
+      (_next : PrefixState (generatedHeap caller) finalHeap (processed ++ remaining)),
+      BlockContinues program env
+        [.sequenceStepLoop "t" (.ref caller.length) position (prefixBody (generatedHeap caller).length) []]
+        heap finalEnv finalHeap globals := by
+  have typesFound : (generatedHeap caller)[caller.length]? = some (.list (numbers types)) := by
+    simp [generated_layout, initialHeap, List.append_assoc]
+  induction remaining generalizing position heap processed env with
+  | nil =>
+      refine ⟨heap, env, by simpa using world, ?_⟩
+      apply BlockContinues.sequence_done (items := numbers types)
+      · obtain ⟨extra, extension⟩ := world.extension
+        have found := build_prefix_map.found_append _ extra _ _ typesFound
+        rw [← extension] at found
+        simp [sequenceValue, Mutable.sequence, found]
+      · have done : types[position]? = none := by rw [← List.head?_drop, suffix]; rfl
+        simp [numbers, List.getElem?_map, done]
+      · exact .nil
+  | cons sides rest ih =>
+      let bound := setLocal env "t" (number sides)
+      have boundNumbers : bound "nums_by_type" = some (.ref (initialHeap caller).length) := by
+        simpa [bound, setLocal] using getNumbers
+      have absent : lookup world.entries sides = none := lookup_missing world.entries sides
+        (by rw [world.keys]; exact fresh sides (by simp))
+      have bounds := valid sides (by simp)
+      obtain ⟨middle, ready, emitted⟩ := prefix_store caller world sides bounds.1 bounds.2 absent bound boundNumbers rfl globals
+      obtain ⟨finalHeap, finalEnv, finished, executed⟩ := ih (position + 1)
+        (by simp only [List.drop_add_one_eq_tail_drop, suffix, List.tail_cons])
+        (List.nodup_cons.mp distinct).2
+        (by
+          intro key member
+          have old := fresh key (by simp [member])
+          have different : key ≠ sides := by
+            intro equal
+            subst key
+            exact (List.nodup_cons.mp distinct).1 member
+          simp [old, different])
+        (by intro key member; exact valid key (by simp [member])) ready bound boundNumbers
+      refine ⟨finalHeap, finalEnv, ?_, ?_⟩
+      · simpa only [List.append_assoc, List.singleton_append] using finished
+      · apply BlockContinues.sequence_step (items := numbers types) (value := number sides)
+        · obtain ⟨extra, extension⟩ := world.extension
+          have found := build_prefix_map.found_append _ extra _ _ typesFound
+          rw [← extension] at found
+          simp [sequenceValue, Mutable.sequence, found]
+        · have item : types[position]? = some sides := by rw [← List.head?_drop, suffix]; rfl
+          simp [numbers, List.getElem?_map, item]
+        · simpa [prefixBody, Calls.loopContinuation, Calls.loopControl, Calls.loopControlStmt] using emitted.append executed
+
+private def prefixGenerators : List (Expr × Expr × List Expr) := [(.name "t", typeCell, [])]
+private def prefixComprehension : Expr := .dictComp (.name "t") prefixValue prefixGenerators
+
+theorem prefixes_evaluate (caller : Mutable.Heap) (env : HeapCalls.Env)
+    (getCell : env "__formalsw_cell_solve_types" = some (.ref (caller.length + 1)))
+    (getNumbers : env "nums_by_type" = some (.ref (initialHeap caller).length))
+    (globals : Mutable.Globals := []) :
+    ∃ (finalHeap : Mutable.Heap) (_world : PrefixState (generatedHeap caller) finalHeap types),
+      Evaluates program env prefixComprehension (generatedHeap caller)
+        (.ref (generatedHeap caller).length) finalHeap globals := by
+  let masked := comprehensionTargetsEnv env prefixGenerators
+  have maskedNumbers : masked "nums_by_type" = some (.ref (initialHeap caller).length) := by
+    simpa [masked, prefixGenerators, comprehensionTargetsEnv, targetLocals] using getNumbers
+  obtain ⟨finalHeap, finalEnv, world, executed⟩ := prefix_loop caller types 0 rfl (by decide)
+    (by intro key _; simp) (by intro key member; simp [types] at member; omega)
+    (PrefixState.initial (generatedHeap caller)) masked maskedNumbers globals
+  refine ⟨finalHeap, by simpa using world, ?_⟩
+  have cellFound : (generatedHeap caller)[caller.length + 1]? = some (.list [.ref caller.length]) := by
+    simp [generated_layout, initialHeap, List.append_assoc]
+  have typesFound : (generatedHeap caller)[caller.length]? = some (.list (numbers types)) := by
+    simp [generated_layout, initialHeap, List.append_assoc]
+  have iterable : Evaluates program env typeCell (generatedHeap caller) (.ref caller.length)
+      (generatedHeap caller) globals := by
+    apply Evaluates.subscript (middle := generatedHeap caller) (afterIndex := generatedHeap caller)
+      (finalHeap := generatedHeap caller) (by intros; intro impossible; cases impossible)
+      (Evaluates.lookup getCell) Evaluates.constant
+    exact Mutable.getItem_list _ _ 0 [.ref caller.length] cellFound (by simp)
+  apply Evaluates.dict_comp_sequence (receiver := .ref caller.length) (items := numbers types)
+    (middle := generatedHeap caller) (finalEnv := finalEnv)
+    (by intro expressions impossible; cases impossible)
+    (by intro expressions impossible; cases impossible)
+    (by intro expressions impossible; cases impossible)
+    iterable (by simp [Mutable.sequence, typesFound])
+  simpa only [prefixGenerators, comprehensionTargetName, comprehensionTargetBody, comprehensionFilters,
+    List.foldr_nil, comprehensionTargetsBody, sequenceSource, masked, prefixBody] using executed
+
+def prefixCode : List Stmt :=
+  [.assign [.name "__formalsw_cell_solve_pref_map"] (.list [prefixComprehension])]
+
+theorem prefix_source :
+    (executableBody ((findFunctionIn program.body "solve").getD ([], [])).2).take 3 =
+      initialCode ++ generateCode ++ prefixCode := rfl
+
+def Prepared (caller : Mutable.Heap) (env : HeapCalls.Env) (globals : Mutable.Globals) : Prop :=
+    ∃ (finalHeap : Mutable.Heap) (cell : Nat),
+      Nonempty (PrefixState (generatedHeap caller) finalHeap types) ∧
+      BlockContinues program env
+        ((executableBody ((findFunctionIn program.body "solve").getD ([], [])).2).take 3)
+        caller (setLocal (generatedEnv env caller) "__formalsw_cell_solve_pref_map" (.ref cell)) finalHeap globals ∧
+      finalHeap[cell]? = some (.list [.ref (generatedHeap caller).length])
+
+/-- The complete source setup creates the candidate tables and both closure cells. -/
+theorem prepared_result (caller : Mutable.Heap) (env : HeapCalls.Env) (globals : Mutable.Globals := []) :
+    Prepared caller env globals := by
+  obtain ⟨prefixHeap, world, evaluated⟩ := prefixes_evaluate caller (generatedEnv env caller)
+    (by simp [generatedEnv, initialEnv, setLocal]) rfl globals
+  refine ⟨prefixHeap ++ [.list [.ref (generatedHeap caller).length]], prefixHeap.length,
+    ⟨world.append [.list [.ref (generatedHeap caller).length]]⟩, ?_, by simp⟩
+  rw [prefix_source]
+  apply (generate_result caller env globals).append
+  exact BlockContinues.assign (Evaluates.list (.cons evaluated .nil))
+
+end solvers.«61».solve_setup
+
 namespace solvers.«61»
+
+theorem prefix_setup_source_result (caller : FormalSW.PyAst.Mutable.Heap)
+    (env : FormalSW.PyAst.HeapCalls.Env) (globals : FormalSW.PyAst.Mutable.Globals) :
+    solve_setup.Prepared caller env globals := solve_setup.prepared_result caller env globals
 
 theorem build_prefix_map_source_result (values : List Int) (heap : FormalSW.PyAst.Mutable.Heap) (input : Nat)
     (globals : FormalSW.PyAst.Mutable.Globals) :
