@@ -45,6 +45,13 @@
       ProjectEulerSolutions.CubicGroups.record cube (solvers.«62».store.logical cells) ∧
     solvers.«62».store.Above floor finalCells ∧ finalHeap.take floor = heap.take floor ∧
     heap.length ≤ finalHeap.length
+
+@formalsw: theorem solve_source_result
+  (target answer : Int) (caller : FormalSW.PyAst.Mutable.Heap) :
+  ProjectEulerSolutions.CubicSearch.Returns target ProjectEulerSolutions.CubicSearch.start answer →
+  ∃ finalHeap, FormalSW.PyAst.HeapCalls.ReturnsValue Solvers.P62Ast.module "solve"
+    [.scalar (.int target)] caller (.scalar (.int answer)) finalHeap ∧
+    finalHeap.take caller.length = caller
 """
 from __future__ import annotations
 
