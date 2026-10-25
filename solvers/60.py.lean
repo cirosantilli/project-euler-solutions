@@ -12,6 +12,7 @@ import ProjectEulerSolutions.Lib.CliqueSearchCorrectness
 import ProjectEulerSolutions.Lib.CliqueSearchAgreement
 import ProjectEulerSolutions.Lib.TrialPrimeCertificate
 import ProjectEulerSolutions.Lib.PrimePairCertificate
+import ProjectEulerSolutions.Lib.PrimePairUpperBound
 import ProjectEulerSolutions.Lib.PrimePairVertices.All
 import ProjectEulerSolutions.Lib.PrimePairCache.SmallPrefix
 import data.«project-euler-statements».data.py.project_euler_statements.«p60.py»
@@ -5355,8 +5356,8 @@ private abbrev referenceModel :=
 
 /-- Equality of the exact models gives equivalence of the complete source calls,
 including the freshly allocated tuple and list and all caller-visible objects. -/
-theorem equiv_of_models (limit : Int) (caller : Mutable.Heap) (globals : Mutable.Globals)
-    (valid : caller.Valid)
+theorem equiv_of_models_closed (limit : Int) (caller : Mutable.Heap) (globals : Mutable.Globals)
+    (closed : ∀ node ∈ caller.map Mutable.Relocation.graphNode, ∀ edge ∈ node.edges, edge.Within caller.length)
     (globalsWithin : ∀ entry ∈ globals, entry.2.edge.Within caller.length)
     (context : is_prime.SourceGlobals caller globals)
     (modelsEqual : solve_search.answerModel limit = referenceModel limit) :
@@ -5373,12 +5374,12 @@ theorem equiv_of_models (limit : Int) (caller : Mutable.Heap) (globals : Mutable
   rw [← modelsEqual] at rightSelected
   change leftHeap[leftList]? = some (.list ((solve_search.answerModel limit).chosen.map
     (fun (value : Nat) => Mutable.Value.scalar (.int value)))) at leftSelected
-  have equivalent := Mutable.Relocation.equivalent_tuple_list caller
+  have equivalent := Mutable.Relocation.equivalent_tuple_list_of_closed caller
     (leftHeap ++ [.tuple [.scalar (.int (solve_search.answerModel limit).bound), .ref leftList]])
     (rightHeap ++ [.tuple [.scalar (.int (solve_search.answerModel limit).bound), .ref rightList]])
     globals (.int (solve_search.answerModel limit).bound)
     ((solve_search.answerModel limit).chosen.map fun (value : Nat) => Constant.int value)
-    leftHeap.length leftList rightHeap.length rightList valid globalsWithin
+    leftHeap.length leftList rightHeap.length rightList closed globalsWithin
     (List.prefix_iff_getElem?.mpr (fun index inside => preserved index caller[index] (List.getElem?_eq_getElem inside)))
     (by rw [rightExtension]; exact ⟨rightExtra ++ [.tuple [.scalar (.int (solve_search.answerModel limit).bound), .ref rightList]], (List.append_assoc _ _ _).symm⟩)
     (by omega) leftFresh (by omega) rightFresh (by omega) (by omega)
@@ -5388,6 +5389,17 @@ theorem equiv_of_models (limit : Int) (caller : Mutable.Heap) (globals : Mutable
   exact Mutable.Call.equiv_of_finishes leftReturn.finishes rightReturn.finishes
     (by simpa only [modelsEqual] using equivalent)
 
+
+/-- Heap validity is sufficient for the general source-call comparison. -/
+theorem equiv_of_models (limit : Int) (caller : Mutable.Heap) (globals : Mutable.Globals)
+    (valid : caller.Valid)
+    (globalsWithin : ∀ entry ∈ globals, entry.2.edge.Within caller.length)
+    (context : is_prime.SourceGlobals caller globals)
+    (modelsEqual : solve_search.answerModel limit = referenceModel limit) :
+    (HeapCalls.call Solvers.P60Ast.module "solve" [.scalar (.int limit)] (globals := globals) caller).Equiv
+      (HeapCalls.call P60Ast.module "naive" [.scalar (.int limit)] (globals := globals) caller) :=
+  equiv_of_models_closed limit caller globals (Mutable.Relocation.graphNodes_closed valid)
+    globalsWithin context modelsEqual
 
 /-- The two outstanding finite search checks suffice for actual source-call
 equivalence at every signed limit, with no artificial bound on the input. -/
@@ -5405,3 +5417,112 @@ theorem equiv_of_finite_checks
     (certificate.models_eq_of_finite_checks smallChecked largeChecked limit)
 
 end solvers.«60».observational
+
+
+namespace solvers.«60».initialized
+open FormalSW.PyAst FormalSW.PyAst.HeapCalls
+
+private theorem graph_closed (caller : Mutable.Heap) (valid : caller.Valid) :
+    ∀ node ∈ (is_prime.initialization.heap caller).map Mutable.Relocation.graphNode,
+      ∀ edge ∈ node.edges, edge.Within (is_prime.initialization.heap caller).length := by
+  intro node member edge edgeMember
+  simp only [is_prime.initialization.heap, List.map_append, List.map_cons, List.map_nil,
+    List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at member
+  rcases member with old | rfl | rfl
+  · have inside := Mutable.Relocation.graphNodes_closed valid node old edge edgeMember
+    cases edge with
+    | scalar _ => trivial
+    | ref address =>
+      change address < (is_prime.initialization.heap caller).length
+      change address < caller.length at inside
+      simp only [is_prime.initialization.heap, List.length_append, List.length_cons, List.length_nil]
+      omega
+  · simp only [Mutable.Relocation.graphNode, is_prime.baseValues, List.map_map,
+      Function.comp_def, Mutable.Value.edge] at edgeMember
+    obtain ⟨value, _, rfl⟩ := List.mem_map.mp edgeMember
+    trivial
+  · simp only [Mutable.Relocation.graphNode, is_prime.smallValues, List.map_map,
+      Function.comp_def, Mutable.Value.edge] at edgeMember
+    obtain ⟨value, _, rfl⟩ := List.mem_map.mp edgeMember
+    trivial
+
+private theorem globals_within (caller : Mutable.Heap) :
+    ∀ entry ∈ is_prime.initialization.globals caller,
+      entry.2.edge.Within (is_prime.initialization.heap caller).length := by
+  intro entry member
+  simp only [is_prime.initialization.globals, List.mem_cons, List.not_mem_nil, or_false] at member
+  rcases member with rfl | rfl
+  · change caller.length < (is_prime.initialization.heap caller).length
+    simp [is_prime.initialization.heap]
+  · change caller.length + 1 < (is_prime.initialization.heap caller).length
+    simp [is_prime.initialization.heap]
+
+/-- Execute the actual table assignments and compare the complete source calls
+in the resulting shared module context. No table contents are assumed. -/
+theorem equiv_of_models (limit : Int) (caller : Mutable.Heap) (valid : caller.Valid)
+    (modelsEqual : solve_search.answerModel limit =
+      data.«project-euler-statements».data.py.project_euler_statements.p60.naive.answerModel limit) :
+    BlockContinues Solvers.P60Ast.module (fun _ => none) is_prime.initialization.code caller
+      (is_prime.initialization.env caller) (is_prime.initialization.heap caller) [] ∧
+    (HeapCalls.call Solvers.P60Ast.module "solve" [.scalar (.int limit)]
+      (globals := is_prime.initialization.globals caller) (is_prime.initialization.heap caller)).Equiv
+      (HeapCalls.call P60Ast.module "naive" [.scalar (.int limit)]
+        (globals := is_prime.initialization.globals caller) (is_prime.initialization.heap caller)) :=
+  ⟨is_prime.initialization.executes caller,
+    observational.equiv_of_models_closed limit (is_prime.initialization.heap caller)
+      (is_prime.initialization.globals caller) (graph_closed caller valid) (globals_within caller)
+      (is_prime.initialization.context caller) modelsEqual⟩
+
+end solvers.«60».initialized
+
+
+namespace solvers.«60».certificate
+open ProjectEulerSolutions
+
+/-- For the empty small search, rejecting excluded edges is enough: a
+supergraph with no completion leaves the actual source sentinel unchanged. -/
+theorem small_model_of_upper_certificate (graph : PrimePairCertificate.Graph)
+    (covers : graph.Covers PrimePairVertices.smallTree)
+    (coverage : ∀ p ∈ PrimePairVertices.small, p ∈ graph.vertices)
+    (checked : CliqueSearch.search graph.edge 5 [] PrimePairVertices.small 0
+      ⟨solve_setup.sentinel, []⟩ = ⟨solve_setup.sentinel, []⟩) :
+    solve_search.answerModel 8388 = ⟨solve_setup.sentinel, []⟩ := by
+  have ordered : PrimePairVertices.small.Pairwise (· < ·) := by
+    rw [← small_vertices]
+    exact solve_setup.vertices_increasing 8388
+  have included : CliqueSearch.IncludedOn PrimePairCertificate.relation graph.edge PrimePairVertices.small := by
+    simpa only [PrimePairVertices.smallTree_values] using PrimePairCertificate.Graph.included covers
+      (by simpa only [PrimePairVertices.smallTree_values] using coverage)
+  apply small_model_of_certificate
+  apply CliqueSearch.search_eq_of_supergraph ordered included checked
+  exact Or.inl rfl
+
+/-- Included edges are possible edges only. The winning witness is independently
+checked against the actual source predicate before transferring the optimum. -/
+theorem large_model_of_upper_certificate (graph : PrimePairCertificate.Graph)
+    (covers : graph.Covers PrimePairVertices.largeTree)
+    (coverage : ∀ p ∈ PrimePairVertices.large, p ∈ graph.vertices)
+    (checked : CliqueSearch.search graph.edge 5 [] PrimePairVertices.large 0
+      ⟨26034, []⟩ = ⟨26033, competitive.witness⟩) :
+    solve_search.answerModel 26033 = ⟨26033, competitive.witness⟩ := by
+  have ordered : PrimePairVertices.large.Pairwise (· < ·) := by
+    rw [← large_vertices]
+    exact solve_setup.vertices_increasing 26033
+  have included : CliqueSearch.IncludedOn PrimePairCertificate.relation graph.edge PrimePairVertices.large := by
+    simpa only [PrimePairVertices.largeTree_values] using PrimePairCertificate.Graph.included covers
+      (by simpa only [PrimePairVertices.largeTree_values] using coverage)
+  have completion : CliqueSearch.Completion PrimePairCertificate.relation 5 PrimePairVertices.large competitive.witness := by
+    have source := competitive.witness_mr_completion 26033 (by decide)
+    refine ⟨source.size, ?_, ?_⟩
+    · simpa only [large_vertices] using source.sublist
+    · apply competitive.witness_mr_pairs.imp_of_mem
+      intro p q memberP memberQ accepted
+      have smallP := competitive.witness_bounds p memberP
+      have smallQ := competitive.witness_bounds q memberQ
+      rw [← relation_eq p q (by omega) (by omega)]
+      exact accepted
+  apply large_model_of_seeded_certificate
+  apply CliqueSearch.search_eq_of_supergraph ordered included checked
+  exact Or.inr ⟨competitive.witness, completion, by rw [competitive.witness_sum]; rfl, rfl, by decide⟩
+
+end solvers.«60».certificate
