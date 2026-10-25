@@ -258,8 +258,8 @@ theorem small_initializer_source :
     globalInitializer contextProgram.body "_SMALL_PRIMES" =
       some (.tuple (smallPrimes.map (fun p => .constant (.int p)))) := rfl
 
-/-- Explicit raw-call context. The future source-initialized public wrapper must
-produce these facts by execution; they are not arbitrary public MR-base inputs. -/
+/-- Explicit raw-call context, supplied by the source table-initialization proof
+below. The table references and contents remain available to helper proofs. -/
 structure SourceGlobals (heap : Mutable.Heap) (globals : Mutable.Globals) where
   smallAddress : Nat
   basesAddress : Nat
@@ -902,7 +902,7 @@ theorem natural_result (n : Nat) (positive : 2 ≤ n) (heap : Mutable.Heap) (glo
   exact scanned
 
 /-- All signed inputs are covered, with negative values following the actual
-n<2 return. The context remains explicit until module initialization is proved. -/
+n<2 return. The raw interface retains its explicit module context. -/
 theorem raw_result (n : Int) (heap : Mutable.Heap) (globals : Mutable.Globals)
     (context : SourceGlobals heap globals) :
     ReturnsValue finalProgram "is_prime" [finalNumber n] heap
@@ -914,3 +914,94 @@ theorem raw_result (n : Int) (heap : Mutable.Heap) (globals : Mutable.Globals)
     simpa only [Int.toNat_of_nonneg nonnegative] using natural_result n.toNat (by omega) heap globals context
 
 end solvers.«60».is_prime
+
+namespace solvers.«60».is_prime.initialization
+open FormalSW.PyAst FormalSW.PyAst.HeapCalls
+open ProjectEulerSolutions.MillerRabin
+
+private abbrev program := Solvers.P60Ast.module
+
+/-- The two real module assignments, in source order. Imports and function
+definitions preceding them do not form part of this data-initialization block. -/
+def code : List Stmt := program.body.drop 3 |>.take 2
+
+theorem code_source : code =
+    [.assign [.name "_MR_BASES_64"] (.tuple (bases.map (fun a => .constant (.int a)))),
+     .assign [.name "_SMALL_PRIMES"] (.tuple (smallPrimes.map (fun p => .constant (.int p))))] := rfl
+
+def heap (caller : Mutable.Heap) : Mutable.Heap :=
+  caller ++ [.tuple baseValues, .tuple smallValues]
+
+def env (caller : Mutable.Heap) : HeapCalls.Env :=
+  setLocal (setLocal (fun _ => none) "_MR_BASES_64" (.ref caller.length))
+    "_SMALL_PRIMES" (.ref (caller.length + 1))
+
+def globals (caller : Mutable.Heap) : Mutable.Globals :=
+  [("_MR_BASES_64", .ref caller.length), ("_SMALL_PRIMES", .ref (caller.length + 1))]
+
+/-- This executes both tuple displays and assignments, retaining an arbitrary
+caller heap as a prefix. No table is assumed to have been initialized. -/
+theorem executes (caller : Mutable.Heap) :
+    BlockContinues program (fun _ => none) code caller (env caller) (heap caller) [] := by
+  rw [code_source]
+  have first : BlockContinues program (fun _ => none)
+      [.assign [.name "_MR_BASES_64"] (.tuple (bases.map (fun a => .constant (.int a))))]
+      caller (setLocal (fun _ => none) "_MR_BASES_64" (.ref caller.length))
+      (caller ++ [.tuple baseValues]) [] := by
+    apply BlockContinues.assign
+    apply Evaluates.tuple
+    · change Evaluates.Arguments program (fun _ => none) _ caller baseValues caller []
+      repeat first | apply Evaluates.Arguments.cons Evaluates.constant | exact .nil
+    · decide
+  have second : BlockContinues program
+      (setLocal (fun _ => none) "_MR_BASES_64" (.ref caller.length))
+      [.assign [.name "_SMALL_PRIMES"] (.tuple (smallPrimes.map (fun p => .constant (.int p))))]
+      (caller ++ [.tuple baseValues])
+      (setLocal (setLocal (fun _ => none) "_MR_BASES_64" (.ref caller.length))
+        "_SMALL_PRIMES" (.ref (caller ++ [Mutable.Object.tuple baseValues]).length))
+      ((caller ++ [.tuple baseValues]) ++ [.tuple smallValues]) [] := by
+    apply BlockContinues.assign
+    apply Evaluates.tuple
+    · repeat first | apply Evaluates.Arguments.cons Evaluates.constant | exact .nil
+    · decide
+  simpa [env, heap, List.append_assoc] using first.append second
+
+/-- Exporting the two initialized names preserves the addresses established by
+execution; it does not reconstruct either tuple from a copied list. -/
+theorem exports (caller : Mutable.Heap) (name : String) :
+    env caller name = (globals caller).lookup name := by
+  by_cases small : name = "_SMALL_PRIMES"
+  · subst name
+    simp [env, globals, setLocal, List.lookup]
+  · by_cases base : name = "_MR_BASES_64"
+    · subst name
+      simp [env, globals, setLocal]
+    · simp [env, globals, setLocal, List.lookup, small, base,
+        beq_eq_false_iff_ne.mpr small, beq_eq_false_iff_ne.mpr base]
+
+/-- The raw helper's previously explicit table hypotheses now follow from the
+heap and bindings produced by the actual source initialization block. -/
+def context (caller : Mutable.Heap) : SourceGlobals (heap caller) (globals caller) where
+  smallAddress := caller.length + 1
+  basesAddress := caller.length
+  smallBinding := by simp [globals, List.lookup]
+  basesBinding := by simp [globals]
+  smallTuple := by simp [heap]
+  basesTuple := by simp [heap]
+
+theorem caller_preserved (caller : Mutable.Heap) (address : Nat) (object : Mutable.Object)
+    (found : caller[address]? = some object) : (heap caller)[address]? = some object := by
+  have inside : address < caller.length := by
+    by_contra outside
+    simp [List.getElem?_eq_none (by omega : caller.length ≤ address)] at found
+  simpa [heap, List.getElem?_append_left inside] using found
+
+/-- Every signed input can use the executed setup state, with no public
+arbitrary-base assumption and no restriction to the unsigned 64-bit range.
+The conclusion is the exact algorithmic Miller–Rabin model, not Nat.Prime. -/
+theorem result (n : Int) (caller : Mutable.Heap) :
+    ReturnsValue program "is_prime" [.scalar (.int n)] (heap caller)
+      (.scalar (.bool (isPrimeModel n.toNat))) (heap caller) (globals caller) :=
+  raw_result n (heap caller) (globals caller) (context caller)
+
+end solvers.«60».is_prime.initialization
