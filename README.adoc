@@ -564,6 +564,8 @@ Problem 50’s source-level equivalence proof covers the bytearray sieve, prime 
 
 Problem 51’s source-level equivalence proof covers the signed bytearray sieve, decimal conversion, mutable digit-position groups, bit-mask enumeration, replacement counting, and the complete search across digit widths. For every integer target at most eight, a checked prime-family witness bounds termination to six widths, and sorted prime scans establish the least answer. The proofs use only standard Lean axioms.
 
+Problem 52’s source-level equivalence proof covers decimal digit counters, tuple comparison, early breaks, positive candidate windows, and the complete width search for targets two through six. A kernel-checked `142857` witness bounds both searches and establishes a least positive answer. The reference search starts at one to exclude zero; the proofs use only standard Lean axioms.
+
 ====== Problem 14: Collatz termination
 
 Research checked on 2026-10-25. The existing `ProjectEulerStatements.P14.collatzConjecture` assumes that each positive natural number eventually reaches 1. The reference source proofs are conditional on that exact assumption; they do not establish the conjecture. Zero is handled separately by the implementation. Negative starting values are outside the termination claim.
@@ -695,7 +697,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/49.py[49.py] | link:solvers/49.md[49.md] | link:solvers/49.py.lean[49.py.lean] | 0.129 | 296962999629 |
 | link:solvers/50.py[50.py] | link:solvers/50.md[50.md] | link:solvers/50.py.lean[50.py.lean] | 0.150 | 997651 |
 | link:solvers/51.py[51.py] | link:solvers/51.md[51.md] | link:solvers/51.py.lean[51.py.lean] | 0.149 | 121313 |
-| link:solvers/52.py[52.py] | link:solvers/52.md[52.md] |  | 0.123 | 142857 |
+| link:solvers/52.py[52.py] | link:solvers/52.md[52.md] | link:solvers/52.py.lean[52.py.lean] | 0.123 | 142857 |
 | link:solvers/53.py[53.py] | link:solvers/53.md[53.md] |  | 0.106 | 4075 |
 | link:solvers/54.py[54.py] | link:solvers/54.md[54.md] |  | 0.198 | 376 |
 | link:solvers/55.py[55.py] | link:solvers/55.md[55.md] |  | 0.166 | 249 |

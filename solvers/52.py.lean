@@ -4,8 +4,9 @@ import ProjectEulerSolutions.Lib.DigitHistogram
 import ProjectEulerSolutions.Lib.PermutedMultiples
 import ProjectEulerSolutions.Lib.HeapCollection
 import lang.py.FormalSW.LoopCalls
+import data.«project-euler-statements».data.py.project_euler_statements.«p52.py»
 
-/-! Source proofs for problem 52's decimal digit counters and permuted-multiple search. -/
+/-! Source-level termination and equivalence proofs for problem 52's complete permuted-multiple search. -/
 set_option Elab.async false
 
 namespace solvers.«52»
@@ -241,6 +242,264 @@ theorem prepare_candidate (limit x : Nat) (supported : 2 ≤ limit) (env : HeapC
   · have natural : ((limit : Int)-1).toNat = limit-1 := by omega
     simpa only [ProjectEulerSolutions.PermutedMultiples.accepts, show decide (2 ≤ (limit : Int)) = true from by simp; omega,
       Bool.true_and, natural, List.range'_eq_map_range, List.all_map, Nat.add_comm] using getOk
+
+private def SearchStable (before after : HeapCalls.Env) : Prop :=
+  ∀ name, name ∉ ["x", "sig", "ok", "m"] → after name = before name
+
+private theorem search_stable_trans (first : SearchStable before middle) (second : SearchStable middle after) :
+    SearchStable before after := fun name untouched => (second name untouched).trans (first name untouched)
+
+private theorem search_stable_bind (env : HeapCalls.Env) (x : Nat) : SearchStable env (setLocal env "x" (number x)) := by
+  intro name untouched
+  have different : name ≠ "x" := by intro same; exact untouched (by simp [same])
+  simp [setLocal, different]
+
+private def Search (env : HeapCalls.Env) (body : List Stmt) (heap : Mutable.Heap) : Option Nat → Prop
+  | some value => ∃ extra, ∀ following, BlockReturns program env (body ++ following) heap (number value) (heap ++ extra)
+  | none => ∃ finalEnv extra, BlockContinues program env body heap finalEnv (heap ++ extra) ∧ SearchStable env finalEnv
+
+private theorem candidate (limit x : Nat) (supported : 2 ≤ limit) (env : HeapCalls.Env) (heap : Mutable.Heap)
+    (getLimit : env "limit_mul" = some (number limit)) (getX : env "x" = some (number x)) :
+    Search env candidateBody heap (if ProjectEulerSolutions.PermutedMultiples.accepts limit x then some x else none) := by
+  obtain ⟨ready, allocated, prepared, stable, getOk⟩ := prepare_candidate limit x supported env heap getLimit getX
+  have current : ready "x" = some (number x) := (stable "x" (by decide) (by decide) (by decide)).trans getX
+  cases accepted : ProjectEulerSolutions.PermutedMultiples.accepts limit x with
+  | true =>
+      simp only [↓reduceIte]
+      refine ⟨allocated, ?_⟩
+      intro following
+      have tail : BlockReturns program ready (candidateBody.drop 3 ++ following) (heap ++ allocated) (number x) (heap ++ allocated) := by
+        apply BlockReturns.branch (flag := true) (Evaluates.lookup (by simpa only [accepted] using getOk)) rfl
+        exact BlockReturns.return_value (Evaluates.lookup current)
+      simpa only [List.take_append_drop, List.append_assoc] using prepared.returns tail
+  | false =>
+      simp only [Bool.false_eq_true, ↓reduceIte]
+      refine ⟨ready, allocated, ?_, ?_⟩
+      · have tail : BlockContinues program ready (candidateBody.drop 3) (heap ++ allocated) ready (heap ++ allocated) :=
+          BlockContinues.branch (flag := false) (Evaluates.lookup (by simpa only [accepted] using getOk)) rfl .nil
+        simpa only [List.take_append_drop] using prepared.append tail
+      · intro name untouched
+        have notSig : name ≠ "sig" := by intro same; exact untouched (by simp [same])
+        have notOk : name ≠ "ok" := by intro same; exact untouched (by simp [same])
+        have notM : name ≠ "m" := by intro same; exact untouched (by simp [same])
+        exact stable name notSig notOk notM
+
+/-- The complete source range returns its first accepted number, preserving captured width bounds on exhaustion. -/
+theorem candidates_loop (limit first count stop : Nat) (supported : 2 ≤ limit) (length : first+count = stop)
+    (env : HeapCalls.Env) (heap : Mutable.Heap) (getLimit : env "limit_mul" = some (number limit)) :
+    Search env [.rangeStepLoop "x" first stop 1 candidateBody []] heap
+      ((List.range' first count).find? (fun x => ProjectEulerSolutions.PermutedMultiples.accepts limit x)) := by
+  induction count generalizing first env heap with
+  | zero =>
+      refine ⟨env, [], ?_, fun _ _ => rfl⟩
+      simpa only [List.append_nil] using BlockContinues.range_done
+        (by simp [Calls.rangeContinues]; omega) BlockContinues.nil
+  | succ count ih =>
+      let bound := setLocal env "x" (number first)
+      have tested := candidate limit first supported bound heap (by simpa [bound, setLocal] using getLimit) (by simp [bound, setLocal])
+      have active : Calls.rangeContinues first stop 1 = true := by simp [Calls.rangeContinues]; omega
+      cases accepted : ProjectEulerSolutions.PermutedMultiples.accepts limit first with
+      | true =>
+          simp only [accepted, ↓reduceIte] at tested
+          obtain ⟨allocated, returned⟩ := tested
+          simp only [List.range'_succ, List.find?_cons, accepted]
+          refine ⟨allocated, ?_⟩
+          intro following
+          apply BlockReturns.range_step active
+          exact returned (.rangeStepLoop "x" ((first : Int)+1) stop 1 candidateBody [] :: following)
+      | false =>
+          simp only [accepted, Bool.false_eq_true, ↓reduceIte] at tested
+          obtain ⟨ready, allocated, prepared, stable⟩ := tested
+          have getReady : ready "limit_mul" = some (number limit) :=
+            (stable "limit_mul" (by decide)).trans (by simpa [bound, setLocal] using getLimit)
+          have scanned := ih (first+1) (by omega) ready (heap ++ allocated) getReady
+          simp only [List.range'_succ, List.find?_cons, accepted]
+          cases selected : (List.range' (first+1) count).find? (fun x => ProjectEulerSolutions.PermutedMultiples.accepts limit x) with
+          | some value =>
+              rw [selected] at scanned
+              obtain ⟨extra, returned⟩ := scanned
+              refine ⟨allocated ++ extra, ?_⟩
+              intro following
+              apply BlockReturns.range_step active
+              have rest := prepared.returns (returned following)
+              simpa only [List.append_assoc, Nat.cast_add, Nat.cast_one] using rest
+          | none =>
+              rw [selected] at scanned
+              obtain ⟨finalEnv, extra, continued, finalStable⟩ := scanned
+              refine ⟨finalEnv, allocated ++ extra, ?_, ?_⟩
+              · apply BlockContinues.range_step active
+                simpa only [List.append_assoc, Nat.cast_add, Nat.cast_one] using prepared.append continued
+              · exact search_stable_trans (search_stable_bind env first) (search_stable_trans stable finalStable)
+
+open ProjectEulerSolutions.PermutedMultiples
+
+private def boundsEnv (env : HeapCalls.Env) (limit digits : Nat) : HeapCalls.Env :=
+  setLocal (setLocal env "lo" (number (lower digits))) "hi" (number (upper limit digits))
+
+private theorem ten_power (exponent : Nat) (env : HeapCalls.Env) (heap : Mutable.Heap) (expression : Expr)
+    (evaluated : Evaluates program env expression heap (number exponent) heap) :
+    Evaluates program env (.binOp (.constant (.int 10)) .pow expression) heap (number (10 ^ exponent : Nat)) heap := by
+  exact Evaluates.binary (av := number 10) (bv := number exponent) (middle := heap) (afterRight := heap)
+    Evaluates.constant evaluated (by simp [Mutable.binary, scalarBinary, show ¬ (exponent : Int) < 0 by omega])
+
+/-- The original width arithmetic computes the complete positive candidate interval. -/
+theorem prepare_width (limit digits : Nat) (positive : 1 ≤ digits) (supported : 2 ≤ limit)
+    (env : HeapCalls.Env) (heap : Mutable.Heap) (getLimit : env "limit_mul" = some (number limit))
+    (getDigits : env "d" = some (number digits)) :
+    BlockContinues program env (widthBody.take 2) heap (boundsEnv env limit digits) heap := by
+  let withLower := setLocal env "lo" (number (lower digits))
+  have first : BlockContinues program env [widthBody[0]'(by decide)] heap withLower heap := by
+    apply BlockContinues.assign
+    apply ten_power (digits-1)
+    apply Evaluates.binary (Evaluates.lookup getDigits) Evaluates.constant
+    have cast : ((digits-1 : Nat) : Int) = (digits : Int)-1 := by omega
+    simp [Mutable.binary, scalarBinary, cast]
+  have second : BlockContinues program withLower [widthBody[1]'(by decide)] heap (boundsEnv env limit digits) heap := by
+    apply BlockContinues.assign
+    apply Evaluates.binary (av := number (10^digits-1 : Nat)) (bv := number limit) (middle := heap) (afterRight := heap)
+    · apply Evaluates.binary (av := number (10^digits : Nat)) (bv := number 1) (middle := heap) (afterRight := heap)
+      · exact ten_power digits withLower heap (.name "d") (Evaluates.lookup (by simpa [withLower, setLocal] using getDigits))
+      · exact Evaluates.constant
+      · have nonzero : 0 < 10^digits := Nat.pow_pos (by decide)
+        have cast : ((10^digits-1 : Nat) : Int) = (10 : Int)^digits-1 := by
+          have powerCast : ((10^digits : Nat) : Int) = (10 : Int)^digits := by simp
+          omega
+        simp [Mutable.binary, scalarBinary, cast]
+    · exact Evaluates.lookup (by simpa [withLower, setLocal] using getLimit)
+    · simp [Mutable.binary, scalarBinary, upper, number, show 0 < limit by omega, show limit ≠ 0 by omega]
+  exact first.append second
+
+private def WidthSearch (limit digits : Nat) (env : HeapCalls.Env) (heap : Mutable.Heap) : Option Nat → Prop
+  | some value => ∃ extra, ∀ following, BlockReturns program env (widthBody.take 3 ++ following) heap (number value) (heap ++ extra)
+  | none => ∃ finalEnv extra, BlockContinues program env (widthBody.take 3) heap finalEnv (heap ++ extra) ∧
+      finalEnv "limit_mul" = some (number limit) ∧ finalEnv "d" = some (number digits)
+
+/-- A full width iteration prepares its bounds and returns the first accepted candidate. -/
+theorem width_result (limit digits : Nat) (supported : 2 ≤ limit ∧ limit ≤ 6) (positive : 1 ≤ digits)
+    (env : HeapCalls.Env) (heap : Mutable.Heap) (getLimit : env "limit_mul" = some (number limit))
+    (getDigits : env "d" = some (number digits)) :
+    WidthSearch limit digits env heap
+      ((List.range' (lower digits) (upper limit digits+1-lower digits)).find? (fun x => accepts limit x)) := by
+  have prepared := prepare_width limit digits positive supported.1 env heap getLimit getDigits
+  have startBound := window_nonempty limit digits supported positive
+  have getReady : (boundsEnv env limit digits) "limit_mul" = some (number limit) := by simpa [boundsEnv, setLocal] using getLimit
+  have scanned := candidates_loop limit (lower digits) (upper limit digits+1-lower digits) (upper limit digits+1)
+    supported.1 (by omega) (boundsEnv env limit digits) heap getReady
+  have arguments : Evaluates.Arguments program (boundsEnv env limit digits)
+      [.name "lo", .binOp (.name "hi") .add (.constant (.int 1))] heap
+      [number (lower digits), number (upper limit digits+1 : Nat)] heap := by
+    refine .cons (Evaluates.lookup (by simp [boundsEnv, setLocal])) (.cons ?_ .nil)
+    exact Evaluates.binary (av := number (upper limit digits)) (bv := number 1) (middle := heap) (afterRight := heap)
+      (Evaluates.lookup (by simp [boundsEnv, setLocal])) Evaluates.constant (by simp [Mutable.binary, scalarBinary])
+  cases selected : (List.range' (lower digits) (upper limit digits+1-lower digits)).find? (fun x => accepts limit x) with
+  | some value =>
+      rw [selected] at scanned
+      obtain ⟨extra, returned⟩ := scanned
+      refine ⟨extra, ?_⟩
+      intro following
+      exact prepared.returns (BlockReturns.for_range arguments rfl (returned following))
+  | none =>
+      rw [selected] at scanned
+      obtain ⟨finalEnv, extra, continued, stable⟩ := scanned
+      refine ⟨finalEnv, extra, prepared.append (BlockContinues.for_range arguments rfl continued), ?_, ?_⟩
+      · exact (stable "limit_mul" (by decide)).trans getReady
+      · exact (stable "d" (by decide)).trans (by simpa [boundsEnv, setLocal] using getDigits)
+
+/-- The unbounded source width loop reaches the least positive reference answer within six widths. -/
+private theorem widths_loop (limit digits : Nat) (supported : 2 ≤ limit ∧ limit ≤ 6) (positive : 1 ≤ digits)
+    (before : digits ≤ answerWidth limit) (env : HeapCalls.Env) (heap : Mutable.Heap)
+    (getLimit : env "limit_mul" = some (number limit)) (getDigits : env "d" = some (number digits)) :
+    ∃ extra, BlockReturns program env [.whileDo (.constant (.bool true)) widthBody []]
+      heap (number (answer limit)) (heap ++ extra) := by
+  have interval : 2 ≤ (limit : Int) ∧ (limit : Int) ≤ 6 := by omega
+  have scanned := width_result limit digits supported positive env heap getLimit getDigits
+  have selected := window limit digits interval before
+  by_cases inside : answer limit ≤ upper limit digits
+  · rw [if_pos inside] at selected
+    rw [selected] at scanned
+    obtain ⟨extra, returned⟩ := scanned
+    refine ⟨extra, ?_⟩
+    apply BlockReturns.while_loop (flag := true) Evaluates.constant rfl
+    exact returned (widthBody.drop 3 ++ [.whileDo (.constant (.bool true)) widthBody []])
+  · rw [if_neg inside] at selected
+    rw [selected] at scanned
+    obtain ⟨ready, allocated, prepared, finalLimit, finalDigits⟩ := scanned
+    have earlier : digits < answerWidth limit := by
+      have reached := inside_width limit interval
+      by_contra late
+      have same : digits = answerWidth limit := by omega
+      exact inside (same ▸ reached)
+    let next := setLocal ready "d" (number (digits+1 : Nat))
+    obtain ⟨extra, returned⟩ := widths_loop limit (digits+1) supported (by omega) (by omega) next (heap ++ allocated)
+      (by simpa [next, setLocal] using finalLimit) (by simp [next, setLocal])
+    refine ⟨allocated ++ extra, ?_⟩
+    apply BlockReturns.while_loop (flag := true) Evaluates.constant rfl
+    apply prepared.returns
+    apply BlockReturns.augAssign (value := number (digits+1 : Nat)) (middle := heap ++ allocated) (afterOperation := heap ++ allocated)
+      finalDigits Evaluates.constant
+    · simp [inplace, Mutable.binary, scalarBinary]
+    · simpa only [List.append_assoc] using returned
+termination_by answerWidth limit - digits
+decreasing_by omega
+
+/-- The executable optimized Python solver terminates with the least positive reference answer. -/
+theorem result (limit : Nat) (supported : 2 ≤ limit ∧ limit ≤ 6) (heap : Mutable.Heap) :
+    ∃ extra, ReturnsValue program "solve" [number limit] heap (number (answer limit)) (heap ++ extra) := by
+  let entry := functionEnv ((findFunctionIn program.body "solve").getD ([], [])).1
+    ((findFunctionIn program.body "solve").getD ([], [])).2 [number limit] []
+  obtain ⟨extra, scanned⟩ := widths_loop limit 1 supported (by decide)
+    (width_bounds limit (by omega)).1 (setLocal entry "d" (number 1)) heap (by simp [setLocal]; rfl) (by simp [setLocal])
+  refine ⟨extra, ?_⟩
+  apply BlockReturns.function rfl rfl
+  apply BlockReturns.assign Evaluates.constant
+  exact scanned
+
+private abbrev inputEnv (limit : Int) : ScalarEnv :=
+  fun name => if name = "limit_mul" then some (.int limit) else none
+
+private theorem target_bounds (limit : Int)
+    (lower : Calls.Condition program (inputEnv limit) Solvers.P52Ast.requires_solve_0)
+    (upper : Calls.Condition program (inputEnv limit) Solvers.P52Ast.requires_solve_1) : 2 ≤ limit ∧ limit ≤ 6 := by
+  constructor
+  · simpa [evalCmpOp] using Calls.Evaluates.condition_int_compare lower rfl
+  · simpa [evalCmpOp] using Calls.Evaluates.condition_int_compare upper rfl
+
+theorem «Equiv(naive)» (limit : Int)
+    (lower : Calls.Condition program (inputEnv limit) Solvers.P52Ast.requires_solve_0)
+    (upper : Calls.Condition program (inputEnv limit) Solvers.P52Ast.requires_solve_1) :
+    (HeapCalls.scalarFunction program "solve" [.int limit]).Equiv (HeapCalls.scalarFunction P52Ast.module "naive" [.int limit]) := by
+  have supported := target_bounds limit lower upper
+  lift limit to Nat using (by omega : 0 ≤ limit)
+  obtain ⟨extra, returned⟩ := result limit (by omega) []
+  obtain ⟨referenceExtra, reference⟩ := data.«project-euler-statements».data.py.project_euler_statements.p52.naive.result limit supported []
+  have optimized := returned.scalar_finishes (values := [.int limit])
+  have original := reference.scalar_finishes (values := [.int limit])
+  intro outcome
+  constructor
+  · intro finished
+    rw [finished.unique optimized]
+    exact original
+  · intro finished
+    rw [finished.unique original]
+    exact optimized
+
+theorem «Supported» :
+    (∀ limit : Int, Calls.Condition program (inputEnv limit) Solvers.P52Ast.requires_solve_0 →
+      Calls.Condition program (inputEnv limit) Solvers.P52Ast.requires_solve_1 →
+      (HeapCalls.scalarFunction program "solve" [.int limit]).Supported) ∧
+    (∀ limit : Int, Calls.Condition program (inputEnv limit) Solvers.P52Ast.requires_solve_0 →
+      Calls.Condition program (inputEnv limit) Solvers.P52Ast.requires_solve_1 →
+      (HeapCalls.scalarFunction P52Ast.module "naive" [.int limit]).Supported) := by
+  constructor
+  · intro limit lower upper
+    have supported := target_bounds limit lower upper
+    lift limit to Nat using (by omega : 0 ≤ limit)
+    obtain ⟨extra, returned⟩ := result limit (by omega) []
+    exact (returned.scalar_returns (values := [.int limit])).supported
+  · intro limit lower upper
+    obtain ⟨extra, returned⟩ := data.«project-euler-statements».data.py.project_euler_statements.p52.naive.result
+      limit (target_bounds limit lower upper) []
+    exact (returned.scalar_returns (values := [.int limit])).supported
 
 end solve
 
