@@ -56,6 +56,9 @@ def rank_groups(counts: dict[int, int]) -> list[tuple[int, int]]:
 def _score_values(values: list[int], suits: list[str]) -> Tuple:
     """
     Rank parsed cards, sorting the private values buffer in place.
+
+    @formalsw: Requires(len(values) == 5)
+    @formalsw: Returns
     """
     values.sort(reverse=True)
     is_flush = len(set(suits)) == 1
