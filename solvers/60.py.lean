@@ -2629,12 +2629,14 @@ structure Incumbent (heap : Mutable.Heap) (sumCell setCell : Nat) (bound : Int) 
   sumFound : heap[sumCell]? = some (.list [number bound])
   setFound : heap[setCell]? = some (.list [.ref selectedAddress])
   selectedFound : heap[selectedAddress]? = some (.list (primes_up_to.numbers selected))
+  sumBeforeSelected : sumCell < selectedAddress
 
 variable {heap : Mutable.Heap} {sumCell setCell : Nat} {bound : Int} {selected : List Nat}
 
 def Incumbent.append (incumbent : Incumbent heap sumCell setCell bound selected) (extra : Mutable.Heap) :
     Incumbent (heap ++ extra) sumCell setCell bound selected where
   selectedAddress := incumbent.selectedAddress
+  sumBeforeSelected := incumbent.sumBeforeSelected
   sumFound := HeapCollection.prefix_found heap extra _ _ incumbent.sumFound
   setFound := HeapCollection.prefix_found heap extra _ _ incumbent.setFound
   selectedFound := HeapCollection.prefix_found heap extra _ _ incumbent.selectedFound
@@ -2646,6 +2648,7 @@ def Incumbent.after_pair (incumbent : Incumbent heap sumCell setCell bound selec
     (store : pair_ok.Store heap entries cacheCell powerCell) (left right : Int) :
     Incumbent (pair_ok.resultHeap heap store.cacheAddress entries left right) sumCell setCell bound selected where
   selectedAddress := incumbent.selectedAddress
+  sumBeforeSelected := incumbent.sumBeforeSelected
   sumFound := pair_ok.resultHeap_preserves incumbent.sumFound _ (store.cache_ne_list incumbent.sumFound) entries left right
   setFound := pair_ok.resultHeap_preserves incumbent.setFound _ (store.cache_ne_list incumbent.setFound) entries left right
   selectedFound := pair_ok.resultHeap_preserves incumbent.selectedFound _ (store.cache_ne_list incumbent.selectedFound) entries left right
@@ -2655,6 +2658,7 @@ def initializedIncumbent (heap buffers : Mutable.Heap) (limit : Int) :
       (solve_setup.prefixHeap heap buffers limit).length
       ((solve_setup.prefixHeap heap buffers limit).length + 2) solve_setup.sentinel [] where
   selectedAddress := (solve_setup.prefixHeap heap buffers limit).length + 1
+  sumBeforeSelected := by omega
   sumFound := by simp [solve_setup.initializedHeap, solve_setup.searchHeap, number]
   setFound := by simp [solve_setup.initializedHeap, solve_setup.searchHeap]
   selectedFound := by simp [solve_setup.initializedHeap, solve_setup.searchHeap, primes_up_to.numbers]
@@ -2928,6 +2932,7 @@ theorem improved_preserves (heap : Mutable.Heap) (sumCell setCell : Nat) (sum : 
 def improvedIncumbent (incumbent : Incumbent heap sumCell setCell bound selected) (sum : Int) (clique : List Nat) :
     Incumbent (improvedHeap heap sumCell setCell sum clique) sumCell setCell sum clique where
   selectedAddress := heap.length
+  sumBeforeSelected := (List.getElem?_eq_some_iff.mp incumbent.sumFound).1
   sumFound := by
     unfold improvedHeap
     rw [List.getElem?_set_ne (Ne.symm (cells_distinct incumbent))]
@@ -3145,6 +3150,7 @@ def CandidateState.emit
       exact state.context.basesTuple }
   incumbent := {
     selectedAddress := state.incumbent.selectedAddress
+    sumBeforeSelected := state.incumbent.sumBeforeSelected
     sumFound := by rw [List.getElem?_set_ne state.notSum]; exact state.incumbent.sumFound
     setFound := by rw [List.getElem?_set_ne state.notSet]; exact state.incumbent.setFound
     selectedFound := by rw [List.getElem?_set_ne state.notSelected]; exact state.incumbent.selectedFound }
@@ -3190,6 +3196,7 @@ def CandidateState.reindex
     basesTuple := by simpa only [← sameHeap] using state.context.basesTuple }
   incumbent := {
     selectedAddress := state.incumbent.selectedAddress
+    sumBeforeSelected := state.incumbent.sumBeforeSelected
     sumFound := by simpa only [← sameHeap] using state.incumbent.sumFound
     setFound := by simpa only [← sameHeap] using state.incumbent.setFound
     selectedFound := by simpa only [← sameHeap] using state.incumbent.selectedFound }
@@ -4715,7 +4722,7 @@ theorem result (limit : Int) (caller : Mutable.Heap) (globals : Mutable.Globals)
       finalHeap[selectedAddress]? = some (.list (numbers (answerModel limit).chosen)) ∧
       Nonempty (is_prime.SourceGlobals (finalHeap ++ [.tuple [number (answerModel limit).bound, .ref selectedAddress]]) globals) ∧
       (∀ (address : Nat) (object : Mutable.Object), caller[address]? = some object →
-        (finalHeap ++ [.tuple [number (answerModel limit).bound, .ref selectedAddress]])[address]? = some object) := by
+        (finalHeap ++ [.tuple [number (answerModel limit).bound, .ref selectedAddress]])[address]? = some object) ∧ caller.length ≤ selectedAddress := by
   let params := ((findFunctionIn program.body "solve").getD ([], [])).1
   let sourceBody := ((findFunctionIn program.body "solve").getD ([], [])).2
   let env := functionEnv params sourceBody [number limit] globals
@@ -4727,7 +4734,7 @@ theorem result (limit : Int) (caller : Mutable.Heap) (globals : Mutable.Globals)
     (primeAddressFor caller buffers limit) (solve_setup.vertices limit) (initialInputs caller buffers limit context)
     ready (initial_environment env caller buffers limit)
   refine ⟨finalHeap, finalWorld.incumbent.selectedAddress, ?_, finalWorld.incumbent.selectedFound,
-    ⟨finalWorld.context.append _⟩, ?_⟩
+    ⟨finalWorld.context.append _⟩, ?_, ?_⟩
   · apply BlockReturns.function rfl rfl
     change BlockReturns program env code caller (.ref finalHeap.length)
       (finalHeap ++ [.tuple [number (answerModel limit).bound, .ref finalWorld.incumbent.selectedAddress]]) globals
@@ -4737,6 +4744,13 @@ theorem result (limit : Int) (caller : Mutable.Heap) (globals : Mutable.Globals)
   · intro address object found
     exact HeapCollection.prefix_found finalHeap _ address object
       (caller_preserved caller buffers limit context finalWorld transition address object found)
+
+  · have before := finalWorld.incumbent.sumBeforeSelected
+    have lower : caller.length ≤ sumCellFor caller buffers limit := by
+      simp only [sumCellFor, solve_setup.prefixHeap, pair_ok.initialHeap, solve_setup.filteredHeap,
+        HeapCollection.working, solve_setup.sieveHeap, List.length_append, List.length_cons, List.length_nil]
+      omega
+    exact Nat.le_trans lower (Nat.le_of_lt before)
 
 end solvers.«60».solve_search
 
@@ -4764,11 +4778,11 @@ theorem result (limit : Int) (caller : Mutable.Heap) :
         (finalHeap ++ [.tuple [number (solve_search.answerModel limit).bound, .ref selectedAddress]])
         (is_prime.initialization.globals caller)) ∧
       (∀ (address : Nat) (object : Mutable.Object), caller[address]? = some object →
-        (finalHeap ++ [.tuple [number (solve_search.answerModel limit).bound, .ref selectedAddress]])[address]? = some object) := by
-  obtain ⟨finalHeap, selectedAddress, returned, selected, tables, preserved⟩ := solve_search.result limit
+        (finalHeap ++ [.tuple [number (solve_search.answerModel limit).bound, .ref selectedAddress]])[address]? = some object) ∧ (is_prime.initialization.heap caller).length ≤ selectedAddress := by
+  obtain ⟨finalHeap, selectedAddress, returned, selected, tables, preserved, fresh⟩ := solve_search.result limit
     (is_prime.initialization.heap caller) (is_prime.initialization.globals caller) (is_prime.initialization.context caller)
   refine ⟨finalHeap, selectedAddress, is_prime.initialization.executes caller,
-    is_prime.initialization.exports caller, returned, selected, tables, ?_⟩
+    is_prime.initialization.exports caller, returned, selected, tables, ?_, fresh⟩
   intro address object found
   exact preserved address object (is_prime.initialization.caller_preserved caller address object found)
 
