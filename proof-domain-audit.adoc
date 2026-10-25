@@ -1,6 +1,6 @@
 = Python proof-domain audit
 
-This audit covers the Python solver and reference interfaces for problems 1 through 65, their `Requires` annotations, default adapters, and the documented proof claims.
+This audit covers the Python solver and reference interfaces for problems 1 through 65, the reference for problem 66, their `Requires` annotations, default adapters, and the documented proof claims.
 
 Prefer a meaningful argument shared by both implementations. A reference-only search limit changes an unbounded problem into a bounded one and is not an acceptable substitute. A mathematical bound derived from the inputs or the problem definition is acceptable. For a fixed problem without a useful parameter, retain `Equiv` and prefer structural proofs through shared mathematical models. A completed interpreter observation can establish termination; running out of observation fuel cannot.
 
@@ -52,6 +52,8 @@ Problem 64 has structural source termination and equivalence proofs for every si
 
 Problem 65 has structural source termination and equivalence proofs for every positive convergent index. Both coefficient generation methods implement the same infinite pattern, and each finite numerator recurrence consumes exactly the requested number of coefficients. The proof tracks the reference's coefficient-list allocation and tuple swaps and connects string-character digit summation to the reference's positional digits. The default index 100 uses the universal termination theorem rather than a whole-program computation.
 
+Problem 66's reference has structural source termination and result proofs for every signed upper bound. Pell existence justifies the search over positive y, and the least accepted y gives the least positive x. The corresponding Lean statement uses this minimum, proved to be Mathlib's fundamental Pell solution. Integer continuant invariants and square-root state periodicity prove a norm-one convergent exists within two periods. Its coordinates are positive, so its x is at least the reference minimum. The reverse inequality and the optimized source equivalence proof remain pending.
+
 == Remaining implementation and proof restrictions
 
 [cols="1,3,3"]
@@ -72,12 +74,12 @@ The default root-partition certificate for problem 62 is numerical evidence towa
 
 == Additional Python reference corrections through problem 100
 
-The following interfaces have matching Python arguments and passing numerical regression checks. Their generalized structural source proofs remain pending; the separate Lean statements and solver models also need reconciliation before they can certify these contracts.
+The following interfaces have matching Python arguments and passing numerical regression checks. Problem 66 has the reference proof described above; its optimized source proof remains pending. The other generalized structural source proofs remain pending, and their separate Lean statements and solver models need reconciliation before they can certify these contracts.
 
 [cols="1,3"]
 |===
 | Problem | Current design
-| 66 | Search positive Pell y values until an exact solution, with no polynomial cutoff. Both public functions return zero for empty candidate ranges.
+| 66 | Search positive Pell y values until an exact solution. The reference and its Lean statement have proved existence and minimality. Both public Python functions return zero for empty candidate ranges.
 | 74 | Share the exclusive starting bound and desired chain length. The reference walks until repetition; the optimized solver memoizes tails and cycles without fixed arrays or iteration limits. Zero has digit-factorial successor one and is excluded as a starting value.
 | 77 | Share only the prime-partition threshold and search integers from two until it is exceeded.
 | 78 | Share the positive partition divisor and search positive indices until divisible. No universal existence claim is assumed.
