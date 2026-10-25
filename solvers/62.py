@@ -52,6 +52,15 @@
   ∃ finalHeap, FormalSW.PyAst.HeapCalls.ReturnsValue Solvers.P62Ast.module "solve"
     [.scalar (.int target)] caller (.scalar (.int answer)) finalHeap ∧
     finalHeap.take caller.length = caller
+
+@formalsw: theorem grouped_reference_source_result
+  (limit target : Int) (caller : FormalSW.PyAst.Mutable.Heap)
+  (groups : List ProjectEulerSolutions.CubicGroups.Group)
+  (summary : ProjectEulerSolutions.CubicGroupCounts.Summary
+    (solvers.«62».reference_model.cubes limit) groups) :
+  ∃ extra, FormalSW.PyAst.HeapCalls.ReturnsValue P62Ast.module "naive"
+    [.scalar (.int limit), .scalar (.int target)] caller
+    (.scalar (.int (ProjectEulerSolutions.CubicGroupCounts.choose target groups))) (caller ++ extra)
 """
 from __future__ import annotations
 
