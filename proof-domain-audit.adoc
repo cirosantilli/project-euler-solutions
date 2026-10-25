@@ -25,7 +25,7 @@ Prefer a meaningful argument shared by both implementations. A reference-only se
 
 Source proofs still awaiting replacement are retained as `.py.lean.attempt`; their README proof links are removed, and they are not counted as current proofs. Problem 36 has structural equivalence and termination proofs for every nonnegative limit, with no fixed prefix cutoff. Problem 40 has a structural equivalence and termination proof for every finite tuple of positive positions, with no maximum position. Problem 52 has structural equivalence for every positive multiplier: both searches terminate at the least positive solution for multipliers one through nine and diverge for larger multipliers, where digit widths rule out a solution. Unchanged zero-argument `Equiv` proofs remain in place; they need not be discarded merely because they have no arguments.
 
-Problem 62 has structural equivalence and support proofs for every signed class size. Both unbounded source searches return exactly when a completed digit width contains a matching class, with the same result; otherwise both diverge. The reference root boundaries are derived from the requested digit width. No external search limit or assumption that every class size exists is needed.
+Problem 62 has structural equivalence and support proofs for every signed class size. Both unbounded source searches return exactly when a completed digit width contains a matching class, with the same result; otherwise both diverge. The reference root boundaries are derived from the requested digit width. A complete five-cube class, checked in small kernel reductions, proves that both source calls terminate for target five. The structural search proof turns this finite existence witness into termination of the unbounded programs. No external search limit or assumption that every class size exists is needed.
 
 Problem 45 has structural termination and equivalence proofs for every signed `after` threshold. A recurrence supplies arbitrarily large common pentagonal and hexagonal values. Both source loops reach the least common value above the threshold; the three-way merge advances its least cursor without passing that answer.
 
@@ -81,14 +81,12 @@ Problem 73 has structural source termination and equivalence proofs for every si
 | 17 | Number spelling and its proof stop at 1000. | This is the original problem's range, not an exhaustion bound. A broader naming convention would be a new parameterized problem.
 | 19 | The solver starts its calendar at 1900 and the proof excludes earlier years. | Extend the implementation before claiming arbitrary year ranges.
 | 44 | Both implementations accept the same finite pentagonal-index bound. | This is a valid bounded parameterization, but equivalence alone does not prove that the default answer is the global minimum over all indices.
-| 62 | Unbounded equivalence and a termination characterization hold for every signed class size. | A separate `Returns` theorem for the default target still needs a verified existence witness.
+| 62 | Python source equivalence holds for every signed class size, with termination proved for target five. | Reconcile the standalone Lean model's two-argument interface and replace its assumed termination.
 |===
 
 Other explicit bounds were checked for their role: the quadratic coefficient ranges in problem 27, the fifth power in problem 30, the four-digit progression in problem 49, the fifty reverse-and-add steps in problem 55, and the one-tenth spiral threshold in problem 58 come from their stated problem variants. Problems 32 and 38 accept a shared target width. Problem 60's bound is shared by both implementations and its theorem covers every signed bound; it is not a reference-only cutoff. Such shared parameters still deserve review when a more natural generalization is available.
 
 Further useful shared parameters include coefficient ranges in problem 27, the digit-power exponent in problem 30, arbitrary target digit subsets in problems 32 and 38, the substring divisors in problem 43, and the diagonal-prime ratio in problem 58. Existing fixed-input proofs do not replace these prospective generalized results. Problems 34, 40, 45, and 46 have shared base, position, and threshold parameters.
-
-The default root-partition certificate for problem 62 is numerical evidence toward a termination witness, not an execution cap. Its class batches were checked, but final assembly has not passed and is not a completed proof.
 
 == Additional Python reference corrections through problem 100
 
