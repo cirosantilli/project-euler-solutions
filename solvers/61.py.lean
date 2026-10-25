@@ -2,6 +2,7 @@ import «.formalsw».solvers.«61.py.ast»
 import data.«project-euler-statements».data.py.project_euler_statements.«p61.py»
 import FormalSW
 import ProjectEulerSolutions.Lib.PolygonalCycle
+import ProjectEulerSolutions.Lib.PolygonalCycleOptimized
 
 namespace solvers.«61».polygonal
 open FormalSW.PyAst
@@ -2333,4 +2334,231 @@ theorem sum_evaluate (view : PathView heap path nodes) (env : HeapCalls.Env)
     (setLocal (comprehensionTargetsEnv env [(sumTarget, .name "res", [])]) sumAccumulator (number 0)) 0 rfl globals
   simpa only [total, comprehensionFilters, comprehensionTargetsBody, sumIteration] using executed
 
+def startArguments : List Expr :=
+  [.list [.tuple [.name "start", .constant (.int 8)]],
+   .builtinCall .setDisplay [.constant (.int 8)], .builtinCall .setDisplay [.name "start"],
+   .name "__formalsw_cell_solve_pref_map", .name "__formalsw_cell_solve_types"]
+def startCall : Expr := .call (.name "__formalsw_local_solve_dfs") startArguments
+def startHeap (heap : Mutable.Heap) (start : Int) : Mutable.Heap :=
+  heap ++ [.tuple [number start, number 8], .list [.ref heap.length], .set [.int 8], .set [.int start]]
+
+theorem start_arguments_evaluate (heap : Mutable.Heap) (start : Int) (env : HeapCalls.Env)
+    (prefixCell typesCell : Nat) (getStart : env "start" = some (number start))
+    (getPrefix : env "__formalsw_cell_solve_pref_map" = some (.ref prefixCell))
+    (getTypes : env "__formalsw_cell_solve_types" = some (.ref typesCell)) (globals : Mutable.Globals := []) :
+    Evaluates.Arguments program env startArguments heap
+      [.ref (heap.length + 1), .ref (heap.length + 2), .ref (heap.length + 3), .ref prefixCell, .ref typesCell]
+      (startHeap heap start) globals := by
+  let pathReady : Mutable.Heap := heap ++ [.tuple [number start, number 8], .list [.ref heap.length]]
+  let typesReady : Mutable.Heap := pathReady ++ [.set [.int 8]]
+  have tuple : Evaluates program env (.tuple [.name "start", .constant (.int 8)]) heap (.ref heap.length)
+      (heap ++ [.tuple [number start, number 8]]) globals :=
+    Evaluates.tuple (.cons (Evaluates.lookup getStart) (.cons Evaluates.constant .nil)) (by simp)
+  have pathRun : Evaluates program env (.list [.tuple [.name "start", .constant (.int 8)]]) heap
+      (.ref (heap.length + 1)) pathReady globals := by
+    have evaluated := Evaluates.list (.cons tuple .nil)
+    simpa [pathReady, List.append_assoc] using evaluated
+  have typesRun : Evaluates program env (.builtinCall .setDisplay [.constant (.int 8)]) pathReady
+      (.ref (heap.length + 2)) typesReady globals := by
+    apply Evaluates.builtin (.cons Evaluates.constant .nil)
+    have allocated := Mutable.allocateSetValues_singleton pathReady (.int 8)
+    simpa [pathReady, typesReady] using allocated
+  have numbersRun : Evaluates program env (.builtinCall .setDisplay [.name "start"]) typesReady
+      (.ref (heap.length + 3)) (startHeap heap start) globals := by
+    apply Evaluates.builtin (.cons (Evaluates.lookup getStart) .nil)
+    have allocated := Mutable.allocateSetValues_singleton typesReady (.int start)
+    simpa [pathReady, typesReady, startHeap, List.append_assoc] using allocated
+  exact .cons pathRun (.cons typesRun (.cons numbersRun
+    (.cons (Evaluates.lookup getPrefix) (.cons (Evaluates.lookup getTypes) .nil))))
+
+def startState (world : World heap prefixCell typesCell) (start : Int) :
+    SearchState (startHeap heap start) (heap.length + 1) (heap.length + 2) (heap.length + 3)
+      prefixCell typesCell [(heap.length, (start, 8))] where
+  world := world.append [.tuple [number start, number 8], .list [.ref heap.length], .set [.int 8], .set [.int start]]
+  pathView := {
+    found := by simp [startHeap, references]
+    contents := by
+      intro target item member
+      obtain ⟨rfl, rfl⟩ := Prod.mk.inj (List.mem_singleton.mp member)
+      simp [startHeap]
+  }
+  typesFound := by simp [startHeap, integerSet, usedKinds]
+  numbersFound := by simp [startHeap, integerSet, usedNumbers]
+
+/-- Each real start call allocates its initial tuple, path, and two independent sets. -/
+theorem start_evaluate (world : World heap prefixCell typesCell) (start : Int) (env : HeapCalls.Env)
+    (getStart : env "start" = some (number start))
+    (getPrefix : env "__formalsw_cell_solve_pref_map" = some (.ref prefixCell))
+    (getTypes : env "__formalsw_cell_solve_types" = some (.ref typesCell)) (globals : Mutable.Globals := []) :
+    ∃ extra answer, Evaluates program env startCall heap answer (heap ++ extra) globals ∧
+      ResultView (heap ++ extra) (ProjectEulerSolutions.PolygonalCycle.search 5 [(start, 8)]) answer := by
+  obtain ⟨extra, answer, returned, represented⟩ := search_result 5 (startHeap heap start)
+    (heap.length + 1) (heap.length + 2) (heap.length + 3) prefixCell typesCell
+    [(heap.length, (start, 8))] (startState world start) (by simp) (by simp) globals
+  let total : Mutable.Heap :=
+    [.tuple [number start, number 8], .list [.ref heap.length], .set [.int 8], .set [.int start]] ++ extra
+  have layout : startHeap heap start ++ extra = heap ++ total := by simp [startHeap, total, List.append_assoc]
+  refine ⟨total, answer, ?_, ?_⟩
+  · rw [← layout]
+    exact Evaluates.call (start_arguments_evaluate heap start env prefixCell typesCell getStart getPrefix getTypes globals)
+      returned
+  · rw [← layout]
+    exact represented
+
+def startBody : List Stmt :=
+  [.assign [.name "res"] startCall, .ifThen resultCondition [.return sumExpression] []]
+def startIterable : Expr := .subscript (.name "nums_by_type") (.constant (.int 8))
+
+theorem start_source :
+    (executableBody ((findFunctionIn program.body "solve").getD ([], [])).2).drop 3 =
+      .forIn (.name "start") startIterable startBody [] ::
+        (executableBody ((findFunctionIn program.body "solve").getD ([], [])).2).drop 4 := rfl
+
+theorem sum_result_evaluate (view : ResultView heap (some logical) answer) (env : HeapCalls.Env)
+    (getResult : env "res" = some answer) (globals : Mutable.Globals := []) :
+    Evaluates program env sumExpression heap (number (logical.map Prod.fst).sum) heap globals := by
+  obtain ⟨path, nodes, rfl, ⟨pathView⟩, equal⟩ := view
+  have numbers : logical.map Prod.fst = usedNumbers nodes := by
+    rw [← equal]
+    simp [usedNumbers, List.map_map]
+  rw [numbers]
+  exact sum_evaluate pathView env getResult globals
+
+/-- A successful model start makes the source's terminal exception unreachable. -/
+theorem start_loop (all remaining : List Int) (position : Nat) (suffix : all.drop position = remaining)
+    (heap : Mutable.Heap) (prefixCell typesCell source : Nat) (world : World heap prefixCell typesCell)
+    (found : heap[source]? = some (.list (numbers all))) (env : HeapCalls.Env)
+    (getPrefix : env "__formalsw_cell_solve_pref_map" = some (.ref prefixCell))
+    (getTypes : env "__formalsw_cell_solve_types" = some (.ref typesCell))
+    (logical : ProjectEulerSolutions.PolygonalCycle.Path)
+    (succeeds : ProjectEulerSolutions.PolygonalCycle.firstResult remaining
+      (fun start => ProjectEulerSolutions.PolygonalCycle.search 5 [(start, 8)]) = some logical)
+    (following : List Stmt) (globals : Mutable.Globals := []) :
+    ∃ extra, BlockReturns program env
+      (.sequenceStepLoop "start" (.ref source) position startBody [] :: following)
+      heap (number (logical.map Prod.fst).sum) (heap ++ extra) globals := by
+  induction remaining generalizing position heap env with
+  | nil => simp [ProjectEulerSolutions.PolygonalCycle.firstResult] at succeeds
+  | cons start rest ih =>
+      have selected : all[position]? = some start := by rw [← List.head?_drop, suffix]; rfl
+      have sequence : Mutable.sequence (sequenceValue (.ref source)) heap = some (.ok (numbers all), heap) := by
+        simp [sequenceValue, Mutable.sequence, found]
+      let bound := setLocal env "start" (number start)
+      have boundPrefix : bound "__formalsw_cell_solve_pref_map" = some (.ref prefixCell) := by
+        simpa [bound, setLocal] using getPrefix
+      have boundTypes : bound "__formalsw_cell_solve_types" = some (.ref typesCell) := by
+        simpa [bound, setLocal] using getTypes
+      obtain ⟨extra, answer, evaluated, represented⟩ := start_evaluate world start bound rfl boundPrefix boundTypes globals
+      let resultEnv := setLocal bound "res" answer
+      have tested := result_condition_evaluate represented resultEnv rfl globals
+      cases outcome : ProjectEulerSolutions.PolygonalCycle.search 5 [(start, 8)] with
+      | none =>
+          have tailSucceeds : ProjectEulerSolutions.PolygonalCycle.firstResult rest
+              (fun start => ProjectEulerSolutions.PolygonalCycle.search 5 [(start, 8)]) = some logical := by
+            simpa only [ProjectEulerSolutions.PolygonalCycle.firstResult, outcome] using succeeds
+          have nextSuffix : all.drop (position + 1) = rest := by
+            simp only [List.drop_add_one_eq_tail_drop, suffix, List.tail_cons]
+          obtain ⟨later, continued⟩ := ih (position + 1) nextSuffix (heap ++ extra) (world.append extra)
+            (build_prefix_map.found_append _ _ _ _ found) resultEnv
+            (by simpa [resultEnv, setLocal] using boundPrefix)
+            (by simpa [resultEnv, setLocal] using boundTypes) tailSucceeds
+          refine ⟨extra ++ later, ?_⟩
+          apply BlockReturns.sequence_step (value := number start) sequence (by simp [numbers, List.getElem?_map, selected])
+          apply BlockReturns.assign evaluated
+          apply BlockReturns.branch (flag := false) (by simpa only [outcome] using tested) rfl
+          simpa only [startBody, Calls.loopContinuation, Calls.loopControl, Calls.loopControlStmt,
+            Bool.false_or, Bool.or_false, if_false, List.nil_append, List.append_assoc] using continued
+      | some path =>
+          have equal : path = logical := by
+            simpa only [ProjectEulerSolutions.PolygonalCycle.firstResult, outcome, Option.some.injEq] using succeeds
+          subst path
+          refine ⟨extra, ?_⟩
+          apply BlockReturns.sequence_step (value := number start) sequence (by simp [numbers, List.getElem?_map, selected])
+          apply BlockReturns.assign evaluated
+          apply BlockReturns.branch (flag := true) (by simpa only [outcome] using tested) rfl
+          exact BlockReturns.return_value (sum_result_evaluate (by simpa only [outcome] using represented) resultEnv rfl globals)
+
 end solvers.«61».dfs
+
+namespace solvers.«61».solve
+open FormalSW.PyAst FormalSW.PyAst.HeapCalls
+
+private abbrev program := Solvers.P61Ast.module
+private abbrev number (value : Int) : Mutable.Value := .scalar (.int value)
+
+/-- The complete source solver follows the first successful start and preserves its caller's objects. -/
+theorem model_result (caller : Mutable.Heap) (logical : ProjectEulerSolutions.PolygonalCycle.Path)
+    (succeeds : ProjectEulerSolutions.PolygonalCycle.cycle = some logical) (globals : Mutable.Globals := []) :
+    ∃ extra, ReturnsValue program "solve" [] caller (number (logical.map Prod.fst).sum) (caller ++ extra) globals := by
+  let params := ((findFunctionIn program.body "solve").getD ([], [])).1
+  let sourceBody := ((findFunctionIn program.body "solve").getD ([], [])).2
+  let env := functionEnv params sourceBody [] globals
+  obtain ⟨preparedHeap, cell, ⟨prepared⟩, setup, cellFound⟩ := solve_setup.prepared_result caller env globals
+  let readyEnv := setLocal (solve_setup.generatedEnv env caller) "__formalsw_cell_solve_pref_map" (.ref cell)
+  let world := dfs.World.of_setup caller cell prepared cellFound
+  have getPrefix : readyEnv "__formalsw_cell_solve_pref_map" = some (.ref cell) := rfl
+  have getTypes : readyEnv "__formalsw_cell_solve_types" = some (.ref (caller.length + 1)) := by
+    simp [readyEnv, solve_setup.generatedEnv, solve_setup.initialEnv, setLocal]
+  have getNumbers : readyEnv "nums_by_type" = some (.ref (solve_setup.initialHeap caller).length) := by
+    simp [readyEnv, solve_setup.generatedEnv, setLocal]
+  obtain ⟨prefixExtra, prefixLayout⟩ := prepared.extension
+  have table : preparedHeap[(solve_setup.initialHeap caller).length]? = some (.dict (solve_setup.numberEntries caller)) := by
+    rw [prefixLayout]
+    exact build_prefix_map.found_append _ _ _ _ (solve_setup.generated_table caller)
+  have starts : preparedHeap[caller.length + 8]? =
+      some (.list (dfs.numbers (ProjectEulerSolutions.PolygonalCycle.candidates 8))) := by
+    rw [prefixLayout]
+    have found := build_prefix_map.found_append _ prefixExtra _ _
+      (solve_setup.generated_family caller 8 (by decide) (by decide))
+    simpa only [solve_setup.numbers, dfs.numbers,
+      generate_4digit_polygonals.candidates_eq_model 8 (by decide)] using found
+  have iterable : Evaluates program readyEnv dfs.startIterable preparedHeap (.ref (caller.length + 8)) preparedHeap globals := by
+    apply Evaluates.subscript (middle := preparedHeap) (afterIndex := preparedHeap) (finalHeap := preparedHeap)
+      (by intros; intro impossible; cases impossible) (Evaluates.lookup getNumbers) Evaluates.constant
+    exact Mutable.getItem_dictionary _ _ _ table (.int 8) (solve_setup.numberEntries_lookup caller 8 (by decide) (by decide))
+  obtain ⟨searchExtra, searched⟩ := dfs.start_loop
+    (ProjectEulerSolutions.PolygonalCycle.candidates 8) (ProjectEulerSolutions.PolygonalCycle.candidates 8) 0 rfl
+    preparedHeap cell (caller.length + 1) (caller.length + 8) world starts readyEnv getPrefix getTypes logical succeeds
+    ((executableBody sourceBody).drop 4) globals
+  have tail : BlockReturns program readyEnv ((executableBody sourceBody).drop 3)
+      preparedHeap (number (logical.map Prod.fst).sum) (preparedHeap ++ searchExtra) globals := by
+    rw [dfs.start_source]
+    apply BlockReturns.for_sequence (items := dfs.numbers (ProjectEulerSolutions.PolygonalCycle.candidates 8))
+      (by intro expressions impossible; cases impossible) iterable (by simp [Mutable.sequence, starts])
+    exact searched
+  obtain ⟨generatedExtra, generatedLayout⟩ : ∃ extra, solve_setup.generatedHeap caller = caller ++ extra := by
+    refine ⟨[.list (solve_setup.numbers solve_setup.types), .list [.ref caller.length]] ++
+      (.dict (solve_setup.numberEntries caller) ::
+        solve_setup.types.map (fun kind => .list (solve_setup.numbers (generate_4digit_polygonals.answer kind)))), ?_⟩
+    rw [solve_setup.generated_layout]
+    simp only [solve_setup.initialHeap, List.append_assoc]
+  have finalLayout : preparedHeap ++ searchExtra = caller ++ (generatedExtra ++ prefixExtra ++ searchExtra) := by
+    rw [prefixLayout, generatedLayout]
+    simp only [List.append_assoc]
+  refine ⟨generatedExtra ++ prefixExtra ++ searchExtra, ?_⟩
+  rw [← finalLayout]
+  apply BlockReturns.function rfl rfl
+  have complete := BlockContinues.returns setup tail
+  simpa only [List.take_append_drop] using complete
+
+theorem heap_result (caller : Mutable.Heap) (globals : Mutable.Globals := []) :
+    ∃ extra, ReturnsValue program "solve" [] caller (number 28684) (caller ++ extra) globals := by
+  obtain ⟨extra, returned⟩ := model_result caller _ ProjectEulerSolutions.PolygonalCycle.cycle_checked globals
+  exact ⟨extra, by simpa using returned⟩
+
+theorem «Returns» : (SetCalls.call program "solve" [] []).Returns := by
+  obtain ⟨extra, returned⟩ := heap_result []
+  exact SetCalls.returns_of_heap returned.returns
+
+theorem «Supported» : (SetCalls.call program "solve" [] []).Supported :=
+  fun choices => («Returns» choices).supported
+
+end solvers.«61».solve
+
+namespace solvers.«61»
+
+theorem solve_source_result (caller : FormalSW.PyAst.Mutable.Heap) (globals : FormalSW.PyAst.Mutable.Globals) :
+    ∃ extra, FormalSW.PyAst.HeapCalls.ReturnsValue Solvers.P61Ast.module "solve" [] caller
+      (.scalar (.int 28684)) (caller ++ extra) globals := solve.heap_result caller globals
+
+end solvers.«61»

@@ -29,6 +29,11 @@
   (caller : FormalSW.PyAst.Mutable.Heap) (env : FormalSW.PyAst.HeapCalls.Env)
   (globals : FormalSW.PyAst.Mutable.Globals) :
   solvers.«61».solve_setup.Prepared caller env globals
+
+@formalsw: theorem solve_source_result
+  (caller : FormalSW.PyAst.Mutable.Heap) (globals : FormalSW.PyAst.Mutable.Globals) :
+  ∃ extra, FormalSW.PyAst.HeapCalls.ReturnsValue Solvers.P61Ast.module "solve" [] caller
+    (.scalar (.int 28684)) (caller ++ extra) globals
 """
 from __future__ import annotations
 
@@ -67,6 +72,9 @@ def build_prefix_map(nums: list[int]) -> dict[int, list[int]]:
 
 
 def solve() -> int:
+    """
+    @formalsw: Returns
+    """
     types = [3, 4, 5, 6, 7, 8]
     nums_by_type: dict[int, list[int]] = {
         t: generate_4digit_polygonals(t) for t in types
