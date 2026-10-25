@@ -3,7 +3,11 @@ from __future__ import annotations
 
 
 def sieve_primes_upto(n: int) -> list[bool]:
-    """Return boolean array is_prime[0..n]."""
+    """
+    Return boolean array is_prime[0..n].
+
+    @formalsw: Returns
+    """
     is_prime = [True] * (n + 1)
     if n >= 0:
         is_prime[0] = False
