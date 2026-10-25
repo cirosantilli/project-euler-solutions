@@ -5,6 +5,7 @@ import ProjectEulerSolutions.Lib.HeapCollection
 import ProjectEulerSolutions.Lib.DigitSignatures
 import ProjectEulerSolutions.Lib.StringBuckets
 import ProjectEulerSolutions.Lib.PrimePermutationSearch
+import ProjectEulerSolutions.Lib.PrimeBucketSearch
 
 set_option Elab.async false
 
@@ -348,6 +349,17 @@ private def code : List Stmt :=
   executableBody ((findFunctionIn program.body "find_prime_perm_arith_sequence").getD ([], [])).2
 private def groupBody : List Stmt :=
   match (code[3]? : Option Stmt) with | some (.forIn _ _ body _) => body | _ => []
+private def searchBody : List Stmt :=
+  match (code[5]? : Option Stmt) with | some (.forDictionaryItems _ _ body _) => body | _ => []
+private def pairBody : List Stmt :=
+  match (searchBody[4]? : Option Stmt) with
+  | some (.forIn _ _ (.forIn _ _ body _ :: _) _) => body
+  | _ => []
+private def pairCondition : Expr :=
+  match (pairBody[3]? : Option Stmt) with | some (.ifThen condition _ _) => condition | _ => .constant .none
+private def acceptedBody : List Stmt :=
+  match (pairBody[3]? : Option Stmt) with | some (.ifThen _ body _) => body | _ => []
+private def knownValues : List Mutable.Value := [number 1487, number 4817, number 8147]
 private def numbers (items : List Nat) : List Mutable.Value := items.map (fun (n : Nat) => number n)
 private def primeBody (collector : Nat) : List Stmt :=
   [.ifThen (.subscript (.name "is_prime") (.name "p")) [.comprehensionAppend collector (.name "p")] []]
@@ -585,6 +597,33 @@ theorem groups_result (heap : Mutable.Heap) (env : HeapCalls.Env) :
   exact ⟨finalEnv, extra, buckets, (setup_result heap env).append (allocated.append iterated), view,
     by simpa only [List.nil_append] using partition, finalGroups⟩
 
+theorem known_result (heap : Mutable.Heap) (env : HeapCalls.Env) :
+    BlockContinues program env [code[4]'(by decide)] heap
+      (setLocal env "target_known" (.ref heap.length)) (heap ++ [.tuple knownValues]) := by
+  apply BlockContinues.assign
+  exact Evaluates.tuple (.cons Evaluates.constant (.cons Evaluates.constant (.cons Evaluates.constant .nil)))
+    (by simp [knownValues])
+
+/-- The dictionary scan receives the actual shared buckets and freshly allocated excluded example. -/
+theorem search_ready_result (heap : Mutable.Heap) (env : HeapCalls.Env) :
+    ∃ finalEnv extra buckets knownAddress,
+      BlockContinues program env (code.take 5) heap finalEnv (preparedHeap heap ++ extra) ∧
+      ProjectEulerSolutions.StringBuckets.View (preparedHeap heap ++ extra) (preparedHeap heap).length buckets ∧
+      ProjectEulerSolutions.StringBuckets.Partition keyOf primes4d buckets ∧
+      finalEnv "groups" = some (.ref (preparedHeap heap).length) ∧
+      finalEnv "target_known" = some (.ref knownAddress) ∧
+      (preparedHeap heap ++ extra)[knownAddress]? = some (.tuple knownValues) := by
+  obtain ⟨groupedEnv, extra, buckets, grouped, view, partition, getGroups⟩ := groups_result heap env
+  let base := preparedHeap heap ++ extra
+  let ready := setLocal groupedEnv "target_known" (.ref base.length)
+  refine ⟨ready, extra ++ [.tuple knownValues], buckets, base.length, ?_, ?_, partition, ?_, ?_, ?_⟩
+  · simpa only [base, List.append_assoc] using grouped.append (known_result base groupedEnv)
+  · simpa only [List.append_assoc] using view.append [.tuple knownValues]
+  · simpa [ready, setLocal] using getGroups
+  · simp [ready, setLocal]
+  · rw [← List.append_assoc]
+    simp [base]
+
 theorem bucket_member (buckets : List ProjectEulerSolutions.StringBuckets.Bucket)
     (partition : ProjectEulerSolutions.StringBuckets.Partition keyOf primes4d buckets)
     (bucket : ProjectEulerSolutions.StringBuckets.Bucket) (member : bucket ∈ buckets)
@@ -650,6 +689,162 @@ theorem winner_bucket (buckets : List ProjectEulerSolutions.StringBuckets.Bucket
     exact List.mem_filter.mpr ⟨thirdMember, by
       apply decide_eq_true
       exact ProjectEulerSolutions.DigitSignatures.winner_signatures.2.symm.trans key.symm⟩
+
+theorem bucket_classification (buckets : List ProjectEulerSolutions.StringBuckets.Bucket)
+    (partition : ProjectEulerSolutions.StringBuckets.Partition keyOf primes4d buckets)
+    (bucket : ProjectEulerSolutions.StringBuckets.Bucket) (member : bucket ∈ buckets) :
+    ProjectEulerSolutions.PrimeBucketSearch.Classifies bucket.values := by
+  intro a aMember b bMember ab cMember
+  exact bucket_classifies buckets partition bucket member a b (ProjectEulerSolutions.PrimeBucketSearch.third a b)
+    aMember bMember cMember ab (by simp only [ProjectEulerSolutions.PrimeBucketSearch.third]; omega)
+    (by simp only [ProjectEulerSolutions.PrimeBucketSearch.third]; omega)
+
+/-- A successful native pair scan of any constructed bucket can return only the required row. -/
+theorem bucket_search_sound (buckets : List ProjectEulerSolutions.StringBuckets.Bucket)
+    (partition : ProjectEulerSolutions.StringBuckets.Partition keyOf primes4d buckets)
+    (bucket : ProjectEulerSolutions.StringBuckets.Bucket) (member : bucket ∈ buckets)
+    (answer : ProjectEulerSolutions.PrimePermutationGroups.Row)
+    (result : ProjectEulerSolutions.PrimeBucketSearch.pairs bucket.values bucket.values = some answer) :
+    answer = ProjectEulerSolutions.PrimePermutationGroups.winner :=
+  ProjectEulerSolutions.PrimeBucketSearch.pairs_sound bucket.values bucket.values (fun _ inside => inside)
+    (bucket_ordered buckets partition bucket member) (bucket_classification buckets partition bucket member) answer result
+
+theorem winner_search (buckets : List ProjectEulerSolutions.StringBuckets.Bucket)
+    (partition : ProjectEulerSolutions.StringBuckets.Partition keyOf primes4d buckets) :
+    ∃ bucket ∈ buckets, ProjectEulerSolutions.PrimeBucketSearch.pairs bucket.values bucket.values =
+      some ProjectEulerSolutions.PrimePermutationGroups.winner := by
+  obtain ⟨bucket, member, first, second, last⟩ := winner_bucket buckets partition
+  exact ⟨bucket, member, ProjectEulerSolutions.PrimeBucketSearch.complete bucket.values
+    (bucket_ordered buckets partition bucket member) (bucket_classification buckets partition bucket member)
+    first second last⟩
+
+/-- For a nontrivial ordered bucket, the source prepares its set and bounds without changing the list. -/
+theorem bucket_setup (heap : Mutable.Heap) (env : HeapCalls.Env) (address : Nat) (items : List Nat)
+    (getArray : env "arr" = some (.ref address)) (found : heap[address]? = some (.list (numbers items)))
+    (ordered : items.Pairwise (· < ·)) (large : 3 ≤ items.length) :
+    BlockContinues program env (searchBody.take 4) heap
+      (setLocal (setLocal env "s" (.ref heap.length)) "m" (number items.length))
+      (heap ++ [.set (ProjectEulerSolutions.PrimeBucketSearch.setKeys items)]) := by
+  let afterSet := heap ++ [Mutable.Object.set (ProjectEulerSolutions.PrimeBucketSearch.setKeys items)]
+  let setEnv := setLocal env "s" (.ref heap.length)
+  have shared : heap[address]? = some (.list (ProjectEulerSolutions.PrimeBucketSearch.numbers items)) := by
+    simpa only [ProjectEulerSolutions.PrimeBucketSearch.numbers, ProjectEulerSolutions.PrimeBucketSearch.scalarKeys,
+      numbers, List.map_map, Function.comp_def] using found
+  have sized : Evaluates program env (.builtinCall .len [.name "arr"]) heap (number items.length) heap := by
+    apply Evaluates.builtin (.cons (Evaluates.lookup getArray) .nil)
+    simp [primitive, Mutable.length, found, numbers]
+  have checked : BlockContinues program env [searchBody[0]'(by decide)] heap env heap := by
+    apply BlockContinues.branch (flag := false) (value := flag false) (middle := heap)
+    · apply Evaluates.compare (av := number items.length) (bv := number 3)
+        (middle := heap) (afterRight := heap) sized Evaluates.constant
+      simp [HeapCalls.compare, scalarCompare, evalCmpOp, show ¬ (items.length : Int) < 3 by omega]
+    · rfl
+    · exact .nil
+  have sorted : BlockContinues program env [searchBody[1]'(by decide)] heap env heap := by
+    apply BlockContinues.discard
+    apply Evaluates.sort (Evaluates.lookup getArray) shared
+      (ProjectEulerSolutions.PrimeBucketSearch.sort_ordered heap address items shared
+        (ordered.imp Nat.le_of_lt))
+    intro name same
+    cases same
+    simp [getArray]
+  have built : BlockContinues program env [searchBody[2]'(by decide)] heap setEnv afterSet := by
+    apply BlockContinues.assign
+    exact Evaluates.builtin (.cons (Evaluates.lookup getArray) .nil)
+      (ProjectEulerSolutions.PrimeBucketSearch.set_from_numbers heap address items shared)
+  have bounded : BlockContinues program setEnv [searchBody[3]'(by decide)] afterSet
+      (setLocal setEnv "m" (number items.length)) afterSet := by
+    apply BlockContinues.assign (value := number items.length)
+    apply Evaluates.builtin (values := [.ref address])
+      (.cons (Evaluates.lookup (by simpa [setEnv, setLocal] using getArray)) .nil)
+    simp [primitive, Mutable.length, afterSet, prefix_found heap _ address _ found, numbers]
+  exact checked.append (sorted.append (built.append bounded))
+
+private theorem read_number (heap : Mutable.Heap) (env : HeapCalls.Env) (address position value : Nat)
+    (items : List Nat) (name : String) (getArray : env "arr" = some (.ref address))
+    (getIndex : env name = some (number position)) (found : heap[address]? = some (.list (numbers items)))
+    (selected : items[position]? = some value) :
+    Evaluates program env (.subscript (.name "arr") (.name name)) heap (number value) heap := by
+  have bound : position < (numbers items).length := by
+    simpa only [numbers, List.length_map] using (List.getElem?_eq_some_iff.mp selected).1
+  have mapped : (numbers items)[position]? = some (number value) := by simp [numbers, selected]
+  have item : (numbers items)[position] = number value :=
+    Option.some.inj ((List.getElem?_eq_getElem bound).symm.trans mapped)
+  apply Evaluates.subscript (middle := heap) (afterIndex := heap)
+    (by intros; intro impossible; cases impossible) (Evaluates.lookup getArray) (Evaluates.lookup getIndex)
+  simpa only [item] using Mutable.getItem_list heap address position (numbers items) found bound
+
+private def pairEnv (env : HeapCalls.Env) (a b : Nat) : HeapCalls.Env :=
+  setLocal (setLocal (setLocal (setLocal env "a" (number a)) "b" (number b))
+    "d" (number (b - a : Nat))) "c" (number (ProjectEulerSolutions.PrimeBucketSearch.third a b))
+
+/-- Each original pair iteration allocates its unpacked tuple before computing the signed difference and next term. -/
+theorem pair_prefix (heap : Mutable.Heap) (env : HeapCalls.Env) (address i j a b : Nat) (items : List Nat)
+    (getArray : env "arr" = some (.ref address)) (getI : env "i" = some (number i))
+    (getJ : env "j" = some (number j)) (found : heap[address]? = some (.list (numbers items)))
+    (first : items[i]? = some a) (second : items[j]? = some b) (increasing : a ≤ b) :
+    BlockContinues program env (pairBody.take 3) heap (pairEnv env a b)
+      (heap ++ [.tuple [number a, number b]]) := by
+  let afterTuple := heap ++ [Mutable.Object.tuple [number a, number b]]
+  let unpacked := setLocal (setLocal env "a" (number a)) "b" (number b)
+  let afterDifference := setLocal unpacked "d" (number (b - a : Nat))
+  have unpackedPair : BlockContinues program env [pairBody[0]'(by decide)] heap unpacked afterTuple := by
+    apply BlockContinues.unpack (names := ["a", "b"]) (items := [number a, number b])
+      (middle := afterTuple) rfl
+    · exact Evaluates.tuple
+        (.cons (read_number heap env address i a items "i" getArray getI found first)
+          (.cons (read_number heap env address j b items "j" getArray getJ found second) .nil))
+        (by simp)
+    · simp [Mutable.sequence, afterTuple]
+    · rfl
+  have difference : (b : Int) - a = ((b - a : Nat) : Int) := by omega
+  have subtracted : BlockContinues program unpacked [pairBody[1]'(by decide)] afterTuple afterDifference afterTuple := by
+    apply BlockContinues.assign
+    exact Evaluates.binary (av := number b) (bv := number a) (middle := afterTuple) (afterRight := afterTuple)
+      (Evaluates.lookup (by simp [unpacked, setLocal]))
+      (Evaluates.lookup (by simp [unpacked, setLocal])) (by simp [Mutable.binary, scalarBinary, difference])
+  have advanced : BlockContinues program afterDifference [pairBody[2]'(by decide)] afterTuple
+      (pairEnv env a b) afterTuple := by
+    apply BlockContinues.assign
+    exact Evaluates.binary (av := number b) (bv := number (b - a : Nat))
+      (middle := afterTuple) (afterRight := afterTuple)
+      (Evaluates.lookup (by simp [afterDifference, unpacked, setLocal]))
+      (Evaluates.lookup (by simp [afterDifference, setLocal]))
+      (by simp [Mutable.binary, scalarBinary, ProjectEulerSolutions.PrimeBucketSearch.third])
+  exact unpackedPair.append (subtracted.append advanced)
+
+theorem candidate_present (heap : Mutable.Heap) (env : HeapCalls.Env) (address value : Nat) (items : List Nat)
+    (getValue : env "c" = some (number value)) (getSet : env "s" = some (.ref address))
+    (found : heap[address]? = some (.set (ProjectEulerSolutions.PrimeBucketSearch.setKeys items))) :
+    Evaluates program env pairCondition heap (flag (decide (value ∈ items))) heap := by
+  apply Evaluates.membership (.cons (Evaluates.lookup getValue) (.cons (Evaluates.lookup getSet) .nil))
+  simp [HeapCalls.membership, found, ProjectEulerSolutions.PrimeBucketSearch.set_contains]
+
+theorem candidate_result (heap : Mutable.Heap) (env : HeapCalls.Env) (a b c : Nat)
+    (getA : env "a" = some (number a)) (getB : env "b" = some (number b))
+    (getC : env "c" = some (number c)) :
+    BlockContinues program env (acceptedBody.take 1) heap (setLocal env "seq" (.ref heap.length))
+      (heap ++ [.tuple [number a, number b, number c]]) := by
+  apply BlockContinues.assign
+  exact Evaluates.tuple (.cons (Evaluates.lookup getA) (.cons (Evaluates.lookup getB)
+    (.cons (Evaluates.lookup getC) .nil))) (by simp)
+
+/-- Comparing the freshly allocated candidate with the stored example tests their integer contents. -/
+theorem known_comparison (heap : Mutable.Heap) (env : HeapCalls.Env) (address knownAddress a b c : Nat)
+    (getCandidate : env "seq" = some (.ref address)) (getKnown : env "target_known" = some (.ref knownAddress))
+    (candidate : heap[address]? = some (.tuple [number a, number b, number c]))
+    (known : heap[knownAddress]? = some (.tuple knownValues)) (different : address ≠ knownAddress) :
+    Evaluates program env (.compare (.name "seq") [(.notEq, .name "target_known")]) heap
+      (flag (decide ((a,b,c) ≠ ProjectEulerSolutions.PrimePermutationGroups.known))) heap := by
+  apply Evaluates.compare (av := .ref address) (bv := .ref knownAddress)
+    (middle := heap) (afterRight := heap) (Evaluates.lookup getCandidate) (Evaluates.lookup getKnown)
+  have aTest : (a : Int) = 1487 ↔ a = 1487 := by omega
+  have bTest : (b : Int) = 4817 ↔ b = 4817 := by omega
+  have cTest : (c : Int) = 8147 ↔ c = 8147 := by omega
+  simp [HeapCalls.compare, candidate, known, different, knownValues, equalLists, equalElements,
+    scalarCompare, evalCmpOp, ProjectEulerSolutions.PrimePermutationGroups.known, Prod.ext_iff,
+    aTest, bTest, cTest, show (CmpOp.notEq == CmpOp.eq) = false by rfl]
+  split_ifs <;> simp_all
 
 end find_prime_perm_arith_sequence
 end solvers.«49»
