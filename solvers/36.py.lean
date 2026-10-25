@@ -1,4 +1,4 @@
-import ProjectEulerStatements.Lib.DoublePalindromeSum
+import ProjectEulerStatements.Lib.DoublePalindromeSearch
 import data.«project-euler-statements».data.py.project_euler_statements.«p36.py»
 import «.formalsw».solvers.«36.py.ast»
 import lang.py.FormalSW.IntegerParsing
@@ -50,15 +50,15 @@ private theorem integer_evaluates (n : Nat) (expression : Expr)
   rfl
 
 private abbrev oddExpression : Expr := .builtinCall .int
-  [.binOp (.name "s") .add (.subscript (.name "s")
+  [.binOp (.name "text") .add (.subscript (.name "text")
     (.slice (some (.unaryOp .uSub (.constant (.int 2)))) none
       (some (.unaryOp .uSub (.constant (.int 1))))))]
 private abbrev evenExpression : Expr := .builtinCall .int
-  [.binOp (.name "s") .add (.subscript (.name "s")
+  [.binOp (.name "text") .add (.subscript (.name "text")
     (.slice none none (some (.unaryOp .uSub (.constant (.int 1))))))]
 
 private theorem even_evaluates (n : Nat) (positive : 0 < n)
-    (env : HeapCalls.Env) (heap : Mutable.Heap) (getS : env "s" = some (text n)) :
+    (env : HeapCalls.Env) (heap : Mutable.Heap) (getS : env "text" = some (text n)) :
     Evaluates program env evenExpression heap (number (evenPalindrome n)) heap := by
   apply integer_evaluates
   apply Evaluates.binary (av := text n)
@@ -75,7 +75,7 @@ private theorem even_evaluates (n : Nat) (positive : 0 < n)
         some (.ok (.scalar (.string (decimal n ++ String.ofList (decimal n).toList.reverse))), heap) from rfl)
 
 private theorem odd_evaluates (n : Nat) (positive : 0 < n)
-    (env : HeapCalls.Env) (heap : Mutable.Heap) (getS : env "s" = some (text n)) :
+    (env : HeapCalls.Env) (heap : Mutable.Heap) (getS : env "text" = some (text n)) :
     Evaluates program env oddExpression heap (number (oddPalindrome n)) heap := by
   apply integer_evaluates
   apply Evaluates.binary (av := text n)
@@ -149,21 +149,13 @@ theorem result (n : Nat) (heap : Mutable.Heap) :
 
 end is_palindrome_base2
 
+private abbrev generate := ProjectEulerStatements.DoublePalindromeSearch.generate
+private abbrev scan := ProjectEulerStatements.DoublePalindromeSearch.scan
+
 namespace generate_decimal_palindromes
-private abbrev code : List Stmt :=
-  executableBody ((findFunctionIn program.body "generate_decimal_palindromes").getD ([], [])).2
-private abbrev loopBody : List Stmt :=
-  match (code[1]? : Option Stmt) with | some (.forIn _ _ body _) => body | _ => []
 private def collectorHeap (base : Mutable.Heap) (values : List Nat) : Mutable.Heap :=
   base ++ [.list (numbers values)]
 private def selected (limit value : Nat) : List Nat := if value < limit then [value] else []
-private def row (limit seed : Nat) : List Nat :=
-  [oddPalindrome seed, evenPalindrome seed].filter (fun n => decide (n < limit))
-private def rows (limit first count : Nat) : List Nat :=
-  (List.range' first count).flatMap (row limit)
-private def Stable (before after : HeapCalls.Env) : Prop :=
-  after "limit" = before "limit" ∧ after "pals" = before "pals"
-
 private theorem append_selected (limit value : Nat) (name : String)
     (base : Mutable.Heap) (before : List Nat) (env : HeapCalls.Env)
     (getValue : env name = some (number value)) (getLimit : env "limit" = some (number limit))
@@ -188,88 +180,99 @@ private theorem append_selected (limit value : Nat) (name : String)
   · simpa only [selected, if_neg inside, List.append_nil] using
       (BlockContinues.branch (flag := false) (by simpa [inside] using tested) rfl BlockContinues.nil)
 
-private def rowEnv (env : HeapCalls.Env) (seed : Nat) : HeapCalls.Env :=
-  setLocal (setLocal (setLocal env "s" (text seed)) "odd" (number (oddPalindrome seed)))
-    "even" (number (evenPalindrome seed))
 
-private theorem iteration (limit seed : Nat) (positive : 0 < seed)
-    (base : Mutable.Heap) (before : List Nat) (env : HeapCalls.Env)
-    (getSeed : env "i" = some (number seed)) (getLimit : env "limit" = some (number limit))
-    (getPals : env "pals" = some (.ref base.length)) :
-    BlockContinues program env loopBody (collectorHeap base before)
-      (rowEnv env seed) (collectorHeap base (before ++ row limit seed)) := by
-  let e1 := setLocal env "s" (text seed)
+private def body : List Stmt :=
+  [.assign [.name "text"] (.builtinCall .str [.name "prefix"]),
+   .assign [.name "odd"] oddExpression,
+   .ifThen (.compare (.name "odd") [(.gtE, .name "limit")]) [.return (.name "pals")] [],
+   .expr (.call (.attribute (.name "pals") "append") [.name "odd"]),
+   .assign [.name "even"] evenExpression,
+   .ifThen (.compare (.name "even") [(.lt, .name "limit")])
+     [.expr (.call (.attribute (.name "pals") "append") [.name "even"])] [],
+   .augAssign (.name "prefix") .add (.constant (.int 1))]
+
+private theorem loop (limit seed : Nat) (positive : 0 < seed) (base : Mutable.Heap) (before : List Nat)
+    (env : HeapCalls.Env) (getLimit : env "limit" = some (number limit))
+    (getPals : env "pals" = some (.ref base.length)) (getSeed : env "prefix" = some (number seed)) :
+    BlockReturns program env [.whileDo (.constant (.bool true)) body []] (collectorHeap base before)
+      (.ref base.length) (collectorHeap base (before ++ ProjectEulerStatements.DoublePalindromeSearch.generateFrom limit seed)) := by
+  let e1 := setLocal env "text" (text seed)
   let e2 := setLocal e1 "odd" (number (oddPalindrome seed))
-  let oddValues := before ++ selected limit (oddPalindrome seed)
-  have first : BlockContinues program env [loopBody[0]'(by decide)] (collectorHeap base before)
-      e1 (collectorHeap base before) :=
+  have first : BlockContinues program env [body[0]'(by decide)] (collectorHeap base before) e1
+      (collectorHeap base before) :=
     BlockContinues.assign (Evaluates.builtin (.cons (Evaluates.lookup getSeed) .nil) rfl)
-  have second : BlockContinues program e1 [loopBody[1]'(by decide)] (collectorHeap base before)
-      e2 (collectorHeap base before) := BlockContinues.assign (odd_evaluates seed positive e1 _ rfl)
-  have third : BlockContinues program e2 [loopBody[2]'(by decide)] (collectorHeap base before)
-      e2 (collectorHeap base oddValues) := append_selected limit (oddPalindrome seed) "odd" base before e2 rfl
-        (by simpa [e2, e1, setLocal] using getLimit) (by simpa [e2, e1, setLocal] using getPals)
-  have fourth : BlockContinues program e2 [loopBody[3]'(by decide)] (collectorHeap base oddValues)
-      (rowEnv env seed) (collectorHeap base oddValues) :=
-    BlockContinues.assign (even_evaluates seed positive e2 _ (by simp [e2, e1, setLocal]))
-  have fifth := append_selected limit (evenPalindrome seed) "even" base oddValues (rowEnv env seed) rfl
-    (by simpa [rowEnv, setLocal] using getLimit) (by simpa [rowEnv, setLocal] using getPals)
-  have same : oddValues ++ selected limit (evenPalindrome seed) = before ++ row limit seed := by
-    simp only [oddValues, row, List.filter_cons, List.filter_nil, decide_eq_true_eq]
-    by_cases oddInside : oddPalindrome seed < limit <;>
+  have second : BlockContinues program e1 [body[1]'(by decide)] (collectorHeap base before) e2
+      (collectorHeap base before) := BlockContinues.assign (odd_evaluates seed positive e1 _ rfl)
+  have tested : Evaluates program e2 (.compare (.name "odd") [(.gtE, .name "limit")])
+      (collectorHeap base before) (.scalar (.bool (decide (limit ≤ oddPalindrome seed)))) (collectorHeap base before) :=
+    Evaluates.compare (Evaluates.lookup rfl)
+      (Evaluates.lookup (by simpa [e2, e1, setLocal] using getLimit))
+      (by simp [HeapCalls.compare, scalarCompare, evalCmpOp])
+  rw [ProjectEulerStatements.DoublePalindromeSearch.generateFrom_step limit seed positive]
+  apply BlockReturns.while_loop (flag := true) Evaluates.constant rfl
+  apply BlockContinues.returns (first.append second)
+  by_cases inside : oddPalindrome seed < limit
+  · rw [if_pos inside]
+    apply BlockReturns.branch (flag := false) (by simpa [inside, Nat.not_le.mpr inside] using tested) rfl
+    let afterOdd := before ++ [oddPalindrome seed]
+    let e3 := setLocal e2 "even" (number (evenPalindrome seed))
+    let e4 := setLocal e3 "prefix" (number (seed + 1))
+    have appended : BlockContinues program e2 [body[3]'(by decide)] (collectorHeap base before)
+        e2 (collectorHeap base afterOdd) := by
+      apply BlockContinues.discard
+      have appended := Evaluates.append (globals := []) (module := program) (env := e2) (base := .name "pals")
+        (expression := .name "odd") (value := number (oddPalindrome seed))
+        (heap := collectorHeap base before)
+        (Evaluates.lookup (by simpa [e2, e1, setLocal] using getPals))
+        (by simp [collectorHeap] : (collectorHeap base before)[base.length]? = some (.list (numbers before)))
+        (Evaluates.lookup rfl)
+        (by simp [collectorHeap] : (collectorHeap base before)[base.length]? = some (.list (numbers before)))
+      simpa [collectorHeap, afterOdd, numbers, List.map_append, List.set_append_right] using appended
+    have evenValue : BlockContinues program e2 [body[4]'(by decide)] (collectorHeap base afterOdd)
+        e3 (collectorHeap base afterOdd) :=
+      BlockContinues.assign (even_evaluates seed positive e2 _ (by simp [e2, e1, setLocal]))
+    have evenAppended : BlockContinues program e3 [body[5]'(by decide)] (collectorHeap base afterOdd)
+        e3 (collectorHeap base (afterOdd ++ selected limit (evenPalindrome seed))) :=
+      append_selected limit (evenPalindrome seed) "even" base afterOdd e3 rfl
+        (by simpa [e3, e2, e1, setLocal] using getLimit) (by simpa [e3, e2, e1, setLocal] using getPals)
+    have incremented : BlockContinues program e3 [body[6]'(by decide)]
+        (collectorHeap base (afterOdd ++ selected limit (evenPalindrome seed))) e4
+        (collectorHeap base (afterOdd ++ selected limit (evenPalindrome seed))) := by
+      apply BlockContinues.augAssign (left := number seed) (right := number 1)
+        (by simpa [e3, e2, e1, setLocal] using getSeed) Evaluates.constant
+      simp [inplace, Mutable.binary, scalarBinary, number]
+    have rowEquals : afterOdd ++ selected limit (evenPalindrome seed) =
+        before ++ ProjectEulerStatements.DoublePalindromeSearch.row limit seed := by
       by_cases evenInside : evenPalindrome seed < limit <;>
-        simp [selected, oddInside, evenInside, List.append_assoc]
-  rw [same] at fifth
-  exact first.append (second.append (third.append (fourth.append fifth)))
+        simp [afterOdd, selected, ProjectEulerStatements.DoublePalindromeSearch.row, inside, evenInside, List.append_assoc]
+    have continued := appended.append (evenValue.append (evenAppended.append incremented))
+    rw [rowEquals] at continued
+    have rest := loop limit (seed + 1) (by omega) base
+      (before ++ ProjectEulerStatements.DoublePalindromeSearch.row limit seed) e4
+      (by simpa [e4, e3, e2, e1, setLocal] using getLimit)
+      (by simpa [e4, e3, e2, e1, setLocal] using getPals) rfl
+    simpa only [Calls.loopContinuation, Calls.loopControl, Calls.loopControlStmt, Bool.false_or,
+      Bool.false_eq_true, if_false, List.nil_append, List.append_nil, List.append_assoc] using continued.returns rest
+  · rw [if_neg inside, List.append_nil]
+    apply BlockReturns.branch (flag := true) (by simpa [Nat.le_of_not_gt inside] using tested) rfl
+    exact BlockReturns.return_value (Evaluates.lookup (by simpa [e2, e1, setLocal] using getPals))
+termination_by limit - seed
+decreasing_by
+  have lower := ProjectEulerStatements.DoublePalindromeSearch.seed_le_odd seed positive
+  omega
 
-private theorem loop (limit first count : Nat) (positive : 0 < first) (endpoint : first+count = 1000)
-    (base : Mutable.Heap) (before : List Nat) (env : HeapCalls.Env)
-    (getLimit : env "limit" = some (number limit)) (getPals : env "pals" = some (.ref base.length)) :
-    ∃ finalEnv, BlockContinues program env [.rangeStepLoop "i" first 1000 1 loopBody []]
-      (collectorHeap base before) finalEnv (collectorHeap base (before ++ rows limit first count)) ∧
-      Stable env finalEnv := by
-  induction count generalizing first before env with
-  | zero =>
-      refine ⟨env, ?_, rfl, rfl⟩
-      simpa only [rows, List.range'_zero, List.flatMap_nil, List.append_nil] using
-        (BlockContinues.range_done (module := program) (env := env) (name := "i")
-          (next := (first : Int)) (stop := 1000) (stride := 1) (body := loopBody) (otherwise := [])
-          (heap := collectorHeap base before) (by simp [Calls.rangeContinues]; omega) BlockContinues.nil)
-  | succ count ih =>
-      let bound := setLocal env "i" (number first)
-      let updated := rowEnv bound first
-      have nextLimit : updated "limit" = some (number limit) := by
-        simpa [updated, rowEnv, bound, setLocal] using getLimit
-      have nextPals : updated "pals" = some (.ref base.length) := by
-        simpa [updated, rowEnv, bound, setLocal] using getPals
-      obtain ⟨finalEnv, rest, stable⟩ := ih (first+1) (by omega) (by omega)
-        (before ++ row limit first) updated nextLimit nextPals
-      have iterated := iteration limit first positive base before bound rfl
-        (by simpa [bound, setLocal] using getLimit) (by simpa [bound, setLocal] using getPals)
-      refine ⟨finalEnv, ?_, ?_⟩
-      · apply BlockContinues.range_step (by simp [Calls.rangeContinues]; omega)
-        simpa [Calls.loopContinuation, Calls.loopControl, Calls.loopControlStmt, rows,
-          List.range'_succ, List.append_assoc] using iterated.append rest
-      · exact ⟨stable.1.trans (by simp [updated, rowEnv, bound, setLocal]),
-          stable.2.trans (by simp [updated, rowEnv, bound, setLocal])⟩
-
-/-- The source's fixed seed interval produces precisely the filtered palindrome list. -/
+/-- The source stops exactly when later prefixes cannot contribute another value below the input. -/
 theorem result (limit : Nat) (heap : Mutable.Heap) :
     ReturnsValue program "generate_decimal_palindromes" [number limit] heap (.ref heap.length)
-      (heap ++ [.list (numbers (generate limit))]) := by
-  let env := functionEnv ((findFunctionIn program.body "generate_decimal_palindromes").getD ([], [])).1
+      (collectorHeap heap (generate limit)) := by
+  let initial := functionEnv ((findFunctionIn program.body "generate_decimal_palindromes").getD ([], [])).1
     ((findFunctionIn program.body "generate_decimal_palindromes").getD ([], [])).2 [number limit] []
-  let initialized := setLocal env "pals" (.ref heap.length)
-  obtain ⟨finalEnv, searched, stable⟩ := loop limit 1 999 (by decide) rfl heap [] initialized rfl rfl
-  have collected : rows limit 1 999 = generate limit := by
-    simp only [generate, candidates, List.filter_flatMap, rows]
-    rfl
-  rw [collected] at searched
+  let ready := setLocal (setLocal initial "pals" (.ref heap.length)) "prefix" (number 1)
   apply BlockReturns.function rfl rfl
-  apply BlockContinues.returns (BlockContinues.annAssign (Evaluates.list .nil))
-  apply BlockContinues.returns
-    (BlockContinues.for_range (.cons Evaluates.constant (.cons Evaluates.constant .nil)) rfl searched)
-  exact BlockReturns.return_value (Evaluates.lookup (stable.2.trans rfl))
+  apply BlockReturns.assign (Evaluates.list .nil)
+  apply BlockReturns.assign Evaluates.constant
+  simpa only [List.nil_append] using loop limit 1 (by decide) heap [] ready
+    (by simp [ready, setLocal]; rfl) (by simp [ready, setLocal]) rfl
 
 end generate_decimal_palindromes
 
@@ -356,50 +359,35 @@ theorem scan_result (limit : Nat) (heap : Mutable.Heap) :
     (by intros; simp)
     (Evaluates.call (.cons (Evaluates.lookup rfl) .nil)
       (generate_decimal_palindromes.result limit heap))
-    (by simp [Mutable.sequence])
-  exact loop (generate limit) (generate limit) 0 heap.length 0 _ _ (by simp) rfl (by simp [setLocal])
+    (by simp [Mutable.sequence, generate_decimal_palindromes.collectorHeap])
+  exact loop (generate limit) (generate limit) 0 heap.length 0 _ _ (by simp [generate_decimal_palindromes.collectorHeap]) rfl (by simp [setLocal])
 
-theorem result (limit : Nat) (bound : limit ≤ 1000000) (heap : Mutable.Heap) :
+theorem result (limit : Nat) (heap : Mutable.Heap) :
     ReturnsValue program "solve" [number limit] heap (number (ProjectEulerStatements.P36.naive limit))
       (heap ++ [.list (numbers (generate limit))]) := by
-  simpa only [scan_correct limit bound] using scan_result limit heap
+  simpa only [ProjectEulerStatements.DoublePalindromeSearch.scan_correct limit] using scan_result limit heap
 
 private abbrev inputEnv (limit : Int) : ScalarEnv :=
   fun name => if name = "limit" then some (.int limit) else none
 
-private theorem condition_result (limit : Int) :
-    Calls.Evaluates program (inputEnv limit) Solvers.P36Ast.requires_solve_0
-      (.bool (decide (0 ≤ limit ∧ limit ≤ 1000000))) := by
-  intro stack
-  apply Calls.Reaches.next rfl
-  apply Calls.Reaches.next rfl
-  apply Calls.Reaches.next rfl
-  apply Calls.Reaches.next rfl
-  by_cases lower : 0 ≤ limit
-  · simp only [lower, true_and]
-    apply Calls.Reaches.next (following :=
-      ⟨.expr (.constant (.int 1000000)) (inputEnv limit), .chainRight .ltE (.int limit) [] (inputEnv limit) :: stack⟩)
-      (by simp [Calls.step, scalarCompare, evalCmpOp, lower])
-    apply Calls.Reaches.next rfl
-    by_cases upper : limit ≤ 1000000 <;> simp only [upper, decide_true, decide_false]
-    · exact Calls.Reaches.next (by simp [Calls.step, scalarCompare, evalCmpOp, upper]) .refl
-    · exact Calls.Reaches.next (by simp [Calls.step, scalarCompare, evalCmpOp, upper]) .refl
-  · simp only [lower, false_and, decide_false]
-    exact Calls.Reaches.next (by simp [Calls.step, scalarCompare, evalCmpOp, lower]) .refl
+private theorem condition_nonnegative (limit : Int)
+    (condition : Calls.Condition program (inputEnv limit) Solvers.P36Ast.requires_solve_0) : 0 ≤ limit := by
+  simpa [evalCmpOp] using Calls.Evaluates.condition_int_compare condition rfl
 
-private theorem condition_bounds (limit : Int)
+theorem «Returns» (limit : Int)
     (condition : Calls.Condition program (inputEnv limit) Solvers.P36Ast.requires_solve_0) :
-    0 ≤ limit ∧ limit ≤ 1000000 := by
-  simpa using (condition_result limit).condition_iff.mp condition
+    (HeapCalls.scalarFunction program "solve" [.int limit]).Returns := by
+  have nonnegative := condition_nonnegative limit condition
+  lift limit to Nat using nonnegative
+  exact (result limit []).scalar_returns (values := [.int limit])
 
 theorem «Equiv(naive)» (limit : Int)
     (condition : Calls.Condition program (inputEnv limit) Solvers.P36Ast.requires_solve_0) :
     (HeapCalls.scalarFunction program "solve" [.int limit]).Equiv
       (HeapCalls.scalarFunction P36Ast.module "naive" [.int limit]) := by
-  obtain ⟨nonnegative, bounded⟩ := condition_bounds limit condition
+  have nonnegative := condition_nonnegative limit condition
   lift limit to Nat using nonnegative
-  have bound : limit ≤ 1000000 := by exact_mod_cast bounded
-  have optimized := (result limit bound []).scalar_finishes (values := [.int limit])
+  have optimized := (result limit []).scalar_finishes (values := [.int limit])
   obtain ⟨_, reference⟩ := data.«project-euler-statements».data.py.project_euler_statements.p36.naive.result limit []
   have original := reference.scalar_finishes (values := [.int limit])
   intro outcome
@@ -418,15 +406,12 @@ theorem «Supported» :
       (HeapCalls.scalarFunction P36Ast.module "naive" [.int limit]).Supported) := by
   constructor
   · intro limit condition
-    obtain ⟨nonnegative, bounded⟩ := condition_bounds limit condition
-    lift limit to Nat using nonnegative
-    exact ((result limit (by exact_mod_cast bounded) []).scalar_returns (values := [.int limit])).supported
+    exact («Returns» limit condition).supported
   · intro limit condition
-    have nonnegative := (condition_bounds limit condition).1
+    have nonnegative := condition_nonnegative limit condition
     lift limit to Nat using nonnegative
     obtain ⟨_, reference⟩ := data.«project-euler-statements».data.py.project_euler_statements.p36.naive.result limit []
     exact (reference.scalar_returns (values := [.int limit])).supported
 
 end solve
-
 end solvers.«36»

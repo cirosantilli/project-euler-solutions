@@ -536,7 +536,7 @@ Problem 34’s previous source proof is archived after removing the reference-on
 
 Problem 35’s source-level equivalence proof covers the prime sieve, decimal rotations, captured primality lookup, and circular-prime count for every nonnegative limit.
 
-Problem 36’s optimized palindrome generator now grows prefixes until the supplied bound is exhausted, with no million-value cap. The previous restricted-domain proof is retained as an attempt pending a generalized `Equiv` proof.
+Problem 36’s source-level equivalence and termination proofs cover every nonnegative limit. The proofs establish complete, duplicate-free decimal mirroring, justify the early stop for growing prefixes and the skipped even binary candidates, and connect the resulting sum to the exhaustive reference. There is no fixed prefix or input cutoff and no whole-program evaluation; the proofs use only standard Lean axioms.
 
 Problem 37’s reference exhausts the right-truncatable-prime tree without a numeric cutoff, and the optimized sieve expands until finding the problem’s eleven primes. The previous bounded-reference proof is retained as an attempt pending a new `Equiv` proof.
 
@@ -705,7 +705,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/33.py[33.py] | link:solvers/33.md[33.md] | link:solvers/33.py.lean[33.py.lean] | 0.124 | 100 |
 | link:solvers/34.py[34.py] | link:solvers/34.md[34.md] |  | 0.284 | 40730 |
 | link:solvers/35.py[35.py] | link:solvers/35.md[35.md] | link:solvers/35.py.lean[35.py.lean] | 0.161 | 55 |
-| link:solvers/36.py[36.py] | link:solvers/36.md[36.md] |  | 0.127 | 872187 |
+| link:solvers/36.py[36.py] | link:solvers/36.md[36.md] | link:solvers/36.py.lean[36.py.lean] | 0.127 | 872187 |
 | link:solvers/37.py[37.py] | link:solvers/37.md[37.md] |  | 0.140 | 748317 |
 | link:solvers/38.py[38.py] | link:solvers/38.md[38.md] |  | 0.141 | 932718654 |
 | link:solvers/39.py[39.py] | link:solvers/39.md[39.md] | link:solvers/39.py.lean[39.py.lean] | 0.118 | 840 |

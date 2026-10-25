@@ -25,6 +25,7 @@ def solve(limit: int = 1_000_000) -> int:
     """
     @formalsw: Py from project_euler_statements.p36 import naive
     @formalsw: Requires(limit >= 0)
+    @formalsw: Returns
     @formalsw: Equiv(naive)
     """
     total = 0

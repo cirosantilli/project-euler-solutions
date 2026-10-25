@@ -20,7 +20,7 @@ Prefer a meaningful argument shared by both implementations. A reference-only se
 | 62 | Supplied cube-root limit | Accept only the requested class size and expand complete digit widths until successful. Internal finite counting windows come from those widths.
 |===
 
-Source proofs still awaiting replacement are retained as `.py.lean.attempt`; their README proof links are removed, and they are not counted as current proofs. Problem 40 has a structural equivalence and termination proof for every finite tuple of positive positions, with no maximum position. Unchanged zero-argument `Equiv` proofs remain in place; they need not be discarded merely because they have no arguments.
+Source proofs still awaiting replacement are retained as `.py.lean.attempt`; their README proof links are removed, and they are not counted as current proofs. Problem 36 has structural equivalence and termination proofs for every nonnegative limit, with no fixed prefix cutoff. Problem 40 has a structural equivalence and termination proof for every finite tuple of positive positions, with no maximum position. Unchanged zero-argument `Equiv` proofs remain in place; they need not be discarded merely because they have no arguments.
 
 == Remaining implementation and proof restrictions
 
@@ -32,7 +32,6 @@ Source proofs still awaiting replacement are retained as `.py.lean.attempt`; the
 | 19 | The solver starts its calendar at 1900 and the proof excludes earlier years. | Extend the implementation before claiming arbitrary year ranges.
 | 23 | Embedded example assertions require indices 24 and 28, restricting otherwise meaningful smaller limits. | Move example checks outside the solver and extend its proof domain.
 | 26 | The proof excludes small limits because the two implementations disagree on empty searches and zero-length ties. | Align the boundary semantics rather than hiding them with a lower bound.
-| 36 | Fixed: prefixes now grow until the supplied bound is exhausted. | Replace the archived capped-domain proof with a generalized equivalence proof.
 | 37 | Fixed: the optimized sieve doubles until it finds the eleven primes specified by the problem. | Restore equivalence to the unbounded reference; there is no fixed sieve cutoff.
 | 44 | Both implementations accept the same finite pentagonal-index bound. | This is a valid bounded parameterization, but equivalence alone does not prove that the default answer is the global minimum over all indices.
 | 51 | Fixed: the decimal-width cutoff and proof-only target cap are removed. | Replace the archived restricted-domain proof; establish termination when a matching family exists.
