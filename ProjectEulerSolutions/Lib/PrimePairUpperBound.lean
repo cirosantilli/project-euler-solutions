@@ -49,6 +49,69 @@ theorem row_upper_of_checked (tree : VertexTree) (p : Nat) (neighbors rejectSeco
   exact rejectionCheck_sound p q neighbors rejectSecond
     (rejectsMissing_at tree p q neighbors rejectSecond checked member) ordered accepted
 
+/-- Decisions are aligned with the vertex list, so checking an omitted edge
+never searches a separate orientation list. -/
+inductive RowChoice where
+  | possible
+  | first
+  | second
+
+private def RowChoice.check (choice : RowChoice) (p q : Nat) : Bool :=
+  match choice with
+  | .possible => true
+  | .first => rejectionCheck p q [] []
+  | .second => rejectionCheck p q [] [q]
+
+private theorem RowChoice.possible_of_checked (choice : RowChoice) (p q : Nat)
+    (checked : choice.check p q = true) (ordered : p < q) (accepted : relation p q = true) :
+    choice = .possible := by
+  cases choice with
+  | possible => rfl
+  | first => exact False.elim (by simpa using rejectionCheck_sound p q [] [] checked ordered accepted)
+  | second => exact False.elim (by simpa using rejectionCheck_sound p q [] [q] checked ordered accepted)
+
+def checkPlan (p : Nat) : List Nat → List RowChoice → Bool
+  | [], [] => true
+  | q :: qs, choice :: choices => choice.check p q && checkPlan p qs choices
+  | _, _ => false
+
+def planNeighbors : List Nat → List RowChoice → List Nat
+  | q :: qs, .possible :: choices => q :: planNeighbors qs choices
+  | _ :: qs, _ :: choices => planNeighbors qs choices
+  | _, _ => []
+
+theorem plan_covers (p : Nat) (values : List Nat) (choices : List RowChoice)
+    (checked : checkPlan p values choices = true) :
+    ∀ q ∈ values, p < q → relation p q = true → q ∈ planNeighbors values choices := by
+  induction values generalizing choices with
+  | nil => simp
+  | cons head rest ih =>
+    cases choices with
+    | nil => simp [checkPlan] at checked
+    | cons choice choices =>
+      simp only [checkPlan, Bool.and_eq_true] at checked
+      intro q member ordered accepted
+      rcases List.mem_cons.mp member with same | member
+      · subst q
+        have same := RowChoice.possible_of_checked choice p head checked.1 ordered accepted
+        simp [same, planNeighbors]
+      · have found := ih choices checked.2 q member ordered accepted
+        cases choice <;> simp [planNeighbors, found]
+
+theorem row_upper_of_plan (tree : VertexTree) (p : Nat) (choices : List RowChoice) (neighbors : List Nat)
+    (checked : checkPlan p tree.values choices = true) (listed : planNeighbors tree.values choices = neighbors) :
+    RowUpperBound tree p neighbors := by
+  rw [← listed]
+  exact plan_covers p tree.values choices checked
+
+theorem RowUpperBound.branch {left right : VertexTree} {p : Nat} {leftRow rightRow : List Nat}
+    (leftBound : RowUpperBound left p leftRow) (rightBound : RowUpperBound right p rightRow) :
+    RowUpperBound (.branch left right) p (leftRow ++ rightRow) := by
+  intro q member ordered accepted
+  rcases List.mem_append.mp member with inLeft | inRight
+  · exact List.mem_append.mpr (Or.inl (leftBound q inLeft ordered accepted))
+  · exact List.mem_append.mpr (Or.inr (rightBound q inRight ordered accepted))
+
 /-- The numeric cache may overapproximate accepted edges. -/
 def Graph.Covers (tree : VertexTree) (graph : Graph) : Prop :=
   ∀ p ∈ graph.vertices, ∀ q ∈ tree.values, p < q → relation p q = true → graph.edge p q = true
