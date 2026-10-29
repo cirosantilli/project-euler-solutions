@@ -124,6 +124,35 @@ theorem complete (values : List Nat) (ordered : values.Pairwise (· < ·)) (clas
       have same := pairs_sound values values (fun _ member => member) ordered classifies answer result
       simp only [same]
 
+theorem three_members_length (values : List Nat) (a b c : Nat)
+    (aMember : a ∈ values) (bMember : b ∈ values) (cMember : c ∈ values)
+    (ab : a < b) (bc : b < c) : 3 ≤ values.length := by
+  cases values with
+  | nil => simp at aMember
+  | cons first rest =>
+      cases rest with
+      | nil =>
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at aMember bMember cMember
+          omega
+      | cons second tail =>
+          cases tail with
+          | nil =>
+              simp only [List.mem_cons, List.not_mem_nil, or_false] at aMember bMember cMember
+              omega
+          | cons third rest => simp
+
+/-- The source may skip short buckets before constructing their sets or scanning any pairs. -/
+theorem short_none (values : List Nat) (ordered : values.Pairwise (· < ·)) (short : values.length < 3) :
+    pairs values values = none := by
+  cases result : pairs values values with
+  | none => rfl
+  | some answer =>
+      obtain ⟨a, aMember, b, bMember, ab, accepted, _⟩ := pairs_some values values ordered answer result
+      have valid : third a b ∈ values ∧ candidate a b ≠ known := of_decide_eq_true accepted
+      have bc : b < third a b := by simp only [third]; omega
+      have length := three_members_length values a b (third a b) aMember bMember valid.1 ab bc
+      omega
+
 def scalarKeys (items : List Nat) : List Constant := items.map (fun (n : Nat) => .int n)
 def numbers (items : List Nat) : List Mutable.Value := (scalarKeys items).map Mutable.Value.scalar
 def setKeys (items : List Nat) : List Constant := items.eraseDups.map (fun (n : Nat) => .int n)

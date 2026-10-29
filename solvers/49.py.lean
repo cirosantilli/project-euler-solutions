@@ -351,6 +351,8 @@ private def groupBody : List Stmt :=
   match (code[3]? : Option Stmt) with | some (.forIn _ _ body _) => body | _ => []
 private def searchBody : List Stmt :=
   match (code[5]? : Option Stmt) with | some (.forDictionaryItems _ _ body _) => body | _ => []
+private def rowBody : List Stmt :=
+  match (searchBody[4]? : Option Stmt) with | some (.forIn _ _ body _) => body | _ => []
 private def pairBody : List Stmt :=
   match (searchBody[4]? : Option Stmt) with
   | some (.forIn _ _ (.forIn _ _ body _ :: _) _) => body
@@ -845,6 +847,278 @@ theorem known_comparison (heap : Mutable.Heap) (env : HeapCalls.Env) (address kn
     scalarCompare, evalCmpOp, ProjectEulerSolutions.PrimePermutationGroups.known, Prod.ext_iff,
     aTest, bTest, cTest, show (CmpOp.notEq == CmpOp.eq) = false by rfl]
   split_ifs <;> simp_all
+
+private def rowValues (row : ProjectEulerSolutions.PrimePermutationGroups.Row) : List Mutable.Value :=
+  [number row.1, number row.2.1, number row.2.2]
+
+private structure SearchHeap (heap : Mutable.Heap) (arrayAddress setAddress knownAddress : Nat)
+    (items : List Nat) : Prop where
+  arrayFound : heap[arrayAddress]? = some (.list (numbers items))
+  setFound : heap[setAddress]? = some (.set (ProjectEulerSolutions.PrimeBucketSearch.setKeys items))
+  knownFound : heap[knownAddress]? = some (.tuple knownValues)
+
+private theorem SearchHeap.append (snapshot : SearchHeap heap arrayAddress setAddress knownAddress items)
+    (extra : Mutable.Heap) : SearchHeap (heap ++ extra) arrayAddress setAddress knownAddress items :=
+  ⟨prefix_found heap extra _ _ snapshot.arrayFound, prefix_found heap extra _ _ snapshot.setFound,
+    prefix_found heap extra _ _ snapshot.knownFound⟩
+
+private structure SearchContext (env : HeapCalls.Env) (arrayAddress setAddress knownAddress : Nat)
+    (items : List Nat) : Prop where
+  getArray : env "arr" = some (.ref arrayAddress)
+  getSet : env "s" = some (.ref setAddress)
+  getLength : env "m" = some (number items.length)
+  getKnown : env "target_known" = some (.ref knownAddress)
+
+private theorem SearchContext.pair (context : SearchContext env arrayAddress setAddress knownAddress items)
+    (a b : Nat) : SearchContext (pairEnv env a b) arrayAddress setAddress knownAddress items :=
+  ⟨by simpa [pairEnv, setLocal] using context.getArray,
+    by simpa [pairEnv, setLocal] using context.getSet,
+    by simpa [pairEnv, setLocal] using context.getLength,
+    by simpa [pairEnv, setLocal] using context.getKnown⟩
+
+private theorem SearchContext.seq (context : SearchContext env arrayAddress setAddress knownAddress items)
+    (address : Nat) : SearchContext (setLocal env "seq" (.ref address)) arrayAddress setAddress knownAddress items :=
+  ⟨by simpa [setLocal] using context.getArray, by simpa [setLocal] using context.getSet,
+    by simpa [setLocal] using context.getLength, by simpa [setLocal] using context.getKnown⟩
+
+private theorem SearchContext.bind_i (context : SearchContext env arrayAddress setAddress knownAddress items)
+    (i : Nat) : SearchContext (setLocal env "i" (number i)) arrayAddress setAddress knownAddress items :=
+  ⟨by simpa [setLocal] using context.getArray, by simpa [setLocal] using context.getSet,
+    by simpa [setLocal] using context.getLength, by simpa [setLocal] using context.getKnown⟩
+
+private theorem SearchContext.bind_j (context : SearchContext env arrayAddress setAddress knownAddress items)
+    (j : Nat) : SearchContext (setLocal env "j" (number j)) arrayAddress setAddress knownAddress items :=
+  ⟨by simpa [setLocal] using context.getArray, by simpa [setLocal] using context.getSet,
+    by simpa [setLocal] using context.getLength, by simpa [setLocal] using context.getKnown⟩
+
+private theorem fresh_comparison (heap : Mutable.Heap) (env : HeapCalls.Env) (knownAddress a b c : Nat)
+    (getKnown : env "target_known" = some (.ref knownAddress))
+    (known : heap[knownAddress]? = some (.tuple knownValues)) :
+    Evaluates program (setLocal env "seq" (.ref heap.length))
+      (.compare (.name "seq") [(.notEq, .name "target_known")])
+      (heap ++ [.tuple [number a, number b, number c]])
+      (flag (decide ((a,b,c) ≠ ProjectEulerSolutions.PrimePermutationGroups.known)))
+      (heap ++ [.tuple [number a, number b, number c]]) := by
+  apply known_comparison _ _ heap.length knownAddress a b c (by simp [setLocal])
+    (by simpa [setLocal] using getKnown) (by simp) (prefix_found heap _ _ _ known)
+  have bound := (List.getElem?_eq_some_iff.mp known).1
+  omega
+
+/-- A successful original pair iteration returns its freshly allocated candidate tuple. -/
+private theorem pair_return (heap : Mutable.Heap) (env : HeapCalls.Env) (arrayAddress setAddress knownAddress i j a b : Nat)
+    (items : List Nat) (snapshot : SearchHeap heap arrayAddress setAddress knownAddress items)
+    (context : SearchContext env arrayAddress setAddress knownAddress items)
+    (getI : env "i" = some (number i)) (getJ : env "j" = some (number j))
+    (first : items[i]? = some a) (second : items[j]? = some b) (increasing : a ≤ b)
+    (accepted : ProjectEulerSolutions.PrimeBucketSearch.accepted items a b = true) (following : List Stmt) :
+    BlockReturns program env (pairBody ++ following) heap (.ref ((heap ++ [Mutable.Object.tuple [number a, number b]]).length))
+      (heap ++ [.tuple [number a, number b]] ++
+        [.tuple (rowValues (ProjectEulerSolutions.PrimeBucketSearch.candidate a b))]) := by
+  let c := ProjectEulerSolutions.PrimeBucketSearch.third a b
+  let afterPair := pairEnv env a b
+  let firstHeap := heap ++ [Mutable.Object.tuple [number a, number b]]
+  have valid : c ∈ items ∧ (a,b,c) ≠ ProjectEulerSolutions.PrimePermutationGroups.known := of_decide_eq_true accepted
+  have locals := context.pair a b
+  have extended := snapshot.append [Mutable.Object.tuple [number a, number b]]
+  have memberTest := candidate_present firstHeap afterPair setAddress c items
+    (by simp [afterPair, pairEnv, setLocal, c]) locals.getSet extended.setFound
+  have allocated := candidate_result firstHeap afterPair a b c
+    (by simp [afterPair, pairEnv, setLocal]) (by simp [afterPair, pairEnv, setLocal])
+    (by simp [afterPair, pairEnv, setLocal, c])
+  have compared := fresh_comparison firstHeap afterPair knownAddress a b c locals.getKnown extended.knownFound
+  apply (pair_prefix heap env arrayAddress i j a b items context.getArray getI getJ snapshot.arrayFound first second increasing).returns
+  apply BlockReturns.branch (flag := true) (middle := firstHeap)
+    memberTest (by simp [valid.1, Mutable.truth, scalarTruth])
+  apply allocated.returns
+  apply BlockReturns.branch (flag := true)
+    compared (by simp [valid.2, Mutable.truth, scalarTruth])
+  exact BlockReturns.return_value (Evaluates.lookup (by simp [setLocal, firstHeap]))
+
+/-- A rejected pair retains all allocations and preserves the captured search inputs. -/
+private theorem pair_skip (heap : Mutable.Heap) (env : HeapCalls.Env) (arrayAddress setAddress knownAddress i j a b : Nat)
+    (items : List Nat) (snapshot : SearchHeap heap arrayAddress setAddress knownAddress items)
+    (context : SearchContext env arrayAddress setAddress knownAddress items)
+    (getI : env "i" = some (number i)) (getJ : env "j" = some (number j))
+    (first : items[i]? = some a) (second : items[j]? = some b) (increasing : a ≤ b)
+    (rejected : ProjectEulerSolutions.PrimeBucketSearch.accepted items a b = false) :
+    ∃ finalEnv extra, BlockContinues program env pairBody heap finalEnv (heap ++ extra) ∧
+      SearchContext finalEnv arrayAddress setAddress knownAddress items ∧ finalEnv "i" = env "i" := by
+  let c := ProjectEulerSolutions.PrimeBucketSearch.third a b
+  let afterPair := pairEnv env a b
+  let firstHeap := heap ++ [Mutable.Object.tuple [number a, number b]]
+  have constructed := pair_prefix heap env arrayAddress i j a b items context.getArray getI getJ snapshot.arrayFound first second increasing
+  have locals := context.pair a b
+  have extended := snapshot.append [Mutable.Object.tuple [number a, number b]]
+  have memberTest := candidate_present firstHeap afterPair setAddress c items
+    (by simp [afterPair, pairEnv, setLocal, c]) locals.getSet extended.setFound
+  by_cases present : c ∈ items
+  · let ready := setLocal afterPair "seq" (.ref firstHeap.length)
+    let finalHeap := firstHeap ++ [Mutable.Object.tuple [number a, number b, number c]]
+    have failed : ¬ (c ∈ items ∧ (a,b,c) ≠ ProjectEulerSolutions.PrimePermutationGroups.known) :=
+      of_decide_eq_false rejected
+    have same : (a,b,c) = ProjectEulerSolutions.PrimePermutationGroups.known := by
+      by_contra different
+      exact failed ⟨present, different⟩
+    have allocated := candidate_result firstHeap afterPair a b c
+      (by simp [afterPair, pairEnv, setLocal]) (by simp [afterPair, pairEnv, setLocal])
+      (by simp [afterPair, pairEnv, setLocal, c])
+    have compared := fresh_comparison firstHeap afterPair knownAddress a b c locals.getKnown extended.knownFound
+    have excluded : BlockContinues program ready [acceptedBody[1]'(by decide)] finalHeap ready finalHeap := by
+      apply BlockContinues.branch (flag := false) compared (by simp [same, Mutable.truth, scalarTruth])
+      exact .nil
+    have skipped : BlockContinues program afterPair (pairBody.drop 3) firstHeap ready finalHeap := by
+      apply BlockContinues.branch (flag := true) memberTest (by simp [present, Mutable.truth, scalarTruth])
+      exact allocated.append excluded
+    refine ⟨ready, [.tuple [number a, number b], .tuple [number a, number b, number c]], ?_,
+      locals.seq firstHeap.length, ?_⟩
+    · simpa only [firstHeap, finalHeap, List.append_assoc, List.singleton_append] using constructed.append skipped
+    · simp [ready, afterPair, pairEnv, setLocal]
+  · have skipped : BlockContinues program afterPair (pairBody.drop 3) firstHeap afterPair firstHeap := by
+      apply BlockContinues.branch (flag := false) memberTest (by simp [present, Mutable.truth, scalarTruth])
+      exact .nil
+    exact ⟨afterPair, [.tuple [number a, number b]], constructed.append skipped, locals,
+      by simp [afterPair, pairEnv, setLocal]⟩
+
+/-- A scan either continues with fresh garbage or returns a freshly allocated row. -/
+private def Scan (invariant : HeapCalls.Env → Prop) (env : HeapCalls.Env) (body : List Stmt)
+    (heap : Mutable.Heap) : Option ProjectEulerSolutions.PrimePermutationGroups.Row → Prop
+  | none => ∃ finalEnv extra, BlockContinues program env body heap finalEnv (heap ++ extra) ∧ invariant finalEnv
+  | some answer => ∀ following, ∃ address extra,
+      BlockReturns program env (body ++ following) heap (.ref address) (heap ++ extra) ∧
+      (heap ++ extra)[address]? = some (.tuple (rowValues answer))
+
+theorem pair_result (heap : Mutable.Heap) (env : HeapCalls.Env) (arrayAddress setAddress knownAddress i j a b : Nat)
+    (items : List Nat) (snapshot : SearchHeap heap arrayAddress setAddress knownAddress items)
+    (context : SearchContext env arrayAddress setAddress knownAddress items)
+    (getI : env "i" = some (number i)) (getJ : env "j" = some (number j))
+    (first : items[i]? = some a) (second : items[j]? = some b) (increasing : a ≤ b) :
+    Scan (fun finalEnv => SearchContext finalEnv arrayAddress setAddress knownAddress items ∧
+      finalEnv "i" = some (number i)) env pairBody heap
+      (if ProjectEulerSolutions.PrimeBucketSearch.accepted items a b then
+        some (ProjectEulerSolutions.PrimeBucketSearch.candidate a b) else none) := by
+  cases verdict : ProjectEulerSolutions.PrimeBucketSearch.accepted items a b with
+  | false =>
+      obtain ⟨finalEnv, extra, continued, locals, stable⟩ :=
+        pair_skip heap env arrayAddress setAddress knownAddress i j a b items snapshot context getI getJ first second increasing verdict
+      exact ⟨finalEnv, extra, continued, locals, stable.trans getI⟩
+  | true =>
+      intro following
+      let middle : Mutable.Heap := heap ++ [.tuple [number a, number b]]
+      refine ⟨middle.length,
+        [.tuple [number a, number b], .tuple (rowValues (ProjectEulerSolutions.PrimeBucketSearch.candidate a b))], ?_, ?_⟩
+      · simpa only [List.append_assoc, List.singleton_append] using
+          pair_return heap env arrayAddress setAddress knownAddress i j a b items snapshot context getI getJ first second increasing verdict following
+      · simp [middle]
+
+private theorem scan_weaken (invariant weaker : HeapCalls.Env → Prop)
+    {result : Option ProjectEulerSolutions.PrimePermutationGroups.Row}
+    (implication : ∀ finalEnv, invariant finalEnv → weaker finalEnv)
+    (executed : Scan invariant env body heap result) : Scan weaker env body heap result := by
+  cases result with
+  | none =>
+      obtain ⟨finalEnv, extra, continued, valid⟩ := executed
+      exact ⟨finalEnv, extra, continued, implication finalEnv valid⟩
+  | some answer => exact executed
+
+private theorem scan_for_range
+    {result : Option ProjectEulerSolutions.PrimePermutationGroups.Row}
+    (arguments : Evaluates.Arguments program env expressions heap values heap)
+    (bounds : rangeBounds values = .ok (start, stop, stride))
+    (executed : Scan invariant env [.rangeStepLoop name start stop stride body []] heap result) :
+    Scan invariant env [.forIn (.name name) (.call (.name "range") expressions) body []] heap result := by
+  cases result with
+  | none =>
+      obtain ⟨finalEnv, extra, continued, valid⟩ := executed
+      exact ⟨finalEnv, extra, BlockContinues.for_range arguments bounds continued, valid⟩
+  | some answer =>
+      intro following
+      obtain ⟨address, extra, returned, found⟩ := executed following
+      exact ⟨address, extra, BlockReturns.for_range arguments bounds returned, found⟩
+
+private theorem scan_range_return (active : Calls.rangeContinues next stop 1 = true)
+    (executed : Scan invariant (setLocal env name (number next)) body heap (some answer)) :
+    Scan invariant env [.rangeStepLoop name next stop 1 body []] heap (some answer) := by
+  intro following
+  obtain ⟨address, extra, returned, found⟩ :=
+    executed ([Calls.loopContinuation body (.rangeStepLoop name (next + 1) stop 1 body [])] ++ following)
+  refine ⟨address, extra, ?_, found⟩
+  apply BlockReturns.range_step active
+  simpa only [List.append_assoc] using returned
+
+private theorem scan_range_continue (active : Calls.rangeContinues next stop 1 = true)
+    {result : Option ProjectEulerSolutions.PrimePermutationGroups.Row}
+    (control : Calls.loopControl body = false)
+    (continued : BlockContinues program (setLocal env name (number next)) body heap middleEnv (heap ++ extra))
+    (rest : Scan invariant middleEnv [.rangeStepLoop name (next + 1) stop 1 body []] (heap ++ extra) result) :
+    Scan invariant env [.rangeStepLoop name next stop 1 body []] heap result := by
+  cases result with
+  | none =>
+      obtain ⟨finalEnv, more, finished, valid⟩ := rest
+      refine ⟨finalEnv, extra ++ more, ?_, valid⟩
+      apply BlockContinues.range_step active
+      simpa only [Calls.loopContinuation, control, Bool.false_eq_true, if_false, List.append_assoc] using
+        continued.append finished
+  | some answer =>
+      intro following
+      obtain ⟨address, more, returned, found⟩ := rest following
+      refine ⟨address, extra ++ more, ?_, ?_⟩
+      · apply BlockReturns.range_step active
+        simpa only [Calls.loopContinuation, control, Bool.false_eq_true, if_false, List.append_assoc,
+          List.singleton_append] using continued.returns returned
+      · simpa only [List.append_assoc] using found
+
+private theorem pairBody_control : Calls.loopControl pairBody = false := rfl
+private theorem rowBody_control : Calls.loopControl rowBody = false := rfl
+
+/-- The original inner range reads every remaining pair and returns exactly the native row scan. -/
+theorem inner_loop (items : List Nat) (i a : Nat) (first : items[i]? = some a)
+    (remaining : List Nat) (j : Nat) (suffix : items.drop j = remaining)
+    (larger : ∀ b ∈ remaining, a < b)
+    (heap : Mutable.Heap) (env : HeapCalls.Env) (arrayAddress setAddress knownAddress : Nat)
+    (snapshot : SearchHeap heap arrayAddress setAddress knownAddress items)
+    (context : SearchContext env arrayAddress setAddress knownAddress items)
+    (getI : env "i" = some (number i)) :
+    Scan (fun finalEnv => SearchContext finalEnv arrayAddress setAddress knownAddress items ∧
+      finalEnv "i" = some (number i)) env [.rangeStepLoop "j" j items.length 1 pairBody []] heap
+      (ProjectEulerSolutions.PrimeBucketSearch.row items a remaining) := by
+  induction remaining generalizing j heap env with
+  | nil =>
+      have empty := congrArg List.length suffix
+      simp only [List.length_drop, List.length_nil] at empty
+      refine ⟨env, [], ?_, context, getI⟩
+      simp only [List.append_nil]
+      exact BlockContinues.range_done (by simp [Calls.rangeContinues]; omega) .nil
+  | cons head tail ih =>
+      let bound := setLocal env "j" (number j)
+      have selected : items[j]? = some head := by
+        simpa [suffix] using (List.head?_drop (l := items) (i := j)).symm
+      have inside := (List.getElem?_eq_some_iff.mp selected).1
+      have active : Calls.rangeContinues j items.length 1 = true := by simp [Calls.rangeContinues]; omega
+      have getI' : bound "i" = some (number i) := by simpa [bound, setLocal] using getI
+      have increasing : a ≤ head := Nat.le_of_lt (larger head List.mem_cons_self)
+      cases verdict : ProjectEulerSolutions.PrimeBucketSearch.accepted items a head with
+      | true =>
+          have returned := pair_result heap bound arrayAddress setAddress knownAddress i j a head items
+            snapshot (context.bind_j j) getI' (by simp [bound, setLocal]) first selected increasing
+          have native : ProjectEulerSolutions.PrimeBucketSearch.row items a (head :: tail) =
+              some (ProjectEulerSolutions.PrimeBucketSearch.candidate a head) := by
+            simp [ProjectEulerSolutions.PrimeBucketSearch.row, verdict]
+          rw [native]
+          apply scan_range_return active
+          simpa only [verdict, if_pos (rfl : (true : Bool) = true)] using returned
+      | false =>
+          obtain ⟨nextEnv, extra, continued, locals, stable⟩ := pair_skip heap bound
+            arrayAddress setAddress knownAddress i j a head items snapshot (context.bind_j j)
+            getI' (by simp [bound, setLocal]) first selected increasing verdict
+          have next := ih (j := j + 1) (suffix := by simp [List.drop_add_one_eq_tail_drop, suffix])
+            (larger := fun b member => larger b (List.mem_cons_of_mem _ member)) (heap := heap ++ extra)
+            (env := nextEnv) (snapshot.append extra) locals (stable.trans getI')
+          have native : ProjectEulerSolutions.PrimeBucketSearch.row items a (head :: tail) =
+              ProjectEulerSolutions.PrimeBucketSearch.row items a tail := by
+            simp [ProjectEulerSolutions.PrimeBucketSearch.row, verdict]
+          rw [native]
+          apply scan_range_continue active pairBody_control continued
+          simpa only [Int.natCast_add, Int.natCast_one] using next
 
 end find_prime_perm_arith_sequence
 end solvers.«49»
