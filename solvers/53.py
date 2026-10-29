@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 def solve(limit_n: int, threshold: int) -> int:
+    if threshold < 1:
+        return limit_n * (limit_n + 3) // 2 if limit_n > 0 else 0
     total = 0
     for n in range(1, limit_n + 1):
         c = 1  # C(n, 0)
@@ -14,4 +16,7 @@ def solve(limit_n: int, threshold: int) -> int:
 
 
 if __name__ == "__main__":
+    assert solve(1, 0) == 2
+    assert solve(2, -1) == 5
+    assert solve(-1, 0) == 0
     print(solve(100, 1_000_000))
