@@ -223,4 +223,34 @@ theorem completion_survives_candidates (relation : Nat → Nat → Bool) (need :
   have lower : (r : Int) ≤ (completion.sum : Int) := by exact_mod_cast member_le_sum completion r member
   exact ⟨members r member, by omega, compatible r member⟩
 
+/-- If fewer vertices than picks remain, no recursive branch can satisfy the
+source's candidate-count guard, even without an early cardinality return. -/
+theorem scan_insufficient (relation : Nat → Nat → Bool)
+    (recurse : List Nat → List Nat → Int → Best → Best)
+    (need : Nat) (clique : List Nat) (sum : Int) (remaining : List Nat) (best : Best)
+    (short : remaining.length < need) : scan relation recurse need clique sum remaining best = best := by
+  induction remaining generalizing best with
+  | nil => rfl
+  | cons q rest ih =>
+    simp only [scan]
+    split
+    · rfl
+    · have size := (candidates_sublist relation need sum q rest best.bound).length_le
+      have tooFew : ¬ need - 1 ≤ (candidates relation need sum q rest best.bound).length := by
+        simp only [List.length_cons] at short
+        omega
+      rw [if_neg tooFew]
+      exact ih best (by simp only [List.length_cons] at short; omega)
+
+/-- The owner scan and a recursive call with one or more picks have the same
+value, although the owner may perform cache work before finding too few picks. -/
+theorem search_succ_eq_scan (relation : Nat → Nat → Bool) (need : Nat)
+    (clique remaining : List Nat) (sum : Int) (best : Best) :
+    search relation (need+1) clique remaining sum best =
+      scan relation (search relation need) (need+1) clique sum remaining best := by
+  rw [search]
+  by_cases short : remaining.length < need+1
+  · rw [if_pos short, scan_insufficient relation (search relation need) (need+1) clique sum remaining best short]
+  · rw [if_neg short]
+
 end ProjectEulerSolutions.CliqueSearch
