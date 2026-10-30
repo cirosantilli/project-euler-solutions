@@ -5,6 +5,10 @@ def solve(limit: int) -> int:
     """
     Count among the first `limit` convergents of sqrt(2) (as in the problem's expansions)
     how many have a numerator with more digits than the denominator.
+
+    @formalsw: Returns
+    @formalsw: Py from project_euler_statements.p57 import naive
+    @formalsw: Equiv(naive)
     """
     # First expansion: 3/2
     p, q = 3, 2
