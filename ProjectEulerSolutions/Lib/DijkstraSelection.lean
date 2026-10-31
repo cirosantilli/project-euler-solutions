@@ -70,15 +70,12 @@ theorem findMin_le_unvisited (total : Nat) (infinity : Int) (state : SearchState
     (findMin total infinity state).2 ≤ state.distances[index]! :=
   fold_le_member state (List.range total) (0, infinity) index (List.mem_range.mpr inside) unvisited
 
-/-- A finite remaining estimate prevents the sentinel from being selected. -/
-theorem findMin_selected (total : Nat) (infinity : Int) (state : SearchState)
-    (available : ∃ index < total, state.visited[index]! = false ∧ state.distances[index]! < infinity) :
+/-- Every finite scan result names an unvisited entry at the returned distance. -/
+theorem findMin_finite (total : Nat) (infinity : Int) (state : SearchState)
+    (below : (findMin total infinity state).2 < infinity) :
     let selected := findMin total infinity state
     selected.1 < total ∧ state.visited[selected.1]! = false ∧
       selected.2 = state.distances[selected.1]! ∧ selected.2 < infinity := by
-  obtain ⟨index, inside, unvisited, finite⟩ := available
-  have lower := findMin_le_unvisited total infinity state index inside unvisited
-  have below : (findMin total infinity state).2 < infinity := Int.lt_of_le_of_lt lower finite
   rcases fold_selected state (List.range total) (0, infinity) with unchanged |
       ⟨selected, member, unvisited, value⟩
   · have impossible : findMin total infinity state = (0, infinity) := unchanged
@@ -88,6 +85,16 @@ theorem findMin_selected (total : Nat) (infinity : Int) (state : SearchState)
     dsimp only
     rw [result]
     exact ⟨List.mem_range.mp member, unvisited, rfl, by simpa only [result] using below⟩
+
+/-- A finite remaining estimate prevents the sentinel from being selected. -/
+theorem findMin_selected (total : Nat) (infinity : Int) (state : SearchState)
+    (available : ∃ index < total, state.visited[index]! = false ∧ state.distances[index]! < infinity) :
+    let selected := findMin total infinity state
+    selected.1 < total ∧ state.visited[selected.1]! = false ∧
+      selected.2 = state.distances[selected.1]! ∧ selected.2 < infinity := by
+  obtain ⟨index, inside, unvisited, finite⟩ := available
+  exact findMin_finite total infinity state
+    (Int.lt_of_le_of_lt (findMin_le_unvisited total infinity state index inside unvisited) finite)
 
 /-- If the scan returns its sentinel, no unvisited estimate lies below that bound. -/
 theorem findMin_sentinel (total : Nat) (infinity : Int) (state : SearchState)
