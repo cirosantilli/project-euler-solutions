@@ -33,4 +33,34 @@ theorem ListFound.append {heap : Mutable.Heap} {address : Nat} {pairs : List Pai
   obtain ⟨values, present, rows⟩ := found
   exact ⟨values, ProjectEulerSolutions.HeapCollection.prefix_found heap extra address _ present, rows.append extra⟩
 
+/-- A rational tuple cannot alias the list cell used to collect results. -/
+theorem Row.collector {base : Mutable.Heap} {old : List Mutable.Value} {garbage : Mutable.Heap}
+    {value : Mutable.Value} {pair : Pair}
+    (row : Row (ProjectEulerSolutions.HeapCollection.working base old garbage) value pair)
+    (replacement : List Mutable.Value) (extra : Mutable.Heap) :
+    Row (ProjectEulerSolutions.HeapCollection.working base replacement (garbage ++ extra)) value pair := by
+  obtain ⟨address, rfl, present⟩ := row
+  have different : base.length ≠ address := by
+    rintro rfl
+    simp [ProjectEulerSolutions.HeapCollection.found] at present
+  exact ⟨address, rfl, ProjectEulerSolutions.HeapCollection.other_found
+    base old replacement garbage extra address (object pair) different present⟩
+
+theorem Rows.collector {base : Mutable.Heap} {old : List Mutable.Value} {garbage : Mutable.Heap}
+    {values : List Mutable.Value} {pairs : List Pair}
+    (rows : Rows (ProjectEulerSolutions.HeapCollection.working base old garbage) values pairs)
+    (replacement : List Mutable.Value) (extra : Mutable.Heap) :
+    Rows (ProjectEulerSolutions.HeapCollection.working base replacement (garbage ++ extra)) values pairs :=
+  rows.imp (fun _ _ row => row.collector replacement extra)
+
+/-- Recursive result lists survive writes to a distinct collector. -/
+theorem ListFound.collector {base : Mutable.Heap} {old : List Mutable.Value} {garbage : Mutable.Heap}
+    {address : Nat} {pairs : List Pair}
+    (list : ListFound (ProjectEulerSolutions.HeapCollection.working base old garbage) address pairs)
+    (different : base.length ≠ address) (replacement : List Mutable.Value) (extra : Mutable.Heap) :
+    ListFound (ProjectEulerSolutions.HeapCollection.working base replacement (garbage ++ extra)) address pairs := by
+  obtain ⟨values, present, rows⟩ := list
+  exact ⟨values, ProjectEulerSolutions.HeapCollection.other_found
+    base old replacement garbage extra address (.list values) different present, rows.collector replacement extra⟩
+
 end ProjectEulerSolutions.RationalPair.Heap
