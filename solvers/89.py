@@ -1,12 +1,7 @@
 #!/usr/bin/env python
 from __future__ import annotations
 
-import os
-import sys
-from typing import Dict, List, Tuple
-
-
-ROMAN_VALUE: Dict[str, int] = {
+ROMAN_VALUE: dict[str, int] = {
     "I": 1,
     "V": 5,
     "X": 10,
@@ -17,7 +12,7 @@ ROMAN_VALUE: Dict[str, int] = {
 }
 
 # Standard minimal Roman numeral construction (Project Euler 89 rules).
-MINIMAL_TABLE: List[Tuple[int, str]] = [
+MINIMAL_TABLE: list[tuple[int, str]] = [
     (1000, "M"),
     (900, "CM"),
     (500, "D"),
@@ -35,7 +30,9 @@ MINIMAL_TABLE: List[Tuple[int, str]] = [
 
 
 def roman_to_int(s: str) -> int:
-    """Parse a (valid) Roman numeral into an integer."""
+    """
+    Parse Roman symbols using adjacent subtractive pairs.
+    """
     total = 0
     i = 0
     n = len(s)
@@ -53,10 +50,12 @@ def roman_to_int(s: str) -> int:
 
 
 def int_to_min_roman(x: int) -> str:
-    """Convert an integer to its minimal Roman numeral form."""
+    """
+    Convert a positive integer to its minimal Roman numeral form.
+    """
     if x <= 0:
         raise ValueError("Roman numerals here are defined only for positive integers.")
-    res: List[str] = []
+    res: list[str] = []
     for val, sym in MINIMAL_TABLE:
         if x == 0:
             break
@@ -66,12 +65,12 @@ def int_to_min_roman(x: int) -> str:
     return "".join(res)
 
 
-def load_lines() -> List[str]:
+def load_lines() -> list[str]:
     with open("0089_roman.txt", "r", encoding="utf-8") as f:
         return [line.strip() for line in f if line.strip()]
 
 
-def solve(lines: List[str]) -> int:
+def solve(lines: list[str]) -> int:
     saved = 0
     for s in lines:
         val = roman_to_int(s)
@@ -97,5 +96,4 @@ if __name__ == "__main__":
 
     assert roman_to_int("MMMMCMXCIX") == 4999
     assert int_to_min_roman(4999) == "MMMMCMXCIX"
-    lines = load_lines()
-    print(solve(lines))
+    print(solve(load_lines()))
