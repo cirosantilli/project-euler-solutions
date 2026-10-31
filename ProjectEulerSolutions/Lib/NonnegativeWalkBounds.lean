@@ -27,6 +27,23 @@ theorem erase_cycles {α : Type} [DecidableEq α] (graph : SimpleGraph α)
     walk.support_bypass_subset nonnegative
 
 /-- All finite nonnegative vertex-weighted graphs admit the same sum and vertex-count bounds. -/
+theorem bounded_path_enumerated {α : Type} [DecidableEq α] (vertices : List α)
+    (complete : ∀ vertex, vertex ∈ vertices) (graph : SimpleGraph α) (cost : α → Int)
+    (nonnegative : ∀ vertex, 0 ≤ cost vertex)
+    {start finish : α} (walk : graph.Walk start finish) :
+    ∃ path : graph.Walk start finish, path.IsPath ∧
+      (path.support.map cost).sum ≤ (walk.support.map cost).sum ∧
+      path.length < vertices.length ∧
+      (path.support.map cost).sum < (vertices.map cost).sum + 1 := by
+  obtain ⟨path, simple, cheaper⟩ := erase_cycles graph cost walk (fun vertex _ => nonnegative vertex)
+  have included : path.support ⊆ vertices := fun vertex _ => complete vertex
+  have lengthBound := (simple.support_nodup.subperm included).length_le
+  have costBound := cost_le_of_nodup_subset cost path.support vertices simple.support_nodup
+    included (fun vertex _ => nonnegative vertex)
+  refine ⟨path, simple, cheaper, ?_, by omega⟩
+  simpa using lengthBound
+
+/-- The flat-index specialization used by array implementations. -/
 theorem bounded_path (weights : List Int) (graph : SimpleGraph (Fin weights.length))
     (nonnegative : ∀ value ∈ weights, 0 ≤ value)
     {start finish : Fin weights.length} (walk : graph.Walk start finish) :

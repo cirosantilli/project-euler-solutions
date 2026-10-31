@@ -151,7 +151,40 @@ theorem run_witness [DecidableEq α] (graph : SimpleGraph α) (cost : α → Int
         (adjacent v) (edges v) _ (ih v)
 
 /-- The vertex count suffices: erasing cycles produces a cheaper path with fewer edges.
-The result is an attained minimum over all walks, without executing the search. -/
+The enumeration need not have any particular order. -/
+theorem run_minimum_enumerated [DecidableEq α] (vertices : List α)
+    (complete : ∀ vertex, vertex ∈ vertices) (graph : SimpleGraph α) (cost : α → Int)
+    (adjacent : α → List α)
+    (adjacency : ∀ v u, u ∈ adjacent v ↔ graph.Adj v u)
+    (nonnegative : ∀ vertex, 0 ≤ cost vertex)
+    (source v : α) (reachable : graph.Walk v source) :
+    ∃ shortest : graph.Walk v source,
+      (shortest.support.map cost).sum =
+        run cost adjacent ((vertices.map cost).sum + 1) source vertices.length v ∧
+      ∀ walk : graph.Walk v source,
+        (shortest.support.map cost).sum ≤ (walk.support.map cost).sum := by
+  have bounded (walk : graph.Walk v source) :
+      run cost adjacent ((vertices.map cost).sum + 1) source vertices.length v ≤
+        (walk.support.map cost).sum := by
+    obtain ⟨path, _, cheaper, short, _⟩ :=
+      NonnegativeWalkBounds.bounded_path_enumerated vertices complete graph cost nonnegative walk
+    exact (run_le_walk graph cost adjacent (fun v u edge => (adjacency v u).mpr edge)
+      _ path _ (Nat.le_of_lt short)).trans cheaper
+  obtain ⟨path, _, _, _, below⟩ :=
+    NonnegativeWalkBounds.bounded_path_enumerated vertices complete graph cost nonnegative reachable
+  have strictlyBelow := lt_of_le_of_lt (bounded path) below
+  have sourceBound : cost source ≤ (vertices.map cost).sum + 1 := by
+    have bound := NonnegativeWalkBounds.cost_le_of_nodup_subset cost [source] vertices
+      (by simp) (by simpa using complete source) (fun vertex _ => nonnegative vertex)
+    simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, add_zero] at bound
+    omega
+  have witness := run_witness graph cost adjacent
+    (fun v u member => (adjacency v u).mp member) nonnegative _ source sourceBound vertices.length v
+  rcases witness.2 with sentinel | ⟨shortest, value⟩
+  · omega
+  · exact ⟨shortest, value, fun walk => value ▸ bounded walk⟩
+
+/-- Flat-index arrays are a specialization of the enumeration theorem. -/
 theorem run_minimum (weights : List Int) (graph : SimpleGraph (Fin weights.length))
     (adjacent : Fin weights.length → List (Fin weights.length))
     (adjacency : ∀ v u, u ∈ adjacent v ↔ graph.Adj v u)
@@ -162,24 +195,26 @@ theorem run_minimum (weights : List Int) (graph : SimpleGraph (Fin weights.lengt
         run weights.get adjacent (weights.sum + 1) source weights.length v ∧
       ∀ walk : graph.Walk v source,
         (shortest.support.map weights.get).sum ≤ (walk.support.map weights.get).sum := by
-  have bounded (walk : graph.Walk v source) :
-      run weights.get adjacent (weights.sum + 1) source weights.length v ≤
-        (walk.support.map weights.get).sum := by
-    obtain ⟨path, _, cheaper, short, _⟩ :=
-      NonnegativeWalkBounds.bounded_path weights graph nonnegative walk
-    exact (run_le_walk graph weights.get adjacent (fun v u edge => (adjacency v u).mpr edge)
-      _ path _ (Nat.le_of_lt short)).trans cheaper
-  obtain ⟨path, _, _, short, below⟩ :=
-    NonnegativeWalkBounds.bounded_path weights graph nonnegative reachable
-  have strictlyBelow := lt_of_le_of_lt (bounded path) below
-  have sourceBound : weights.get source ≤ weights.sum + 1 := by
-    have bound := GridPathBounds.simple_path_bound weights [source] nonnegative (by simp)
-    simpa using le_of_lt bound.2
-  have witness := run_witness graph weights.get adjacent
-    (fun v u member => (adjacency v u).mp member)
-    (fun v => nonnegative _ (List.get_mem weights v)) _ source sourceBound weights.length v
-  rcases witness.2 with sentinel | ⟨shortest, value⟩
-  · omega
-  · exact ⟨shortest, value, fun walk => value ▸ bounded walk⟩
+  simpa only [List.length_finRange, List.map_get_finRange] using
+    run_minimum_enumerated (List.finRange weights.length) (by intro vertex; simp)
+      graph weights.get adjacent adjacency
+      (fun vertex => nonnegative _ (List.get_mem weights vertex)) source v reachable
+
+/-- Changing vertex representation preserves the recurrence, including neighbor order. -/
+theorem run_map {β : Type} [DecidableEq α] [DecidableEq β]
+    (encode : α → β) (injective : Function.Injective encode)
+    (costA : α → Int) (costB : β → Int) (costs : ∀ v, costA v = costB (encode v))
+    (adjacentA : α → List α) (adjacentB : β → List β)
+    (neighbors : ∀ v, (adjacentA v).map encode = adjacentB (encode v))
+    (infinity : Int) (source : α) (n : Nat) :
+    ∀ v, run costA adjacentA infinity source n v =
+      run costB adjacentB infinity (encode source) n (encode v) := by
+  induction n with
+  | zero =>
+      intro v
+      simp only [run, initial, injective.eq_iff, costs]
+  | succ n ih =>
+      intro v
+      simp only [run, step, ← neighbors, List.foldl_map, costs, ih]
 
 end ProjectEulerSolutions.VertexRelaxation
