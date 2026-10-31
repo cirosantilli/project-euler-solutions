@@ -15,7 +15,7 @@ Prefer a meaningful argument shared by both implementations. A reference-only se
 | 38 | Supplied base limit 9999 | Derive the maximum base width from fitting at least two products into nine digits.
 | 40 | Supplied decimal-stream construction limit | Accept the same requested digit positions as the optimized solver and extend the stream until they exist.
 | 45 | Scan 100001 triangular indices | Accept the same `after` threshold as the optimized solver and merge the three increasing polygonal sequences without a cutoff.
-| 46 | Scan below 10000 | Search until the first counterexample, without a cutoff.
+| 46 | Scan below 10000 | Accept the same `after` threshold as the optimized solver and search until the first counterexample, without a cutoff.
 | 61 | Supplied polygonal index limit 140 | Enumerate each family until its values reach the problem's four-digit boundary.
 | 62 | Supplied cube-root limit | Accept only the requested class size and expand complete digit widths until successful. Internal finite counting windows come from those widths.
 |===
@@ -25,6 +25,8 @@ Source proofs still awaiting replacement are retained as `.py.lean.attempt`; the
 Problem 62 has structural equivalence and support proofs for every signed class size. Both unbounded source searches return exactly when a completed digit width contains a matching class, with the same result; otherwise both diverge. The reference root boundaries are derived from the requested digit width. No external search limit or assumption that every class size exists is needed.
 
 Problem 45 has structural termination and equivalence proofs for every signed `after` threshold. A recurrence supplies arbitrarily large common pentagonal and hexagonal values. Both source loops reach the least common value above the threshold; the three-way merge advances its least cursor without passing that answer.
+
+Problem 46 has structural equivalence and support proofs for every signed `after` threshold. Both functions terminate exactly when a counterexample above that threshold exists, returning the least one; otherwise both diverge. The default call has a separate termination proof from the explicit counterexample 5777.
 
 == Remaining implementation and proof restrictions
 
@@ -44,6 +46,6 @@ Problem 45 has structural termination and equivalence proofs for every signed `a
 
 Other explicit bounds were checked for their role: the quadratic coefficient ranges in problem 27, the fifth power in problem 30, the target decimal digits in problems 32 and 38, the four-digit progression in problem 49, the fifty reverse-and-add steps in problem 55, and the one-tenth spiral threshold in problem 58 come from their stated problem variants. Problem 60's bound is shared by both implementations and its theorem covers every signed bound; it is not a reference-only cutoff. Such shared parameters still deserve review when a more natural generalization is available.
 
-Further useful shared parameters include coefficient ranges in problem 27, the digit-power exponent in problem 30, the numeral base in problem 34, the target digit set in problems 32 and 38, the substring divisors in problem 43, and the diagonal-prime ratio in problem 58. Existing fixed-input proofs do not replace these prospective generalized results. Problems 40 and 45 already have shared position and threshold parameters after this cleanup.
+Further useful shared parameters include coefficient ranges in problem 27, the digit-power exponent in problem 30, the numeral base in problem 34, the target digit set in problems 32 and 38, the substring divisors in problem 43, and the diagonal-prime ratio in problem 58. Existing fixed-input proofs do not replace these prospective generalized results. Problems 40, 45, and 46 have shared position and threshold parameters.
 
 The default root-partition certificate for problem 62 is numerical evidence toward a termination witness, not an execution cap. Its class batches were checked, but final assembly has not passed and is not a completed proof.

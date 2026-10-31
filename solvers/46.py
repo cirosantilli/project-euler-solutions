@@ -47,18 +47,23 @@ def can_be_written_as_prime_plus_twice_square(n: int, primes: list[int]) -> bool
     return False
 
 
-def solve() -> int:
+def solve(after: int = 0) -> int:
     """
-    @formalsw: Py from project_euler_statements.p46 import naive_default
-    @formalsw: Equiv(naive_default)
+    Find the least counterexample strictly above after, if one exists.
+
+    @formalsw: Py from project_euler_statements.p46 import naive
+    @formalsw: Equiv(naive)
     """
     primes: list[int] = [2, 3]
     n = 9
     while True:
         ensure_primes_up_to(n, primes)
-        if not is_prime_with_list(n, primes):  # odd composite
-            if not can_be_written_as_prime_plus_twice_square(n, primes):
-                return n
+        if (
+            n > after
+            and not is_prime_with_list(n, primes)
+            and not can_be_written_as_prime_plus_twice_square(n, primes)
+        ):
+            return n
         n += 2
 
 
