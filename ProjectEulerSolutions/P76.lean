@@ -1,35 +1,31 @@
 import ProjectEulerStatements.P76
-import ProjectEulerSolutions.Termination.P76
+import ProjectEulerSolutions.Lib.CoinChangeArray
+
+/-! A complete partition table for the supplied signed input. -/
 namespace ProjectEulerSolutions.P76
+open CoinChangeArray
+set_option Elab.async false
 
-def countSummations (n : Nat) : Nat :=
-  let dp0 := Array.replicate (n + 1) 0
-  let dp0 := dp0.set! 0 1
-  let rec loopPart (part : Nat) (dp : Array Nat) : Array Nat :=
-    if part >= n then
-      dp
-    else
-      let rec loopS (s : Nat) (dp : Array Nat) : Array Nat :=
-        if s > n then
-          dp
-        else
-          let dp := dp.set! s (dp[s]! + dp[s - part]!)
-          loopS (s + 1) dp
-      termination_by 0
-      decreasing_by all_goals exact Termination.decreases
-      loopPart (part + 1) (loopS part dp)
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  let dp := loopPart 1 dp0
-  dp[n]!
+def countSummations (n : Nat) : Nat := (compute n (List.range' 1 (n-1))).getD n 0
 
+theorem countSummations_correct (n : Nat) :
+    countSummations n = ProjectEulerStatements.P76.countPartitions n := by
+  have positive : ∀ part ∈ List.range' 1 (n-1), 0 < part := by
+    intro part member
+    obtain ⟨index, smaller, same⟩ := List.mem_range'.mp member
+    omega
+  rw [countSummations, compute_encode _ _ positive]
+  simp [encode, ProjectEulerStatements.P76.countPartitions,
+    ProjectEulerStatements.P76.countWays_coins, Array.getD]
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-example : countSummations 5 = 6 := by
-  native_decide
+def solve (n : Int) : Int := if n < 0 then 0 else countSummations n.toNat
 
+theorem solve_result (n : Int) : solve n = ProjectEulerStatements.P76.result n := by
+  by_cases negative : n < 0
+  · simpa only [solve, if_pos negative] using
+      (ProjectEulerStatements.P76.result_negative n negative).symm
+  · simp only [solve, if_neg negative, countSummations_correct]
+    have counted := ProjectEulerStatements.P76.result_nat n.toNat
+    simpa only [Int.toNat_of_nonneg (by omega : 0 ≤ n)] using counted.symm
 
-def solve (_n : Nat) :=
-  countSummations 100
 end ProjectEulerSolutions.P76

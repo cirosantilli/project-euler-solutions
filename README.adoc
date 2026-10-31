@@ -600,6 +600,8 @@ Problem 74 has structural source termination and equivalence proofs for every si
 
 Problem 75 has structural source termination and equivalence proofs for every signed perimeter bound. The optimized proof executes list allocation, the integer-square-root bound, parity and gcd tests, both continue paths, the increasing-perimeter break, strided counter updates, and the live filtered sum. Pythagorean classification and uniqueness justify the complete multiplicity table. The reference proof covers both nested generator loops and the outer singular-count sum. Negative bounds return zero, and existing caller heap objects are preserved. The proofs use only standard Lean axioms and do not evaluate either whole program. The standalone Lean array sieve has the same signed interface and a structural equivalence proof.
 
+Problem 76 has structural source termination and equivalence proofs for every signed integer input. The recursive reference preserves an exact cache keyed by both the remaining sum and maximum part. The optimized proof executes list allocation, initialization, ascending part and sum loops, in-place additions, and the final indexed read. A coin-change frontier connects the complete table to the unordered partition recurrence. Negative inputs return zero, and zero counts the empty partition. Caller heap objects are preserved. The proofs use only standard Lean axioms and do not evaluate either whole program. The standalone Lean array solver shares the signed interface and has proved termination and equivalence.
+
 The proof-domain cleanup and remaining restrictions are tracked in link:proof-domain-audit.adoc[]. Fixed-input functions should retain `Equiv`, using structural source proofs instead of whole-program computation; meaningful shared parameters are preferred whenever the problem admits them.
 
 ====== Problem 14: Collatz termination
@@ -757,7 +759,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/73.py[73.py] | link:solvers/73.md[73.md] | link:solvers/73.py.lean[73.py.lean] | 0.880 | 7295372 |
 | link:solvers/74.py[74.py] | link:solvers/74.md[74.md] | link:solvers/74.py.lean[74.py.lean] | 0.151 | 402 |
 | link:solvers/75.py[75.py] | link:solvers/75.md[75.md] | link:solvers/75.py.lean[75.py.lean] | 0.162 | 161667 |
-| link:solvers/76.py[76.py] | link:solvers/76.md[76.md] |  | 0.116 | 190569291 |
+| link:solvers/76.py[76.py] | link:solvers/76.md[76.md] | link:solvers/76.py.lean[76.py.lean] | 0.116 | 190569291 |
 | link:solvers/77.py[77.py] | link:solvers/77.md[77.md] |  | 0.123 | 71 |
 | link:solvers/78.py[78.py] | link:solvers/78.md[78.md] |  | 0.241 | 55374 |
 | link:solvers/79.py[79.py] | link:solvers/79.md[79.md] |  | 0.095 | 73162890 |

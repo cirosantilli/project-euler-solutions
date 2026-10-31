@@ -1,13 +1,17 @@
 #!/usr/bin/env python
-from typing import List
 
 
 def solve(n: int) -> int:
     """
-    Number of ways to write n as a sum of at least two positive integers,
-    where order does not matter (i.e., integer partitions excluding [n]).
+    Count partitions of n using positive parts smaller than n.
+
+    @formalsw: Py from project_euler_statements.p76 import naive
+    @formalsw: Returns
+    @formalsw: Equiv(naive)
     """
-    dp: List[int] = [0] * (n + 1)
+    if n < 0:
+        return 0
+    dp: list[int] = [0] * (n + 1)
     dp[0] = 1
 
     # Use parts 1..n-1, which excludes the single-part partition [n]

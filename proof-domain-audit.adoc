@@ -1,6 +1,6 @@
 = Python proof-domain audit
 
-This audit covers the Python solver and reference interfaces for problems 1 through 75, their `Requires` annotations, default adapters, and the documented proof claims.
+This audit covers the Python solver and reference interfaces for problems 1 through 76, their `Requires` annotations, default adapters, and the documented proof claims.
 
 Prefer a meaningful argument shared by both implementations. A reference-only search limit changes an unbounded problem into a bounded one and is not an acceptable substitute. A mathematical bound derived from the inputs or the problem definition is acceptable. For a fixed problem without a useful parameter, retain `Equiv` and prefer structural proofs through shared mathematical models. A completed interpreter observation can establish termination; running out of observation fuel cannot.
 
@@ -75,6 +75,8 @@ Problem 73 has structural source termination and equivalence proofs for every si
 Problem 74 has initialized source termination and equivalence proofs for every signed counting bound and target, including both omitted-argument defaults. Its standalone Lean solver uses dynamic hash maps for lengths and path positions, stops only at cache hits or repeated states, and has a structural signed equivalence proof. Both calls preserve caller objects, globals, aliases, and cycles. Digit growth proves repetition for every natural chain start. The optimized cache remains correct and successor-closed through reverse tail writes and complete cycle batches. The source proofs cover the factorial comprehension, digit sums, short-circuit walk, position indices, both sliced writeback branches, and counting. The proofs use only standard Lean axioms and do not evaluate either whole program.
 
 Problem 75 has structural source termination and equivalence proofs for every signed perimeter bound. Pythagorean classification and uniqueness connect the complete Euclidean sieve to the exhaustive triangle counts. The optimized proof covers the actual list allocation, square-root bound, parity and gcd tests, both continue transfers, increasing-perimeter break, strided updates, and live filtered sum. The reference proof executes both nested triangle generators and the outer singular-perimeter generator. Existing caller heap objects are preserved, and negative bounds return zero. The standalone Lean array sieve accepts the same signed bound and has a structural equivalence proof. All proofs use only standard Lean axioms, without whole-program computation.
+
+Problem 76 has source termination and equivalence proofs for every signed integer input. The cached reference recurrence counts partitions by their largest allowed part. The optimized proof covers actual mutable list allocation and initialization, both ascending range loops, indexed addition, and the final read. The positive-coin frontier proves completeness of the table, including the empty partition at zero; negative inputs return zero. The standalone Lean solver processes the same complete part list with a dynamically sized array, proved decreasing loop measures, and signed equivalence. Every proof uses only standard Lean axioms, without whole-program computation.
 
 == Remaining implementation and proof restrictions
 
