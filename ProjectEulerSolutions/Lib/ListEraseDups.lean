@@ -1,6 +1,7 @@
 import Mathlib.Data.Finset.Card
+import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 
-/-! First-occurrence deduplication has the same cardinality as a finite set. -/
+/-! First-occurrence deduplication agrees with finite-set cardinality and summation. -/
 namespace ProjectEulerSolutions.ListEraseDups
 set_option Elab.async false
 
@@ -22,5 +23,13 @@ theorem length_eq_card {α : Type*} [DecidableEq α] (items : List α) :
     ext value
     simp [List.mem_eraseDups]
   rw [← List.toFinset_card_of_nodup (nodup items), same]
+
+theorem sum_eq (items : List Nat) :
+    items.eraseDups.sum = items.toFinset.sum id := by
+  have same : items.eraseDups.toFinset = items.toFinset := by
+    ext value
+    simp [List.mem_eraseDups]
+  simpa only [same, List.map_id] using
+    (List.sum_toFinset id (nodup items)).symm
 
 end ProjectEulerSolutions.ListEraseDups

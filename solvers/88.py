@@ -11,7 +11,9 @@ def solve(k_max: int) -> int:
       we can append (P - S) ones to make sum equal product.
       Then the effective k is: k = t + (P - S).
 
+    @formalsw: Py from project_euler_statements.p88 import naive
     @formalsw: Returns
+    @formalsw: Equiv(naive)
     """
     if k_max < 2:
         return 0
