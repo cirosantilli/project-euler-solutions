@@ -490,7 +490,7 @@ The most important statement is the `@formalsw: Equiv(naive)` one, which, if our
 
 The proofs of FormalSW statements such as `Equiv` as present in .py.lean files present next to each .py file, e.g.: link:solvers/1.py.lean[]. These files are very complicated for humans to understand, but that's fine, we just have LLMs deal with it for us, and Lean checks that the proof checks out.
 
-Keep Python-specific proofs beside their solver. Use a single `.py.lean` file unless separate compilation materially improves rebuild times; in that case, import supporting files from `.py.lean.d/`. Put reusable mathematics in `ProjectEulerSolutions/Lib/`, or the statements library when both repositories need it, and reusable Python semantics in formalsw.
+Keep Python-specific proofs beside their solver. Use a single `.py.lean` file unless separate compilation materially improves rebuild times; in that case, import supporting files from `.py.lean.d/`. Within that directory, use as many small modules as help proof development and rebuild speed. Put reusable mathematics in `ProjectEulerSolutions/Lib/`, or the statements library when both repositories need it, and reusable Python semantics in formalsw.
 
 Prefer a meaningful parameter shared by the optimized and naive implementations. Do not add a reference-only exhaustion limit to an unbounded problem. For fixed problems without a useful generalization, retain `Equiv` and prefer structural proofs through shared mathematical models. Whole-program evaluation is not the default proof strategy. Stale proofs are kept as `.py.lean.attempt` and are not marked proven. See link:proof-domain-audit.adoc[] for the current audit and remaining restrictions.
 
