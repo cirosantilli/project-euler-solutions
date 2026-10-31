@@ -1,4 +1,15 @@
 #!/usr/bin/env python
+"""
+@formalsw: theorem solve_source_equivalence
+  (limit target : Int) (caller : FormalSW.PyAst.Mutable.Heap) :
+  caller.Valid → solvers.«74».source_equivalence.Verified limit target caller
+@formalsw: theorem solve_defaults_source_equivalence
+  (limit : Int) (caller : FormalSW.PyAst.Mutable.Heap) :
+  caller.Valid →
+    solvers.«74».source_equivalence.VerifiedCall [solvers.«74».solve.integer limit] limit 60 caller ∧
+    solvers.«74».source_equivalence.VerifiedCall [] 1000000 60 caller
+"""
+
 from math import factorial
 
 

@@ -72,6 +72,8 @@ Problem 72 has structural source termination and equivalence proofs for every si
 
 Problem 73 has structural source termination and equivalence proofs for every signed denominator bound and arbitrary signed interval numerators, requiring only positive endpoint denominators. Both functions count positive reduced proper fractions in the open interval; unreduced endpoints, reversed intervals, and intervals outside the unit range are covered. Integer division and clamping give exactly the admissible numerator interval, so the optimized loop can omit the reference's two cross-product tests. The source proof covers both lazy reference sums, signed floor division, minimum and maximum, the empty-row return, gcd tests, and both accumulator loops. All four omitted-default call shapes reuse the same complete symbolic execution proof. The standalone Lean statement and finite gcd scans share this interface, and the Python result is connected to the runnable model. No fixed-instance computation is used in the proofs.
 
+Problem 74 has initialized source termination and equivalence proofs for every signed counting bound and target, including both omitted-argument defaults. Both calls preserve caller objects, globals, aliases, and cycles. Digit growth proves repetition for every natural chain start. The optimized cache remains correct and successor-closed through reverse tail writes and complete cycle batches. The source proofs cover the factorial comprehension, digit sums, short-circuit walk, position indices, both sliced writeback branches, and counting. The proofs use only standard Lean axioms and do not evaluate either whole program.
+
 == Remaining implementation and proof restrictions
 
 [cols="1,3,3"]
@@ -82,6 +84,7 @@ Problem 73 has structural source termination and equivalence proofs for every si
 | 19 | The solver starts its calendar at 1900 and the proof excludes earlier years. | Extend the implementation before claiming arbitrary year ranges.
 | 44 | Both implementations accept the same finite pentagonal-index bound. | This is a valid bounded parameterization, but equivalence alone does not prove that the default answer is the global minimum over all indices.
 | 62 | Python source equivalence holds for every signed class size, with termination proved for target five. | Reconcile the standalone Lean model's two-argument interface and replace its assumed termination.
+| 74 | Initialized Python source equivalence covers all signed bounds and targets. The standalone Lean solver still uses fixed arrays and assumed termination. | Replace that model with safe memoization, remove its false termination helper, and align its signed interface and aggregate theorem.
 |===
 
 Other explicit bounds were checked for their role: the quadratic coefficient ranges in problem 27, the fifth power in problem 30, the four-digit progression in problem 49, the fifty reverse-and-add steps in problem 55, and the one-tenth spiral threshold in problem 58 come from their stated problem variants. Problems 32 and 38 accept a shared target width. Problem 60's bound is shared by both implementations and its theorem covers every signed bound; it is not a reference-only cutoff. Such shared parameters still deserve review when a more natural generalization is available.
@@ -92,13 +95,10 @@ Further useful shared parameters include coefficient ranges in problem 27, the d
 
 The following interfaces have matching Python arguments and passing numerical regression checks. Their generalized structural source proofs remain pending; the separate Lean statements and solver models also need reconciliation before they can certify these contracts.
 
-Problem 74's reference Python source has termination and coverage proofs for every signed counting bound and target; its two chain helpers require nonnegative starts. The actual digit-list allocation and lazy sum, tuple unpacking, mutable seen list, successor calls, and filtered outer sum implement the signed result model while preserving caller objects. Decimal digit growth keeps each orbit inside `max(start, 7 * 9!)`, proving first-repeat termination without a supplied iteration budget. Structural orbit and cache lemmas justify complete cycle batches and reverse tail writes. The optimized module's actual comprehension initializes its factorial table and exports its fresh address. Its digit-sum helper returns the same successor for every nonnegative input. Source proofs cover the forward walk's allocations, both short-circuit membership tests, index writes, path appends, and successor calls. Its exit records either a cached tail or an exact repeated position; in the latter case the path is the complete mathematical first-repeat path. The forward walk preserves earlier heap objects. Source proofs cover both writeback branches, including the live reverse cursor, constant cycle writes, length increments, and both fresh slice allocations. Only the cache cell changes among existing objects. The complete cycle batch implements the shared mathematical cache update. Propagating cache correctness through the full optimized call and repairing the standalone Lean model remain pending, including its final signed interface; problem 74 is not yet marked equivalent.
-
 
 [cols="1,3"]
 |===
 | Problem | Current design
-| 74 | Share the exclusive starting bound and desired chain length. The reference walks until repetition; the optimized solver memoizes tails and cycles without fixed arrays or iteration limits. Zero has digit-factorial successor one and is excluded as a starting value.
 | 77 | Share only the prime-partition threshold and search integers from two until it is exceeded.
 | 78 | Share the positive partition divisor and search positive indices until divisible. No universal existence claim is assumed.
 | 85 | Share only the desired rectangle count. Increasing counts and the incumbent distance bound the search; the optimized row search uses an exact integer square root. Ties choose the least positive pair (m, n), with m <= n.
