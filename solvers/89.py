@@ -12,7 +12,7 @@ ROMAN_VALUE: dict[str, int] = {
 }
 
 # Standard minimal Roman numeral construction (Project Euler 89 rules).
-MINIMAL_TABLE: list[tuple[int, str]] = [
+MINIMAL_TABLE: tuple[tuple[int, str], ...] = (
     (1000, "M"),
     (900, "CM"),
     (500, "D"),
@@ -26,7 +26,7 @@ MINIMAL_TABLE: list[tuple[int, str]] = [
     (5, "V"),
     (4, "IV"),
     (1, "I"),
-]
+)
 
 
 def roman_to_int(s: str) -> int:
