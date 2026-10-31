@@ -1,6 +1,6 @@
 = Python proof-domain audit
 
-This audit covers the Python solver and reference interfaces for problems 1 through 76, their `Requires` annotations, default adapters, and the documented proof claims.
+This audit covers the Python solver and reference interfaces for problems 1 through 77, their `Requires` annotations, default adapters, and the documented proof claims.
 
 Prefer a meaningful argument shared by both implementations. A reference-only search limit changes an unbounded problem into a bounded one and is not an acceptable substitute. A mathematical bound derived from the inputs or the problem definition is acceptable. For a fixed problem without a useful parameter, retain `Equiv` and prefer structural proofs through shared mathematical models. A completed interpreter observation can establish termination; running out of observation fuel cannot.
 
@@ -88,6 +88,7 @@ Problem 76 has source termination and equivalence proofs for every signed intege
 | 19 | The solver starts its calendar at 1900 and the proof excludes earlier years. | Extend the implementation before claiming arbitrary year ranges.
 | 44 | Both implementations accept the same finite pentagonal-index bound. | This is a valid bounded parameterization, but equivalence alone does not prove that the default answer is the global minimum over all indices.
 | 62 | Python source equivalence holds for every signed class size, with termination proved for target five. | Reconcile the standalone Lean model's two-argument interface and replace its assumed termination.
+| 77 | Tuple-key cache execution is supported, and prime partition counts provably exceed every signed threshold. The Python source equivalence remains pending; the standalone Lean models retain an obsolete two-argument interface and assumed termination. | Prove the original cached tuple recurrence, bytearray sieve, DP break, and least-value search; align the standalone model with the signed one-argument specification.
 |===
 
 Other explicit bounds were checked for their role: the quadratic coefficient ranges in problem 27, the fifth power in problem 30, the four-digit progression in problem 49, the fifty reverse-and-add steps in problem 55, and the one-tenth spiral threshold in problem 58 come from their stated problem variants. Problems 32 and 38 accept a shared target width. Problem 60's bound is shared by both implementations and its theorem covers every signed bound; it is not a reference-only cutoff. Such shared parameters still deserve review when a more natural generalization is available.
