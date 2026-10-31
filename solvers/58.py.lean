@@ -137,7 +137,8 @@ theorem result (a : Int) (n d s : Nat) (positive : 2 ≤ n)
       apply HeapCalls.Evaluates.builtin
         (.cons (HeapCalls.Evaluates.lookup getA)
           (.cons (HeapCalls.Evaluates.lookup getD) (.cons (HeapCalls.Evaluates.lookup getN) .nil)))
-      simp [HeapCalls.primitive, HeapCalls.scalarResult, Calls.modularPower, scalarNumber,
+      change HeapCalls.scalarResult (Calls.modularPower (.int a) (.int d) (.int n)) heap = _
+      simp [HeapCalls.scalarResult, Calls.modularPower, scalarNumber,
         FormalSW.Py.Builtin.Int.powMod_nonnegative a d n (by omega),
         ← FormalSW.Py.Builtin.Int.powModBinary_correct a d n, number, x]
     apply HeapCalls.BlockReturns.assign power

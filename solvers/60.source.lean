@@ -798,7 +798,8 @@ theorem loop (n d s : Nat) (positive : 2 ≤ n) (values remaining : List Int) (p
         have power : Evaluates outerProgram bound powerExpression heap (outerNumber x) heap globals := by
           apply Evaluates.builtin (.cons (Evaluates.lookup getA) (.cons (Evaluates.lookup boundInputs.d_value)
             (.cons (Evaluates.lookup boundInputs.n_value) .nil)))
-          simp [HeapCalls.primitive, HeapCalls.scalarResult, Calls.modularPower, scalarNumber,
+          change HeapCalls.scalarResult (Calls.modularPower (.int a) (.int d) (.int n)) heap = _
+          simp [HeapCalls.scalarResult, Calls.modularPower, scalarNumber,
             FormalSW.Py.Builtin.Int.powMod_nonnegative a d n (by omega),
             ← FormalSW.Py.Builtin.Int.powModBinary_correct a d n, outerNumber, x]
         apply BlockReturns.assign power
