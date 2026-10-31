@@ -1,5 +1,4 @@
-import solvers.«92.py.lean.d».WeightedLoop
-import solvers.«92.py.lean.d».Distribution
+import solvers.«92.py.lean.d».Execution
 import data.«project-euler-statements».data.py.project_euler_statements.«p92.py»
 
 namespace solvers.«92».next_term
@@ -66,3 +65,48 @@ theorem distribution_source (bound : Nat) (heap : Mutable.Heap) (globals : Mutab
   distribution.verified bound heap globals
 
 end solvers.«92»
+
+namespace solvers.«92».solve
+open FormalSW.PyAst ProjectEulerSolutions.DigitSquareChains
+set_option Elab.async false
+
+/-- The actual optimized source returns the count for every signed input. -/
+theorem finishes (limit : Int) :
+    Finishes (HeapMemoCalls.scalarFunction program "solve" [.int limit]).step
+      (HeapMemoCalls.scalarFunction program "solve" [.int limit]).initial (.ok (.int (count limit))) := by
+  have run := (result limit [] []).consequence
+    (post := fun value _ => value = .scalar (.int (count limit)) ∧ True)
+    (by intro value after same; exact ⟨same, trivial⟩)
+  obtain ⟨_, _, finished⟩ := run.scalar_finishes (values := [.int limit])
+  exact finished
+
+theorem «Returns» (limit_exclusive : Int) :
+    (HeapMemoCalls.scalarFunction program "solve" [.int limit_exclusive]).Returns :=
+  ⟨_, finishes limit_exclusive⟩
+
+theorem «Equiv(naive)» (limit_exclusive : Int) :
+    (HeapMemoCalls.scalarFunction program "solve" [.int limit_exclusive]).Equiv
+      (HeapCalls.scalarFunction P92Ast.module "naive" [.int limit_exclusive]) := by
+  obtain ⟨_, reference⟩ :=
+    data.«project-euler-statements».data.py.project_euler_statements.p92.naive.result limit_exclusive []
+  have left := finishes limit_exclusive
+  have right := reference.scalar_finishes (values := [.int limit_exclusive])
+  intro outcome
+  constructor
+  · intro finished
+    rw [finished.unique left]
+    exact right
+  · intro finished
+    rw [finished.unique right]
+    exact left
+
+theorem «Supported» :
+    (∀ limit : Int, (HeapMemoCalls.scalarFunction program "solve" [.int limit]).Supported) ∧
+    (∀ limit : Int, (HeapCalls.scalarFunction P92Ast.module "naive" [.int limit]).Supported) := by
+  constructor
+  · intro limit
+    exact («Returns» limit).supported
+  · intro limit
+    exact (data.«project-euler-statements».data.py.project_euler_statements.p92.naive.«Returns» limit).supported
+
+end solvers.«92».solve

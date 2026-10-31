@@ -46,6 +46,10 @@ def terminal(start: int, known: dict[int, int]) -> int:
 def solve(limit_exclusive: int = 10_000_000) -> int:
     """
     Count digit-square chains reaching 89 by grouping equal digit-square sums.
+
+    @formalsw: Py from project_euler_statements.p92 import naive
+    @formalsw: Returns
+    @formalsw: Equiv(naive)
     """
     if limit_exclusive <= 1:
         return 0
