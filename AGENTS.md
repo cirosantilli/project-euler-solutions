@@ -18,3 +18,9 @@ def naive(n: int) -> int:
     @formalsw: Returns
     """
 ```
+
+# Specification comments
+
+Keep `spec.yaml` comment fields limited to current design considerations, such as
+possible argument generalizations or constraints the formal specification cannot
+express. Do not put Python signatures, change history, or progress reports there.
