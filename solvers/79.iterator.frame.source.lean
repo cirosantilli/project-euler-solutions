@@ -1,4 +1,5 @@
 import solvers.«79.valid.source»
+import lang.py.FormalSW.MutableRelocation
 
 /-! Graph updates preserve arbitrary disjoint caller cells, including iterator allocations
 interleaved with the graph's own storage. No unchanged-prefix assumption is needed. -/
@@ -38,6 +39,22 @@ theorem PreservesCells.set (keep : Nat → Prop) (heap : Mutable.Heap)
       intro same
       exact separate (same ▸ selected)
     simp [different]
+
+/-- The solver's private writes preserve a relocated caller graph, including cycles. -/
+theorem PreservesCells.layout {keep : Nat → Prop} {before after logical : Mutable.Heap}
+    {rename : Nat → Nat} (retained : PreservesCells keep before after)
+    (layout : Mutable.Relocation.HeapLayout logical before rename)
+    (selected : ∀ index < logical.length, keep (rename index)) :
+    Mutable.Relocation.HeapLayout logical after rename := by
+  apply layout.preserves
+  intro index inside
+  have found : (logical.map Mutable.Relocation.graphNode)[index]? =
+      some (Mutable.Relocation.graphNode logical[index]) := by
+    simp [List.getElem?_eq_getElem inside]
+  have lookup := layout.lookup index _ found
+  have bound : rename index < before.length := by
+    simpa only [List.length_map] using (List.getElem?_eq_some_iff.mp lookup).1
+  exact retained.read (rename index) (selected index inside) bound
 
 /-- Protected objects may occur anywhere in memory, but cannot be graph-owned cells. -/
 structure ProtectedCells (keep : Nat → Prop) (roots : Roots) (state : Storage)
