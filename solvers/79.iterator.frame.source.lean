@@ -1,5 +1,5 @@
 import solvers.«79.valid.source»
-import lang.py.FormalSW.RuntimeRelocation
+import lang.py.FormalSW.TupleRelocation
 
 /-! Graph updates preserve arbitrary disjoint caller cells, including iterator allocations
 interleaved with the graph's own storage. No unchanged-prefix assumption is needed. -/
@@ -141,5 +141,48 @@ theorem ProtectedCells.withEdge {keep : Nat → Prop} {roots : Roots} {state : S
   intro address selected
   exact Nat.lt_of_lt_of_le (saved.inside address selected)
     (saved.edge_preserves source target member).length
+
+
+/-- Private graph construction never changes the allocator's empty-tuple choice. -/
+theorem Represents.node_preserves_emptyTuple (roots : Roots) (state : Storage)
+    (heap : Mutable.Heap) (represented : Represents roots state heap) (vertex : String) :
+    Mutable.Relocation.emptyTupleAddress
+      (nodeHeap heap roots.nodes roots.adjacency roots.degrees
+        state.vertices state.adjacency state.degrees vertex) =
+      Mutable.Relocation.emptyTupleAddress heap := by
+  by_cases present : vertex ∈ state.vertices
+  · simp [nodeHeap, present]
+  · simp only [nodeHeap, if_neg present]
+    have adjacencyInside := (List.getElem?_eq_some_iff.mp represented.adjacencyFound).1
+    have degreesInside := (List.getElem?_eq_some_iff.mp represented.degreesFound).1
+    rw [Mutable.Relocation.emptyTupleAddress_set_nonempty _ roots.degrees _
+      (by
+        simp only [List.getElem?_set, if_neg represented.tablesDistinct]
+        rw [List.getElem?_append_left (by simpa using degreesInside)]
+        simp [represented.nodes_not_degrees roots state heap,
+          represented.degreesFound]) (by simp)]
+    rw [Mutable.Relocation.emptyTupleAddress_set_nonempty _ roots.adjacency _
+      (by
+        rw [List.getElem?_append_left (by simpa using adjacencyInside)]
+        simp [represented.nodes_not_adjacency roots state heap,
+          represented.adjacencyFound]) (by simp)]
+    rw [Mutable.Relocation.emptyTupleAddress_append_nonempty _ _ (by simp)]
+    exact Mutable.Relocation.emptyTupleAddress_set _ _ _ _
+      represented.nodesFound (by simp) (by simp)
+
+theorem Represents.edge_preserves_emptyTuple (roots : Roots) (state : Storage)
+    (heap : Mutable.Heap) (represented : Represents roots state heap)
+    (source target : String) (member : source ∈ state.vertices) :
+    Mutable.Relocation.emptyTupleAddress
+      (edgeHeap heap (state.address source) roots.degrees (state.neighbors source) state.degrees
+        target (ProjectEulerStatements.TopologicalOrder.indegree target state.edges)) =
+      Mutable.Relocation.emptyTupleAddress heap := by
+  by_cases present : target ∈ state.neighbors source
+  · simp [edgeHeap, present]
+  · simp only [edgeHeap, if_neg present]
+    rw [Mutable.Relocation.emptyTupleAddress_set_nonempty _ roots.degrees _
+      (by simp [List.getElem?_set, represented.degreesFound, ite_eq_iff]) (by simp)]
+    exact Mutable.Relocation.emptyTupleAddress_set _ _ _ _
+      (represented.neighborsFound source member) (by simp) (by simp)
 
 end solvers.«79».graph

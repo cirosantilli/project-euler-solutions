@@ -31,13 +31,15 @@ theorem iterator_valid_iteration (context : Module) (extension : Extends context
           stack, after⟩, finalUsed⟩ resumes) ∧
       Represents roots next after ∧ ProtectedCells keep roots next after ∧
       PreservesCells keep yielded after ∧ Bindings roots nextEnv ∧
+      Mutable.Relocation.emptyTupleAddress after = Mutable.Relocation.emptyTupleAddress yielded ∧
       next.graphData = state.graphData.extend s := by
-  obtain ⟨after, next, nextEnv, body, result, framed, retained, nextBindings, data⟩ :=
+  obtain ⟨after, next, nextEnv, body, result, framed, retained, nextBindings, interned, data⟩ :=
     valid_iteration_cells keep roots state yielded env represented saved bindings s valid
   obtain ⟨finalUsed, continued⟩ := IteratorCalls.advance_continue
     (loop := inputIteratorLoop env following stack) (anchors := anchors) (used := used)
     (resumes := resumes) isObject bound executed rfl (body.extend extension)
-  exact ⟨after, next, nextEnv, finalUsed, continued, result, framed, retained, nextBindings, data⟩
+  exact ⟨after, next, nextEnv, finalUsed, continued, result, framed, retained,
+    nextBindings, interned, data⟩
 
 /-- One source iteration preserves the relocated graph left by the iterator method. -/
 theorem iterator_valid_iteration_layout (context : Module) (extension : Extends context program)
@@ -64,14 +66,15 @@ theorem iterator_valid_iteration_layout (context : Module) (extension : Extends 
       Represents roots next after ∧ ProtectedCells keep roots next after ∧
       PreservesCells keep yielded after ∧ Bindings roots nextEnv ∧
       Mutable.Relocation.HeapLayout logical after rename ∧
+      Mutable.Relocation.emptyTupleAddress after = Mutable.Relocation.emptyTupleAddress yielded ∧
       next.graphData = state.graphData.extend s := by
   obtain ⟨after, next, nextEnv, finalUsed, run, representedAfter, savedAfter,
-      retained, nextBindings, data⟩ :=
+      retained, nextBindings, interned, data⟩ :=
     iterator_valid_iteration context extension choices anchors used keep roots state
       before yielded iterator operation env s valid isObject bound executed represented saved
       bindings following stack resumes
   exact ⟨after, next, nextEnv, finalUsed, run, representedAfter, savedAfter, retained,
-    nextBindings, retained.layout layout selected, data⟩
+    nextBindings, retained.layout layout selected, interned, data⟩
 
 /-- One source iteration retains exact relocated objects for the next method call. -/
 theorem iterator_valid_iteration_runtime (context : Module) (extension : Extends context program)
@@ -98,14 +101,15 @@ theorem iterator_valid_iteration_runtime (context : Module) (extension : Extends
       Represents roots next after ∧ ProtectedCells keep roots next after ∧
       PreservesCells keep yielded after ∧ Bindings roots nextEnv ∧
       Mutable.Relocation.RuntimeLayout logical after rename ∧
+      Mutable.Relocation.emptyTupleAddress after = Mutable.Relocation.emptyTupleAddress yielded ∧
       next.graphData = state.graphData.extend s := by
   obtain ⟨after, next, nextEnv, finalUsed, run, representedAfter, savedAfter,
-      retained, nextBindings, data⟩ :=
+      retained, nextBindings, interned, data⟩ :=
     iterator_valid_iteration context extension choices anchors used keep roots state
       before yielded iterator operation env s valid isObject bound executed represented saved
       bindings following stack resumes
   exact ⟨after, next, nextEnv, finalUsed, run, representedAfter, savedAfter, retained,
-    nextBindings, retained.runtimeLayout layout selected, data⟩
+    nextBindings, retained.runtimeLayout layout selected, interned, data⟩
 
 /-- An invalid yielded string stops immediately after validation, retaining next's writes. -/
 theorem iterator_invalid_attempt (context : Module) (extension : Extends context program)
