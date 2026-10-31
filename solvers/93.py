@@ -3,6 +3,12 @@
 @formalsw: theorem rational_source (numerator denominator : Int)
   (heap : FormalSW.PyAst.Mutable.Heap) (globals : FormalSW.PyAst.Mutable.Globals) :
   denominator ≠ 0 → solvers.«93».rational.Verified numerator denominator heap globals
+@formalsw: theorem pair_results_source (a b : ProjectEulerSolutions.RationalPair.Pair)
+  (left right : Nat) (heap : FormalSW.PyAst.Mutable.Heap) (globals : FormalSW.PyAst.Mutable.Globals) :
+  0 < a.2 → 0 < b.2 →
+    heap[left]? = some (ProjectEulerSolutions.RationalPair.Heap.object a) →
+      heap[right]? = some (ProjectEulerSolutions.RationalPair.Heap.object b) →
+        solvers.«93».pair_results.Verified a b left right heap globals
 """
 from __future__ import annotations
 

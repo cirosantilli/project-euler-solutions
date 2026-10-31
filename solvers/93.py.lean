@@ -1,4 +1,4 @@
-import solvers.«93.py.lean.d».Rational
+import solvers.«93.py.lean.d».PairOperations
 
 namespace solvers.«93».rational
 open FormalSW.PyAst
@@ -26,5 +26,13 @@ open FormalSW.PyAst
 theorem rational_source (numerator denominator : Int) (heap : Mutable.Heap) (globals : Mutable.Globals) :
     denominator ≠ 0 → rational.Verified numerator denominator heap globals :=
   fun nonzero => rational.verified numerator denominator nonzero heap globals
+
+theorem pair_results_source (a b : ProjectEulerSolutions.RationalPair.Pair) (left right : Nat)
+    (heap : Mutable.Heap) (globals : Mutable.Globals) :
+    0 < a.2 → 0 < b.2 →
+      heap[left]? = some (ProjectEulerSolutions.RationalPair.Heap.object a) →
+        heap[right]? = some (ProjectEulerSolutions.RationalPair.Heap.object b) →
+          pair_results.Verified a b left right heap globals :=
+  pair_results.result a b left right heap globals
 
 end solvers.«93»
