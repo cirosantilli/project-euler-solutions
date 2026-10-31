@@ -1,3 +1,4 @@
+import solvers.«79.py.lean.d».AllocationTerminal
 import solvers.«79.py.lean.d».AllocationResult
 import solvers.«79.py.lean.d».Terminal
 import solvers.«79.py.lean.d».Execution
