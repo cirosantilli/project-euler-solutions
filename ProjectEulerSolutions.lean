@@ -501,7 +501,7 @@ example (ln ld un ud : Int) (lo : 0 < ld) (hi : 0 < ud) :
       (fun limit : Int => ProjectEulerSolutions.P73.solve limit ln ld un ud) :=
   funext (fun limit => ProjectEulerSolutions.P73.equiv limit ln ld un ud lo hi)
 
-example : ProjectEulerStatements.P74.naive = ProjectEulerSolutions.P74.solve := by
+example : @ProjectEulerStatements.P74.naive = @ProjectEulerSolutions.P74.solve := by
   apply (funext_iff).2
   simpa [funext_iff] using ProjectEulerSolutions.P74.equiv
 

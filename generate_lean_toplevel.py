@@ -47,6 +47,9 @@ def main() -> int:
         n = stem[1:]
         lhs_expr = f"ProjectEulerStatements.P{n}.naive"
         rhs_expr = f"ProjectEulerSolutions.P{n}.solve"
+        if n == "74":
+            lhs_expr = "@" + lhs_expr
+            rhs_expr = "@" + rhs_expr
         # These equivalences apply only on the domains proved by their modules.
         if n == "17":
             lines.append(f"example (n : Nat) (bound : n ≤ 1000) : {lhs_expr} n = {rhs_expr} n :=")
