@@ -1,3 +1,4 @@
+import ProjectEulerSolutions.Lib.DigitDiceSelections
 import solvers.«90.py.lean.d».Rotation
 
 /-! Construction of each die's mask from the tuple yielded by combinations. -/
@@ -69,8 +70,6 @@ theorem digit_loop (digits remaining : List Nat) (position accumulator : Nat)
 
 /-- itertools' positional rows and the mathematical choices use the same complete ordering. -/
 theorem choices_rows (count : Nat) (pool : List α) : choices count pool = Combinations.rows count pool := by
-  induction pool generalizing count with
-  | nil => cases count <;> simp [choices, Combinations.rows]
-  | cons first rest ih => cases count <;> simp [choices, Combinations.rows, ih]
+  exact DigitDice.choices_rows count pool
 
 end solvers.«90».masks
