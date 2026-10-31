@@ -1,82 +1,29 @@
 import ProjectEulerStatements.P75
-import ProjectEulerSolutions.Termination.P75
+import ProjectEulerSolutions.Lib.PythagoreanArraySieve
+
+/-! Count singular perimeters using the complete Euclidean sieve for the supplied bound. -/
 namespace ProjectEulerSolutions.P75
+open PythagoreanArraySieve
+set_option Elab.async false
 
-def gcd (a b : Nat) : Nat :=
-  if b == 0 then a else gcd b (a % b)
+def countArray (cells : Array Nat) : Nat :=
+  cells.foldl (fun total value => if value = 1 then total + 1 else total) 0
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def sqrtFloor (n : Nat) : Nat :=
-  let rec loop (lo hi : Nat) : Nat :=
-    if lo > hi then
-      hi
-    else
-      let mid := (lo + hi) / 2
-      let sq := mid * mid
-      if sq == n then
-        mid
-      else if sq < n then
-        loop (mid + 1) hi
-      else
-        loop lo (mid - 1)
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  loop 1 n
+def solveCore (limit : Nat) : Nat := countArray (compute limit)
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def solveCore (limit : Nat) : Nat :=
-  let counts := Array.replicate (limit + 1) 0
-  let mMax := sqrtFloor (limit / 2) + 1
-  let rec loopM (m : Nat) (counts : Array Nat) : Array Nat :=
-    if m > mMax then
-      counts
-    else
-      let rec loopN (n : Nat) (counts : Array Nat) : Array Nat :=
-        if n >= m then
-          counts
-        else
-          if (m + n) % 2 == 0 then
-            loopN (n + 1) counts
-          else if gcd m n != 1 then
-            loopN (n + 1) counts
-          else
-            let p0 := 2 * m * (m + n)
-            if p0 > limit then
-              counts
-            else
-              let rec loopP (p : Nat) (counts : Array Nat) : Array Nat :=
-                if p > limit then
-                  counts
-                else
-                  loopP (p + p0) (counts.set! p (counts[p]! + 1))
-              termination_by 0
-              decreasing_by all_goals exact Termination.decreases
-              loopN (n + 1) (loopP p0 counts)
-      termination_by 0
-      decreasing_by all_goals exact Termination.decreases
-      loopM (m + 1) (loopN 1 counts)
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  let counts := loopM 2 counts
-  let rec countOnes (i : Nat) (acc : Nat) : Nat :=
-    if i > limit then
-      acc
-    else
-      let acc := if counts[i]! == 1 then acc + 1 else acc
-      countOnes (i + 1) acc
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  countOnes 0 0
+theorem solveCore_correct (limit : Nat) : solveCore limit =
+    ProjectEulerStatements.P75.countSingular limit := by
+  rw [solveCore, countArray, compute_encode, ← Array.foldl_toList, encode_toList, List.foldl_map]
+  exact ProjectEulerStatements.P75.countSingular_table limit
 
+def solve (limit : Int) : Int := if limit < 0 then 0 else solveCore limit.toNat
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-example : solveCore 50 = 6 := by
-  native_decide
+theorem solve_result (limit : Int) : solve limit = ProjectEulerStatements.P75.result limit := by
+  by_cases negative : limit < 0
+  · simpa only [solve, if_pos negative] using
+      (ProjectEulerStatements.P75.result_negative limit negative).symm
+  · simp only [solve, if_neg negative, solveCore_correct]
+    have counted := ProjectEulerStatements.P75.result_nat limit.toNat
+    simpa only [Int.toNat_of_nonneg (by omega : 0 ≤ limit)] using counted.symm
 
-
-def solve (_n : Nat) :=
-  solveCore 1500000
 end ProjectEulerSolutions.P75

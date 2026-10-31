@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from math import gcd, isqrt
-from typing import List
 
 
 def solve(limit: int) -> int:
@@ -10,7 +9,9 @@ def solve(limit: int) -> int:
     Counts perimeters L <= limit that can form exactly one integer-sided right triangle.
     Uses Euclid's formula for primitive Pythagorean triples and counts their multiples.
     """
-    counts: List[int] = [0] * (limit + 1)
+    if limit < 0:
+        return 0
+    counts: list[int] = [0] * (limit + 1)
 
     # For primitive triples: a=m^2-n^2, b=2mn, c=m^2+n^2
     # Perimeter p0 = a+b+c = 2*m*(m+n)
