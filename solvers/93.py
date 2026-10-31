@@ -4,6 +4,8 @@
   (heap : FormalSW.PyAst.Mutable.Heap) (globals : FormalSW.PyAst.Mutable.Globals) :
   denominator ≠ 0 → solvers.«93».rational.Verified numerator denominator heap globals
 """
+from __future__ import annotations
+
 from itertools import combinations
 from math import gcd
 
