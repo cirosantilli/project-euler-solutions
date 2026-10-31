@@ -24,7 +24,7 @@ def implementations(problem):
 
 class UnboundedContractTests(unittest.TestCase):
     def test_shared_arguments(self):
-        for problem in (66, 68, 74, 77, 78, 79, 85, 88, 90, 92, 100):
+        for problem in (66, 68, 74, 77, 78, 79, 85, 88, 90, 92, 93, 100):
             with self.subTest(problem=problem):
                 reference, optimized = implementations(problem)
                 self.assertEqual(list(inspect.signature(reference.naive).parameters),

@@ -1,83 +1,96 @@
 #!/usr/bin/env python
-from __future__ import annotations
-
-from dataclasses import dataclass
-from fractions import Fraction
+"""
+@formalsw: theorem rational_source (numerator denominator : Int)
+  (heap : FormalSW.PyAst.Mutable.Heap) (globals : FormalSW.PyAst.Mutable.Globals) :
+  denominator ≠ 0 → solvers.«93».rational.Verified numerator denominator heap globals
+"""
 from itertools import combinations
-from typing import Dict, List, Set, Tuple
+from math import gcd
 
 
-def all_results(digits: Tuple[int, int, int, int]) -> Set[Fraction]:
+def rational(numerator: int, denominator: int) -> tuple[int, int]:
     """
-    Return all values obtainable by using each digit exactly once with + - * /
-    and any parenthesization (i.e., any binary expression tree).
-    """
-    start: Tuple[Fraction, ...] = tuple(sorted(Fraction(d, 1) for d in digits))
-    memo: Dict[Tuple[Fraction, ...], Set[Fraction]] = {}
+    Canonicalize a rational with a nonzero denominator for tuple hashing.
 
-    def rec(state: Tuple[Fraction, ...]) -> Set[Fraction]:
+    @formalsw: Requires(denominator != 0)
+    @formalsw: Returns
+    """
+    if denominator < 0:
+        numerator = -numerator
+        denominator = -denominator
+    divisor = gcd(numerator, denominator)
+    return numerator // divisor, denominator // divisor
+
+
+def pair_results(a: tuple[int, int], b: tuple[int, int]) -> list[tuple[int, int]]:
+    numerator_a, denominator_a = a
+    numerator_b, denominator_b = b
+    denominator = denominator_a * denominator_b
+    results = [
+        rational(numerator_a * denominator_b + numerator_b * denominator_a, denominator),
+        rational(numerator_a * denominator_b - numerator_b * denominator_a, denominator),
+        rational(numerator_b * denominator_a - numerator_a * denominator_b, denominator),
+        rational(numerator_a * numerator_b, denominator),
+    ]
+    if numerator_b:
+        results.append(rational(numerator_a * denominator_b, denominator_a * numerator_b))
+    if numerator_a:
+        results.append(rational(numerator_b * denominator_a, denominator_b * numerator_a))
+    return results
+
+
+def all_results(digits: tuple[int, ...]) -> set[tuple[int, int]]:
+    """
+    Reduce every pair of expression fragments, caching canonical multisets.
+    """
+    start = tuple(sorted((digit, 1) for digit in digits))
+    memo = {}
+
+    def rec(state: tuple[tuple[int, int], ...]) -> set[tuple[int, int]]:
         if state in memo:
             return memo[state]
         if len(state) == 1:
             memo[state] = {state[0]}
             return memo[state]
 
-        res: Set[Fraction] = set()
-        m = len(state)
-        for i in range(m):
-            for j in range(i + 1, m):
-                a, b = state[i], state[j]
-                rest: List[Fraction] = [state[k] for k in range(m) if k != i and k != j]
-
-                candidates: List[Fraction] = [a + b, a - b, b - a, a * b]
-                if b != 0:
-                    candidates.append(a / b)
-                if a != 0:
-                    candidates.append(b / a)
-
-                for c in candidates:
-                    new_state = tuple(sorted(rest + [c]))
-                    res.update(rec(new_state))
-
-        memo[state] = res
-        return res
+        results = set()
+        for i in range(len(state)):
+            for j in range(i + 1, len(state)):
+                rest = [state[k] for k in range(len(state)) if k != i and k != j]
+                for value in pair_results(state[i], state[j]):
+                    results.update(rec(tuple(sorted(rest + [value]))))
+        memo[state] = results
+        return results
 
     return rec(start)
 
 
-def consecutive_length(digits: Tuple[int, int, int, int]) -> Tuple[int, Set[int]]:
-    vals = all_results(digits)
-    ints: Set[int] = set()
-    for v in vals:
-        if v.denominator == 1 and v.numerator > 0:
-            ints.add(v.numerator)
-
+def consecutive_length(digits: tuple[int, ...]) -> tuple[int, set[int]]:
+    integers = set()
+    for numerator, denominator in all_results(digits):
+        if denominator == 1 and numerator > 0:
+            integers.add(numerator)
     n = 1
-    while n in ints:
+    while n in integers:
         n += 1
-    return n - 1, ints
+    return n - 1, integers
 
 
-def solve() -> Tuple[str, int]:
-    best_len = -1
-    best_digits: Tuple[int, int, int, int] | None = None
-
-    for comb in combinations(range(10), 4):
-        L, _ = consecutive_length(comb)
-        if L > best_len:
-            best_len = L
-            best_digits = comb
-
-    assert best_digits is not None
-    return "".join(map(str, best_digits)), best_len
+def solve(max_digit: int = 9) -> tuple[int, ...]:
+    best_length = -1
+    best_digits = ()
+    for digits in combinations(range(max_digit + 1), 4):
+        length, _ = consecutive_length(digits)
+        if length > best_length:
+            best_length = length
+            best_digits = digits
+    return best_digits
 
 
 if __name__ == "__main__":
-    # From the statement: for {1,2,3,4}, first non-expressible is 29, so run length is 28.
-    L_1234, ints_1234 = consecutive_length((1, 2, 3, 4))
-    assert L_1234 == 28
-    assert max(ints_1234) == 36  # statement says 36 is the maximum for {1,2,3,4}
-
-    ans, L = solve()
-    assert L == 51
-    print(ans)
+    length, integers = consecutive_length((1, 2, 3, 4))
+    assert length == 28
+    assert len(integers) == 31
+    assert max(integers) == 36
+    assert consecutive_length((1, 2, 5, 8))[0] == 51
+    print("".join(map(str, solve())))
