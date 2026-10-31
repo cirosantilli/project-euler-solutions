@@ -9,6 +9,9 @@ def solve(n: int) -> int:
     Count right triangles OPQ with O=(0,0), P and Q integer points in [0,n]x[0,n],
     P != Q, P,Q != O.
     """
+    if n <= 0:
+        return 0
+
     total = n * n  # right angle at the origin: (x,0) with (0,y), x,y in 1..n
 
     for x in range(n + 1):

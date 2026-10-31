@@ -1,12 +1,8 @@
 import ProjectEulerStatements.P91
-import ProjectEulerSolutions.Termination.P91
+import Mathlib.Data.Nat.GCD.Basic
 namespace ProjectEulerSolutions.P91
 
-def gcd (a b : Nat) : Nat :=
-  if b == 0 then a else gcd b (a % b)
-
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
+abbrev gcd := Nat.gcd
 def countRightTriangles (n : Nat) : Nat :=
   let total := n * n
   let rec loopX (x : Nat) (acc : Nat) : Nat :=
@@ -28,20 +24,14 @@ def countRightTriangles (n : Nat) : Nat :=
             let k1 := Nat.min (x / dx) ((n - y) / dy)
             let k2 := Nat.min ((n - x) / dx) (y / dy)
             loopY (y + 1) (acc + k1 + k2)
-      termination_by 0
-      decreasing_by all_goals exact Termination.decreases
+      termination_by n + 1 - y
+      decreasing_by all_goals omega
       loopX (x + 1) (loopY 0 acc)
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
+  termination_by n + 1 - x
+  decreasing_by omega
   loopX 0 total
 
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-example : countRightTriangles 2 = 14 := by
-  native_decide
-
-
-def solve (_n : Nat) :=
-  countRightTriangles 50
+def solve (n : Nat) :=
+  countRightTriangles n
 end ProjectEulerSolutions.P91
