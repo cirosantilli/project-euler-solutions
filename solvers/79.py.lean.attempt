@@ -869,3 +869,48 @@ theorem iterator_traversal_equiv (context : Module)
         base acquired yielded acquiredUsed finalUsed closed acquisition attempts error trace noGrowth valid
 
 end solvers.«79».source
+
+namespace solvers.«79».source
+open FormalSW.PyAst HeapCalls Mutable.Relocation IteratorCalls
+open solvers.«79».graph
+open data.«project-euler-statements».data.py.project_euler_statements
+set_option Elab.async false
+
+/-- Graph initialization precedes failed acquisition; its private objects remain unobservable. -/
+theorem solve_acquisition_failure (context : Module) (extension : Extends context graph.program)
+    (source : IteratorCalls.Relocation.ModuleSource context) (choices : ChoiceSchedule)
+    (receiver : Mutable.Value) (base failed : Mutable.Heap) (finalUsed : Nat) (error : ExceptionObject)
+    (closed : Closed base) (failure : AcquireFailure context choices receiver base 0 error failed finalUsed) :
+    ∃ after rename, ExecutionLayout failed after rename ∧
+      (∀ index < base.length, rename index = index) ∧
+      ((IteratorCalls.call context "solve" [receiver] base).run choices).Finishes
+        ⟨.error error, [], after, base.length⟩ := by
+  obtain ⟨after, rename, extended, rejected⟩ := failure.for_name_relocates source (initialHeap base) id
+    (initial_execution_layout base closed) base.length
+  have actual := rejected (inputIteratorLoop (initialEnv (buildEnv receiver) base) returnGraph
+    (iteratorBuildStack receiver [])) [] "attempts" (by simpa only [relocateValue_id] using
+      (show initialEnv (buildEnv receiver) base "attempts" = some receiver from rfl))
+  refine ⟨after, rename, extended.layout, extended.agrees, ?_⟩
+  have entered := IteratorCalls.Reaches.of_heap (choices := choices) (used := 0)
+    ((solve_iterator_initialize base receiver base.length []).extend extension) []
+  exact (entered.trans (by simpa only [inputIteratorLoop, inputLoop, iteratorBuildStack,
+    Calls.generatorException, List.any_cons, List.any_nil, Frame.inGenerator, Bool.false_or,
+    Bool.false_and, Bool.false_eq_true, ↓reduceIte] using actual)).finishes (.done rfl)
+
+/-- Binding errors, raised exceptions and rejected __iter__ results agree at both actual call boundaries. -/
+theorem acquisition_failure_equiv (context : Module)
+    (solverExtension : Extends context graph.program) (referenceExtension : Extends context p79.program)
+    (source : IteratorCalls.Relocation.ModuleSource context) (choices : ChoiceSchedule)
+    (receiver : Mutable.Value) (base failed : Mutable.Heap) (finalUsed : Nat) (error : ExceptionObject)
+    (closed : Closed base) (failure : AcquireFailure context choices receiver base 0 error failed finalUsed) :
+    ((IteratorCalls.call context "solve" [receiver] base).run choices).Equiv
+      ((IteratorCalls.call context "naive" [receiver] base).run choices) := by
+  obtain ⟨left, leftMap, leftLayout, leftFixed, optimized⟩ := solve_acquisition_failure context solverExtension source choices
+    receiver base failed finalUsed error closed failure
+  obtain ⟨right, rightMap, rightLayout, rightFixed, reference⟩ := p79.naive_acquisition_failure context referenceExtension source choices
+    receiver base failed finalUsed error closed failure
+  exact Mutable.Call.equiv_of_finishes optimized reference
+    (leftLayout.equivalent_exceptions rightLayout base.length (failure.effects source closed).2
+      leftFixed rightFixed error)
+
+end solvers.«79».source
