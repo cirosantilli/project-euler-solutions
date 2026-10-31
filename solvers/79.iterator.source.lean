@@ -1,5 +1,6 @@
 import solvers.«79.iterator.attempt.source»
 import lang.py.FormalSW.IteratorRules
+import lang.py.FormalSW.RuntimeEffects
 
 /-! The graph-builder's source loop composes actual protocol execution with graph updates.
 The iterator may mutate and allocate; graph updates preserve its disjoint resulting cells. -/
@@ -110,6 +111,41 @@ theorem iterator_valid_iteration_runtime (context : Module) (extension : Extends
       bindings following stack resumes
   exact ⟨after, next, nextEnv, finalUsed, run, representedAfter, savedAfter, retained,
     nextBindings, retained.runtimeLayout layout selected, interned, data⟩
+
+/-- The next iterator call retains valid references and the same empty-tuple identity. -/
+theorem iterator_valid_iteration_execution (context : Module) (extension : Extends context program)
+    (choices : ChoiceSchedule) (anchors used : Nat) (keep : Nat → Prop)
+    (roots : Roots) (state : Storage)
+    (before yielded : Mutable.Heap) (iterator : Mutable.Value) (operation : Operation)
+    (env : HeapCalls.Env) (s : String) (valid : ValidAttempt s)
+    (isObject : IteratorCalls.isInstance before iterator = true)
+    (bound : ProtocolCalls.nextMethod context iterator before = some (.ok (some operation), before))
+    (executed : IteratorCalls.OperationCompletes context choices used operation
+      before (.ok (text s)) yielded)
+    (represented : Represents roots state yielded) (saved : ProtectedCells keep roots state yielded)
+    (logical : Mutable.Heap) (rename : Nat → Nat)
+    (layout : Mutable.Relocation.ExecutionLayout logical yielded rename)
+    (selected : ∀ index < logical.length, keep (rename index))
+    (bindings : Bindings roots env) (following : List Stmt)
+    (stack : List HeapCalls.Frame) (resumes : List IteratorCalls.Resume) :
+    ∃ after next nextEnv finalUsed,
+      IteratorCalls.Reaches context anchors choices []
+        (.running ⟨⟨.block (sequenceLoop (sequenceSource iterator) 0 :: following) env,
+          stack, before⟩, used⟩ resumes)
+        (.running ⟨⟨.block (sequenceLoop (sequenceSource iterator) 0 :: following) nextEnv,
+          stack, after⟩, finalUsed⟩ resumes) ∧
+      Represents roots next after ∧ ProtectedCells keep roots next after ∧
+      PreservesCells keep yielded after ∧ Bindings roots nextEnv ∧
+      Mutable.Relocation.ExecutionLayout logical after rename ∧
+      Mutable.Relocation.emptyTupleAddress after = Mutable.Relocation.emptyTupleAddress yielded ∧
+      next.graphData = state.graphData.extend s := by
+  obtain ⟨after, next, nextEnv, finalUsed, run, representedAfter, savedAfter,
+      retained, nextBindings, related, interned, data⟩ :=
+    iterator_valid_iteration_runtime context extension choices anchors used keep roots state
+      before yielded iterator operation env s valid isObject bound executed represented saved
+      logical rename layout.runtime selected bindings following stack resumes
+  exact ⟨after, next, nextEnv, finalUsed, run, representedAfter, savedAfter, retained,
+    nextBindings, layout.preserves related interned, interned, data⟩
 
 /-- An invalid yielded string stops immediately after validation, retaining next's writes. -/
 theorem iterator_invalid_attempt (context : Module) (extension : Extends context program)
