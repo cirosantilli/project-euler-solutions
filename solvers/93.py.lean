@@ -1,4 +1,5 @@
 import solvers.«93.py.lean.d».PairOperations
+import solvers.«93.py.lean.d».IntegerFilter
 
 namespace solvers.«93».rational
 open FormalSW.PyAst
