@@ -1,4 +1,4 @@
-import solvers.«93.py.lean.d».PairOperations
+import solvers.«93.py.lean.d».BaseCases
 import solvers.«93.py.lean.d».Consecutive
 
 namespace solvers.«93».rational
@@ -35,5 +35,8 @@ theorem pair_results_source (a b : ProjectEulerSolutions.RationalPair.Pair) (lef
         heap[right]? = some (ProjectEulerSolutions.RationalPair.Heap.object b) →
           pair_results.Verified a b left right heap globals :=
   pair_results.result a b left right heap globals
+
+theorem recursive_base_source (heap : Mutable.Heap) (globals : Mutable.Globals) :
+    all_results.BaseCasesVerified heap globals := all_results.base_cases_verified heap globals
 
 end solvers.«93»
