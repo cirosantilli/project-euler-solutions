@@ -10,6 +10,8 @@ def solve(k_max: int) -> int:
       For a factor multiset (>=2 factors only), with product P, sum S, length t,
       we can append (P - S) ones to make sum equal product.
       Then the effective k is: k = t + (P - S).
+
+    @formalsw: Returns
     """
     if k_max < 2:
         return 0
@@ -34,7 +36,6 @@ def solve(k_max: int) -> int:
     dfs(2, 1, 0, 0)
 
     uniq: set[int] = set(best[2:])  # ignore k=0,1
-    uniq.discard(sentinel)
     return sum(uniq)
 
 
