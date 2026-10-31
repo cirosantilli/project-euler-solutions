@@ -1,4 +1,11 @@
 #!/usr/bin/env python
+"""
+@formalsw: theorem solve_source_equivalence
+  (heap : FormalSW.PyAst.Mutable.Heap) (globals : FormalSW.PyAst.Mutable.Globals)
+  (address : Nat) (lines : List String) :
+  solvers.«89».source_equivalence.Domain heap globals address lines →
+    solvers.«89».source_equivalence.Verified heap globals address
+"""
 from __future__ import annotations
 
 ROMAN_VALUE: dict[str, int] = {
