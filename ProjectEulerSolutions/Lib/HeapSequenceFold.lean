@@ -5,24 +5,24 @@ namespace ProjectEulerSolutions.HeapSequenceFold
 open FormalSW.PyAst FormalSW.PyAst.HeapCalls
 open HeapRangeFold
 set_option Elab.async false
-universe u
+universe u v
 variable {globals : Mutable.Globals}
 
 /-- Fold an actual source sequence loop whose body can allocate and update
 locals while preserving the existing heap. The iterable is read by index on
 each iteration, and its original object remains live throughout nested calls. -/
-theorem loop {State : Type u} (program : Module) (name : String) (body : List Stmt)
+theorem loop {α : Type v} {State : Type u} (program : Module) (name : String) (body : List Stmt)
     (noControl : Calls.loopControl body = false) (changed : List String) (written : name ∈ changed)
-    (encode : Nat → Mutable.Value) (update : State → Nat → State)
+    (encode : α → Mutable.Value) (update : State → α → State)
     (Invariant : Mutable.Heap → HeapCalls.Env → State → Prop)
-    (address : Nat) (values : List Nat)
+    (address : Nat) (values : List α)
     (bindInvariant : ∀ heap env state value, Invariant heap env state → value ∈ values →
       Invariant heap (setLocal env name (encode value)) state)
     (cell : ∀ heap env state value, Invariant heap env state → value ∈ values → env name = some (encode value) →
       ∃ afterEnv finalHeap, BlockContinues program env body heap afterEnv finalHeap globals ∧
         Invariant finalHeap afterEnv (update state value) ∧
         (∃ extra, finalHeap = heap ++ extra) ∧ Frame changed env afterEnv)
-    (remaining : List Nat) (position : Nat) (suffix : values.drop position = remaining) (within : position ≤ values.length)
+    (remaining : List α) (position : Nat) (suffix : values.drop position = remaining) (within : position ≤ values.length)
     (heap : Mutable.Heap) (env : HeapCalls.Env) (state : State) (safe : Invariant heap env state)
     (found : heap[address]? = some (.list (values.map encode))) :
     ∃ afterEnv finalHeap,
@@ -64,10 +64,10 @@ theorem loop {State : Type u} (program : Module) (name : String) (body : List St
     · exact (Frame.updated changed env name _ written).trans (firstFrame.trans restFrame)
 
 /-- The source evaluates the iterable once, then runs the sequence fold above. -/
-theorem for_list {State : Type u} (program : Module) (name : String) (body : List Stmt)
+theorem for_list {α : Type v} {State : Type u} (program : Module) (name : String) (body : List Stmt)
     (noControl : Calls.loopControl body = false) (changed : List String) (written : name ∈ changed)
-    (encode : Nat → Mutable.Value) (update : State → Nat → State)
-    (Invariant : Mutable.Heap → HeapCalls.Env → State → Prop) (address : Nat) (values : List Nat)
+    (encode : α → Mutable.Value) (update : State → α → State)
+    (Invariant : Mutable.Heap → HeapCalls.Env → State → Prop) (address : Nat) (values : List α)
     (bindInvariant : ∀ heap env state value, Invariant heap env state → value ∈ values →
       Invariant heap (setLocal env name (encode value)) state)
     (cell : ∀ heap env state value, Invariant heap env state → value ∈ values → env name = some (encode value) →
@@ -89,10 +89,10 @@ theorem for_list {State : Type u} (program : Module) (name : String) (body : Lis
 
 /-- A nested enumeration loop conditionally runs a proved child block. Guard
 evaluation preserves the heap, and skipped items retain the fold state. -/
-theorem for_guarded_list {State : Type u} (program : Module) (name : String) (test : Expr) (body : List Stmt)
+theorem for_guarded_list {α : Type v} {State : Type u} (program : Module) (name : String) (test : Expr) (body : List Stmt)
     (noControl : Calls.loopControl body = false) (changed : List String) (written : name ∈ changed)
-    (encode : Nat → Mutable.Value) (accept : Nat → Bool) (update : State → Nat → State)
-    (Invariant : Mutable.Heap → HeapCalls.Env → State → Prop) (address : Nat) (values : List Nat)
+    (encode : α → Mutable.Value) (accept : α → Bool) (update : State → α → State)
+    (Invariant : Mutable.Heap → HeapCalls.Env → State → Prop) (address : Nat) (values : List α)
     (bindInvariant : ∀ heap env state value, Invariant heap env state → value ∈ values →
       Invariant heap (setLocal env name (encode value)) state)
     (guard : ∀ heap env state value, Invariant heap env state → value ∈ values → env name = some (encode value) →
