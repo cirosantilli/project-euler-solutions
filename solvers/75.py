@@ -8,6 +8,10 @@ def solve(limit: int) -> int:
     """
     Counts perimeters L <= limit that can form exactly one integer-sided right triangle.
     Uses Euclid's formula for primitive Pythagorean triples and counts their multiples.
+
+    @formalsw: Py from project_euler_statements.p75 import naive
+    @formalsw: Returns
+    @formalsw: Equiv(naive)
     """
     if limit < 0:
         return 0
