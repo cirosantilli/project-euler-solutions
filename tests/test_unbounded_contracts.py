@@ -5,6 +5,7 @@ Check generalized solver contracts and regressions from truncated reference sear
 import importlib
 import inspect
 from itertools import permutations, product
+from math import comb
 from pathlib import Path
 import runpy
 import sys
@@ -23,11 +24,27 @@ def implementations(problem):
 
 class UnboundedContractTests(unittest.TestCase):
     def test_shared_arguments(self):
-        for problem in (66, 68, 74, 77, 78, 79, 85, 88, 92, 100):
+        for problem in (66, 68, 74, 77, 78, 79, 85, 88, 90, 92, 100):
             with self.subTest(problem=problem):
                 reference, optimized = implementations(problem)
                 self.assertEqual(list(inspect.signature(reference.naive).parameters),
                                  list(inspect.signature(optimized["solve"]).parameters))
+
+    def test_die_faces_and_required_pairs(self):
+        reference, optimized = implementations(90)
+        for solve in (reference.naive, optimized["solve"]):
+            self.assertEqual(solve(6, optimized["SQUARE_PAIRS"]), 1217)
+            for faces in (-10, -1, *range(12), 10**100):
+                designs = comb(10, faces) if 0 <= faces <= 10 else 0
+                self.assertEqual(solve(faces, []), designs * (designs + 1) // 2)
+            self.assertEqual(solve(0, [(0, 0)]), 0)
+            self.assertEqual(solve(1, [(0, 0)]), 1)
+            # Printed 6 and printed 9 are distinct designs: (6,6), (6,9), (9,9).
+            self.assertEqual(solve(1, [(6, 9)]), 3)
+            pairs = [(6, 9), (9, 6), (6, 9)]
+            self.assertEqual(solve(1, pairs), 3)
+            self.assertEqual(pairs, [(6, 9), (9, 6), (6, 9)])
+            self.assertEqual(solve(10, [(x, y) for x in range(10) for y in range(10)]), 1)
 
     def test_pell_search_and_empty_range(self):
         reference, optimized = implementations(66)
