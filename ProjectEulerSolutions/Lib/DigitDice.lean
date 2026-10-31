@@ -114,4 +114,15 @@ theorem referenceCount_too_large (faceCount : Nat) (required : List (Nat × Nat)
   rw [referenceCount, choices_too_large faceCount (List.range 10) (by simpa using large)]
   rfl
 
+/-- Signed face counts have no designs below zero; oversized natural selections are already empty. -/
+def answer (faceCount : Int) (required : List (Nat × Nat)) : Nat :=
+  if faceCount < 0 then 0 else referenceCount faceCount.toNat required
+
+theorem answer_invalid (faceCount : Int) (required : List (Nat × Nat))
+    (impossible : faceCount < 0 ∨ 10 < faceCount) : answer faceCount required = 0 := by
+  by_cases negative : faceCount < 0
+  · simp [answer, negative]
+  · have large : 10 < faceCount.toNat := by omega
+    simp [answer, negative, referenceCount_too_large _ _ large]
+
 end ProjectEulerSolutions.DigitDice
