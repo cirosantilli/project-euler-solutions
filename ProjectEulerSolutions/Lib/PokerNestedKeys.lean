@@ -130,9 +130,10 @@ theorem compare_gt (heap : Mutable.Heap) (leftAddress rightAddress leftTailAddre
     HeapCalls.compare .gt (.ref leftAddress) (.ref rightAddress) heap =
       some (.ok (.scalar (.bool (HeapSort.lexInt (rightPrefix ++ rightTail) (leftPrefix ++ leftTail)))), heap) := by
   have room := nested_room heap leftAddress leftTailAddress leftPrefix leftTail leftFound leftTailFound
-  have depth : heap.length-2+3 = heap.length+1 := by omega
+  have allowance := HeapSort.comparisonFuel_ge_linear heap
+  have depth : HeapSort.comparisonFuel heap - 3 + 3 = HeapSort.comparisonFuel heap := by omega
   apply HeapCalls.compare_tuple_gt heap leftAddress rightAddress _ _ _ leftFound rightFound
-  simpa only [depth] using compare_nested heap rightAddress leftAddress rightTailAddress leftTailAddress (heap.length-2)
+  simpa only [depth] using compare_nested heap rightAddress leftAddress rightTailAddress leftTailAddress (HeapSort.comparisonFuel heap - 3)
     rightPrefix leftPrefix rightTail leftTail rightFound leftFound rightTailFound leftTailFound lengths.symm
 
 end ProjectEulerSolutions.PokerNestedKeys

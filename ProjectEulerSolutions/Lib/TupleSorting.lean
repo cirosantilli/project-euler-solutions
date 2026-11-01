@@ -68,15 +68,16 @@ theorem less_pair (heap : Mutable.Heap) (a b : Nat) (count value otherCount othe
 private theorem compared (heap : Mutable.Heap) (a b : Nat) (xs ys : List Int)
     (left : heap[a]? = some (.tuple (xs.map fun n => .scalar (.int n))))
     (right : heap[b]? = some (.tuple (ys.map fun n => .scalar (.int n)))) :
-    HeapSort.compare (heap.length+1) heap false (.ref a) (.ref b) = some (.ok (less heap (.ref a) (.ref b))) := by
+    HeapSort.compare (HeapSort.comparisonFuel heap) heap false (.ref a) (.ref b) = some (.ok (less heap (.ref a) (.ref b))) := by
   have positive : 0 < heap.length := by
     by_cases positive : 0 < heap.length
     · exact positive
     · rw [List.getElem?_eq_none (show heap.length ≤ a by omega)] at left
       cases left
-  have depth : heap.length-1+2 = heap.length+1 := by omega
+  have allowance := HeapSort.comparisonFuel_ge_linear heap
+  have depth : HeapSort.comparisonFuel heap - 2 + 2 = HeapSort.comparisonFuel heap := by omega
   simpa [depth, less, readInts, left, right, List.filterMap_map, Function.comp_def] using
-    HeapSort.compare_int_tuples heap a b (heap.length-1) xs ys left right
+    HeapSort.compare_int_tuples heap a b (HeapSort.comparisonFuel heap - 2) xs ys left right
 
 /-- Every typed tuple comparison succeeds, retaining the original tuple references. -/
 theorem sortWithReverse (heap : Mutable.Heap) (reverse : Bool) (items : List Mutable.Value)
