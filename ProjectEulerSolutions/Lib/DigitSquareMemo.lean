@@ -62,6 +62,13 @@ inductive Trace (known : Cache) : Nat → List Nat → Nat → List Nat → Nat 
       Trace known (nextTerm current) (path ++ [current]) last result value →
       Trace known current path last result value
 
+theorem Trace.selected {known : Cache} {current last value : Nat} {path result : List Nat}
+    (trace : Trace known current path last result value) : (known last).getD 0 = value := by
+  induction trace with
+  | cached found => simp [found]
+  | repeated missing _ => simp [missing]
+  | step _ _ _ ih => exact ih
+
 theorem exists_trace (known : Cache) (start current : Nat) (path : List Nat)
     (bounded : current ≤ bound start) (distinct : path.Nodup) (inside : Within (bound start) path) :
     ∃ last result value, Trace known current path last result value := by
