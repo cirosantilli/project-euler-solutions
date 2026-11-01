@@ -4,7 +4,7 @@ Check generalized solver contracts and regressions from truncated reference sear
 
 import importlib
 import inspect
-from itertools import product
+from itertools import permutations, product
 from pathlib import Path
 import runpy
 import sys
@@ -23,7 +23,7 @@ def implementations(problem):
 
 class UnboundedContractTests(unittest.TestCase):
     def test_shared_arguments(self):
-        for problem in (66, 68, 74, 77, 78, 85, 88, 92, 100):
+        for problem in (66, 68, 74, 77, 78, 79, 85, 88, 92, 100):
             with self.subTest(problem=problem):
                 reference, optimized = implementations(problem)
                 self.assertEqual(list(inspect.signature(reference.naive).parameters),
@@ -86,6 +86,57 @@ class UnboundedContractTests(unittest.TestCase):
         for modulus, expected in ((1, 1), (2, 2), (3, 3), (5, 4), (7, 5)):
             self.assertEqual(reference.naive(modulus), expected)
             self.assertEqual(optimized["solve"](modulus), expected)
+
+    def test_passcode_ordering_and_iterables(self):
+        reference, optimized = implementations(79)
+        for attempts, expected in (([], ""), (["789", "123"], "123789"),
+                                   (["012", "234"], "01234"), (["123", "123"], "123"),
+                                   (["١٢٣", "٣٤٥"], "١٢٣٤٥"), (["0²3"], "0²3")):
+            for solve in (reference.naive, optimized["solve"]):
+                self.assertEqual(solve(attempts), expected)
+                self.assertEqual(solve(iter(attempts)), expected)
+
+    def test_passcode_cycles_and_validation(self):
+        reference, optimized = implementations(79)
+        for attempts in (["121"], ["123", "341"]):
+            for solve in (reference.naive, optimized["solve"]):
+                with self.assertRaisesRegex(ValueError, "Constraints contain a cycle"):
+                    solve(attempts)
+        for invalid in ("", "12", "1234", "12x", "😀12"):
+            for solve in (reference.naive, optimized["solve"]):
+                with self.assertRaises(ValueError) as caught:
+                    solve([invalid])
+                self.assertEqual(caught.exception.args, (f"Invalid attempt: {invalid!r}",))
+
+        def observations():
+            yield "12"
+            raise AssertionError("read past an invalid observation")
+
+        for solve in (reference.naive, optimized["solve"]):
+            with self.assertRaises(ValueError):
+                solve(observations())
+
+    def test_passcode_matches_exhaustive_permutations(self):
+        reference, optimized = implementations(79)
+        triples = ["".join(chars) for chars in permutations("0123", 3)]
+        cases = [["".join(chars)] for chars in product("0123", repeat=3)]
+        cases.extend(list(pair) for pair in product(triples, repeat=2))
+        for attempts in cases:
+            digits = sorted(set("".join(attempts)))
+            valid = []
+            for chars in permutations(digits):
+                candidate = "".join(chars)
+                if all(candidate.index(a) < candidate.index(b) < candidate.index(c)
+                       for a, b, c in attempts):
+                    valid.append(candidate)
+            expected = min(valid, default=None)
+            for solve in (reference.naive, optimized["solve"]):
+                with self.subTest(attempts=attempts, implementation=solve.__name__):
+                    if expected is None:
+                        with self.assertRaises(ValueError):
+                            solve(attempts)
+                    else:
+                        self.assertEqual(solve(attempts), expected)
 
     def test_rectangle_ties_and_large_dimensions(self):
         reference, optimized = implementations(85)

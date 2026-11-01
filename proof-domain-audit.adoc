@@ -84,6 +84,8 @@ Problem 78 has structural Python source equivalence for every positive partition
 
 The standalone exact reference and array solver for problem 78 accept the same signed divisor and have proved equal partial results: a returned index is represented by `some`, and divergence by `none`. A least-fixpoint search runner and a relation between their complete steps prove this equality; every successful Python return is connected to the standalone result. The finite inner and table-filling loops have proved decreasing measures, and the admitted termination module is removed. No universal existence assumption, search cutoff, or whole-program computation is used. All proofs use only standard Lean axioms.
 
+Problem 79's mathematical library proves that removing the least eligible vertex produces the lexicographically least valid permutation, and that failure is equivalent to absence of a valid ordering. The result applies to arbitrary finite vertex and edge lists over any linearly ordered alphabet. An index-based characterization connects the removal invariant to forward precedence edges and proves that transitive edges do not change the constraints. The corrected Python reference returns text, resolves ties lexicographically, rejects cycles, and validates iterables as they are consumed. Its structural source execution proofs, including the heap operations, and reconciliation of the standalone Lean models remain pending.
+
 == Remaining implementation and proof restrictions
 
 [cols="1,3,3"]
@@ -108,6 +110,7 @@ The following interfaces have matching Python arguments and passing numerical re
 [cols="1,3"]
 |===
 | Problem | Current design
+| 79 | Share finite digit-triple observations and return the lexicographically least ordering of distinct observed digits. Both searches reject cycles and invalid observations, preserve Unicode digits, and validate single-pass inputs as they are consumed.
 | 85 | Share only the desired rectangle count. Increasing counts and the incumbent distance bound the search; the optimized row search uses an exact integer square root. Ties choose the least positive pair (m, n), with m <= n.
 | 88 | Both sentinels are one above the complete product bound 2*k_max. Factors 2 and k with k-2 ones witness that bound for every k >= 2.
 | 92 | Share the exclusive starting bound. The reference walks complete chains; the optimized solver groups arbitrary bound prefixes by digit-square sum. No fixed seven-digit domain is assumed.

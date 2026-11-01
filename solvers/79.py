@@ -2,22 +2,22 @@
 from __future__ import annotations
 
 import heapq
-from typing import Dict, Iterable, List, Set, Tuple
+from collections.abc import Iterable
 
 KEYLOG_PATH = "0079_keylog.txt"
 
 
-def load_attempts() -> List[str]:
+def load_attempts() -> list[str]:
     with open(KEYLOG_PATH, "r", encoding="utf-8") as f:
         return [line.strip() for line in f if line.strip()]
 
 
 def build_graph(
     attempts: Iterable[str],
-) -> Tuple[Set[str], Dict[str, Set[str]], Dict[str, int]]:
-    nodes: Set[str] = set()
-    adj: Dict[str, Set[str]] = {}
-    indeg: Dict[str, int] = {}
+) -> tuple[set[str], dict[str, set[str]], dict[str, int]]:
+    nodes: set[str] = set()
+    adj: dict[str, set[str]] = {}
+    indeg: dict[str, int] = {}
 
     def add_node(v: str) -> None:
         if v not in nodes:
@@ -44,12 +44,12 @@ def build_graph(
     return nodes, adj, indeg
 
 
-def topo_sort(nodes: Set[str], adj: Dict[str, Set[str]], indeg: Dict[str, int]) -> str:
+def topo_sort(nodes: set[str], adj: dict[str, set[str]], indeg: dict[str, int]) -> str:
     # Use a heap for deterministic output when multiple choices exist.
-    heap: List[str] = [v for v in nodes if indeg[v] == 0]
+    heap: list[str] = [v for v in nodes if indeg[v] == 0]
     heapq.heapify(heap)
 
-    out: List[str] = []
+    out: list[str] = []
     indeg2 = dict(indeg)
 
     while heap:
