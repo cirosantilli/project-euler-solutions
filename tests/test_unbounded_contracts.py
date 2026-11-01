@@ -116,6 +116,18 @@ class UnboundedContractTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 solve(observations())
 
+    def test_passcode_first_invalid_attempt_depends_on_input_order(self):
+        reference, optimized = implementations(79)
+        attempts = {"", "x"}
+        for ordered in (("", "x"), ("x", ""), attempts):
+            expected = (f"Invalid attempt: {next(iter(ordered))!r}",)
+            for solve in (reference.naive, optimized["solve"]):
+                with self.subTest(solver=solve.__name__, order=ordered):
+                    with self.assertRaises(ValueError) as caught:
+                        solve(ordered)
+                    self.assertEqual(caught.exception.args, expected)
+        self.assertEqual(attempts, {"", "x"})
+
     def test_passcode_matches_exhaustive_permutations(self):
         reference, optimized = implementations(79)
         triples = ["".join(chars) for chars in permutations("0123", 3)]
