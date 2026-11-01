@@ -7,6 +7,8 @@ from math import isqrt
 def sieve_primes(n: int) -> list[int]:
     """
     Return the primes at most n.
+
+    @formalsw: Returns
     """
     if n < 2:
         return []
