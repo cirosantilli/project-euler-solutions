@@ -1,6 +1,6 @@
 = Python proof-domain audit
 
-This audit covers the Python solver and reference interfaces for problems 1 through 77, their `Requires` annotations, default adapters, and the documented proof claims.
+This audit covers the Python solver and reference interfaces for problems 1 through 80, their `Requires` annotations, default adapters, and the documented proof claims.
 
 Prefer a meaningful argument shared by both implementations. A reference-only search limit changes an unbounded problem into a bounded one and is not an acceptable substitute. A mathematical bound derived from the inputs or the problem definition is acceptable. For a fixed problem without a useful parameter, retain `Equiv` and prefer structural proofs through shared mathematical models. A completed interpreter observation can establish termination; running out of observation fuel cannot.
 
@@ -266,6 +266,8 @@ Unicode digit validation uses the complete Decimal and Digit properties from Uni
 
 Scalar `repr` and f-string `!r` preserve Python's quote selection, control escapes and Unicode 16.0 printability. Structural call rules retain caller effects without allocating heap objects; a source equivalence proof covers prefixed validation messages for arbitrary strings. Fields convert from left to right independently of bindings named `str` or `repr`, and explicit exception arguments are retained. The low-level code-point API escapes isolated surrogates, which the source model's Lean string type cannot store. Container and custom-object representation remain unsupported.
 
+Problem 80 has structural source termination and equivalence proofs for every nonnegative inclusive limit and positive digit count. The decimal prefix uses the square root’s integer width, with integer division when the requested prefix ends before the decimal point. Both prefix branches, digit conversions, and finite summation loops are covered, including the reference’s temporary digit-list allocations. Its Lean models agree structurally, and scaling and truncation bounds use only standard Lean axioms. No fixed precision, input cutoff, assumed termination, or whole-program evaluation is used.
+
 == Remaining implementation and proof restrictions
 
 [cols="1,3,3"]
@@ -290,7 +292,6 @@ The following interfaces have matching Python arguments and passing numerical re
 [cols="1,3"]
 |===
 | Problem | Current design
-| 79 | Share finite digit-triple observations and return the lexicographically least ordering of distinct observed digits. Both searches reject cycles and invalid observations, preserve Unicode digits, and validate single-pass inputs as they are consumed.
 | 85 | Share only the desired rectangle count. Increasing counts and the incumbent distance bound the search; the optimized row search uses an exact integer square root. Ties choose the least positive pair (m, n), with m <= n.
 | 88 | Both sentinels are one above the complete product bound 2*k_max. Factors 2 and k with k-2 ones witness that bound for every k >= 2.
 | 92 | Share the exclusive starting bound. The reference walks complete chains; the optimized solver groups arbitrary bound prefixes by digit-square sum. No fixed seven-digit domain is assumed.
@@ -302,7 +303,6 @@ The following interfaces have matching Python arguments and passing numerical re
 [cols="1,3"]
 |===
 | Problem | Finding
-| 80 | The decimal scaling does not truncate the integer part when counting a requested number of leading square-root digits for larger inputs.
 | 84 | The Python reference returns stored answers for two dice sizes and zero otherwise; it does not implement the board model.
 | 86 | The reference counts cuboids for a supplied maximum side, while the optimized solver searches for the first maximum side exceeding a supplied count threshold.
 | 93 | The reference uses integer division and only successive left-associated operations. Exact rational arithmetic and all binary expression shapes are needed.
