@@ -1,4 +1,4 @@
-import solvers.«74.equivalence.source»
+import solvers.«74.py.lean.d».Equivalence
 
 /-! Public source contracts include initialization and every trailing-default call shape. -/
 namespace solvers.«74»

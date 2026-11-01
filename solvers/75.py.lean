@@ -1,4 +1,4 @@
-import solvers.«75.source»
+import solvers.«75.py.lean.d».Execution
 import data.«project-euler-statements».data.py.project_euler_statements.«p75.py»
 
 /-! Source termination and equivalence for every signed perimeter bound. -/

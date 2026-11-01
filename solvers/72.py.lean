@@ -1,4 +1,4 @@
-import solvers.«72.source»
+import solvers.«72.py.lean.d».Execution
 import data.«project-euler-statements».data.py.project_euler_statements.«p72.py»
 
 /-! Termination and equivalence of the totient-sieve and exhaustive Python solvers. -/

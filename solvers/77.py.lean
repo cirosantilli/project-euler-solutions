@@ -1,4 +1,4 @@
-import solvers.«77.search.source»
+import solvers.«77.py.lean.d».Search
 import data.«project-euler-statements».data.py.project_euler_statements.«p77.py»
 
 /-! The actual bytearray/DP search and cached tuple reference agree for every signed threshold. -/

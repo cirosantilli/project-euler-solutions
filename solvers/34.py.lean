@@ -1,4 +1,4 @@
-import solvers.«34.search.source»
+import solvers.«34.py.lean.d».Search
 
 namespace solvers.«34».solve
 open FormalSW.PyAst

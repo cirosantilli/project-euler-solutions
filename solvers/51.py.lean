@@ -1,4 +1,4 @@
-import solvers.«51.search.source»
+import solvers.«51.py.lean.d».Search
 import data.«project-euler-statements».data.py.project_euler_statements.«p51.py»
 
 namespace solvers.«51».solve

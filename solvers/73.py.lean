@@ -1,4 +1,4 @@
-import solvers.«73.source»
+import solvers.«73.py.lean.d».Execution
 import data.«project-euler-statements».data.py.project_euler_statements.«p73.py»
 
 /-! Structural source termination, equivalence, and every trailing-default call shape. -/

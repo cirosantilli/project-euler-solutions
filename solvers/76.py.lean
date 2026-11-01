@@ -1,4 +1,4 @@
-import solvers.«76.source»
+import solvers.«76.py.lean.d».Execution
 import data.«project-euler-statements».data.py.project_euler_statements.«p76.py»
 
 /-! The mutable DP and cached recursive reference agree at every signed input. -/

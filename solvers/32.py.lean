@@ -1,4 +1,4 @@
-import solvers.«32.search.source»
+import solvers.«32.py.lean.d».Search
 import data.«project-euler-statements».data.py.project_euler_statements.«p32.py»
 
 set_option Elab.async false

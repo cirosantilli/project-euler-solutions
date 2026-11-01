@@ -1,4 +1,4 @@
-import solvers.«68.source»
+import solvers.«68.py.lean.d».Execution
 import data.«project-euler-statements».data.py.project_euler_statements.«p68.py»
 import lang.py.FormalSW.SetSumCalls
 

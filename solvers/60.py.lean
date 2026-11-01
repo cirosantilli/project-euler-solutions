@@ -1,5 +1,5 @@
 import data.«project-euler-statements».data.py.project_euler_statements.«p60.py»
-import solvers.«60.source»
+import solvers.«60.py.lean.d».Execution
 import ProjectEulerSolutions.Lib.PrimePairLarge.Certificate
 
 /-! Complete initialized source equivalence, using the separately checked source and finite search proofs. -/

@@ -1,4 +1,4 @@
-import solvers.«63.source»
+import solvers.«63.py.lean.d».Execution
 import data.«project-euler-statements».data.py.project_euler_statements.«p63.py»
 
 set_option Elab.async false

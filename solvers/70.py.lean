@@ -1,4 +1,4 @@
-import solvers.«70.source»
+import solvers.«70.py.lean.d».Execution
 import data.«project-euler-statements».data.py.project_euler_statements.«p70.py»
 
 /-! Universal source termination and equivalence for the totient-permutation solver. -/

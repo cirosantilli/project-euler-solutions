@@ -1,4 +1,4 @@
-import solvers.«62.equivalence.source»
+import solvers.«62.py.lean.d».Equivalence
 import ProjectEulerSolutions.Lib.CubicFiveClass.Certificate
 
 /-! The standard class-size request inherits termination from a checked existence witness. -/

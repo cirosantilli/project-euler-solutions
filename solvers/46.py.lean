@@ -1,4 +1,4 @@
-import solvers.«46.search.source»
+import solvers.«46.py.lean.d».Search
 import ProjectEulerSolutions.Lib.PrimeTwiceSquareSearch
 
 namespace solvers.«46».solve

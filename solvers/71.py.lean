@@ -1,4 +1,4 @@
-import solvers.«71.source»
+import solvers.«71.py.lean.d».Execution
 import data.«project-euler-statements».data.py.project_euler_statements.«p71.py»
 
 /-! Universal Python source termination and equivalence for every proper target fraction. -/

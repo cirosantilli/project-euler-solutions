@@ -1,4 +1,4 @@
-import solvers.«78.search.source»
+import solvers.«78.py.lean.d».Search
 import data.«project-euler-statements».data.py.project_euler_statements.«p78.py»
 import ProjectEulerSolutions.P78
 
