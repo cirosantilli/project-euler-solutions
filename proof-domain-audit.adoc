@@ -288,14 +288,14 @@ Further useful shared parameters include coefficient ranges in problem 27, the d
 
 == Additional Python reference corrections through problem 100
 
-The following interfaces have matching Python arguments and passing numerical regression checks. Problem 86 also has a complete structural source proof. The other generalized source proofs remain pending; the separate Lean statements and solver models still need reconciliation with these contracts.
+The following interfaces have matching Python arguments and passing numerical regression checks. Problems 86 and 87 also have complete structural source proofs. The other generalized source proofs remain pending; the separate Lean statements and solver models still need reconciliation with these contracts.
 
 
 [cols="1,3"]
 |===
 | Problem | Current design
 | 86 | Both Python implementations search the least nonnegative maximum side whose count exceeds the shared signed threshold. Structural source proofs cover both complete counting loops, square tests, and threshold searches. Exact pair grouping and the unbounded family (2k, 2k, 3k) establish equivalence and termination for every integer threshold, with no runtime cutoff. All five source-contract checks pass.
-| 87 | Both Python implementations count distinct prime-square/cube/fourth-power sums strictly below the shared signed limit, returning zero for nonpositive limits. Mathematical proofs establish complete prime bounds, exact grouping, and both sorted-prefix pruning steps. The complete reference source has structural termination and exact-count proofs, including every nested loop and final deduplication. Optimized source proofs cover the complete bytearray sieve, power-list construction, sorting, and setup. The pruned-search source proof and final equivalence remain pending.
+| 87 | Both Python implementations count distinct prime-square/cube/fourth-power sums strictly below the shared signed limit, returning zero for nonpositive limits. Complete structural source proofs establish termination and equivalence for every integer limit, following the reference loops and deduplication and the optimized sieve, power-list construction, sorting, pruned loops, set insertions, and final length. Mathematical proofs establish complete prime bounds, exact grouping, and both sorted-prefix pruning steps.
 | 88 | Both sentinels are one above the complete product bound 2*k_max. Factors 2 and k with k-2 ones witness that bound for every k >= 2.
 | 92 | Share the exclusive starting bound. The reference walks complete chains; the optimized solver groups arbitrary bound prefixes by digit-square sum. No fixed seven-digit domain is assumed.
 | 100 | Search arrangements with at least two discs, starting at three blue out of four total. Both implementations advance their recurrence until the total strictly exceeds the supplied bound, without an iteration budget.

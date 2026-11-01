@@ -26,6 +26,10 @@ def sieve_primes(n: int) -> list[int]:
 def solve(limit: int) -> int:
     """
     Count numbers < limit expressible as p^2 + q^3 + r^4 with p,q,r prime.
+
+    @formalsw: Py from project_euler_statements.p87 import naive
+    @formalsw: Returns
+    @formalsw: Equiv(naive)
     """
     if limit <= 0:
         return 0
