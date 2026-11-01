@@ -18,7 +18,8 @@ theorem nonnegative_source : findFunctionIn program.body "has_nonnegative_entrie
     some (arguments, ProjectEulerSolutions.NonnegativeMatrixCalls.checkCode) := rfl
 
 theorem requires_solve_1_supported (heap : Mutable.Heap) (address : Nat) (_valid : heap.Valid)
-    (typed : Mutable.Value.HasType heap (.ref address) "list[list[int]]") :
+    (typed : Mutable.Value.HasType heap (.ref address) "list[list[int]]")
+    (_shape : HeapCalls.Condition program (matrixEnv address) Solvers.P82Ast.requires_solve_0 heap) :
     (HeapCalls.evaluate program (matrixEnv address) Solvers.P82Ast.requires_solve_1 heap).Supported :=
   ProjectEulerSolutions.NonnegativeMatrixCalls.condition_supported nonnegative_source heap address typed
 
