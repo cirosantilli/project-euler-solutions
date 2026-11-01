@@ -13,6 +13,10 @@
   (globals : FormalSW.PyAst.Mutable.Globals) : solvers.«93».all_results.BaseCasesVerified heap globals
 @formalsw: theorem recursive_source (heap : FormalSW.PyAst.Mutable.Heap)
   (globals : FormalSW.PyAst.Mutable.Globals) : solvers.«93».all_results.RecursiveCallsVerified heap globals
+@formalsw: theorem all_results_source (digits : List Int) (address : Nat)
+  (heap : FormalSW.PyAst.Mutable.Heap) (globals : FormalSW.PyAst.Mutable.Globals) :
+  heap[address]? = some (.tuple (digits.map ProjectEulerSolutions.RationalPair.Heap.number)) →
+    solvers.«93».all_results.Verified digits address heap globals
 """
 from __future__ import annotations
 

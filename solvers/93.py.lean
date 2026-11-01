@@ -1,4 +1,4 @@
-import solvers.«93.py.lean.d».Recursive
+import solvers.«93.py.lean.d».ResultAgreement
 import solvers.«93.py.lean.d».Consecutive
 
 namespace solvers.«93».rational
@@ -41,5 +41,9 @@ theorem recursive_base_source (heap : Mutable.Heap) (globals : Mutable.Globals) 
 
 theorem recursive_source (heap : Mutable.Heap) (globals : Mutable.Globals) :
     all_results.RecursiveCallsVerified heap globals := all_results.recursive_calls_verified heap globals
+
+theorem all_results_source (digits : List Int) (address : Nat) (heap : Mutable.Heap) (globals : Mutable.Globals) :
+    heap[address]? = some (.tuple (digits.map ProjectEulerSolutions.RationalPair.Heap.number)) →
+      all_results.Verified digits address heap globals := all_results.result digits address heap globals
 
 end solvers.«93»
