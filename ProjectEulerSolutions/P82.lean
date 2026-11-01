@@ -1,68 +1,38 @@
-import Std
 import ProjectEulerStatements.P82
-import ProjectEulerSolutions.Termination.P82
+
 namespace ProjectEulerSolutions.P82
+open ProjectEulerStatements.P82 (getCol minimum)
 
-def parseNat (s : String) : Nat :=
-  s.data.foldl (fun acc c => acc * 10 + (c.toNat - '0'.toNat)) 0
+def parseMatrix (text : String) : List (List Int) :=
+  (text.splitOn "\n" |>.filter (fun line => line != "")).map fun line =>
+    (line.splitOn ",").map fun value => (value.trimAscii.toString.toInt?).getD 0
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def parseMatrix (text : String) : List (List Nat) :=
-  let lines := text.splitOn "\n" |>.filter (fun ln => ln != "")
-  lines.map (fun ln => ln.splitOn "," |>.filter (fun t => t != "") |>.map parseNat)
+def downUpdate (column buffer : List Int) (index : Nat) : List Int :=
+  buffer.set index (min (buffer.getD index 0) (buffer.getD (index - 1) 0 + column.getD index 0))
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def minimalPathSumThreeWays (mat : List (List Nat)) : Nat :=
-  let n := mat.length
-  if n == 0 then
-    0
-  else
-    let dp := (mat.map (fun row => row.headD 0)).toArray
-    let rec loopCol (j : Nat) (dp : Array Nat) : Array Nat :=
-      if j >= n then
-        dp
-      else
-        let colVals := mat.map (fun row => row.getD j 0)
-        let temp0 := (List.range n |>.map (fun i => dp[i]! + colVals.getD i 0)).toArray
-        let rec relaxDown (i : Nat) (temp : Array Nat) : Array Nat :=
-          if i >= n then temp
-          else
-            let cand := temp[i - 1]! + colVals.getD i 0
-            let temp := if cand < temp[i]! then temp.set! i cand else temp
-            relaxDown (i + 1) temp
-        termination_by 0
-        decreasing_by all_goals exact Termination.decreases
-        let temp1 := if n > 1 then relaxDown 1 temp0 else temp0
-        let rec relaxUp (i : Nat) (temp : Array Nat) : Array Nat :=
-          let cand := temp[i + 1]! + colVals.getD i 0
-          let temp := if cand < temp[i]! then temp.set! i cand else temp
-          if i == 0 then temp else relaxUp (i - 1) temp
-        termination_by 0
-        decreasing_by all_goals exact Termination.decreases
-        let temp2 := if n > 1 then relaxUp (n - 2) temp1 else temp1
-        loopCol (j + 1) temp2
-    termination_by 0
-    decreasing_by all_goals exact Termination.decreases
-    let dp := loopCol 1 dp
-    dp.foldl (fun acc v => if v < acc then v else acc) (dp[0]!)
+def upUpdate (column buffer : List Int) (index : Nat) : List Int :=
+  buffer.set index (min (buffer.getD index 0) (buffer.getD (index + 1) 0 + column.getD index 0))
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-example :
-    let sample := [
-      [131, 673, 234, 103, 18],
-      [201, 96, 342, 965, 150],
-      [630, 803, 746, 422, 111],
-      [537, 699, 497, 121, 956],
-      [805, 732, 524, 37, 331]
-    ]
-    minimalPathSumThreeWays sample = 994 := by
-  native_decide
+def downBuffer (cost column : List Int) : List Int :=
+  if cost.length = column.length then
+    (List.range' 1 (cost.length - 1)).foldl (downUpdate column) cost
+  else []
 
+def upBuffer (cost column : List Int) : List Int :=
+  if cost.length = column.length then
+    (List.range' 1 (cost.length - 1)).foldl (fun buffer index => upUpdate column buffer (cost.length - 1 - index)) cost
+  else []
 
+def nextColumn (previous column : List Int) : List Int :=
+  let base := List.zipWith (· + ·) previous column
+  upBuffer (downBuffer base column) column
 
-def solve (matrix : List (List Nat)) : Nat :=
-  minimalPathSumThreeWays matrix
+def minimalPathSumThreeWays (matrix : List (List Int)) : Int :=
+  let width := (matrix.headD []).length
+  if width = 0 then 0
+  else minimum ((List.range' 1 (width - 1)).foldl
+    (fun buffer column => nextColumn buffer (getCol matrix column)) (getCol matrix 0))
+
+def solve (matrix : List (List Int)) : Int := minimalPathSumThreeWays matrix
+
 end ProjectEulerSolutions.P82

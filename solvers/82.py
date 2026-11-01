@@ -1,35 +1,57 @@
 #!/usr/bin/env python
 from __future__ import annotations
 
-import sys
-from typing import List
+
+def is_rectangular(matrix: list[list[int]]) -> bool:
+    if not matrix:
+        return True
+    width = len(matrix[0])
+    for row in matrix:
+        if len(row) != width:
+            return False
+    return True
 
 
-def solve(mat: List[List[int]]) -> int:
+def has_nonnegative_entries(matrix: list[list[int]]) -> bool:
+    for row in matrix:
+        for value in row:
+            if value < 0:
+                return False
+    return True
+
+
+def solve(matrix: list[list[int]]) -> int:
     """
-    Project Euler 82:
-    Start in any cell in left column, end in any cell in right column.
-    Allowed moves: up, down, right.
+    @formalsw: Requires(is_rectangular(matrix))
+    @formalsw: Requires(has_nonnegative_entries(matrix))
+    @formalsw: Py from project_euler_statements.p82 import naive
+    @formalsw: Returns
+    @formalsw: Equiv(naive)
     """
-    n = len(mat)
-    assert n > 0 and all(len(row) == n for row in mat), "Matrix must be square"
+    if not matrix:
+        return 0
+    assert is_rectangular(matrix)
+    n = len(matrix)
+    m = len(matrix[0])
+    if m == 0:
+        return 0
 
     # dp[i] = minimal cost to reach row i at current column
-    dp = [mat[i][0] for i in range(n)]
+    dp = [matrix[i][0] for i in range(n)]
 
-    for j in range(1, n):
+    for j in range(1, m):
         # Step 1: move right from previous column
-        temp = [dp[i] + mat[i][j] for i in range(n)]
+        temp = [dp[i] + matrix[i][j] for i in range(n)]
 
         # Step 2: relax downward moves within this column
         for i in range(1, n):
-            cand = temp[i - 1] + mat[i][j]
+            cand = temp[i - 1] + matrix[i][j]
             if cand < temp[i]:
                 temp[i] = cand
 
         # Step 3: relax upward moves within this column
         for i in range(n - 2, -1, -1):
-            cand = temp[i + 1] + mat[i][j]
+            cand = temp[i + 1] + matrix[i][j]
             if cand < temp[i]:
                 temp[i] = cand
 
@@ -38,12 +60,12 @@ def solve(mat: List[List[int]]) -> int:
     return min(dp)
 
 
-def parse_matrix_from_text(text: str) -> List[List[int]]:
+def parse_matrix_from_text(text: str) -> list[list[int]]:
     lines = [ln.strip() for ln in text.strip().splitlines() if ln.strip()]
     return [list(map(int, ln.split(","))) for ln in lines]
 
 
-def read_input_matrix() -> List[List[int]]:
+def read_input_matrix() -> list[list[int]]:
     with open("0082_matrix.txt", "r", encoding="utf-8") as f:
         return parse_matrix_from_text(f.read())
 
@@ -57,5 +79,4 @@ if __name__ == "__main__":
         [805, 732, 524, 37, 331],
     ]
     assert solve(sample) == 994
-    mat = read_input_matrix()
-    print(solve(mat))
+    print(solve(read_input_matrix()))
