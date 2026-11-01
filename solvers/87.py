@@ -1,17 +1,18 @@
 #!/usr/bin/env python
 from __future__ import annotations
 
-from typing import List
-import math
+from math import isqrt
 
 
-def sieve_primes(n: int) -> List[int]:
-    """Return list of primes <= n."""
+def sieve_primes(n: int) -> list[int]:
+    """
+    Return the primes at most n.
+    """
     if n < 2:
         return []
     is_prime = bytearray(b"\x01") * (n + 1)
     is_prime[0:2] = b"\x00\x00"
-    limit = int(math.isqrt(n))
+    limit = isqrt(n)
     for p in range(2, limit + 1):
         if is_prime[p]:
             step = p
@@ -28,11 +29,11 @@ def solve(limit: int) -> int:
         return 0
 
     # Need primes up to sqrt(limit) to cover all squares.
-    primes = sieve_primes(int(math.isqrt(limit)) + 1)
+    primes = sieve_primes(isqrt(limit) + 1)
 
-    squares: List[int] = []
-    cubes: List[int] = []
-    fourths: List[int] = []
+    squares: list[int] = []
+    cubes: list[int] = []
+    fourths: list[int] = []
 
     for p in primes:
         p2 = p * p
