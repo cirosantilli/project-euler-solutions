@@ -26,6 +26,11 @@ def count_solutions_up_to(m: int) -> int:
 
 
 def solve(target: int) -> int:
+    """
+    @formalsw: Py from project_euler_statements.p86 import naive
+    @formalsw: Returns
+    @formalsw: Equiv(naive)
+    """
     total = 0
     c = 0
     while total <= target:
