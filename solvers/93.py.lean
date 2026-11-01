@@ -1,6 +1,6 @@
 import solvers.«93.py.lean.d».BaseCases
 import solvers.«93.py.lean.d».Consecutive
-import solvers.«93.py.lean.d».StatePreparation
+import solvers.«93.py.lean.d».ReductionInput
 
 namespace solvers.«93».rational
 open FormalSW.PyAst
