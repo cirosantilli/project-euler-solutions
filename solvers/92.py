@@ -1,4 +1,12 @@
 #!/usr/bin/env python
+"""
+@formalsw: theorem terminal_source
+  (start cache : Nat) (entries : solvers.«92».store.Entries)
+  (heap : FormalSW.PyAst.Mutable.Heap) (globals : FormalSW.PyAst.Mutable.Globals) :
+  solvers.«92».store.Found heap cache entries →
+    ProjectEulerSolutions.DigitSquareChains.Memo.Valid (solvers.«92».store.lookup entries) →
+      solvers.«92».terminal.Verified start cache entries heap globals
+"""
 
 
 def next_term(n: int) -> int:

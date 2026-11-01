@@ -1,4 +1,4 @@
-import solvers.«92.py.lean.d».Digits
+import solvers.«92.py.lean.d».Terminal
 import data.«project-euler-statements».data.py.project_euler_statements.«p92.py»
 
 namespace solvers.«92».next_term
@@ -50,3 +50,14 @@ theorem «Supported» :
       (values := [.int n])).supported
 
 end solvers.«92».next_term
+
+namespace solvers.«92»
+open FormalSW.PyAst ProjectEulerSolutions.DigitSquareChains
+
+theorem terminal_source (start cache : Nat) (entries : store.Entries)
+    (heap : Mutable.Heap) (globals : Mutable.Globals) :
+    store.Found heap cache entries → Memo.Valid (store.lookup entries) →
+      terminal.Verified start cache entries heap globals :=
+  terminal.verified start cache entries heap globals
+
+end solvers.«92»
