@@ -1,0 +1,748 @@
+import solvers.«79.py.lean.d».Execution
+import data.«project-euler-statements».data.py.project_euler_statements.«p79.py»
+import lang.py.FormalSW.SetChoiceCalls
+import lang.py.FormalSW.IteratorLifting
+import lang.py.FormalSW.PossibleChoices
+import lang.py.FormalSW.MutableRelocation
+import lang.py.FormalSW.RuntimeExceptionObservation
+
+/-! Independent set choices can select different validation errors in the actual P79 calls. -/
+namespace solvers.«79».choice
+open FormalSW.PyAst HeapCalls
+open data.«project-euler-statements».data.py.project_euler_statements
+set_option Elab.async false
+
+/-- Graph initialization happens before the invalid attempt, and its allocations remain in the error completion. -/
+theorem build_set_failure_mod (heap : Mutable.Heap) (address index : Nat) (items : List Constant)
+    (s : String) (choices : ChoiceSchedule) (anchors used : Nat) (stack : List HeapCalls.Frame)
+    (found : heap[address]? = some (.set items)) (selected : items[index]? = some (.string s))
+    (invalid : s.length ≠ 3 ∨ Strings.isDigit s = false) (choice : choices used % items.length = index) :
+    Finishes (SetCalls.step graph.program anchors choices)
+      ⟨⟨.block graph.buildCode (graph.buildEnv (.ref address)), stack, heap⟩, used⟩
+      (.ok ⟨.error (graph.invalidException s), [], graph.initialHeap heap, anchors⟩) := by
+  let env := graph.initialEnv (graph.buildEnv (.ref address)) heap
+  have saved : (graph.initialHeap heap)[address]? = some (.set items) := by
+    simpa only [graph.initialHeap, List.getElem?_append_left (List.getElem?_eq_some_iff.mp found).1] using found
+  rw [graph.build_parts]
+  apply (SetCalls.Reaches.of_heap (graph.initial_block (graph.buildEnv (.ref address)) heap _ anchors stack) choices used).finishes
+  apply (SetCalls.for_set_name graph.program choices anchors used address (graph.initialHeap heap) items env "s" "attempts"
+    graph.attemptBody [] graph.returnGraph stack (by rfl) saved).finishes
+  apply Finishes.next (SetCalls.select_item_mod graph.program choices anchors used address index (graph.initialHeap heap)
+    items items (.string s) env "s" graph.attemptBody [] graph.returnGraph stack saved selected choice)
+  exact SetCalls.finishes_of_heap (graph.invalid_attempt (setLocal env "s" (.scalar (.string s))) (graph.initialHeap heap)
+    s (by simp [setLocal, graph.text]) invalid _ anchors stack) choices (used + 1)
+
+theorem build_set_failure (heap : Mutable.Heap) (address index : Nat) (items : List Constant)
+    (s : String) (choices : ChoiceSchedule) (anchors used : Nat) (stack : List HeapCalls.Frame)
+    (found : heap[address]? = some (.set items)) (selected : items[index]? = some (.string s))
+    (invalid : s.length ≠ 3 ∨ Strings.isDigit s = false) (choice : choices used = index) :
+    Finishes (SetCalls.step graph.program anchors choices)
+      ⟨⟨.block graph.buildCode (graph.buildEnv (.ref address)), stack, heap⟩, used⟩
+      (.ok ⟨.error (graph.invalidException s), [], graph.initialHeap heap, anchors⟩) := by
+  exact build_set_failure_mod heap address index items s choices anchors used stack found selected invalid
+    (by rw [choice]; exact Nat.mod_eq_of_lt (List.getElem?_eq_some_iff.mp selected).1)
+
+theorem solve_set_failure_mod (heap : Mutable.Heap) (address index : Nat) (items : List Constant)
+    (s : String) (choices : ChoiceSchedule)
+    (found : heap[address]? = some (.set items)) (selected : items[index]? = some (.string s))
+    (invalid : s.length ≠ 3 ∨ Strings.isDigit s = false) (choice : choices 0 % items.length = index) :
+    ((SetCalls.call graph.program "solve" [.ref address] heap).run choices).Finishes
+      ⟨.error (graph.invalidException s), [], graph.initialHeap heap, heap.length⟩ := by
+  let env := functionEnv source.solveArgs source.solveBody [.ref address] []
+  change Finishes (SetCalls.step graph.program heap.length choices)
+    ⟨⟨.operation (.call "solve") [.ref address], [], heap⟩, 0⟩ _
+  apply SetCalls.Reaches.finishes (SetCalls.Reaches.of_heap
+    (show HeapCalls.Reaches graph.program heap.length
+      ⟨.operation (.call "solve") [.ref address], [], heap⟩ ⟨.block source.solveCode env, [], heap⟩ from .next rfl .refl)
+    choices 0)
+  rw [source.solve_source]
+  refine Finishes.next (step := SetCalls.step graph.program heap.length choices) rfl ?_
+  refine Finishes.next (step := SetCalls.step graph.program heap.length choices) rfl ?_
+  apply (SetCalls.Reaches.of_heap (Evaluates.arguments_reach (.cons (Evaluates.lookup (by rfl)) .nil)
+    (.call "build_graph") [] heap.length _) choices 0).finishes
+  exact .next rfl (build_set_failure_mod heap address index items s choices heap.length 0 _ found selected invalid choice)
+
+
+theorem solve_set_failure (heap : Mutable.Heap) (address index : Nat) (items : List Constant)
+    (s : String) (choices : ChoiceSchedule)
+    (found : heap[address]? = some (.set items)) (selected : items[index]? = some (.string s))
+    (invalid : s.length ≠ 3 ∨ Strings.isDigit s = false) (choice : choices 0 = index) :
+    ((SetCalls.call graph.program "solve" [.ref address] heap).run choices).Finishes
+      ⟨.error (graph.invalidException s), [], graph.initialHeap heap, heap.length⟩ := by
+  exact solve_set_failure_mod heap address index items s choices found selected invalid
+    (by rw [choice]; exact Nat.mod_eq_of_lt (List.getElem?_eq_some_iff.mp selected).1)
+
+/-- The same set input can produce incompatible exact errors under independent schedules. -/
+theorem not_guaranteed_equiv (heap : Mutable.Heap) (address leftIndex rightIndex : Nat)
+    (items : List Constant) (left right : String)
+    (found : heap[address]? = some (.set items))
+    (leftSelected : items[leftIndex]? = some (.string left))
+    (rightSelected : items[rightIndex]? = some (.string right))
+    (leftInvalid : left.length ≠ 3 ∨ Strings.isDigit left = false)
+    (rightInvalid : right.length ≠ 3 ∨ Strings.isDigit right = false)
+    (different : graph.invalidException left ≠ p79.invalidException right) :
+    ¬ (IteratorCalls.call graph.program "solve" [.ref address] heap).Equiv
+      (IteratorCalls.call p79.program "naive" [.ref address] heap) := by
+  have first : ((IteratorCalls.call graph.program "solve" [.ref address] heap).run (fun _ => leftIndex)).Finishes
+      ⟨.error (graph.invalidException left), [], graph.initialHeap heap, heap.length⟩ :=
+    IteratorCalls.finishes_of_set (solve_set_failure heap address leftIndex items left (fun _ => leftIndex)
+      found leftSelected leftInvalid rfl) (by intro completion equal; cases equal; simp [graph.invalidException])
+  have second : ((IteratorCalls.call p79.program "naive" [.ref address] heap).run (fun _ => rightIndex)).Finishes
+      ⟨.error (p79.invalidException right), [], heap ++ [.list []], heap.length⟩ :=
+    IteratorCalls.finishes_of_set (p79.naive_set_failure heap address rightIndex items right (fun _ => rightIndex)
+      found rightSelected rightInvalid rfl) (by intro completion equal; cases equal; simp [p79.invalidException])
+  apply Mutable.CallFamily.not_equiv_of_finishes first second
+  intro equivalent
+  rcases equivalent with same | ⟨_, _, same, _⟩
+  · exact different (Except.error.inj (congrArg Mutable.Completion.outcome same))
+  · exact different same
+
+def exampleHeap : Mutable.Heap := [.set [.string "", .string "x"]]
+
+theorem example_valid : exampleHeap.Valid := by
+  simp [exampleHeap, Mutable.Heap.Valid, ScalarSet.Valid, scalarCompare, evalCmpOp]
+
+theorem example_not_guaranteed_equiv :
+    ¬ (IteratorCalls.call graph.program "solve" [.ref 0] exampleHeap).Equiv
+      (IteratorCalls.call p79.program "naive" [.ref 0] exampleHeap) := by
+  apply not_guaranteed_equiv exampleHeap 0 0 1 [.string "", .string "x"] "" "x" rfl rfl rfl
+    (Or.inl (by simp)) (Or.inl (by change (1 : Nat) ≠ 3; omega))
+  intro same
+  have args := congrArg ExceptionObject.args same
+  change [Constant.string "Invalid attempt: ''"] = [Constant.string "Invalid attempt: 'x'"] at args
+  simp at args
+
+
+/-- Every schedule selects an invalid attempt, and both calls retain the same caller-visible state. -/
+theorem invalid_set_finishes (heap : Mutable.Heap) (address : Nat) (attempts : List String)
+    (choices : ChoiceSchedule)
+    (found : heap[address]? = some (.set (attempts.map Constant.string)))
+    (nonempty : attempts ≠ [])
+    (invalid : ∀ s ∈ attempts, s.length ≠ 3 ∨ Strings.isDigit s = false) :
+    ∃ s ∈ attempts,
+      ((IteratorCalls.call graph.program "solve" [.ref address] heap).run choices).Finishes
+        ⟨.error (graph.invalidException s), [], graph.initialHeap heap, heap.length⟩ ∧
+      ((IteratorCalls.call p79.program "naive" [.ref address] heap).run choices).Finishes
+        ⟨.error (p79.invalidException s), [], heap ++ [.list []], heap.length⟩ := by
+  let index := choices 0 % attempts.length
+  have positive : 0 < attempts.length := List.length_pos_iff.mpr nonempty
+  have bounded : index < attempts.length := Nat.mod_lt _ positive
+  have selected : (attempts.map Constant.string)[index]? = some (.string attempts[index]) := by
+    simp [List.getElem?_map, List.getElem?_eq_getElem bounded]
+  have rejected := invalid attempts[index] (List.getElem_mem bounded)
+  have choice : choices 0 % (attempts.map Constant.string).length = index := by simp [index]
+  have first : ((IteratorCalls.call graph.program "solve" [.ref address] heap).run choices).Finishes
+      ⟨.error (graph.invalidException attempts[index]), [], graph.initialHeap heap, heap.length⟩ :=
+    IteratorCalls.finishes_of_set (solve_set_failure_mod heap address index _ attempts[index] choices
+      found selected rejected choice) (by intro completion equal; cases equal; simp [graph.invalidException])
+  have second : ((IteratorCalls.call p79.program "naive" [.ref address] heap).run choices).Finishes
+      ⟨.error (p79.invalidException attempts[index]), [], heap ++ [.list []], heap.length⟩ :=
+    IteratorCalls.finishes_of_set (p79.naive_set_failure_mod heap address index _ attempts[index] choices
+      found selected rejected choice) (by intro completion equal; cases equal; simp [p79.invalidException])
+  exact ⟨attempts[index], List.getElem_mem bounded, first, second⟩
+
+theorem invalid_set_behavior (heap : Mutable.Heap) (address : Nat) (attempts : List String)
+    (choices : ChoiceSchedule) (valid : heap.Valid)
+    (found : heap[address]? = some (.set (attempts.map Constant.string)))
+    (nonempty : attempts ≠ [])
+    (invalid : ∀ s ∈ attempts, s.length ≠ 3 ∨ Strings.isDigit s = false) :
+    ((IteratorCalls.call graph.program "solve" [.ref address] heap).run choices).BehaviorEquiv
+      ((IteratorCalls.call p79.program "naive" [.ref address] heap).run choices) := by
+  obtain ⟨s, _, first, second⟩ := invalid_set_finishes heap address attempts choices found nonempty invalid
+  exact Mutable.Call.BehaviorEquiv.of_finishes first second
+    (Mutable.Relocation.equivalent_exception_allocations heap [.set [], .dict [], .dict []] [.list []]
+      (graph.invalidException s) [] valid (by simp))
+
+/-- Every permitted schedule completes with a Python exception; no path leaves the model. -/
+theorem invalid_set_throws (heap : Mutable.Heap) (address : Nat) (attempts : List String)
+    (found : heap[address]? = some (.set (attempts.map Constant.string)))
+    (nonempty : attempts ≠ [])
+    (invalid : ∀ s ∈ attempts, s.length ≠ 3 ∨ Strings.isDigit s = false) :
+    (IteratorCalls.call graph.program "solve" [.ref address] heap).Throws ∧
+      (IteratorCalls.call p79.program "naive" [.ref address] heap).Throws := by
+  constructor
+  · intro choices
+    obtain ⟨s, _, first, _⟩ := invalid_set_finishes heap address attempts choices found nonempty invalid
+    exact ⟨graph.invalidException s, [], graph.initialHeap heap, heap.length, first⟩
+  · intro choices
+    obtain ⟨s, _, _, second⟩ := invalid_set_finishes heap address attempts choices found nonempty invalid
+    exact ⟨p79.invalidException s, [], heap ++ [.list []], heap.length, second⟩
+
+/-- Matching possible behaviors handles order-sensitive errors without requiring order independence. -/
+theorem invalid_set_possible_equiv (heap : Mutable.Heap) (address : Nat) (attempts : List String)
+    (valid : heap.Valid) (found : heap[address]? = some (.set (attempts.map Constant.string)))
+    (nonempty : attempts ≠ [])
+    (invalid : ∀ s ∈ attempts, s.length ≠ 3 ∨ Strings.isDigit s = false) :
+    (IteratorCalls.call graph.program "solve" [.ref address] heap).PossibleEquiv
+      (IteratorCalls.call p79.program "naive" [.ref address] heap) :=
+  Mutable.CallFamily.PossibleEquiv.of_pointwise
+    (fun choices => invalid_set_behavior heap address attempts choices valid found nonempty invalid)
+
+theorem example_possible_equiv :
+    (IteratorCalls.call graph.program "solve" [.ref 0] exampleHeap).PossibleEquiv
+      (IteratorCalls.call p79.program "naive" [.ref 0] exampleHeap) := by
+  apply invalid_set_possible_equiv exampleHeap 0 ["", "x"] example_valid rfl (by simp)
+  intro s member
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at member
+  rcases member with rfl | rfl
+  · exact Or.inl (by simp)
+  · exact Or.inl (by change (1 : Nat) ≠ 3; omega)
+
+end solvers.«79».choice
+
+/-! Source-level equivalence compares returned values, exceptions, and all caller-owned objects. -/
+namespace solvers.«79».source
+open FormalSW.PyAst HeapCalls
+open solvers.«79».graph solvers.«79».topo
+open ProjectEulerStatements.TopologicalOrder
+open data.«project-euler-statements».data.py.project_euler_statements
+set_option Elab.async false
+
+theorem solve_outcome_within (attempts : List String) (anchors : Nat) (value : Mutable.Value)
+    (returned : solveOutcome attempts = .ok value) : value.edge.Within anchors := by
+  unfold solveOutcome at returned
+  cases processed : emptyStorage.graphData.process attempts with
+  | error error => simp only [processed] at returned; contradiction
+  | ok data =>
+      simp only [processed] at returned
+      cases ordered : order data.vertices data.edges with
+      | none => simp only [ordered, resultOutcome] at returned; contradiction
+      | some output =>
+          simp only [ordered, resultOutcome, Except.ok.injEq] at returned
+          rw [← returned]
+          trivial
+
+theorem outcome_allocations (base left right : Mutable.Heap) (valid : base.Valid)
+    (leftSaved : base <+: left) (rightSaved : base <+: right)
+    (attempts : List String) :
+    Mutable.Completion.Equivalent ⟨solveOutcome attempts, [], left, base.length⟩
+      ⟨solveOutcome attempts, [], right, base.length⟩ := by
+  obtain ⟨leftExtra, rfl⟩ := leftSaved
+  obtain ⟨rightExtra, rfl⟩ := rightSaved
+  cases outcome : solveOutcome attempts with
+  | ok value =>
+      exact Mutable.Completion.equivalent_allocations base leftExtra rightExtra value [] valid
+        (solve_outcome_within attempts base.length value outcome) (by simp)
+  | error error =>
+      exact Mutable.Relocation.equivalent_exception_allocations base leftExtra rightExtra error []
+        valid (by simp)
+
+/-- Every optimized traversal order agrees with the reference on each stable sequence input. -/
+theorem sequence_equiv (choices : ChoiceSchedule) (base : Mutable.Heap) (value : Mutable.Value)
+    (attempts : List String) (valid : base.Valid)
+    (input : SequenceInput base (sequenceSource value) attempts) :
+    ((SetCalls.call program "solve" [value] base).run choices).Equiv
+      (call p79.program "naive" [value] base) := by
+  obtain ⟨left, optimized, leftSaved⟩ := solve_sequence_finishes choices base value attempts input
+  obtain ⟨right, reference, rightSaved⟩ := p79.naive_sequence_finishes base value attempts
+    ⟨input.read⟩
+  rw [← solve_outcome_eq_reference] at reference
+  exact Mutable.Call.equiv_of_finishes optimized reference
+    (outcome_allocations base left right valid leftSaved rightSaved attempts)
+
+theorem list_equiv (choices : ChoiceSchedule) (base : Mutable.Heap) (address : Nat)
+    (attempts : List String) (valid : base.Valid)
+    (found : base[address]? = some (.list (attempts.map text))) :
+    ((SetCalls.call program "solve" [.ref address] base).run choices).Equiv
+      (call p79.program "naive" [.ref address] base) :=
+  sequence_equiv choices base (.ref address) attempts valid
+    (SequenceInput.list base address attempts found)
+
+theorem tuple_equiv (choices : ChoiceSchedule) (base : Mutable.Heap) (address : Nat)
+    (attempts : List String) (valid : base.Valid)
+    (found : base[address]? = some (.tuple (attempts.map text))) :
+    ((SetCalls.call program "solve" [.ref address] base).run choices).Equiv
+      (call p79.program "naive" [.ref address] base) :=
+  sequence_equiv choices base (.ref address) attempts valid
+    (SequenceInput.tuple base address attempts found)
+
+theorem sequence_family_equiv (base : Mutable.Heap) (value : Mutable.Value)
+    (attempts : List String) (valid : base.Valid)
+    (input : SequenceInput base (sequenceSource value) attempts) :
+    (SetCalls.call program "solve" [value] base).Equiv
+      (Mutable.CallFamily.deterministic (call p79.program "naive" [value] base)) :=
+  fun choices _ => sequence_equiv choices base value attempts valid input
+
+/-- Stable sequence inputs also satisfy the stronger per-run support and divergence checks. -/
+theorem sequence_possible_equiv (base : Mutable.Heap) (value : Mutable.Value)
+    (attempts : List String) (valid : base.Valid)
+    (input : SequenceInput base (sequenceSource value) attempts) :
+    (SetCalls.call program "solve" [value] base).PossibleEquiv
+      (Mutable.CallFamily.deterministic (call p79.program "naive" [value] base)) := by
+  apply Mutable.CallFamily.PossibleEquiv.of_pointwise
+  intro choices
+  obtain ⟨left, optimized, leftSaved⟩ := solve_sequence_finishes choices base value attempts input
+  obtain ⟨right, reference, rightSaved⟩ := p79.naive_sequence_finishes base value attempts ⟨input.read⟩
+  rw [← solve_outcome_eq_reference] at reference
+  exact Mutable.Call.BehaviorEquiv.of_finishes optimized reference
+    (outcome_allocations base left right valid leftSaved rightSaved attempts)
+
+/-- A string is itself iterable; its nonempty inputs fail validation at the first character. -/
+theorem string_equiv (choices : ChoiceSchedule) (base : Mutable.Heap) (value : String)
+    (valid : base.Valid) :
+    ((SetCalls.call program "solve" [text value] base).run choices).Equiv
+      (call p79.program "naive" [text value] base) := by
+  apply sequence_equiv choices base (text value) (value.toList.map String.singleton) valid
+  constructor
+  intro heap _
+  simp [sequenceSource, sequenceValue, Mutable.sequence, List.map_map, text]
+
+end solvers.«79».source
+
+/-! Complete calls agree on input failures, including acquisition effects and caller-visible object graphs. -/
+namespace solvers.«79».source
+open FormalSW.PyAst HeapCalls Mutable.Relocation IteratorCalls
+open solvers.«79».graph
+open data.«project-euler-statements».data.py.project_euler_statements
+set_option Elab.async false
+
+theorem iterator_rejection_equiv (context : Module)
+    (solverExtension : Extends context graph.program) (referenceExtension : Extends context p79.program)
+    (source : IteratorCalls.Relocation.ModuleSource context) (choices : ChoiceSchedule)
+    (receiver iterator : Mutable.Value) (base acquired middle yielded : Mutable.Heap)
+    (acquiredUsed nextUsed finalUsed : Nat) (closed : Closed base)
+    (acquisition : AcquireRun context choices receiver base 0 iterator acquired acquiredUsed)
+    (attempts : List String) (s : String)
+    (trace : YieldPrefix context choices iterator graph.text acquired acquiredUsed attempts middle nextUsed)
+    (ran : NextRun context choices iterator middle nextUsed (.ok (graph.text s)) yielded finalUsed)
+    (noGrowth : yielded.length = base.length) (valid : ∀ value ∈ attempts, ValidAttempt value)
+    (invalid : ¬ ValidAttempt s) :
+    ((IteratorCalls.call context "solve" [receiver] base).run choices).Equiv
+      ((IteratorCalls.call context "naive" [receiver] base).run choices) := by
+  obtain ⟨left, leftLayout, leftRun⟩ := solve_iterator_rejection context solverExtension source choices
+    receiver iterator base acquired middle yielded acquiredUsed nextUsed finalUsed closed acquisition attempts s
+      trace ran noGrowth valid invalid
+  have rejected : s.length ≠ 3 ∨ Strings.isDigit s = false := by
+    by_cases length : s.length = 3
+    · exact Or.inr (by simpa [ValidAttempt, length] using invalid)
+    · exact Or.inl length
+  obtain ⟨right, rightPrivate, rightRun⟩ := p79.naive_iterator_rejection context referenceExtension source choices
+    receiver iterator base acquired middle yielded acquiredUsed nextUsed finalUsed closed acquisition attempts s
+      trace ran noGrowth valid rejected
+  exact Mutable.Call.equiv_of_finishes leftRun rightRun
+    (leftLayout.equivalent_exceptions rightPrivate.layout base.length (by omega)
+      (fun _ _ => rfl) (fun _ _ => rfl) (invalidException s))
+
+theorem iterator_failure_equiv (context : Module)
+    (solverExtension : Extends context graph.program) (referenceExtension : Extends context p79.program)
+    (source : IteratorCalls.Relocation.ModuleSource context) (choices : ChoiceSchedule)
+    (receiver iterator : Mutable.Value) (base acquired yielded : Mutable.Heap)
+    (acquiredUsed finalUsed : Nat) (closed : Closed base)
+    (acquisition : AcquireRun context choices receiver base 0 iterator acquired acquiredUsed)
+    (attempts : List String) (error : ExceptionObject)
+    (trace : Traversal context choices iterator graph.text acquired acquiredUsed attempts (.error error) yielded finalUsed)
+    (noGrowth : yielded.length = base.length) (valid : ∀ value ∈ attempts, ValidAttempt value) :
+    ((IteratorCalls.call context "solve" [receiver] base).run choices).Equiv
+      ((IteratorCalls.call context "naive" [receiver] base).run choices) := by
+  obtain ⟨left, leftLayout, leftRun⟩ := solve_iterator_failure context solverExtension source choices
+    receiver iterator base acquired yielded acquiredUsed finalUsed closed acquisition attempts error trace noGrowth valid
+  obtain ⟨right, rightPrivate, rightRun⟩ := p79.naive_iterator_failure context referenceExtension source choices
+    receiver iterator base acquired yielded acquiredUsed finalUsed closed acquisition attempts error trace noGrowth valid
+  exact Mutable.Call.equiv_of_finishes leftRun rightRun
+    (leftLayout.equivalent_exceptions rightPrivate.layout base.length (by omega)
+      (fun _ _ => rfl) (fun _ _ => rfl) error)
+
+end solvers.«79».source
+
+/-! The first invalid attempt produces the same exception and caller mutations in both consumers. -/
+namespace solvers.«79».source
+open FormalSW.PyAst HeapCalls Mutable.Relocation IteratorCalls
+open solvers.«79».graph
+open data.«project-euler-statements».data.py.project_euler_statements
+set_option Elab.async false
+
+theorem paired_iterator_rejection (context : Module)
+    (solverExtension : Extends context graph.program) (referenceExtension : Extends context p79.program)
+    (source : IteratorCalls.Relocation.ModuleSource context) (choices : ChoiceSchedule)
+    (iterator : Mutable.Value) (logical middle yielded : Mutable.Heap) (used nextUsed finalUsed : Nat)
+    (attempts : List String) (s : String)
+    (trace : YieldPrefix context choices iterator graph.text logical used attempts middle nextUsed)
+    (ran : NextRun context choices iterator middle nextUsed (.ok (graph.text s)) yielded finalUsed)
+    (noGrowth : yielded.length = logical.length) (valid : ∀ value ∈ attempts, ValidAttempt value)
+    (invalid : ¬ ValidAttempt s)
+    (left right : Mutable.Heap) (leftMap rightMap : Nat → Nat)
+    (roots : Roots) (state : Storage) (checked : List String) (checkedAddress : Nat)
+    (leftEnv rightEnv : HeapCalls.Env)
+    (leftLayout : ExecutionLayout logical left leftMap)
+    (rightLayout : PrivateLayout logical right rightMap checkedAddress (.list (checked.map p79.text)))
+    (represented : Represents roots state left)
+    (saved : ProtectedCells (callerImage logical leftMap) roots state left)
+    (bindings : Bindings roots leftEnv) (getChecked : rightEnv "checked" = some (.ref checkedAddress))
+    (leftFollowing rightFollowing : List Stmt) (leftAnchors rightAnchors : Nat)
+    (leftStack rightStack : List HeapCalls.Frame) (leftResumes rightResumes : List Resume) :
+    ∃ leftAfter rightAfter,
+      ExecutionLayout yielded leftAfter leftMap ∧
+      PrivateLayout yielded rightAfter rightMap checkedAddress (.list ((checked ++ attempts).map p79.text)) ∧
+      IteratorCalls.Reaches context leftAnchors choices []
+        (.running ⟨⟨.block (sequenceLoop (sequenceSource (relocateValue leftMap iterator)) 0 :: leftFollowing)
+          leftEnv, leftStack, left⟩, used⟩ leftResumes)
+        (.completed (.ok ⟨.error (graph.invalidException s), [], leftAfter, leftAnchors⟩) finalUsed leftResumes) ∧
+      IteratorCalls.Reaches context rightAnchors choices []
+        (.running ⟨⟨.block (p79.validationLoop (sequenceSource (relocateValue rightMap iterator)) 0 :: rightFollowing)
+          rightEnv, rightStack, right⟩, used⟩ rightResumes)
+        (.completed (.ok ⟨.error (graph.invalidException s), [], rightAfter, rightAnchors⟩) finalUsed rightResumes) := by
+  obtain ⟨leftAfter, finalLayout, leftRun⟩ := graph.reject_after_iterator_prefix context solverExtension source choices
+    iterator logical middle yielded used nextUsed finalUsed attempts s trace ran noGrowth valid invalid
+      left leftMap roots state leftEnv leftLayout represented saved bindings leftFollowing leftAnchors leftStack leftResumes
+  have rejected : s.length ≠ 3 ∨ Strings.isDigit s = false := by
+    by_cases length : s.length = 3
+    · exact Or.inr (by simpa [ValidAttempt, length] using invalid)
+    · exact Or.inl length
+  obtain ⟨rightAfter, finalPrivate, rightRun⟩ := p79.reject_after_iterator_prefix context referenceExtension source choices
+    iterator logical middle yielded used nextUsed finalUsed attempts s trace ran noGrowth valid rejected
+      right rightMap checkedAddress checked rightEnv rightLayout getChecked rightFollowing rightAnchors rightStack rightResumes
+  exact ⟨leftAfter, rightAfter, finalLayout, finalPrivate, leftRun, rightRun⟩
+
+end solvers.«79».source
+
+/-! Both consumers traverse the same actual finite iterator execution and retain their ordering invariant. -/
+namespace solvers.«79».source
+open FormalSW.PyAst HeapCalls Mutable.Relocation IteratorCalls
+open solvers.«79».graph
+open data.«project-euler-statements».data.py.project_euler_statements
+set_option Elab.async false
+
+theorem processedOutcome_prefix (data : GraphData) (attempts rest : List String)
+    (valid : ∀ s ∈ attempts, ValidAttempt s) :
+    processedOutcome data (attempts ++ rest) =
+      processedOutcome (attempts.foldl GraphData.extend data) rest := by
+  induction attempts generalizing data with
+  | nil => rfl
+  | cons s tail ih =>
+      have head := valid s (by simp)
+      simpa only [List.cons_append, List.foldl_cons, processedOutcome, GraphData.process, if_pos head]
+        using ih (data.extend s) (fun value member => valid value (List.mem_cons_of_mem _ member))
+
+theorem ConsumersAgree.traversal (state next : Storage) (checked attempts : List String)
+    (agree : ConsumersAgree state checked) (valid : ∀ s ∈ attempts, ValidAttempt s)
+    (data : next.graphData = attempts.foldl GraphData.extend state.graphData) :
+    ConsumersAgree next (checked ++ attempts) := by
+  intro rest
+  have matched := agree (attempts ++ rest)
+  rw [processedOutcome_prefix _ _ _ valid, p79.validatedOutcome_prefix _ _ _ valid] at matched
+  simpa only [data] using matched
+
+theorem paired_iterator_traversal (context : Module)
+    (solverExtension : Extends context graph.program) (referenceExtension : Extends context p79.program)
+    (source : IteratorCalls.Relocation.ModuleSource context) (choices : ChoiceSchedule)
+    (iterator : Mutable.Value) (logical finalLogical : Mutable.Heap) (used finalUsed : Nat)
+    (attempts : List String) (outcome : Except ExceptionObject Unit)
+    (trace : Traversal context choices iterator graph.text logical used attempts outcome finalLogical finalUsed)
+    (noGrowth : finalLogical.length = logical.length) (valid : ∀ s ∈ attempts, ValidAttempt s)
+    (left right : Mutable.Heap) (leftMap rightMap : Nat → Nat)
+    (roots : Roots) (state : Storage) (checked : List String) (checkedAddress : Nat)
+    (leftEnv rightEnv : HeapCalls.Env)
+    (leftLayout : ExecutionLayout logical left leftMap)
+    (rightLayout : PrivateLayout logical right rightMap checkedAddress (.list (checked.map p79.text)))
+    (represented : Represents roots state left)
+    (saved : ProtectedCells (callerImage logical leftMap) roots state left)
+    (bindings : Bindings roots leftEnv) (getChecked : rightEnv "checked" = some (.ref checkedAddress))
+    (agree : ConsumersAgree state checked)
+    (leftFollowing rightFollowing : List Stmt) (leftAnchors rightAnchors : Nat)
+    (leftStack rightStack : List HeapCalls.Frame) (leftResumes rightResumes : List Resume) :
+    ∃ leftAfter rightAfter next nextLeftEnv nextRightEnv,
+      Represents roots next leftAfter ∧ ProtectedCells (callerImage logical leftMap) roots next leftAfter ∧
+      Bindings roots nextLeftEnv ∧ ExecutionLayout finalLogical leftAfter leftMap ∧
+      PrivateLayout finalLogical rightAfter rightMap checkedAddress (.list ((checked ++ attempts).map p79.text)) ∧
+      nextRightEnv "checked" = some (.ref checkedAddress) ∧
+      ConsumersAgree next (checked ++ attempts) ∧
+      ExitResult context choices leftAnchors
+        (.running ⟨⟨.block (sequenceLoop (sequenceSource (relocateValue leftMap iterator)) 0 :: leftFollowing)
+          leftEnv, leftStack, left⟩, used⟩ leftResumes)
+        (inputIteratorLoop nextLeftEnv leftFollowing leftStack) leftResumes leftAfter finalUsed outcome ∧
+      ExitResult context choices rightAnchors
+        (.running ⟨⟨.block (p79.validationLoop (sequenceSource (relocateValue rightMap iterator)) 0 :: rightFollowing)
+          rightEnv, rightStack, right⟩, used⟩ rightResumes)
+        (p79.validationIteratorLoop nextRightEnv rightFollowing rightStack) rightResumes rightAfter finalUsed outcome := by
+  obtain ⟨leftAfter, next, nextLeftEnv, nextRep, nextSaved, nextBindings, nextLayout, data, leftRun⟩ :=
+    process_iterator_traversal context solverExtension source choices iterator logical finalLogical used finalUsed
+      attempts outcome trace noGrowth valid left leftMap roots state leftEnv leftLayout represented saved bindings
+      leftFollowing leftAnchors leftStack leftResumes
+  obtain ⟨rightAfter, nextRightEnv, nextPrivate, nextChecked, rightRun⟩ :=
+    p79.validated_iterator_traversal context referenceExtension source choices iterator logical finalLogical used finalUsed
+      attempts outcome trace noGrowth valid right rightMap checkedAddress checked rightEnv rightLayout getChecked
+      rightFollowing rightAnchors rightStack rightResumes
+  exact ⟨leftAfter, rightAfter, next, nextLeftEnv, nextRightEnv, nextRep, nextSaved, nextBindings,
+    nextLayout, nextPrivate, nextChecked, agree.traversal state next checked attempts valid data, leftRun, rightRun⟩
+
+end solvers.«79».source
+
+/-! The graph-building source loop follows the actual finite-set choice schedule. -/
+namespace solvers.«79».graph
+open FormalSW.PyAst HeapCalls
+set_option Elab.async false
+
+def setInputLoop (address : Nat) (original remaining : List String) : Stmt :=
+  .setStepLoop "s" address (original.map Constant.string) (remaining.map Constant.string) attemptBody []
+
+def SetProcessResult (choices : ChoiceSchedule) (used : Nat) (caller : Mutable.Heap)
+    (address : Nat) (original remaining : List String) (roots : Roots) (heap : Mutable.Heap)
+    (env : HeapCalls.Env) : Except ExceptionObject GraphData → Prop
+  | .ok data => ∃ after next nextEnv,
+      (∀ following anchors stack, SetCalls.Reaches choices program anchors
+        ⟨⟨.block (setInputLoop address original remaining :: following) env, stack, heap⟩, used⟩
+        ⟨⟨.block following nextEnv, stack, after⟩, used + remaining.length⟩) ∧
+      Represents roots next after ∧ CallerPreserved caller roots next after ∧
+      Bindings roots nextEnv ∧ next.graphData = data
+  | .error error => ∃ after, caller <+: after ∧ ∀ following anchors stack,
+      Finishes (SetCalls.step program anchors choices)
+        ⟨⟨.block (setInputLoop address original remaining :: following) env, stack, heap⟩, used⟩
+        (.ok ⟨.error error, [], after, anchors⟩)
+
+theorem process_set (choices : ChoiceSchedule) (used : Nat) (caller : Mutable.Heap)
+    (address : Nat) (original remaining : List String)
+    (found : caller[address]? = some (.set (original.map Constant.string)))
+    (roots : Roots) (state : Storage) (heap : Mutable.Heap) (env : HeapCalls.Env)
+    (represented : Represents roots state heap) (saved : CallerPreserved caller roots state heap)
+    (bound : Bindings roots env) :
+    SetProcessResult choices used caller address original remaining roots heap env
+      (state.graphData.process (SetCalls.selectionOrder choices used remaining)) := by
+  have retained : heap[address]? = some (.set (original.map Constant.string)) := by
+    obtain ⟨suffix, same⟩ := saved.unchanged
+    rw [← same, List.getElem?_append_left (List.getElem?_eq_some_iff.mp found).1]
+    exact found
+  cases remaining with
+  | nil =>
+      simp only [SetCalls.selectionOrder, GraphData.process]
+      refine ⟨heap, state, env, ?_, represented, saved, bound, rfl⟩
+      intro following anchors stack
+      exact .next (by simp [setInputLoop, SetCalls.step, step, SetCalls.iteratorStep, retained]) .refl
+  | cons head tail =>
+      let index := choices used % (head :: tail).length
+      have bounded : index < (head :: tail).length := Nat.mod_lt _ (by simp)
+      let s := (head :: tail)[index]
+      let rest := (head :: tail).eraseIdx index
+      have selected : ((head :: tail).map Constant.string)[index]? = some (.string s) := by
+        rw [List.getElem?_map, List.getElem?_eq_getElem bounded]
+        rfl
+      have control : Calls.loopControl attemptBody = false := rfl
+      have entered (following : List Stmt) (anchors : Nat) (stack : List Frame) :
+          SetCalls.step program anchors choices
+            ⟨⟨.block (setInputLoop address original (head :: tail) :: following) env, stack, heap⟩, used⟩ =
+          .next ⟨⟨.block (attemptBody ++ (setInputLoop address original rest :: following))
+            (setLocal env "s" (text s)), stack, heap⟩, used + 1⟩ := by
+        simpa only [setInputLoop, Calls.loopContinuation, control, Bool.false_eq_true,
+          ↓reduceIte, List.eraseIdx_map, List.singleton_append, rest, text] using
+          SetCalls.select_item_mod program choices anchors used address index heap
+            (original.map Constant.string) ((head :: tail).map Constant.string) (.string s)
+            env "s" attemptBody [] following stack retained selected (by simp [index])
+      rw [SetCalls.selectionOrder]
+      change SetProcessResult _ _ _ _ _ _ _ _ _
+        (state.graphData.process (s :: SetCalls.selectionOrder choices (used + 1) rest))
+      rw [GraphData.process]
+      by_cases valid : ValidAttempt s
+      · rw [if_pos valid]
+        obtain ⟨middle, current, middleEnv, iteration, currentRep, currentSaved, currentBound, data⟩ :=
+          valid_iteration caller roots state heap env represented saved bound s valid
+        have recursive := process_set choices (used + 1) caller address original rest found roots
+          current middle middleEnv currentRep currentSaved currentBound
+        rw [← data]
+        cases outcome : current.graphData.process (SetCalls.selectionOrder choices (used + 1) rest) with
+        | ok result =>
+            rw [outcome] at recursive
+            obtain ⟨after, next, nextEnv, continued, resultRep, framed, bindings, contents⟩ := recursive
+            refine ⟨after, next, nextEnv, ?_, resultRep, framed, bindings, contents⟩
+            intro following anchors stack
+            apply SetCalls.Reaches.next (entered following anchors stack)
+            apply (SetCalls.Reaches.of_heap
+              (iteration (setInputLoop address original rest :: following) anchors stack)
+              choices (used + 1)).trans
+            have length : rest.length = tail.length := by
+              simp [rest, List.length_eraseIdx_of_lt bounded]
+            simpa only [length, List.length_cons, Nat.add_assoc, Nat.add_comm 1] using
+              continued following anchors stack
+        | error error =>
+            rw [outcome] at recursive
+            obtain ⟨after, framed, failed⟩ := recursive
+            refine ⟨after, framed, ?_⟩
+            intro following anchors stack
+            apply Finishes.next (entered following anchors stack)
+            exact (SetCalls.Reaches.of_heap
+              (iteration (setInputLoop address original rest :: following) anchors stack)
+              choices (used + 1)).finishes (failed following anchors stack)
+      · rw [if_neg valid]
+        refine ⟨heap, saved.unchanged, ?_⟩
+        intro following anchors stack
+        apply Finishes.next (entered following anchors stack)
+        apply SetCalls.finishes_of_heap (invalid_attempt (setLocal env "s" (text s)) heap s
+          (by simp [setLocal]) ?_ _ anchors stack)
+        by_cases length : s.length = 3
+        · exact Or.inr (by simpa [ValidAttempt, length] using valid)
+        · exact Or.inl length
+termination_by remaining.length
+decreasing_by
+  rw [List.length_eraseIdx_of_lt bounded]
+  simp
+
+end solvers.«79».graph
+
+namespace solvers.«79».source
+open FormalSW.PyAst HeapCalls
+open solvers.«79».graph solvers.«79».topo
+open ProjectEulerStatements.TopologicalOrder
+set_option Elab.async false
+
+/-- The complete solver consumes the input set, then sorts the constructed graph under the remaining schedule. -/
+theorem solve_set_finishes (choices : ChoiceSchedule) (base : Mutable.Heap)
+    (address : Nat) (attempts : List String)
+    (found : base[address]? = some (.set (attempts.map Constant.string))) :
+    ∃ after, ((SetCalls.call program "solve" [.ref address] base).run choices).Finishes
+      ⟨solveOutcome (SetCalls.selectionOrder choices 0 attempts), [], after, base.length⟩ ∧
+      base <+: after := by
+  let env := functionEnv solveArgs solveBody [.ref address] []
+  let stack : List Frame := [.unpack ["nodes", "adj", "indeg"] returnTopo env]
+  let initialized := initialEnv (buildEnv (.ref address)) base
+  have retained : (initialHeap base)[address]? = some (.set (attempts.map Constant.string)) := by
+    simpa only [initialHeap, List.getElem?_append_left (List.getElem?_eq_some_iff.mp found).1] using found
+  have entered : SetCalls.Reaches choices program base.length
+      ⟨⟨.operation (.call "solve") [.ref address], [], base⟩, 0⟩
+      ⟨⟨.block (setInputLoop address attempts attempts :: returnGraph) initialized,
+        stack, initialHeap base⟩, 0⟩ := by
+    apply (SetCalls.Reaches.of_heap
+      (show HeapCalls.Reaches program base.length
+        ⟨.operation (.call "solve") [.ref address], [], base⟩ ⟨.block solveCode env, [], base⟩
+        from .next rfl .refl) choices 0).trans
+    rw [solve_source]
+    apply SetCalls.Reaches.next rfl
+    apply SetCalls.Reaches.next rfl
+    apply (SetCalls.Reaches.of_heap (Evaluates.arguments_reach
+      (.cons (Evaluates.lookup (by rfl)) .nil) (.call "build_graph") [] base.length _) choices 0).trans
+    apply SetCalls.Reaches.next (following := ⟨⟨.block buildCode (buildEnv (.ref address)), stack, base⟩, 0⟩) rfl
+    rw [build_parts]
+    apply (SetCalls.Reaches.of_heap
+      (initial_block (buildEnv (.ref address)) base _ base.length stack) choices 0).trans
+    exact SetCalls.for_set_name program choices base.length 0 address (initialHeap base)
+      (attempts.map Constant.string) initialized "s" "attempts" attemptBody [] returnGraph stack (by rfl) retained
+  have built := process_set choices 0 base address attempts attempts found (initialRoots base)
+    emptyStorage (initialHeap base) initialized (initial_represents base) (initial_caller base)
+    (initial_bindings (buildEnv (.ref address)) base)
+  cases processed : emptyStorage.graphData.process (SetCalls.selectionOrder choices 0 attempts) with
+  | error error =>
+      rw [processed] at built
+      obtain ⟨after, saved, failed⟩ := built
+      refine ⟨after, ?_, saved⟩
+      change Finishes (SetCalls.step program base.length choices)
+        ⟨⟨.operation (.call "solve") [.ref address], [], base⟩, 0⟩ _
+      simpa only [solveOutcome, processed] using entered.finishes (failed returnGraph base.length stack)
+  | ok data =>
+      rw [processed] at built
+      obtain ⟨middle, state, finalEnv, loop, represented, saved, bindings, contents⟩ := built
+      let heap := middle ++ [.tuple (graphValues (initialRoots base))]
+      let bound := assignNames env ["nodes", "adj", "indeg"] (graphValues (initialRoots base))
+      have returned : SetCalls.Reaches choices program base.length
+          ⟨⟨.block returnGraph finalEnv, stack, middle⟩, attempts.length⟩
+          ⟨⟨.block returnTopo bound, [], heap⟩, attempts.length⟩ := by
+        apply (SetCalls.Reaches.of_heap (return_graph (initialRoots base) finalEnv middle bindings
+          base.length stack) choices attempts.length).trans
+        apply SetCalls.Reaches.of_heap
+        exact .next (by simp [step, run, stack, Mutable.sequence, heap, bound, graphValues]) .refl
+      obtain ⟨after, sorted, sortedSaved⟩ := return_topo choices heap (initialRoots base) state
+        (represented.append _ _ _ _) bound (by simp [bound, assignNames, graphValues, setLocal])
+        (by simp [bound, assignNames, graphValues, setLocal])
+        (by simp [bound, assignNames, graphValues, setLocal]) base.length attempts.length []
+      refine ⟨after, ?_, saved.unchanged.trans ((List.prefix_append _ _).trans sortedSaved)⟩
+      change Finishes (SetCalls.step program base.length choices)
+        ⟨⟨.operation (.call "solve") [.ref address], [], base⟩, 0⟩ _
+      apply entered.finishes
+      apply (loop returnGraph base.length stack).finishes
+      simp only [Nat.zero_add]
+      apply returned.finishes
+      have completed := ContextResult.finishes _ _ _ _ _ _ _ sorted
+      simpa only [solveOutcome, processed, ← contents] using completed
+
+end solvers.«79».source
+
+/-! Finite string sets have matching possible behaviors, including order-sensitive validation failures. -/
+namespace solvers.«79».source
+open FormalSW.PyAst HeapCalls
+open solvers.«79».graph solvers.«79».topo
+open data.«project-euler-statements».data.py.project_euler_statements
+set_option Elab.async false
+
+theorem validated_outcome_not_type_error (checked attempts : List String) :
+    p79.validatedOutcome checked attempts ≠ .error ⟨"TypeError", []⟩ := by
+  induction attempts generalizing checked with
+  | nil =>
+      simp only [p79.validatedOutcome, p79.checkedOutcome]
+      split <;> simp_all [p79.cycleException]
+  | cons s rest ih =>
+      simp only [p79.validatedOutcome]
+      split
+      · exact ih _
+      · simp [p79.invalidException]
+
+/-- Both actual calls finish for every schedule; their private allocations preserve the caller's heap. -/
+theorem set_calls_finish (choices : ChoiceSchedule) (base : Mutable.Heap)
+    (address : Nat) (attempts : List String)
+    (found : base[address]? = some (.set (attempts.map Constant.string))) :
+    ∃ left right,
+      ((IteratorCalls.call program "solve" [.ref address] base).run choices).Finishes
+        ⟨solveOutcome (SetCalls.selectionOrder choices 0 attempts), [], left, base.length⟩ ∧
+      ((IteratorCalls.call p79.program "naive" [.ref address] base).run choices).Finishes
+        ⟨solveOutcome (SetCalls.selectionOrder choices 0 attempts), [], right, base.length⟩ ∧
+      base <+: left ∧ base <+: right := by
+  obtain ⟨left, optimized, leftSaved⟩ := solve_set_finishes choices base address attempts found
+  obtain ⟨right, reference, rightSaved⟩ := p79.naive_set_finishes choices base address attempts found
+  rw [← solve_outcome_eq_reference] at reference
+  have safe : solveOutcome (SetCalls.selectionOrder choices 0 attempts) ≠ .error ⟨"TypeError", []⟩ := by
+    rw [solve_outcome_eq_reference]
+    exact validated_outcome_not_type_error _ _
+  refine ⟨left, right, ?_, ?_, leftSaved, rightSaved⟩
+  · exact IteratorCalls.finishes_of_set optimized (by intro completion equal; cases equal; exact safe)
+  · exact IteratorCalls.finishes_of_set reference (by intro completion equal; cases equal; exact safe)
+
+theorem set_behavior_equiv (choices : ChoiceSchedule) (base : Mutable.Heap)
+    (address : Nat) (attempts : List String) (valid : base.Valid)
+    (found : base[address]? = some (.set (attempts.map Constant.string))) :
+    ((IteratorCalls.call program "solve" [.ref address] base).run choices).BehaviorEquiv
+      ((IteratorCalls.call p79.program "naive" [.ref address] base).run choices) := by
+  obtain ⟨left, right, optimized, reference, leftSaved, rightSaved⟩ :=
+    set_calls_finish choices base address attempts found
+  exact Mutable.Call.BehaviorEquiv.of_finishes optimized reference
+    (outcome_allocations base left right valid leftSaved rightSaved
+      (SetCalls.selectionOrder choices 0 attempts))
+
+theorem set_possible_equiv (base : Mutable.Heap) (address : Nat) (attempts : List String)
+    (valid : base.Valid) (found : base[address]? = some (.set (attempts.map Constant.string))) :
+    (IteratorCalls.call program "solve" [.ref address] base).PossibleEquiv
+      (IteratorCalls.call p79.program "naive" [.ref address] base) :=
+  Mutable.CallFamily.PossibleEquiv.of_pointwise
+    (fun choices => set_behavior_equiv choices base address attempts valid found)
+
+/-- Coverage is established separately from equivalence: neither family has an unsupported or divergent run. -/
+theorem set_halts (base : Mutable.Heap) (address : Nat) (attempts : List String)
+    (found : base[address]? = some (.set (attempts.map Constant.string))) :
+    (∀ choices, ((IteratorCalls.call program "solve" [.ref address] base).run choices).Halts) ∧
+      (∀ choices, ((IteratorCalls.call p79.program "naive" [.ref address] base).run choices).Halts) := by
+  constructor <;> intro choices
+  · obtain ⟨left, _, optimized, _, _, _⟩ := set_calls_finish choices base address attempts found
+    exact ⟨_, optimized⟩
+  · obtain ⟨_, right, _, reference, _, _⟩ := set_calls_finish choices base address attempts found
+    exact ⟨_, reference⟩
+
+theorem valid_set_outcome (choices : ChoiceSchedule) (attempts : List String)
+    (valid : ∀ s ∈ attempts, ValidAttempt s) :
+    solveOutcome (SetCalls.selectionOrder choices 0 attempts) = solveOutcome attempts := by
+  have permutation := SetCalls.selectionOrder_perm choices 0 attempts
+  have selectedValid : ∀ s ∈ SetCalls.selectionOrder choices 0 attempts,
+      s.length = 3 ∧ Strings.isDigit s = true :=
+    fun s member => valid s (permutation.mem_iff.mp member)
+  rw [solve_outcome_eq_reference, solve_outcome_eq_reference,
+    p79.validatedOutcome_valid _ selectedValid, p79.validatedOutcome_valid _ valid]
+  exact p79.checkedOutcome_perm _ _ permutation
+
+/-- Valid attempts give guaranteed equivalence even with independent input and internal graph orders. -/
+theorem valid_set_equiv (base : Mutable.Heap) (address : Nat) (attempts : List String)
+    (heapValid : base.Valid) (found : base[address]? = some (.set (attempts.map Constant.string)))
+    (valid : ∀ s ∈ attempts, ValidAttempt s) :
+    (IteratorCalls.call program "solve" [.ref address] base).Equiv
+      (IteratorCalls.call p79.program "naive" [.ref address] base) := by
+  intro leftChoices rightChoices
+  obtain ⟨left, _, optimized, _, leftSaved, _⟩ := set_calls_finish leftChoices base address attempts found
+  obtain ⟨_, right, _, reference, _, rightSaved⟩ := set_calls_finish rightChoices base address attempts found
+  rw [valid_set_outcome leftChoices attempts valid] at optimized
+  rw [valid_set_outcome rightChoices attempts valid] at reference
+  exact Mutable.Call.equiv_of_finishes optimized reference
+    (outcome_allocations base left right heapValid leftSaved rightSaved attempts)
+
+end solvers.«79».source
