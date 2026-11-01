@@ -29,3 +29,7 @@ express. Do not put Python signatures, change history, or progress reports there
 
 Do not repeat `spec.yaml` in reference `naive()` docstrings. Keep formal
 annotations and document only Python-specific considerations there.
+
+# Solution explanations
+
+Do not add proof status, proof coverage, or progress reports to solution `.md` files. Keep mathematical and algorithmic explanations and links to source files there.
