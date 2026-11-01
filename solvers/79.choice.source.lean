@@ -2,6 +2,8 @@ import solvers.«79.solve.source»
 import data.«project-euler-statements».data.py.project_euler_statements.«p79.choice.source»
 import lang.py.FormalSW.SetChoiceCalls
 import lang.py.FormalSW.IteratorLifting
+import lang.py.FormalSW.PossibleChoices
+import lang.py.FormalSW.MutableRelocation
 
 /-! Independent set choices can select different validation errors in the actual P79 calls. -/
 namespace solvers.«79».choice
@@ -10,10 +12,10 @@ open data.«project-euler-statements».data.py.project_euler_statements
 set_option Elab.async false
 
 /-- Graph initialization happens before the invalid attempt, and its allocations remain in the error completion. -/
-theorem build_set_failure (heap : Mutable.Heap) (address index : Nat) (items : List Constant)
+theorem build_set_failure_mod (heap : Mutable.Heap) (address index : Nat) (items : List Constant)
     (s : String) (choices : ChoiceSchedule) (anchors used : Nat) (stack : List HeapCalls.Frame)
     (found : heap[address]? = some (.set items)) (selected : items[index]? = some (.string s))
-    (invalid : s.length ≠ 3 ∨ Strings.isDigit s = false) (choice : choices used = index) :
+    (invalid : s.length ≠ 3 ∨ Strings.isDigit s = false) (choice : choices used % items.length = index) :
     Finishes (SetCalls.step graph.program anchors choices)
       ⟨⟨.block graph.buildCode (graph.buildEnv (.ref address)), stack, heap⟩, used⟩
       (.ok ⟨.error (graph.invalidException s), [], graph.initialHeap heap, anchors⟩) := by
@@ -24,15 +26,25 @@ theorem build_set_failure (heap : Mutable.Heap) (address index : Nat) (items : L
   apply (SetCalls.Reaches.of_heap (graph.initial_block (graph.buildEnv (.ref address)) heap _ anchors stack) choices used).finishes
   apply (SetCalls.for_set_name graph.program choices anchors used address (graph.initialHeap heap) items env "s" "attempts"
     graph.attemptBody [] graph.returnGraph stack (by rfl) saved).finishes
-  apply Finishes.next (SetCalls.select_item graph.program choices anchors used address index (graph.initialHeap heap)
+  apply Finishes.next (SetCalls.select_item_mod graph.program choices anchors used address index (graph.initialHeap heap)
     items items (.string s) env "s" graph.attemptBody [] graph.returnGraph stack saved selected choice)
   exact SetCalls.finishes_of_heap (graph.invalid_attempt (setLocal env "s" (.scalar (.string s))) (graph.initialHeap heap)
     s (by simp [setLocal, graph.text]) invalid _ anchors stack) choices (used + 1)
 
-theorem solve_set_failure (heap : Mutable.Heap) (address index : Nat) (items : List Constant)
+theorem build_set_failure (heap : Mutable.Heap) (address index : Nat) (items : List Constant)
+    (s : String) (choices : ChoiceSchedule) (anchors used : Nat) (stack : List HeapCalls.Frame)
+    (found : heap[address]? = some (.set items)) (selected : items[index]? = some (.string s))
+    (invalid : s.length ≠ 3 ∨ Strings.isDigit s = false) (choice : choices used = index) :
+    Finishes (SetCalls.step graph.program anchors choices)
+      ⟨⟨.block graph.buildCode (graph.buildEnv (.ref address)), stack, heap⟩, used⟩
+      (.ok ⟨.error (graph.invalidException s), [], graph.initialHeap heap, anchors⟩) := by
+  exact build_set_failure_mod heap address index items s choices anchors used stack found selected invalid
+    (by rw [choice]; exact Nat.mod_eq_of_lt (List.getElem?_eq_some_iff.mp selected).1)
+
+theorem solve_set_failure_mod (heap : Mutable.Heap) (address index : Nat) (items : List Constant)
     (s : String) (choices : ChoiceSchedule)
     (found : heap[address]? = some (.set items)) (selected : items[index]? = some (.string s))
-    (invalid : s.length ≠ 3 ∨ Strings.isDigit s = false) (choice : choices 0 = index) :
+    (invalid : s.length ≠ 3 ∨ Strings.isDigit s = false) (choice : choices 0 % items.length = index) :
     ((SetCalls.call graph.program "solve" [.ref address] heap).run choices).Finishes
       ⟨.error (graph.invalidException s), [], graph.initialHeap heap, heap.length⟩ := by
   let env := functionEnv source.solveArgs source.solveBody [.ref address] []
@@ -47,8 +59,17 @@ theorem solve_set_failure (heap : Mutable.Heap) (address index : Nat) (items : L
   refine Finishes.next (step := SetCalls.step graph.program heap.length choices) rfl ?_
   apply (SetCalls.Reaches.of_heap (Evaluates.arguments_reach (.cons (Evaluates.lookup (by rfl)) .nil)
     (.call "build_graph") [] heap.length _) choices 0).finishes
-  exact .next rfl (build_set_failure heap address index items s choices heap.length 0 _ found selected invalid choice)
+  exact .next rfl (build_set_failure_mod heap address index items s choices heap.length 0 _ found selected invalid choice)
 
+
+theorem solve_set_failure (heap : Mutable.Heap) (address index : Nat) (items : List Constant)
+    (s : String) (choices : ChoiceSchedule)
+    (found : heap[address]? = some (.set items)) (selected : items[index]? = some (.string s))
+    (invalid : s.length ≠ 3 ∨ Strings.isDigit s = false) (choice : choices 0 = index) :
+    ((SetCalls.call graph.program "solve" [.ref address] heap).run choices).Finishes
+      ⟨.error (graph.invalidException s), [], graph.initialHeap heap, heap.length⟩ := by
+  exact solve_set_failure_mod heap address index items s choices found selected invalid
+    (by rw [choice]; exact Nat.mod_eq_of_lt (List.getElem?_eq_some_iff.mp selected).1)
 
 /-- The same set input can produce incompatible exact errors under independent schedules. -/
 theorem not_guaranteed_equiv (heap : Mutable.Heap) (address leftIndex rightIndex : Nat)
@@ -89,5 +110,81 @@ theorem example_not_guaranteed_equiv :
   have args := congrArg ExceptionObject.args same
   change [Constant.string "Invalid attempt: ''"] = [Constant.string "Invalid attempt: 'x'"] at args
   simp at args
+
+
+/-- Every schedule selects an invalid attempt, and both calls retain the same caller-visible state. -/
+theorem invalid_set_finishes (heap : Mutable.Heap) (address : Nat) (attempts : List String)
+    (choices : ChoiceSchedule)
+    (found : heap[address]? = some (.set (attempts.map Constant.string)))
+    (nonempty : attempts ≠ [])
+    (invalid : ∀ s ∈ attempts, s.length ≠ 3 ∨ Strings.isDigit s = false) :
+    ∃ s ∈ attempts,
+      ((IteratorCalls.call graph.program "solve" [.ref address] heap).run choices).Finishes
+        ⟨.error (graph.invalidException s), [], graph.initialHeap heap, heap.length⟩ ∧
+      ((IteratorCalls.call p79.program "naive" [.ref address] heap).run choices).Finishes
+        ⟨.error (p79.invalidException s), [], heap ++ [.list []], heap.length⟩ := by
+  let index := choices 0 % attempts.length
+  have positive : 0 < attempts.length := List.length_pos_iff.mpr nonempty
+  have bounded : index < attempts.length := Nat.mod_lt _ positive
+  have selected : (attempts.map Constant.string)[index]? = some (.string attempts[index]) := by
+    simp [List.getElem?_map, List.getElem?_eq_getElem bounded]
+  have rejected := invalid attempts[index] (List.getElem_mem bounded)
+  have choice : choices 0 % (attempts.map Constant.string).length = index := by simp [index]
+  have first : ((IteratorCalls.call graph.program "solve" [.ref address] heap).run choices).Finishes
+      ⟨.error (graph.invalidException attempts[index]), [], graph.initialHeap heap, heap.length⟩ :=
+    IteratorCalls.finishes_of_set (solve_set_failure_mod heap address index _ attempts[index] choices
+      found selected rejected choice) (by intro completion equal; cases equal; simp [graph.invalidException])
+  have second : ((IteratorCalls.call p79.program "naive" [.ref address] heap).run choices).Finishes
+      ⟨.error (p79.invalidException attempts[index]), [], heap ++ [.list []], heap.length⟩ :=
+    IteratorCalls.finishes_of_set (p79.naive_set_failure_mod heap address index _ attempts[index] choices
+      found selected rejected choice) (by intro completion equal; cases equal; simp [p79.invalidException])
+  exact ⟨attempts[index], List.getElem_mem bounded, first, second⟩
+
+theorem invalid_set_behavior (heap : Mutable.Heap) (address : Nat) (attempts : List String)
+    (choices : ChoiceSchedule) (valid : heap.Valid)
+    (found : heap[address]? = some (.set (attempts.map Constant.string)))
+    (nonempty : attempts ≠ [])
+    (invalid : ∀ s ∈ attempts, s.length ≠ 3 ∨ Strings.isDigit s = false) :
+    ((IteratorCalls.call graph.program "solve" [.ref address] heap).run choices).BehaviorEquiv
+      ((IteratorCalls.call p79.program "naive" [.ref address] heap).run choices) := by
+  obtain ⟨s, _, first, second⟩ := invalid_set_finishes heap address attempts choices found nonempty invalid
+  exact Mutable.Call.BehaviorEquiv.of_finishes first second
+    (Mutable.Relocation.equivalent_exception_allocations heap [.set [], .dict [], .dict []] [.list []]
+      (graph.invalidException s) [] valid (by simp))
+
+/-- Every permitted schedule completes with a Python exception; no path leaves the model. -/
+theorem invalid_set_throws (heap : Mutable.Heap) (address : Nat) (attempts : List String)
+    (found : heap[address]? = some (.set (attempts.map Constant.string)))
+    (nonempty : attempts ≠ [])
+    (invalid : ∀ s ∈ attempts, s.length ≠ 3 ∨ Strings.isDigit s = false) :
+    (IteratorCalls.call graph.program "solve" [.ref address] heap).Throws ∧
+      (IteratorCalls.call p79.program "naive" [.ref address] heap).Throws := by
+  constructor
+  · intro choices
+    obtain ⟨s, _, first, _⟩ := invalid_set_finishes heap address attempts choices found nonempty invalid
+    exact ⟨graph.invalidException s, [], graph.initialHeap heap, heap.length, first⟩
+  · intro choices
+    obtain ⟨s, _, _, second⟩ := invalid_set_finishes heap address attempts choices found nonempty invalid
+    exact ⟨p79.invalidException s, [], heap ++ [.list []], heap.length, second⟩
+
+/-- Matching possible behaviors handles order-sensitive errors without requiring order independence. -/
+theorem invalid_set_possible_equiv (heap : Mutable.Heap) (address : Nat) (attempts : List String)
+    (valid : heap.Valid) (found : heap[address]? = some (.set (attempts.map Constant.string)))
+    (nonempty : attempts ≠ [])
+    (invalid : ∀ s ∈ attempts, s.length ≠ 3 ∨ Strings.isDigit s = false) :
+    (IteratorCalls.call graph.program "solve" [.ref address] heap).PossibleEquiv
+      (IteratorCalls.call p79.program "naive" [.ref address] heap) :=
+  Mutable.CallFamily.PossibleEquiv.of_pointwise
+    (fun choices => invalid_set_behavior heap address attempts choices valid found nonempty invalid)
+
+theorem example_possible_equiv :
+    (IteratorCalls.call graph.program "solve" [.ref 0] exampleHeap).PossibleEquiv
+      (IteratorCalls.call p79.program "naive" [.ref 0] exampleHeap) := by
+  apply invalid_set_possible_equiv exampleHeap 0 ["", "x"] example_valid rfl (by simp)
+  intro s member
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at member
+  rcases member with rfl | rfl
+  · exact Or.inl (by simp)
+  · exact Or.inl (by change (1 : Nat) ≠ 3; omega)
 
 end solvers.«79».choice

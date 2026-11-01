@@ -1,5 +1,6 @@
 import solvers.«79.outcome.source»
 import lang.py.FormalSW.MutableRelocation
+import lang.py.FormalSW.PossibleChoices
 
 /-! Source-level equivalence compares returned values, exceptions, and all caller-owned objects. -/
 namespace solvers.«79».source
@@ -73,6 +74,20 @@ theorem sequence_family_equiv (base : Mutable.Heap) (value : Mutable.Value)
     (SetCalls.call program "solve" [value] base).Equiv
       (Mutable.CallFamily.deterministic (call p79.program "naive" [value] base)) :=
   fun choices _ => sequence_equiv choices base value attempts valid input
+
+/-- Stable sequence inputs also satisfy the stronger per-run support and divergence checks. -/
+theorem sequence_possible_equiv (base : Mutable.Heap) (value : Mutable.Value)
+    (attempts : List String) (valid : base.Valid)
+    (input : SequenceInput base (sequenceSource value) attempts) :
+    (SetCalls.call program "solve" [value] base).PossibleEquiv
+      (Mutable.CallFamily.deterministic (call p79.program "naive" [value] base)) := by
+  apply Mutable.CallFamily.PossibleEquiv.of_pointwise
+  intro choices
+  obtain ⟨left, optimized, leftSaved⟩ := solve_sequence_finishes choices base value attempts input
+  obtain ⟨right, reference, rightSaved⟩ := p79.naive_sequence_finishes base value attempts ⟨input.read⟩
+  rw [← solve_outcome_eq_reference] at reference
+  exact Mutable.Call.BehaviorEquiv.of_finishes optimized reference
+    (outcome_allocations base left right valid leftSaved rightSaved attempts)
 
 /-- A string is itself iterable; its nonempty inputs fail validation at the first character. -/
 theorem string_equiv (choices : ChoiceSchedule) (base : Mutable.Heap) (value : String)
