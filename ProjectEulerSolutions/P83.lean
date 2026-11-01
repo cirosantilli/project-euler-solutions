@@ -1,88 +1,49 @@
-import Std
 import ProjectEulerStatements.P83
-import ProjectEulerSolutions.Termination.P83
+
 namespace ProjectEulerSolutions.P83
+open ProjectEulerStatements.P83 (bigVal getD2 neighbors)
 
-def parseNat (s : String) : Nat :=
-  s.data.foldl (fun acc c => acc * 10 + (c.toNat - '0'.toNat)) 0
+def parseMatrix (text : String) : List (List Int) :=
+  (text.splitOn "\n" |>.filter (fun line => line != "")).map fun line =>
+    (line.splitOn ",").map fun value => (value.trimAscii.toString.toInt?).getD 0
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def parseMatrix (text : String) : List (List Nat) :=
-  let lines := text.splitOn "\n" |>.filter (fun ln => ln != "")
-  lines.map (fun ln => ln.splitOn "," |>.filter (fun t => t != "") |>.map parseNat)
+structure SearchState where
+  visited : Array Bool
+  distances : Array Int
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def dijkstraMinPathSum (mat : List (List Nat)) : Nat :=
-  let n := mat.length
-  if n == 0 then
-    0
+def findMin (total : Nat) (infinity : Int) (state : SearchState) : Nat × Int :=
+  (List.range total).foldl (fun best index =>
+    if !state.visited[index]! && state.distances[index]! < best.2
+    then (index, state.distances[index]!) else best) (0, infinity)
+
+def relax (matrix : List (List Int)) (width : Nat) (visited : Array Bool)
+    (distance : Int) (distances : Array Int) (cell : Int × Int) : Array Int :=
+  let index := cell.1.toNat * width + cell.2.toNat
+  let candidate := distance + getD2 matrix cell.1 cell.2
+  if !visited[index]! && candidate < distances[index]!
+  then distances.set! index candidate else distances
+
+def searchStep (matrix : List (List Int)) (state : SearchState) : SearchState :=
+  let rows := matrix.length
+  let cols := (matrix.headD []).length
+  let infinity := bigVal matrix
+  let (index, distance) := findMin (rows * cols) infinity state
+  if distance = infinity then state
   else
-    let m := (mat.headD []).length
-    let total := n * m
-    let idx (r c : Nat) : Nat := r * m + c
-    let inf := (Nat.pow 10 30)
-    let dist0 := Array.replicate total inf
-    let dist0 := dist0.set! 0 ((mat.headD []).headD 0)
-    let visited0 := Array.replicate total false
-    let rec loop (visited : Array Bool) (dist : Array Nat) (count : Nat) : Nat :=
-      if count == total then
-        dist[total - 1]!
-      else
-        let rec findMin (i : Nat) (bestI : Nat) (bestD : Nat) : Nat × Nat :=
-          if i >= total then (bestI, bestD)
-          else if visited[i]! then findMin (i + 1) bestI bestD
-          else
-            let d := dist[i]!
-            if d < bestD then findMin (i + 1) i d else findMin (i + 1) bestI bestD
-        termination_by 0
-        decreasing_by all_goals exact Termination.decreases
-        let (u, du) := findMin 0 0 inf
-        if du == inf then
-          dist[total - 1]!
-        else
-          let visited := visited.set! u true
-          let r := u / m
-          let c := u % m
-          let rec relax (r c : Int) (dist : Array Nat) : Array Nat :=
-            if r < 0 || c < 0 || r >= (n : Int) || c >= (m : Int) then
-              dist
-            else
-              let rr := Int.toNat r
-              let cc := Int.toNat c
-              let v := idx rr cc
-              if visited[v]! then
-                dist
-              else
-                let nd := du + (mat.getD rr []).getD cc 0
-                if nd < dist[v]! then dist.set! v nd else dist
-          termination_by 0
-          decreasing_by all_goals exact Termination.decreases
-          let dist := relax (Int.ofNat r - 1) (Int.ofNat c) dist
-          let dist := relax (Int.ofNat r + 1) (Int.ofNat c) dist
-          let dist := relax (Int.ofNat r) (Int.ofNat c - 1) dist
-          let dist := relax (Int.ofNat r) (Int.ofNat c + 1) dist
-          loop visited dist (count + 1)
-    termination_by 0
-    decreasing_by all_goals exact Termination.decreases
-    loop visited0 dist0 0
+    let visited := state.visited.set! index true
+    let adjacent := neighbors (index / cols) (index % cols) rows cols
+    let distances := adjacent.foldl (relax matrix cols visited distance) state.distances
+    ⟨visited, distances⟩
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-example :
-    let sample := [
-      [131, 673, 234, 103, 18],
-      [201, 96, 342, 965, 150],
-      [630, 803, 746, 422, 111],
-      [537, 699, 497, 121, 956],
-      [805, 732, 524, 37, 331]
-    ]
-    dijkstraMinPathSum sample = 2297 := by
-  native_decide
+def dijkstraMinPathSum (matrix : List (List Int)) : Int :=
+  let total := matrix.length * (matrix.headD []).length
+  if total = 0 then 0
+  else
+    let distances := (Array.replicate total (bigVal matrix)).set! 0 (getD2 matrix 0 0)
+    let initial : SearchState := ⟨Array.replicate total false, distances⟩
+    let final := (List.range total).foldl (fun state _ => searchStep matrix state) initial
+    final.distances[total - 1]!
 
+def solve (matrix : List (List Int)) : Int := dijkstraMinPathSum matrix
 
-
-def solve (matrix : List (List Nat)) : Nat :=
-  dijkstraMinPathSum matrix
 end ProjectEulerSolutions.P83

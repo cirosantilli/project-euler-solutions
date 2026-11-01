@@ -1,36 +1,65 @@
 #!/usr/bin/env python
 from __future__ import annotations
 
-from dataclasses import dataclass
 import heapq
 from pathlib import Path
-from typing import List, Tuple
 
 
-def parse_matrix_from_text(text: str) -> List[List[int]]:
+def parse_matrix_from_text(text: str) -> list[list[int]]:
     lines = [ln.strip() for ln in text.strip().splitlines() if ln.strip()]
     return [list(map(int, ln.split(","))) for ln in lines]
 
 
-def load_matrix_file() -> List[List[int]]:
+def load_matrix_file() -> list[list[int]]:
     return parse_matrix_from_text(Path("0083_matrix.txt").read_text(encoding="utf-8"))
 
 
-def solve(mat: List[List[int]]) -> int:
-    n = len(mat)
-    m = len(mat[0])
+def is_rectangular(matrix: list[list[int]]) -> bool:
+    if not matrix:
+        return True
+    width = len(matrix[0])
+    for row in matrix:
+        if len(row) != width:
+            return False
+    return True
+
+
+def has_nonnegative_entries(matrix: list[list[int]]) -> bool:
+    for row in matrix:
+        for value in row:
+            if value < 0:
+                return False
+    return True
+
+
+def big_val(matrix: list[list[int]]) -> int:
+    return sum(sum(row) for row in matrix) + 1
+
+
+def solve(matrix: list[list[int]]) -> int:
+    """
+    @formalsw: Requires(is_rectangular(matrix))
+    @formalsw: Requires(has_nonnegative_entries(matrix))
+    @formalsw: Py from project_euler_statements.p83 import naive
+    @formalsw: Returns
+    @formalsw: Equiv(naive)
+    """
+    if not matrix:
+        return 0
+    assert is_rectangular(matrix)
+    n = len(matrix)
+    m = len(matrix[0])
+    if m == 0:
+        return 0
     total = n * m
 
-    def idx(r: int, c: int) -> int:
-        return r * m + c
+    infinity = big_val(matrix)
+    dist = [infinity] * total
+    start = 0
+    goal = total - 1
 
-    INF = 10**30
-    dist = [INF] * total
-    start = idx(0, 0)
-    goal = idx(n - 1, m - 1)
-
-    dist[start] = mat[0][0]
-    heap: List[Tuple[int, int]] = [(mat[0][0], start)]
+    dist[start] = matrix[0][0]
+    heap: list[tuple[int, int]] = [(matrix[0][0], start)]
 
     visited = [False] * total
 
@@ -45,26 +74,26 @@ def solve(mat: List[List[int]]) -> int:
         r, c = divmod(u, m)
         # 4-neighbors
         if r > 0:
-            v = idx(r - 1, c)
-            nd = d + mat[r - 1][c]
+            v = (r - 1) * m + c
+            nd = d + matrix[r - 1][c]
             if nd < dist[v]:
                 dist[v] = nd
                 heapq.heappush(heap, (nd, v))
         if r + 1 < n:
-            v = idx(r + 1, c)
-            nd = d + mat[r + 1][c]
+            v = (r + 1) * m + c
+            nd = d + matrix[r + 1][c]
             if nd < dist[v]:
                 dist[v] = nd
                 heapq.heappush(heap, (nd, v))
         if c > 0:
-            v = idx(r, c - 1)
-            nd = d + mat[r][c - 1]
+            v = r * m + c - 1
+            nd = d + matrix[r][c - 1]
             if nd < dist[v]:
                 dist[v] = nd
                 heapq.heappush(heap, (nd, v))
         if c + 1 < m:
-            v = idx(r, c + 1)
-            nd = d + mat[r][c + 1]
+            v = r * m + c + 1
+            nd = d + matrix[r][c + 1]
             if nd < dist[v]:
                 dist[v] = nd
                 heapq.heappush(heap, (nd, v))
@@ -80,7 +109,5 @@ if __name__ == "__main__":
     537,699,497,121,956
     805,732,524,37,331
     """
-    mat = parse_matrix_from_text(sample)
-    assert solve(mat) == 2297
-    mat = load_matrix_file()
-    print(solve(mat))
+    assert solve(parse_matrix_from_text(sample)) == 2297
+    print(solve(load_matrix_file()))
