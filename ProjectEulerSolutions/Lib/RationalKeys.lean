@@ -42,6 +42,9 @@ theorem key_equalFuel (left right : Pair) (fuel : Nat) :
     HashKey.equalFuel (fuel + 2) (key left) (key right) = decide (left = right) := by
   simp [HashKey.equalFuel, List.isEqv, scalarCompare, evalCmpOp, Prod.ext_iff, Bool.decide_and]
 
+theorem key_equal (left right : Pair) : HashKey.equal (key left) (key right) = decide (left = right) :=
+  key_equalFuel left right 3
+
 theorem keys_equalFuel (left right : List Pair) (fuel : Nat) :
     (left.map key).isEqv (right.map key) (HashKey.equalFuel (fuel + 2)) = decide (left = right) := by
   induction left generalizing right with
