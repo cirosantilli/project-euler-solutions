@@ -6,6 +6,10 @@ from math import gcd
 
 def solve(n: int) -> int:
     """
+    @formalsw: Py from project_euler_statements.p91 import naive
+    @formalsw: Returns
+    @formalsw: Equiv(naive)
+
     Count right triangles OPQ with O=(0,0), P and Q integer points in [0,n]x[0,n],
     P != Q, P,Q != O.
     """
