@@ -11,6 +11,8 @@
         solvers.«93».pair_results.Verified a b left right heap globals
 @formalsw: theorem recursive_base_source (heap : FormalSW.PyAst.Mutable.Heap)
   (globals : FormalSW.PyAst.Mutable.Globals) : solvers.«93».all_results.BaseCasesVerified heap globals
+@formalsw: theorem recursive_source (heap : FormalSW.PyAst.Mutable.Heap)
+  (globals : FormalSW.PyAst.Mutable.Globals) : solvers.«93».all_results.RecursiveCallsVerified heap globals
 """
 from __future__ import annotations
 

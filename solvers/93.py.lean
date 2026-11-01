@@ -1,7 +1,5 @@
-import solvers.«93.py.lean.d».MemoBaseCases
-import solvers.«93.py.lean.d».MemoAccumulation
+import solvers.«93.py.lean.d».Recursive
 import solvers.«93.py.lean.d».Consecutive
-import solvers.«93.py.lean.d».ReductionInput
 
 namespace solvers.«93».rational
 open FormalSW.PyAst
@@ -40,5 +38,8 @@ theorem pair_results_source (a b : ProjectEulerSolutions.RationalPair.Pair) (lef
 
 theorem recursive_base_source (heap : Mutable.Heap) (globals : Mutable.Globals) :
     all_results.BaseCasesVerified heap globals := all_results.base_cases_verified heap globals
+
+theorem recursive_source (heap : Mutable.Heap) (globals : Mutable.Globals) :
+    all_results.RecursiveCallsVerified heap globals := all_results.recursive_calls_verified heap globals
 
 end solvers.«93»
