@@ -1,5 +1,4 @@
-import solvers.«79.iterator.isolation.source»
-import lang.py.FormalSW.IteratorTraversal
+import solvers.«79.iterator.prefix.source»
 
 /-! Graph construction composes a complete finite iterator traversal and preserves its final caller state. -/
 namespace solvers.«79».graph
@@ -59,43 +58,22 @@ theorem process_iterator_traversal (context : Module) (extension : Extends conte
         (.running ⟨⟨.block (sequenceLoop (sequenceSource (relocateValue rename iterator)) 0 :: following)
           env, stack, physical⟩, used⟩ resumes)
         (inputIteratorLoop finalEnv following stack) resumes after finalUsed outcome := by
-  induction trace generalizing physical state env with
-  | exhausted ran =>
-      obtain ⟨after, afterRep, afterSaved, afterLayout, exited⟩ :=
-        iterator_exit_from_logical context source choices iterator _ _ physical _ _ anchors _ ran noGrowth
-          rename layout roots state represented saved env following stack resumes
-      exact ⟨after, state, env, afterRep, afterSaved, bindings, afterLayout, rfl,
-        by simpa only [exitOutcome, ↓reduceIte] using exited⟩
-  | failed ran notExhausted =>
-      obtain ⟨after, afterRep, afterSaved, afterLayout, exited⟩ :=
-        iterator_exit_from_logical context source choices iterator _ _ physical _ _ anchors _ ran noGrowth
-          rename layout roots state represented saved env following stack resumes
-      exact ⟨after, state, env, afterRep, afterSaved, bindings, afterLayout, rfl,
-        by simpa only [exitOutcome, if_neg notExhausted] using exited⟩
-  | @yielded before middle after used nextUsed finalUsed s rest outcome ran later ih =>
-      obtain ⟨middleClosed, firstGrows⟩ := ran.effects source layout.closed
-      have laterGrows := (later.effects source middleClosed).2
-      have firstSize : middle.length = before.length := by omega
-      have laterSize : after.length = middle.length := by omega
-      obtain ⟨operation, inside, isObject, bound, executed⟩ := ran
-      obtain ⟨middlePhysical, current, currentEnv, nextMap, agrees, iteration,
-        currentRep, currentSaved, currentBindings, currentLayout, data⟩ :=
-        iterator_valid_from_logical context extension source choices anchors used nextUsed before physical middle
-          rename iterator operation roots state env s (valid s (by simp)) layout inside isObject bound executed
-          firstSize represented saved bindings following stack resumes
-      have fixedMap : ExecutionLayout middle middlePhysical rename :=
-        currentLayout.congr (fun index bounded => (agrees index (by omega)).symm)
-      have images : callerImage middle rename = callerImage before rename := by
-        funext address
-        simp only [callerImage, firstSize]
-      have fixedSaved : ProtectedCells (callerImage middle rename) roots current middlePhysical := by
-        rw [images]
-        exact currentSaved
-      obtain ⟨result, next, finalEnv, finalRep, finalSaved, finalBindings, finalLayout, finalData, exited⟩ :=
-        ih laterSize (fun value member => valid value (List.mem_cons_of_mem _ member))
-          middlePhysical current currentEnv fixedMap currentRep fixedSaved currentBindings
-      refine ⟨result, next, finalEnv, finalRep, ?_, finalBindings, finalLayout, ?_, exited.before iteration⟩
-      · rwa [images] at finalSaved
-      · simpa only [List.foldl_cons, data] using finalData
+  obtain ⟨middle, nextUsed, error, first, last, result⟩ := trace.decompose
+  obtain ⟨middleClosed, prefixGrows⟩ := first.effects source layout.closed
+  have lastGrows := (last.effects source middleClosed).2
+  have sameSize : middle.length = logical.length := by omega
+  have images : callerImage middle rename = callerImage logical rename := by
+    funext address
+    simp only [callerImage, sameSize]
+  obtain ⟨middlePhysical, next, nextEnv, nextRep, nextSaved, nextBindings, nextLayout, data, accepted⟩ :=
+    process_iterator_prefix context extension source choices iterator logical middle used nextUsed attempts
+      first sameSize valid physical rename roots state env layout represented saved bindings following anchors stack resumes
+  obtain ⟨after, finalRep, finalSaved, finalLayout, exited⟩ := iterator_exit_from_logical context source choices
+    iterator middle finalLogical middlePhysical nextUsed finalUsed anchors error last (by omega) rename nextLayout
+      roots next nextRep (by rwa [images]) nextEnv following stack resumes
+  refine ⟨after, next, nextEnv, finalRep, ?_, nextBindings, finalLayout, data, ?_⟩
+  · rwa [images] at finalSaved
+  · rw [← result]
+    exact exited.before accepted
 
 end solvers.«79».graph
