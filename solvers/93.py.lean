@@ -1,4 +1,5 @@
-import solvers.«93.py.lean.d».BaseCases
+import solvers.«93.py.lean.d».MemoBaseCases
+import solvers.«93.py.lean.d».MemoAccumulation
 import solvers.«93.py.lean.d».Consecutive
 import solvers.«93.py.lean.d».ReductionInput
 
