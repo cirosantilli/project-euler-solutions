@@ -1,5 +1,5 @@
 import solvers.«92.py.lean.d».Terminal
-import solvers.«92.py.lean.d».Rows
+import solvers.«92.py.lean.d».Initialization
 import data.«project-euler-statements».data.py.project_euler_statements.«p92.py»
 
 namespace solvers.«92».next_term
