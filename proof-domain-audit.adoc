@@ -294,7 +294,7 @@ The following interfaces have matching Python arguments and passing numerical re
 [cols="1,3"]
 |===
 | Problem | Current design
-| 85 | Share only the desired rectangle count. Increasing counts and the incumbent distance bound the search; the optimized row search uses an exact integer square root. Ties choose the least positive pair (m, n), with m <= n.
+| 85 | Share only the desired rectangle count. Exact triangular inversion, completeness of the two row candidates, least-column ties, and incumbent-derived stopping bounds have structural proofs for every integer target. Source proofs cover both rectangle-count helpers on natural dimensions and the optimized quotient/candidate expressions. Complete loop termination and equivalence remain pending, as does replacement of the older bounded standalone Lean models.
 | 88 | Both sentinels are one above the complete product bound 2*k_max. Factors 2 and k with k-2 ones witness that bound for every k >= 2.
 | 92 | Share the exclusive starting bound. The reference walks complete chains; the optimized solver groups arbitrary bound prefixes by digit-square sum. No fixed seven-digit domain is assumed.
 | 100 | Search arrangements with at least two discs, starting at three blue out of four total. Both implementations advance their recurrence until the total strictly exceeds the supplied bound, without an iteration budget.
