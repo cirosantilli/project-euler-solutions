@@ -1,9 +1,8 @@
 import «.formalsw».solvers.«85.py.ast»
-import data.«project-euler-statements».«.formalsw».data.py.project_euler_statements.«p85.py.ast»
 import ProjectEulerSolutions.Lib.RectangleApproximation
 import ProjectEulerSolutions.Lib.SquareRootDigitCalls
 
-/-! Source-level arithmetic used by both rectangle searches. -/
+/-! Arithmetic and candidate expressions for the optimized rectangle search. -/
 namespace solvers.«85»
 open FormalSW.PyAst HeapCalls
 open ProjectEulerSolutions.RectangleApproximation
@@ -50,21 +49,6 @@ theorem rectangle_count.result (m n : Nat) (heap : Mutable.Heap) (globals : Muta
       · exact Evaluates.lookup (by cases globals <;> rfl)
     · exact add (Evaluates.lookup (by cases globals <;> rfl)) Evaluates.constant
   · exact Evaluates.constant
-
-/-- The reference's two separate divisions compute the same rectangle count. -/
-theorem rect_count.result (m n : Nat) (heap : Mutable.Heap) (globals : Mutable.Globals := []) :
-    ReturnsValue P85Ast.module "rect_count" [number m, number n] heap
-      (number (count m n)) heap globals := by
-  apply BlockReturns.function rfl rfl
-  apply BlockReturns.return_value
-  unfold count triangular
-  apply multiply
-  · exact divide (by omega)
-      (multiply (Evaluates.lookup (by cases globals <;> rfl))
-        (add (Evaluates.lookup (by cases globals <;> rfl)) Evaluates.constant)) Evaluates.constant
-  · exact divide (by omega)
-      (multiply (Evaluates.lookup (by cases globals <;> rfl))
-        (add (Evaluates.lookup (by cases globals <;> rfl)) Evaluates.constant)) Evaluates.constant
 
 private theorem maximum_operation (a b : Int) (heap : Mutable.Heap) :
     primitive (.builtin .max) [.scalar (.int a), .scalar (.int b)] heap =

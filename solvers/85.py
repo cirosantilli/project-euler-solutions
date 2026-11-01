@@ -28,6 +28,11 @@ def best_grid_area_near(target: int) -> tuple[int, int, int]:
 
 
 def solve(target: int) -> int:
+    """
+    @formalsw: Py from project_euler_statements.p85 import naive
+    @formalsw: Returns
+    @formalsw: Equiv(naive)
+    """
     return best_grid_area_near(target)[2]
 
 
