@@ -30,6 +30,10 @@ def solve(mod: int) -> int:
     """
     Returns the least n such that p(n) % mod == 0.
     Computes p(n) modulo mod via pentagonal recurrence.
+
+    @formalsw: Py from project_euler_statements.p78 import naive
+    @formalsw: Requires(mod >= 1)
+    @formalsw: Equiv(naive)
     """
     p: list[int] = [1]  # p[0] = 1 (mod mod)
     n = 1
