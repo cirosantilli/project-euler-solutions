@@ -2,6 +2,10 @@
 
 
 def next_term(n: int) -> int:
+    """
+    @formalsw: Requires(n >= 0)
+    @formalsw: Returns
+    """
     total = 0
     while n:
         n, digit = divmod(n, 10)
