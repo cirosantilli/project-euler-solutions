@@ -1,4 +1,4 @@
-import solvers.«92.py.lean.d».Terminal
+import solvers.«92.py.lean.d».WeightedLoop
 import solvers.«92.py.lean.d».Distribution
 import data.«project-euler-statements».data.py.project_euler_statements.«p92.py»
 
