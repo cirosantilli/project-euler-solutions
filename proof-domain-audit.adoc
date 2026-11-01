@@ -294,6 +294,7 @@ The following interfaces have matching Python arguments and passing numerical re
 [cols="1,3"]
 |===
 | Problem | Current design
+| 86 | Both Python implementations search the least nonnegative maximum side whose count exceeds the shared signed threshold. Exact pair grouping and the unbounded family (2k, 2k, 3k) prove count equivalence and search termination in the mathematical model. The reference square test has a source proof; the counting loops and final Python equivalence remain pending.
 | 88 | Both sentinels are one above the complete product bound 2*k_max. Factors 2 and k with k-2 ones witness that bound for every k >= 2.
 | 92 | Share the exclusive starting bound. The reference walks complete chains; the optimized solver groups arbitrary bound prefixes by digit-square sum. No fixed seven-digit domain is assumed.
 | 100 | Search arrangements with at least two discs, starting at three blue out of four total. Both implementations advance their recurrence until the total strictly exceeds the supplied bound, without an iteration budget.
@@ -305,7 +306,6 @@ The following interfaces have matching Python arguments and passing numerical re
 |===
 | Problem | Finding
 | 84 | The Python reference returns stored answers rather than implementing the board model. The optimized solver uses independent card draws instead of cyclic decks and an arbitrary floating-point iteration cutoff; one-sided dice expose incorrect tie ordering. Only the deterministic next-stop helpers have source proofs.
-| 86 | The reference counts cuboids for a supplied maximum side, while the optimized solver searches for the first maximum side exceeding a supplied count threshold.
 | 93 | The reference uses integer division and only successive left-associated operations. Exact rational arithmetic and all binary expression shapes are needed.
 | 94 | The reference bounds the equal side instead of the perimeter and admits a degenerate triangle. The contract and positivity checks need correction.
 | 96 | The Python reference returns the number of grids instead of solving Sudoku and summing the requested leading entries.
