@@ -3,8 +3,10 @@
 
 def next_term(n: int) -> int:
     """
+    @formalsw: Py from project_euler_statements.p92 import next_term as reference_next_term
     @formalsw: Requires(n >= 0)
     @formalsw: Returns
+    @formalsw: Equiv(reference_next_term)
     """
     total = 0
     while n:

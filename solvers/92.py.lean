@@ -1,4 +1,5 @@
 import solvers.«92.py.lean.d».Digits
+import data.«project-euler-statements».data.py.project_euler_statements.«p92.py»
 
 namespace solvers.«92».next_term
 open FormalSW.PyAst
@@ -16,8 +17,36 @@ theorem «Returns» (n : Int) (valid : inputCondition n) :
   obtain ⟨_, returned⟩ := result n []
   exact returned.scalar_returns (values := [.int n])
 
-theorem «Supported» (n : Int) (valid : inputCondition n) :
-    (HeapCalls.scalarFunction program "next_term" [.int n]).Supported :=
-  («Returns» n valid).supported
+theorem «Equiv(reference_next_term)» (n : Int) (valid : inputCondition n) :
+    (HeapCalls.scalarFunction program "next_term" [.int n]).Equiv
+      (HeapCalls.scalarFunction P92Ast.module "next_term" [.int n]) := by
+  have nonnegative : 0 ≤ n := by
+    simpa [evalCmpOp] using Calls.Evaluates.condition_int_compare valid rfl
+  lift n to Nat using nonnegative
+  obtain ⟨_, optimized⟩ := result n []
+  have reference := data.«project-euler-statements».data.py.project_euler_statements.p92.next_term.result n []
+  have left := optimized.scalar_finishes (values := [.int n])
+  have right := reference.scalar_finishes (values := [.int n])
+  intro outcome
+  constructor
+  · intro finished
+    rw [finished.unique left]
+    exact right
+  · intro finished
+    rw [finished.unique right]
+    exact left
+
+theorem «Supported» :
+    (∀ n : Int, inputCondition n → (HeapCalls.scalarFunction program "next_term" [.int n]).Supported) ∧
+    (∀ n : Int, inputCondition n → (HeapCalls.scalarFunction P92Ast.module "next_term" [.int n]).Supported) := by
+  constructor
+  · intro n valid
+    exact («Returns» n valid).supported
+  · intro n valid
+    have nonnegative : 0 ≤ n := by
+      simpa [evalCmpOp] using Calls.Evaluates.condition_int_compare valid rfl
+    lift n to Nat using nonnegative
+    exact ((data.«project-euler-statements».data.py.project_euler_statements.p92.next_term.result n []).scalar_returns
+      (values := [.int n])).supported
 
 end solvers.«92».next_term
