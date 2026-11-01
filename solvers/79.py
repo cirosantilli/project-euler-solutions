@@ -1,8 +1,13 @@
 #!/usr/bin/env python
+"""
+@formalsw: theorem solve_list_source_equivalence
+  (heap : FormalSW.PyAst.Mutable.Heap) (address : Nat) (attempts : List String) :
+  heap.Valid → heap[address]? = some (.list (attempts.map (fun s => .scalar (.string s)))) →
+    solvers.«79».source_equivalence.Verified heap address
+"""
 from __future__ import annotations
 
 import heapq
-from collections.abc import Iterable
 
 KEYLOG_PATH = "0079_keylog.txt"
 
@@ -13,7 +18,7 @@ def load_attempts() -> list[str]:
 
 
 def build_graph(
-    attempts: Iterable[str],
+    attempts: list[str],
 ) -> tuple[set[str], dict[str, set[str]], dict[str, int]]:
     nodes: set[str] = set()
     adj: dict[str, set[str]] = {}
@@ -66,11 +71,10 @@ def topo_sort(nodes: set[str], adj: dict[str, set[str]], indeg: dict[str, int]) 
     return "".join(out)
 
 
-def solve(attempts: Iterable[str]) -> str:
+def solve(attempts: list[str]) -> str:
     nodes, adj, indeg = build_graph(attempts)
     return topo_sort(nodes, adj, indeg)
 
 
 if __name__ == "__main__":
-    attempts = load_attempts()
-    print(solve(attempts))
+    print(solve(load_attempts()))

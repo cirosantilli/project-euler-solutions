@@ -496,6 +496,8 @@ Prefer a meaningful parameter shared by the optimized and naive implementations.
 
 Problem 54 uses a raw source theorem to relate text lines to the reference's pairs of hands. Its explicit `Input.Valid` domain covers finite lists of matching five-card games with coherent live rank tables and rank values at most 14. `Verified` proves that both original functions return and have equivalent observable results, heaps, and globals for every set-iteration schedule.
 
+Problem 79 uses a raw source theorem for its `list[str]` contract. It proves termination and observable equivalence for every finite list of strings, including invalid attempts and graph-cycle exceptions, under every internal set traversal order. General iterator modeling and its partial proofs remain available separately.
+
 After building the Lean libraries above, check a Python proof with:
 
 [source,shell]
@@ -764,7 +766,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/76.py[76.py] | link:solvers/76.md[76.md] | link:solvers/76.py.lean[76.py.lean] | 0.116 | 190569291 |
 | link:solvers/77.py[77.py] | link:solvers/77.md[77.md] | link:solvers/77.py.lean[77.py.lean] | 0.123 | 71 |
 | link:solvers/78.py[78.py] | link:solvers/78.md[78.md] | link:solvers/78.py.lean[78.py.lean] | 0.241 | 55374 |
-| link:solvers/79.py[79.py] | link:solvers/79.md[79.md] |  | 0.095 | 73162890 |
+| link:solvers/79.py[79.py] | link:solvers/79.md[79.md] | link:solvers/79.py.lean[79.py.lean] | 0.095 | 73162890 |
 | link:solvers/80.py[80.py] | link:solvers/80.md[80.md] |  | 0.123 | 40886 |
 | link:solvers/81.py[81.py] | link:solvers/81.md[81.md] |  | 0.116 | 427337 |
 | link:solvers/82.py[82.py] | link:solvers/82.md[82.md] |  | 0.111 | 260324 |
