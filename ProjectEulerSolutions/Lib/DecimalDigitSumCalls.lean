@@ -32,11 +32,8 @@ theorem decimal_sum (n : Nat) :
       exact Nat.digits_lt_base (by decide) (by simpa using member)
 
 private theorem parse_digit (c : Char) (valid : c.isDigit) :
-    Calls.integerConversion [.string (String.singleton c)] = some (.ok (.int (digit c))) := by
-  change Calls.integerConversion [.string (String.ofList [c])] = _
-  rw [Calls.integerConversion, FormalSW.Py.Builtin.Int.parseText_digits [c] (by simp)
-    (by intro d member; simp only [List.mem_singleton] at member; subst d; exact valid)]
-  simp [Calls.parsedInteger, Nat.ofDigitChars, digit]
+    Calls.integerConversion [.string (String.singleton c)] = some (.ok (.int (digit c))) :=
+  Calls.integerConversion_digit c valid
 
 private theorem cast_fold (characters : List Char) (initial : Nat) :
     characters.foldl (fun (total : Int) c => total + (digit c : Int)) initial =

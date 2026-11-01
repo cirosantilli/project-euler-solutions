@@ -106,6 +106,10 @@ theorem weighted_add (table : Table) (key : State) (ways : Nat) (score : State �
 def collect (initial contributions : Table) : Table :=
   contributions.foldl (fun table entry => add table entry.1 entry.2) initial
 
+theorem collect_append (initial left right : Table) :
+    collect initial (left ++ right) = collect (collect initial left) right := by
+  simp [collect, List.foldl_append]
+
 theorem weighted_collect (initial contributions : Table) (score : State → Nat) :
     weighted (collect initial contributions) score = weighted initial score + weighted contributions score := by
   induction contributions generalizing initial with
@@ -134,6 +138,27 @@ theorem Exact.fold_digits {bound : Nat} {table : Table} (exact : Exact bound tab
   | cons digit rest ih =>
       exact ih (exact.transition digit (valid digit (by simp)))
         (by intro next member; exact valid next (by simp [member]))
+
+def characterValue (character : Char) : Nat := character.toNat - '0'.toNat
+
+theorem characterValue_small (character : Char) (valid : character.isDigit) :
+    characterValue character < 10 := by
+  have bounds := Char.isDigit_iff_toNat.mp valid
+  simp only [show '0'.toNat = 48 from rfl, show '9'.toNat = 57 from rfl] at bounds
+  simp only [characterValue, show '0'.toNat = 48 from rfl]
+  omega
+
+/-- Decimal character traversal has the same positional value and distribution as digit traversal. -/
+theorem Exact.fold_characters {bound : Nat} {table : Table} (exact : Exact bound table)
+    (characters : List Char) (valid : ∀ character ∈ characters, character.isDigit) :
+    Exact (Nat.ofDigitChars 10 characters bound)
+      (characters.foldl (fun table character => Prefix.transition (characterValue character) table) table) := by
+  have small : ∀ digit ∈ characters.map characterValue, digit < 10 := by
+    intro digit member
+    obtain ⟨character, present, rfl⟩ := List.mem_map.mp member
+    exact characterValue_small character (valid character present)
+  simpa only [List.foldl_map, characterValue, Nat.ofDigitChars] using
+    exact.fold_digits (characters.map characterValue) small
 
 private theorem filter_sum (values : List Nat) :
     (values.filter endsAt89).length = (values.map (fun n => if endsAt89 n then 1 else 0)).sum := by

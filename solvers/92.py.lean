@@ -1,6 +1,5 @@
 import solvers.«92.py.lean.d».Terminal
-import solvers.«92.py.lean.d».Initialization
-import solvers.«92.py.lean.d».Bindings
+import solvers.«92.py.lean.d».Distribution
 import data.«project-euler-statements».data.py.project_euler_statements.«p92.py»
 
 namespace solvers.«92».next_term
@@ -61,5 +60,9 @@ theorem terminal_source (start cache : Nat) (entries : store.Entries)
     store.Found heap cache entries → Memo.Valid (store.lookup entries) →
       terminal.Verified start cache entries heap globals :=
   terminal.verified start cache entries heap globals
+
+theorem distribution_source (bound : Nat) (heap : Mutable.Heap) (globals : Mutable.Globals) :
+    distribution.Verified bound heap globals :=
+  distribution.verified bound heap globals
 
 end solvers.«92»
