@@ -1,68 +1,34 @@
-import Std
 import ProjectEulerStatements.P81
-import ProjectEulerSolutions.Termination.P81
+
 namespace ProjectEulerSolutions.P81
 
-def parseNat (s : String) : Nat :=
-  s.data.foldl (fun acc c => acc * 10 + (c.toNat - '0'.toNat)) 0
+def parseMatrix (text : String) : List (List Int) :=
+  (text.splitOn "\n" |>.filter (fun line => line != "")).map fun line =>
+    (line.splitOn ",").map fun value => (value.trimAscii.toString.toInt?).getD 0
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def parseMatrix (text : String) : List (List Nat) :=
-  let lines := text.splitOn "\n" |>.filter (fun ln => ln != "")
-  lines.map (fun ln => ln.splitOn "," |>.filter (fun t => t != "") |>.map parseNat)
+def firstUpdate (row buffer : List Int) (index : Nat) : List Int :=
+  buffer.set index (buffer.getD (index - 1) 0 + row.getD index 0)
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def minPathSum (matrix : List (List Nat)) : Nat :=
-  match matrix with
+def rowUpdate (row buffer : List Int) (index : Nat) : List Int :=
+  buffer.set index (row.getD index 0 + min (buffer.getD index 0) (buffer.getD (index - 1) 0))
+
+def firstBuffer (row : List Int) : List Int :=
+  match row with
+  | [] => []
+  | first :: rest =>
+      (List.range' 1 rest.length).foldl (firstUpdate row)
+        ((List.replicate row.length 0).set 0 first)
+
+def nextBuffer (previous row : List Int) : List Int :=
+  match previous, row with
+  | p :: _, x :: rest =>
+      (List.range' 1 rest.length).foldl (rowUpdate row) (previous.set 0 (p + x))
+  | _, _ => []
+
+def minPathSum : List (List Int) → Int
   | [] => 0
-  | row0 :: rows =>
-      let m := row0.length
-      let dp0 := Array.replicate m 0
-      let dp0 := dp0.set! 0 (row0.headD 0)
-      let rec initRow (j : Nat) (dp : Array Nat) : Array Nat :=
-        if j >= m then dp
-        else
-          let val := dp[j - 1]! + (row0.getD j 0)
-          initRow (j + 1) (dp.set! j val)
-      termination_by 0
-      decreasing_by all_goals exact Termination.decreases
-      let dp0 := if m > 1 then initRow 1 dp0 else dp0
-      let rec loopRows (rows : List (List Nat)) (dp : Array Nat) : Array Nat :=
-        match rows with
-        | [] => dp
-        | r :: rs =>
-            let dp := dp.set! 0 (dp[0]! + r.headD 0)
-            let rec loopCols (j : Nat) (dp : Array Nat) : Array Nat :=
-              if j >= m then dp
-              else
-                let v := r.getD j 0
-                let best := Nat.min dp[j]! dp[j - 1]!
-                loopCols (j + 1) (dp.set! j (v + best))
-            termination_by 0
-            decreasing_by all_goals exact Termination.decreases
-            loopRows rs (loopCols 1 dp)
-      termination_by 0
-      decreasing_by all_goals exact Termination.decreases
-      let dp := loopRows rows dp0
-      dp[m - 1]!
+  | row :: rows => ((rows.foldl nextBuffer (firstBuffer row)).getLast?).getD 0
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-example :
-    let sample := [
-      [131, 673, 234, 103, 18],
-      [201, 96, 342, 965, 150],
-      [630, 803, 746, 422, 111],
-      [537, 699, 497, 121, 956],
-      [805, 732, 524, 37, 331]
-    ]
-    minPathSum sample = 2427 := by
-  native_decide
+def solve (matrix : List (List Int)) : Int := minPathSum matrix
 
-
-
-def solve (matrix : List (List Nat)) : Nat :=
-  minPathSum matrix
 end ProjectEulerSolutions.P81
