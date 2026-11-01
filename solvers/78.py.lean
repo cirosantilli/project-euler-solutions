@@ -1,5 +1,6 @@
 import solvers.«78.search.source»
 import data.«project-euler-statements».data.py.project_euler_statements.«p78.py»
+import ProjectEulerSolutions.P78
 
 /-! The original exact reference and mutable residue search agree for every positive modulus. -/
 namespace solvers.«78».solve
@@ -59,5 +60,36 @@ theorem «Supported» :
   · intro modulus condition
     exact data.«project-euler-statements».data.py.project_euler_statements.p78.naive.supported_positive
       modulus (modulus_positive modulus condition)
+
+/-- Successful Python executions return exactly the standalone model's non-bottom value. -/
+theorem native_result_iff (modulus : Int) (positive : 0 < modulus) (n : Nat) :
+    Finishes (HeapCalls.scalarFunction program "solve" [.int modulus]).step
+      (HeapCalls.scalarFunction program "solve" [.int modulus]).initial (.ok (.int n)) ↔
+        ProjectEulerSolutions.P78.solve modulus = some n := by
+  classical
+  by_cases success : Success modulus
+  · obtain ⟨_, returned⟩ := result modulus positive success []
+    have actual := returned.scalar_finishes (values := [.int modulus])
+    have native : ProjectEulerSolutions.P78.solve modulus = some (answer modulus success) :=
+      (ProjectEulerSolutions.P78.solve_result modulus).trans
+        (ProjectEulerStatements.P78.naive_result modulus success)
+    constructor
+    · intro finished
+      have same : (n : Int) = answer modulus success := by simpa using finished.unique actual
+      have equal : n = answer modulus success := by omega
+      simpa only [equal] using native
+    · intro finished
+      have same := Option.some.inj (native.symm.trans finished)
+      simpa only [same] using actual
+  · have divergent := diverges modulus positive success
+    have native : ProjectEulerSolutions.P78.solve modulus = none :=
+      (ProjectEulerSolutions.P78.solve_result modulus).trans
+        (ProjectEulerStatements.P78.naive_none modulus success)
+    constructor
+    · intro finished
+      exact False.elim (Execution.diverges_not_halts divergent ⟨.ok (.int n), finished⟩)
+    · intro finished
+      rw [native] at finished
+      contradiction
 
 end solvers.«78».solve
