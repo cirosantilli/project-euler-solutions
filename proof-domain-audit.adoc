@@ -305,7 +305,7 @@ The following interfaces have matching Python arguments and passing numerical re
 [cols="1,3"]
 |===
 | Problem | Finding
-| 84 | The Python reference returns stored answers for two dice sizes and zero otherwise; it does not implement the board model.
+| 84 | The Python reference returns stored answers rather than implementing the board model. The optimized solver uses independent card draws instead of cyclic decks and an arbitrary floating-point iteration cutoff; one-sided dice expose incorrect tie ordering. Only the deterministic next-stop helpers have source proofs.
 | 86 | The reference counts cuboids for a supplied maximum side, while the optimized solver searches for the first maximum side exceeding a supplied count threshold.
 | 93 | The reference uses integer division and only successive left-associated operations. Exact rational arithmetic and all binary expression shapes are needed.
 | 94 | The reference bounds the equal side instead of the perimeter and admits a degenerate triangle. The contract and positivity checks need correction.

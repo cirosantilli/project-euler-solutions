@@ -16,22 +16,25 @@ CH_SQUARES = {7, 22, 36}
 G2J = 30
 JAIL = 10
 
-RAILWAYS = [5, 15, 25, 35]
-UTILITIES = [12, 28]
-
 
 def next_railway(pos: int) -> int:
-    for r in RAILWAYS:
-        if r > pos:
-            return r
-    return RAILWAYS[0]
+    if pos < 5:
+        return 5
+    if pos < 15:
+        return 15
+    if pos < 25:
+        return 25
+    if pos < 35:
+        return 35
+    return 5
 
 
 def next_utility(pos: int) -> int:
-    for u in UTILITIES:
-        if u > pos:
-            return u
-    return UTILITIES[0]
+    if pos < 12:
+        return 12
+    if pos < 28:
+        return 28
+    return 12
 
 
 def dice_outcomes(sides: int) -> List[Tuple[int, bool, float]]:
