@@ -1,79 +1,92 @@
 import ProjectEulerStatements.P77
-import ProjectEulerSolutions.Termination.P77
+import ProjectEulerSolutions.Lib.CoinChangeArray
+import ProjectEulerSolutions.Lib.PrimeList
+import Mathlib.Data.List.TakeWhile
+
+/-! A proved sieve and mutable partition table drive an unbounded, terminating search. -/
 namespace ProjectEulerSolutions.P77
+open ProjectEulerStatements.P31 ProjectEulerStatements.CoinChange
+set_option Elab.async false
 
-def sievePrimes (limit : Nat) : List Nat :=
-  if limit < 2 then
-    []
-  else
-    let arr0 := Array.replicate (limit + 1) true
-      |>.set! 0 false
-      |>.set! 1 false
-    let rec loopP (p : Nat) (arr : Array Bool) : Array Bool :=
-      if p * p > limit then
-        arr
-      else
-        if arr[p]! then
-          let rec loop (m : Nat) (arr : Array Bool) : Array Bool :=
-            if m > limit then
-              arr
-            else
-              loop (m + p) (arr.set! m false)
-          termination_by 0
-          decreasing_by all_goals exact Termination.decreases
-          loopP (p + 1) (loop (p * p) arr)
-        else
-          loopP (p + 1) arr
-    termination_by 0
-    decreasing_by all_goals exact Termination.decreases
-    let arr := loopP 2 arr0
-    (List.range (limit + 1)).filter (fun n => arr[n]!)
+def sievePrimes (limit : Nat) : List Nat := PrimeList.sievePrimes limit
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def countPrimeSummations (n : Nat) (primes : List Nat) : Nat :=
-  let ways0 := Array.replicate (n + 1) 0
-  let ways0 := ways0.set! 0 1
-  let rec loopPr (ps : List Nat) (ways : Array Nat) : Array Nat :=
-    match ps with
-    | [] => ways
-    | p :: ps =>
-        if p > n then
-          ways
-        else
-          let rec loopS (s : Nat) (ways : Array Nat) : Array Nat :=
-            if s > n then
-              ways
-            else
-              let ways := ways.set! s (ways[s]! + ways[s - p]!)
-              loopS (s + 1) ways
-          termination_by 0
-          decreasing_by all_goals exact Termination.decreases
-          loopPr ps (loopS p ways)
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  let ways := loopPr primes ways0
-  ways[n]!
+theorem sievePrimes_correct (limit : Nat) :
+    sievePrimes limit = ProjectEulerStatements.PrimePartitions.primesUpTo limit :=
+  PrimeList.sievePrimes_correct limit
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def firstValueOver (target : Nat) : Nat :=
-  let rec loop (n : Nat) : Nat :=
-    let primes := sievePrimes n
-    let cnt := countPrimeSummations n primes
-    if cnt > target then n else loop (n + 1)
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  loop 2
+def active (n : Nat) (parts : List Nat) : List Nat := parts.takeWhile (fun p => decide (p ≤ n))
 
+def countPrimeSummations (n : Nat) (parts : List Nat) : Nat :=
+  (CoinChangeArray.compute n (active n parts)).getD n 0
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-example : countPrimeSummations 10 (sievePrimes 10) = 5 := by
-  native_decide
+theorem countPrimeSummations_correct (n : Nat) (parts : List Nat)
+    (positive : ∀ p ∈ parts, 0 < p) :
+    countPrimeSummations n parts = countWaysBound n (active n parts) := by
+  have selected : ∀ p ∈ active n parts, 0 < p := fun p member => positive p (List.takeWhile_subset _ member)
+  rw [countPrimeSummations, CoinChangeArray.compute_encode _ _ selected]
+  simp [CoinChangeArray.encode, Array.getD, countWaysBound_reverse n (active n parts) selected]
 
+theorem candidate_correct (n : Nat) :
+    countPrimeSummations n (sievePrimes n) = ProjectEulerStatements.PrimePartitions.count n := by
+  rw [sievePrimes_correct, countPrimeSummations_correct _ _
+    (ProjectEulerStatements.PrimePartitions.primesUpTo_positive n)]
+  have bounded : ∀ p ∈ ProjectEulerStatements.PrimePartitions.primesUpTo n, p ≤ n := by
+    intro p member
+    have inside : p < n+1 := List.mem_range.mp (List.mem_filter.mp member).1
+    omega
+  have unchanged : active n (ProjectEulerStatements.PrimePartitions.primesUpTo n) =
+      ProjectEulerStatements.PrimePartitions.primesUpTo n := by
+    apply List.takeWhile_eq_self_iff.mpr
+    intro p member
+    simpa using bounded p member
+  rw [unchanged]
+  rfl
 
-def solve (limit target : Nat) :=
-  let _ := limit
-  firstValueOver target
+private theorem next_le (target : Int) (n : Nat)
+    (upper : n ≤ ProjectEulerStatements.PrimePartitions.answer target)
+    (notOver : ¬ target < (countPrimeSummations n (sievePrimes n) : Int)) :
+    n+1 ≤ ProjectEulerStatements.PrimePartitions.answer target := by
+  rw [candidate_correct] at notOver
+  have exceeds := (ProjectEulerStatements.PrimePartitions.answer_spec target).2
+  by_contra after
+  have same : n = ProjectEulerStatements.PrimePartitions.answer target := by omega
+  exact notOver (by simpa [same] using exceeds)
+
+def search (target : Int) (n : Nat) (lower : 2 ≤ n)
+    (upper : n ≤ ProjectEulerStatements.PrimePartitions.answer target) : Nat :=
+  if exceeds : target < (countPrimeSummations n (sievePrimes n) : Int) then n
+  else search target (n+1) (by omega) (next_le target n upper exceeds)
+termination_by ProjectEulerStatements.PrimePartitions.answer target-n
+decreasing_by
+  have := next_le target n upper exceeds
+  omega
+
+theorem search_result (target : Int) (n : Nat) (lower : 2 ≤ n)
+    (upper : n ≤ ProjectEulerStatements.PrimePartitions.answer target) :
+    search target n lower upper = ProjectEulerStatements.PrimePartitions.answer target := by
+  rw [search]
+  split
+  · rename_i exceeds
+    rw [candidate_correct] at exceeds
+    have least := ProjectEulerStatements.PrimePartitions.answer_le target n ⟨lower, exceeds⟩
+    omega
+  · rename_i notOver
+    exact search_result target (n+1) (by omega) (next_le target n upper notOver)
+termination_by ProjectEulerStatements.PrimePartitions.answer target-n
+decreasing_by
+  have := next_le target n upper (by assumption)
+  omega
+
+def firstValueOver (target : Int) : Nat :=
+  search target 2 (by omega) (ProjectEulerStatements.PrimePartitions.answer_spec target).1
+
+theorem firstValueOver_correct (target : Int) :
+    firstValueOver target = ProjectEulerStatements.PrimePartitions.answer target :=
+  search_result target 2 (by omega) (ProjectEulerStatements.PrimePartitions.answer_spec target).1
+
+def solve (target : Int) : Int := firstValueOver target
+
+theorem solve_result (target : Int) : solve target = ProjectEulerStatements.P77.naive target := by
+  simp only [solve, firstValueOver_correct, ProjectEulerStatements.P77.naive, ProjectEulerStatements.P77.firstOver]
+
 end ProjectEulerSolutions.P77

@@ -1,6 +1,8 @@
 import ProjectEulerSolutions.P77
+
 namespace ProjectEulerSolutions.P77
 
-theorem equiv (limit target : Nat) :
-    ProjectEulerStatements.P77.naive limit target = solve limit target := sorry
+theorem equiv (target : Int) : ProjectEulerStatements.P77.naive target = solve target :=
+  (solve_result target).symm
+
 end ProjectEulerSolutions.P77
