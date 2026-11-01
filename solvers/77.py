@@ -37,6 +37,11 @@ def count_prime_summations(n: int, primes: list[int]) -> int:
 
 
 def solve(target: int) -> int:
+    """
+    @formalsw: Py from project_euler_statements.p77 import naive
+    @formalsw: Returns
+    @formalsw: Equiv(naive)
+    """
     n = 2
     while True:
         primes = sieve_primes(n)

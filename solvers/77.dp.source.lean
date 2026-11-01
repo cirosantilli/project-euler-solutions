@@ -328,5 +328,12 @@ theorem primes_result (n : Nat) (heap : Mutable.Heap) (address : Nat)
     result n (ProjectEulerStatements.PrimePartitions.primesUpTo n)
       (ProjectEulerStatements.PrimePartitions.primesUpTo_positive n) heap address found
 
+/-- The computed prime count leaves all preexisting objects unchanged. -/
+theorem primes_append_result (n : Nat) (heap : Mutable.Heap) (address : Nat)
+    (found : heap[address]? = some (.list (encode (ProjectEulerStatements.PrimePartitions.primesUpTo n)))) :
+    ∃ extra, ReturnsValue program "count_prime_summations" [number n, .ref address] heap
+      (number (ProjectEulerStatements.PrimePartitions.count n)) (heap ++ extra) :=
+  ⟨_, primes_result n heap address found⟩
+
 end count_prime_summations
 end solvers.«77»
