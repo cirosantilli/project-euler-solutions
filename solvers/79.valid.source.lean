@@ -105,7 +105,9 @@ theorem valid_attempt (roots : Roots) (state : Storage) (heap : Mutable.Heap)
       next.vertices = insertVertex (character c)
         (insertVertex (character b) (insertVertex (character a) state.vertices)) ∧
       next.edges = insertEdge (character b) (character c)
-        (insertEdge (character a) (character b) state.edges) := by
+        (insertEdge (character a) (character b) state.edges) ∧
+      ∀ caller, CallerPreserved caller roots state heap →
+        CallerPreserved caller roots next after := by
   obtain ⟨a, b, c, characters⟩ := List.length_eq_three.mp
     (show s.toList.length = 3 by simpa using length)
   have guard := valid_guard env heap s getS length digits
@@ -113,14 +115,16 @@ theorem valid_attempt (roots : Roots) (state : Storage) (heap : Mutable.Heap)
   have retained : Represents roots state (unpackHeap heap a b c) :=
     represented.append roots state heap _
   have bound := unpack_bindings roots env a b c bindings
-  obtain ⟨after, next, updated, result, vertices, edges⟩ :=
+  obtain ⟨after, next, updated, result, vertices, edges, saved⟩ :=
     updates_preserve roots state (unpackHeap heap a b c) (unpackEnv env a b c) retained bound
       (character a) (character b) (character c)
       (by simp [unpackEnv, assignNames, setLocal])
       (by simp [unpackEnv, assignNames, setLocal])
       (by simp [unpackEnv, assignNames, setLocal])
-  refine ⟨a, b, c, after, next, characters, ?_, result, bound, vertices, edges⟩
-  rw [attempt_parts]
-  exact (guard.append unpacked).append updated
+  refine ⟨a, b, c, after, next, characters, ?_, result, bound, vertices, edges, ?_⟩
+  · rw [attempt_parts]
+    exact (guard.append unpacked).append updated
+  · intro caller before
+    exact saved caller (before.append caller roots state heap _)
 
 end solvers.«79».graph
