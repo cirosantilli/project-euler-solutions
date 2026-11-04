@@ -5,6 +5,7 @@ import lang.py.FormalSW.IteratorLifting
 import lang.py.FormalSW.PossibleChoices
 import lang.py.FormalSW.MutableRelocation
 import lang.py.FormalSW.RuntimeExceptionObservation
+import lang.py.FormalSW.SetExecutionExtension
 
 /-! Independent set choices can select different validation errors in the actual P79 calls. -/
 namespace solvers.«79».choice
@@ -744,5 +745,127 @@ theorem valid_set_equiv (base : Mutable.Heap) (address : Nat) (attempts : List S
   rw [valid_set_outcome rightChoices attempts valid] at reference
   exact Mutable.Call.equiv_of_finishes optimized reference
     (outcome_allocations base left right heapValid leftSaved rightSaved attempts)
+
+end solvers.«79».source
+
+namespace solvers.«79».source
+open FormalSW.PyAst HeapCalls Mutable.Relocation IteratorCalls
+open solvers.«79».graph solvers.«79».topo
+open ProjectEulerStatements.TopologicalOrder
+open data.«project-euler-statements».data.py.project_euler_statements
+set_option Elab.async false
+
+/-- Exhaustion resumes graph return, tuple unpacking and the actual optimized topological sort. -/
+theorem solve_iterator_result (context : Module) (extension : Extends context graph.program)
+    (source : IteratorCalls.Relocation.ModuleSource context) (choices : ChoiceSchedule)
+    (receiver iterator : Mutable.Value) (base acquired yielded : Mutable.Heap)
+    (acquiredUsed finalUsed : Nat) (closed : Closed base)
+    (acquisition : AcquireRun context choices receiver base 0 iterator acquired acquiredUsed)
+    (attempts : List String)
+    (trace : Traversal context choices iterator graph.text acquired acquiredUsed attempts (.ok ()) yielded finalUsed)
+    (noGrowth : yielded.length = base.length) (valid : ∀ value ∈ attempts, ValidAttempt value) :
+    ∃ after, RuntimeLayout yielded after id ∧
+      ((IteratorCalls.call context "solve" [receiver] base).run choices).Finishes
+        ⟨p79.checkedOutcome attempts, [], after, base.length⟩ := by
+  obtain ⟨acquiredClosed, acquisitionGrows, _⟩ := acquisition.effects source closed
+  have traversalGrows := (trace.effects source acquiredClosed).2
+  obtain ⟨initialized, layout, represented, saved, entered⟩ := solve_iterator_entry context extension source choices
+    receiver iterator base acquired 0 acquiredUsed base.length closed acquisition (by omega) [] []
+  obtain ⟨middle, next, finalEnv, nextRep, _, bindings, finalLayout, data, exhausted⟩ := process_iterator_traversal
+    context extension source choices iterator acquired yielded acquiredUsed finalUsed attempts (.ok ()) trace
+      (by omega) valid initialized id (initialRoots base) emptyStorage (initialEnv (buildEnv receiver) base)
+      layout represented saved (initial_bindings (buildEnv receiver) base) returnGraph base.length
+      (iteratorBuildStack receiver []) []
+  let roots := initialRoots base
+  let tupleHeap := middle ++ [.tuple (graphValues roots)]
+  let bound := assignNames (iteratorSolveEnv receiver) ["nodes", "adj", "indeg"] (graphValues roots)
+  have returned := (return_graph roots finalEnv middle bindings base.length (iteratorBuildStack receiver [])).extend extension
+  have unpacked : HeapCalls.Reaches context base.length
+      ⟨.value (.ref middle.length), iteratorBuildStack receiver [], tupleHeap⟩
+      ⟨.block returnTopo bound, [], tupleHeap⟩ := by
+    apply HeapCalls.Reaches.next _ .refl
+    simp [HeapCalls.step, iteratorBuildStack, tupleHeap, Mutable.sequence, HeapCalls.run,
+      graphValues, assignNames, bound]
+  obtain ⟨after, sorted, retained⟩ := return_topo choices tupleHeap roots next
+    (nextRep.append roots next middle [.tuple (graphValues roots)]) bound
+      (by simp [bound, assignNames, graphValues, setLocal])
+      (by simp [bound, assignNames, graphValues, setLocal])
+      (by simp [bound, assignNames, graphValues, setLocal]) base.length finalUsed []
+  have agree := ConsumersAgree.traversal emptyStorage next [] attempts ConsumersAgree.empty valid data
+  have same : resultOutcome (order next.vertices next.edges) = p79.checkedOutcome attempts := by
+    simpa only [ConsumersAgree, processedOutcome, GraphData.process, Storage.graphData,
+      p79.validatedOutcome, List.nil_append] using agree []
+  have finished := SetCalls.finishes_extend (ContextResult.finishes _ _ _ _ _ _ _ sorted) extension
+  rw [same] at finished
+  have continued := IteratorCalls.finishes_of_set finished (by
+    intro completion equal
+    cases equal
+    unfold p79.checkedOutcome
+    split <;> simp [p79.cycleException])
+  refine ⟨after, ?_, ?_⟩
+  · obtain ⟨extra, rfl⟩ := retained
+    exact (finalLayout.runtime.append_private [.tuple (graphValues roots)]).append_private extra
+  · have reached := entered.trans (by simpa only [ExitResult, relocateValue_id, inputIteratorLoop,
+      List.nil_append] using exhausted)
+    exact (reached.trans (IteratorCalls.Reaches.of_heap (returned.trans unpacked) [])).finishes continued
+
+end solvers.«79».source
+
+namespace solvers.«79».source
+open FormalSW.PyAst HeapCalls Mutable.Relocation IteratorCalls
+open solvers.«79».graph
+open ProjectEulerStatements.TopologicalOrder
+open data.«project-euler-statements».data.py.project_euler_statements
+set_option Elab.async false
+
+/-- Both complete calls agree after exhaustion, including graph cycles and retained caller mutations. -/
+theorem iterator_result_equiv (context : Module)
+    (solverExtension : Extends context graph.program) (referenceExtension : Extends context p79.program)
+    (source : IteratorCalls.Relocation.ModuleSource context) (choices : ChoiceSchedule)
+    (receiver iterator : Mutable.Value) (base acquired yielded : Mutable.Heap)
+    (acquiredUsed finalUsed : Nat) (closed : Closed base)
+    (acquisition : AcquireRun context choices receiver base 0 iterator acquired acquiredUsed)
+    (attempts : List String)
+    (trace : Traversal context choices iterator graph.text acquired acquiredUsed attempts (.ok ()) yielded finalUsed)
+    (noGrowth : yielded.length = base.length) (valid : ∀ value ∈ attempts, ValidAttempt value) :
+    ((IteratorCalls.call context "solve" [receiver] base).run choices).Equiv
+      ((IteratorCalls.call context "naive" [receiver] base).run choices) := by
+  obtain ⟨left, leftLayout, optimized⟩ := solve_iterator_result context solverExtension source choices
+    receiver iterator base acquired yielded acquiredUsed finalUsed closed acquisition attempts trace noGrowth valid
+  obtain ⟨right, rightLayout, reference⟩ := p79.naive_iterator_result context referenceExtension source choices
+    receiver iterator base acquired yielded acquiredUsed finalUsed closed acquisition attempts trace noGrowth valid
+  have acquiredClosed := (acquisition.effects source closed).1
+  have yieldedClosed := (trace.effects source acquiredClosed).1
+  apply Mutable.Call.equiv_of_finishes optimized reference
+  cases ordered : order (p79.nodeValues attempts) (p79.attemptEdges attempts) with
+  | none =>
+      simpa only [p79.checkedOutcome, ordered, Except.map] using
+        leftLayout.equivalent_scalar_completions rightLayout yieldedClosed base.length (by omega)
+          (by intros; rfl) (by intros; rfl) (.error p79.cycleException)
+  | some result =>
+      simpa only [p79.checkedOutcome, ordered, Except.map, p79.text] using
+        leftLayout.equivalent_scalar_completions rightLayout yieldedClosed base.length (by omega)
+          (by intros; rfl) (by intros; rfl) (.ok (.string (String.intercalate "" result)))
+
+/-- A finite valid traversal may exhaust or raise; both actual calls have the same observable behavior. -/
+theorem iterator_traversal_equiv (context : Module)
+    (solverExtension : Extends context graph.program) (referenceExtension : Extends context p79.program)
+    (source : IteratorCalls.Relocation.ModuleSource context) (choices : ChoiceSchedule)
+    (receiver iterator : Mutable.Value) (base acquired yielded : Mutable.Heap)
+    (acquiredUsed finalUsed : Nat) (closed : Closed base)
+    (acquisition : AcquireRun context choices receiver base 0 iterator acquired acquiredUsed)
+    (attempts : List String) (outcome : Except ExceptionObject Unit)
+    (trace : Traversal context choices iterator graph.text acquired acquiredUsed attempts outcome yielded finalUsed)
+    (noGrowth : yielded.length = base.length) (valid : ∀ value ∈ attempts, ValidAttempt value) :
+    ((IteratorCalls.call context "solve" [receiver] base).run choices).Equiv
+      ((IteratorCalls.call context "naive" [receiver] base).run choices) := by
+  cases outcome with
+  | ok result =>
+      cases result
+      exact iterator_result_equiv context solverExtension referenceExtension source choices receiver iterator
+        base acquired yielded acquiredUsed finalUsed closed acquisition attempts trace noGrowth valid
+  | error error =>
+      exact iterator_failure_equiv context solverExtension referenceExtension source choices receiver iterator
+        base acquired yielded acquiredUsed finalUsed closed acquisition attempts error trace noGrowth valid
 
 end solvers.«79».source
