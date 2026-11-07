@@ -1,4 +1,4 @@
-import solvers.«98.py.lean.d».Execution
+import solvers.«98.py.lean.d».Correctness
 
 namespace solvers.«98».pattern_signature
 open FormalSW.PyAst HeapCalls
@@ -96,5 +96,16 @@ theorem «Supported» (words : List String) (heap : Mutable.Heap) (address : Nat
     (found : heap[address]? = some (.list (words.map text))) :
     (HeapCalls.call program "solve" [.ref address] heap).Supported :=
   («Returns» words heap address found).supported
+
+/-- Both complete source calls agree for arbitrary word lists and preserve the caller's aliases and cycles. -/
+theorem «Equiv(naive)» (words : List String) (heap : Mutable.Heap) (address : Nat)
+    (closed : heap.Valid) (found : heap[address]? = some (.list (words.map text))) :
+    (HeapCalls.call program "solve" [.ref address] heap).Equiv
+      (HeapCalls.call P98Ast.module "naive" [.ref address] heap) := by
+  obtain ⟨leftExtra, left⟩ := correct_result words heap address found
+  obtain ⟨rightExtra, right⟩ := data.«project-euler-statements».data.py.project_euler_statements.p98.search.result words heap address found
+  apply Mutable.Call.equiv_of_finishes left.finishes right.finishes
+  exact Mutable.Completion.equivalent_allocations heap leftExtra rightExtra
+    (mapped_word.number (ProjectEulerSolutions.AnagramSearch.solve words)) [] closed trivial (by intros; simp_all)
 
 end solvers.«98».solve
