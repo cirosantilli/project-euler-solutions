@@ -1,74 +1,15 @@
 import ProjectEulerStatements.P30
-import ProjectEulerSolutions.Termination.P30
 namespace ProjectEulerSolutions.P30
 
-abbrev fifth : Array Nat := #[0, 1, 32, 243, 1024, 3125, 7776, 16807, 32768, 59049]
+/-- Precompute the ten digit powers once for the search. -/
+def digitPowers (power : Nat) : Array Nat := Array.ofFn (fun d : Fin 10 => d.val ^ power)
 
-def digitFifthPowerSum (n : Nat) : Nat :=
-  let rec loop (m acc : Nat) : Nat :=
-    if m == 0 then
-      acc
-    else
-      let d := m % 10
-      loop (m / 10) (acc + fifth[d]!)
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  loop n 0
+def digitPowerSum (powers : Array Nat) (n : Nat) : Nat :=
+  (Nat.digits 10 n).foldl (fun acc d => acc + powers[d]!) 0
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def matchesList : List Nat :=
-  let upper := 6 * fifth[9]!
-  let rec loop (n : Nat) (acc : List Nat) : List Nat :=
-    if n > upper then
-      acc.reverse
-    else
-      let acc' := if n == digitFifthPowerSum n then n :: acc else acc
-      loop (n + 1) acc'
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  loop 2 []
-
-
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-example : matchesList = [4150, 4151, 54748, 92727, 93084, 194979] := by
-  native_decide
-
-
-def digitPowerSum (p n : Nat) : Nat :=
-  let rec loop (m acc : Nat) : Nat :=
-    if m == 0 then
-      acc
-    else
-      let d := m % 10
-      loop (m / 10) (acc + Nat.pow d p)
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  if n == 0 then
-    0
-  else
-    loop n 0
-
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def sumPowerDigits (p : Nat) : Nat :=
-  let upper := (p + 2) * Nat.pow 9 p
-  let rec loop (n acc : Nat) : Nat :=
-    if n > upper then
-      acc
-    else
-      let acc := if n != 1 && digitPowerSum p n == n then acc + n else acc
-      loop (n + 1) acc
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  loop 2 0
-
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def solve (p : Nat) :=
-  if p == 5 then
-    matchesList.foldl (fun acc n => acc + n) 0
-  else
-    sumPowerDigits p
+def solve (power : Nat) : Nat :=
+  let powers := digitPowers power
+  (List.range (ProjectEulerStatements.P30.limit power + 1)).foldl
+    (fun total n => if n = 1 then total
+      else if digitPowerSum powers n = n then total+n else total) 0
 end ProjectEulerSolutions.P30

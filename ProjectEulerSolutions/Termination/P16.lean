@@ -1,3 +1,0 @@
-namespace ProjectEulerSolutions.P16.Termination
-
-end ProjectEulerSolutions.P16.Termination

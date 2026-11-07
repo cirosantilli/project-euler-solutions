@@ -1,69 +1,26 @@
 import Std
 import ProjectEulerStatements.P22
-import ProjectEulerSolutions.Termination.P22
 namespace ProjectEulerSolutions.P22
 
 def stripQuotes (s : String) : String :=
-  match s.data with
+  match s.toList with
   | '"' :: xs =>
       match xs.reverse with
-      | '"' :: ys => String.mk ys.reverse
+      | '"' :: ys => String.ofList ys.reverse
       | _ => s
   | _ => s
 
 def parseNames (s : String) : List String :=
-  s.splitOn "," |>.filter (fun t => t != "") |>.map (fun t => stripQuotes t.trim)
+  s.splitOn "," |>.filter (fun t => t != "") |>.map (fun t => stripQuotes t.trimAscii.toString)
 
 def nameValue (name : String) : Nat :=
-  name.data.foldl (fun acc c => acc + (c.toNat - 'A'.toNat + 1)) 0
+  name.toList.foldl (fun acc c => acc + ProjectEulerStatements.P22.letterValue c) 0
 
-def merge (cmp : String -> String -> Bool) : List String -> List String -> List String
-  | [], ys => ys
-  | xs, [] => xs
-  | x :: xs, y :: ys =>
-      if cmp x y then x :: merge cmp xs (y :: ys) else y :: merge cmp (x :: xs) ys
+/-- Accumulate indexed name scores after sorting. -/
+def scoreFrom : List String → Nat → Nat → Nat
+  | [], _, total => total
+  | name :: rest, index, total => scoreFrom rest (index + 1) (total + index * nameValue name)
 
-def split (xs : List String) : List String × List String :=
-  let rec loop (xs : List String) (a b : List String) : List String × List String :=
-    match xs with
-    | [] => (a.reverse, b.reverse)
-    | [x] => ((x :: a).reverse, b.reverse)
-    | x :: y :: rest => loop rest (x :: a) (y :: b)
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  loop xs [] []
-
-def mergeSort (cmp : String -> String -> Bool) (xs : List String) : List String :=
-  match xs with
-  | [] => []
-  | [x] => [x]
-  | _ =>
-      let (a, b) := split xs
-      merge cmp (mergeSort cmp a) (mergeSort cmp b)
-
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
 def solve (names : List String) : Nat :=
-  let namesSorted := mergeSort (fun a b => a < b) names
-  let rec loop (lst : List String) (idx acc : Nat) : Nat :=
-    match lst with
-    | [] => acc
-    | n :: ns => loop ns (idx + 1) (acc + idx * nameValue n)
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  loop namesSorted 1 0
-
-def colinPosScore (names : List String) : Nat × Nat :=
-  let namesSorted := mergeSort (fun a b => a < b) names
-  let rec find (lst : List String) (idx : Nat) : Nat :=
-    match lst with
-    | [] => 0
-    | n :: ns => if n == "COLIN" then idx else find ns (idx + 1)
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  let pos := find namesSorted 1
-  (pos, pos * nameValue "COLIN")
-
-example : colinPosScore (parseNames "\"COLIN\"") = (1, 53) := by
-  native_decide
+  scoreFrom (names.mergeSort (fun a b => decide (a ≤ b))) 1 0
 end ProjectEulerSolutions.P22

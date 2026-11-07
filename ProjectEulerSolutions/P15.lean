@@ -1,5 +1,4 @@
 import ProjectEulerStatements.P15
-import ProjectEulerSolutions.Termination.P15
 namespace ProjectEulerSolutions.P15
 
 def binom (n k : Nat) : Nat :=
@@ -14,9 +13,7 @@ def binom (n k : Nat) : Nat :=
       else
         loop (i + 1) (res * (n - k' + i) / i)
     termination_by k' + 1 - i
-    decreasing_by
-      simp_wf
-      exact Termination.sub_lt_succ_sub_of_not_gt (by assumption)
+    decreasing_by omega
     loop 1 1
 
 def latticePaths (gridN gridM : Nat) : Nat :=

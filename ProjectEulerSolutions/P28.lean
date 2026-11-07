@@ -1,5 +1,4 @@
 import ProjectEulerStatements.P28
-import ProjectEulerSolutions.Termination.P28
 namespace ProjectEulerSolutions.P28
 
 def solve (n : Nat) : Nat :=
@@ -10,8 +9,6 @@ def solve (n : Nat) : Nat :=
   let sumOnes := 4 * m
   total + sumSquares + sumLinear + sumOnes
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
 example : solve 5 = 101 := by
   native_decide
 

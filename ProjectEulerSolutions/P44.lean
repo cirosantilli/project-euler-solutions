@@ -1,87 +1,17 @@
-import ProjectEulerStatements.P44
-import ProjectEulerSolutions.Termination.P44
+import ProjectEulerSolutions.Lib.PentagonalSearch
 namespace ProjectEulerSolutions.P44
+open PentagonalSearch PentagonalDiscriminant
 
-def pentagonal (n : Nat) : Nat :=
-  n * (3 * n - 1) / 2
-
-def sqrtFloor (n : Nat) : Nat :=
-  let rec loop (lo hi : Nat) : Nat :=
-    if lo > hi then
-      hi
-    else
-      let mid := (lo + hi) / 2
-      let sq := mid * mid
-      if sq == n then
-        mid
-      else if sq < n then
-        loop (mid + 1) hi
+/-- Descending second indices permit pruning as soon as the difference exceeds the best. -/
+def scanRow (k : Nat) : Nat → Nat → Nat
+  | 0, best => best
+  | j+1, best =>
+      let diff := difference k (j+1)
+      if best ≤ diff then best
       else
-        loop lo (mid - 1)
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  loop 1 n
+        let accepted := discriminant (pentagonal k + pentagonal (j+1)) && discriminant diff
+        scanRow k j (if accepted then diff else best)
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def isPentagonal (x : Nat) : Bool :=
-  if x == 0 then
-    false
-  else
-    let t := 24 * x + 1
-    let s := sqrtFloor t
-    s * s == t && (1 + s) % 6 == 0
-
-def getAt (xs : List Nat) (i : Nat) : Nat :=
-  match xs, i with
-  | [], _ => 0
-  | x :: _, 0 => x
-  | _ :: xs, i + 1 => getAt xs i
-
-def findMinDifference (limit : Nat) : Nat :=
-  let pent := (List.range (limit + 1)).map pentagonal
-  let rec loopK (k : Nat) (best : Nat) : Nat :=
-    if k > limit then
-      best
-    else
-      let pk := getAt pent k
-      let rec loopJ (j : Nat) (best : Nat) : Nat :=
-        if j == 0 then
-          best
-        else
-          let pj := getAt pent j
-          let diff := pk - pj
-          if diff >= best then
-            best
-          else if isPentagonal diff && isPentagonal (pk + pj) then
-            diff
-          else
-            loopJ (j - 1) best
-      termination_by 0
-      decreasing_by all_goals exact Termination.decreases
-      loopK (k + 1) (loopJ (k - 1) best)
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  loopK 2 (Nat.pow 10 30)
-
-
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-example :
-    let first10 := [1,5,12,22,35,51,70,92,117,145]
-    let ok := (List.range 10).all (fun i =>
-      let v := getAt first10 i
-      pentagonal (i + 1) == v && isPentagonal v)
-    ok = true := by
-  native_decide
-
-example : pentagonal 4 + pentagonal 7 = pentagonal 8 := by
-  native_decide
-
-example : isPentagonal (pentagonal 7 - pentagonal 4) = false := by
-  native_decide
-
-
-def solve (limit : Nat) :=
-  findMinDifference limit
+def solve (limit : Nat) : Nat :=
+  (List.range' 2 (limit-1)).foldl (fun best k => scanRow k (k-1) best) cap
 end ProjectEulerSolutions.P44

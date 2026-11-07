@@ -1,3 +1,0 @@
-namespace ProjectEulerSolutions.P19.Termination
-
-end ProjectEulerSolutions.P19.Termination

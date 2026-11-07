@@ -1,102 +1,32 @@
-import Std
 import ProjectEulerStatements.P89
-import ProjectEulerSolutions.Termination.P89
+import ProjectEulerSolutions.Lib.RomanNumerals
+
 namespace ProjectEulerSolutions.P89
 
 def valueOf (c : Char) : Nat :=
-  match c with
-  | 'I' => 1
-  | 'V' => 5
-  | 'X' => 10
-  | 'L' => 50
-  | 'C' => 100
-  | 'D' => 500
-  | 'M' => 1000
-  | _ => 0
+  if c = 'I' then 1 else if c = 'V' then 5 else if c = 'X' then 10
+  else if c = 'L' then 50 else if c = 'C' then 100 else if c = 'D' then 500
+  else if c = 'M' then 1000 else 0
 
-def romanToInt (s : String) : Nat :=
-  let rec loop (xs : List Char) (total : Nat) : Nat :=
-    match xs with
-    | [] => total
-    | [x] => total + valueOf x
-    | x :: y :: ys =>
-        let v := valueOf x
-        let v2 := valueOf y
-        if v < v2 then
-          loop ys (total + (v2 - v))
-        else
-          loop (y :: ys) (total + v)
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  loop s.data 0
+def parseAcc : List Char → Nat → Nat
+  | [], total => total
+  | [x], total => total + valueOf x
+  | x :: y :: ys, total =>
+      if valueOf x < valueOf y then parseAcc ys (total + (valueOf y - valueOf x))
+      else parseAcc (y :: ys) (total + valueOf x)
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
+def romanToInt (s : String) : Nat := parseAcc s.toList 0
+
 abbrev minimalTable : List (Nat × String) := [
   (1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"), (90, "XC"),
-  (50, "L"), (40, "XL"), (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I")
-]
+  (50, "L"), (40, "XL"), (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I")]
 
+/-- Quotient/remainder token emission, as in the Python solver. -/
 def intToMinRoman (x : Nat) : String :=
-  let rec loop (x : Nat) (tbl : List (Nat × String)) (acc : String) : String :=
-    match tbl with
-    | [] => acc
-    | (val, sym) :: ts =>
-        if x == 0 then acc
-        else
-          let k := x / val
-          let x := x % val
-          let rec rep (n : Nat) (acc : String) : String :=
-            if n == 0 then acc else rep (n - 1) (acc ++ sym)
-          termination_by 0
-          decreasing_by all_goals exact Termination.decreases
-          loop x ts (rep k acc)
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  loop x minimalTable ""
+  String.ofList (RomanNumerals.encode (minimalTable.map (fun p => (p.1, p.2.toList))) x)
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
 def totalCharactersSaved (lines : List String) : Nat :=
-  lines.foldl (fun acc s =>
-    let val := romanToInt s
-    let minimal := intToMinRoman val
-    acc + (s.length - minimal.length)
-  ) 0
+  lines.foldl (fun acc s => acc + (s.length - (intToMinRoman (romanToInt s)).length)) 0
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-example : romanToInt "XVI" = 16 := by
-  native_decide
-
-example : intToMinRoman 16 = "XVI" := by
-  native_decide
-
-example : romanToInt "VIIII" = 9 := by
-  native_decide
-
-example : intToMinRoman 9 = "IX" := by
-  native_decide
-
-example : romanToInt "IIII" = 4 := by
-  native_decide
-
-example : intToMinRoman 4 = "IV" := by
-  native_decide
-
-example : romanToInt "MCMXC" = 1990 := by
-  native_decide
-
-example : intToMinRoman 1990 = "MCMXC" := by
-  native_decide
-
-example : romanToInt "MMMMCMXCIX" = 4999 := by
-  native_decide
-
-example : intToMinRoman 4999 = "MMMMCMXCIX" := by
-  native_decide
-
-
-def solve (lines : List String) : Nat :=
-  totalCharactersSaved lines
+def solve (lines : List String) : Nat := totalCharactersSaved lines
 end ProjectEulerSolutions.P89

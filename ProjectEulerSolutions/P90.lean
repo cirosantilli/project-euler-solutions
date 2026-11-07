@@ -1,5 +1,4 @@
 import ProjectEulerStatements.P90
-import ProjectEulerSolutions.Termination.P90
 namespace ProjectEulerSolutions.P90
 
 abbrev squarePairs : List (Nat × Nat) :=
@@ -16,8 +15,6 @@ def combinations (k : Nat) (xs : List Nat) : List (List Nat) :=
         let withoutX := combinations k xs
         withX ++ withoutX
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
 def expand6_9 (mask : Nat) : Nat :=
   let has6 := (mask / (Nat.pow 2 6)) % 2
   let has9 := (mask / (Nat.pow 2 9)) % 2
@@ -26,8 +23,6 @@ def expand6_9 (mask : Nat) : Nat :=
   else
     mask
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
 def canDisplayAllSquares (pairs : List (Nat × Nat)) (maskA maskB : Nat) : Bool :=
   let rec loop (ps : List (Nat × Nat)) : Bool :=
     match ps with
@@ -39,12 +34,8 @@ def canDisplayAllSquares (pairs : List (Nat × Nat)) (maskA maskB : Nat) : Bool 
           loop ps
         else
           false
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
   loop pairs
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
 def solveWithPairs (pairs : List (Nat × Nat)) : Nat :=
   let masks :=
     (combinations 6 (List.range 10)).map (fun comb =>
@@ -64,15 +55,13 @@ def solveWithPairs (pairs : List (Nat × Nat)) : Nat :=
             else
               count
           loopJ (j + 1) count
-      termination_by 0
-      decreasing_by all_goals exact Termination.decreases
+      termination_by masks.length - j
+      decreasing_by omega
       loopI (i + 1) (loopJ i count)
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
+  termination_by masks.length - i
+  decreasing_by omega
   loopI 0 0
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
 def solve : Nat :=
   solveWithPairs squarePairs
 end ProjectEulerSolutions.P90

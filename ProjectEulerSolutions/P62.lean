@@ -1,77 +1,9 @@
 import ProjectEulerStatements.P62
-import ProjectEulerSolutions.Termination.P62
+
 namespace ProjectEulerSolutions.P62
 
-def digitSignature (x : Nat) : Array Nat :=
-  let rec loop (n : Nat) (acc : Array Nat) : Array Nat :=
-    if n == 0 then
-      acc
-    else
-      let d := n % 10
-      loop (n / 10) (acc.set! d (acc[d]! + 1))
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  if x == 0 then
-    (Array.replicate 10 0).set! 0 1
-  else
-    loop x (Array.replicate 10 0)
+/-- Incremental count/minimum buckets, cleared only after a complete digit width. -/
+def solve (target : Int) : Option Int :=
+  ProjectEulerStatements.UnboundedSearch.run (CubicSearch.step target) CubicSearch.start
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def updateGroup (sig : Array Nat) (cube : Nat) (groups : List (Array Nat × Nat × Nat))
-    : List (Array Nat × Nat × Nat) :=
-  match groups with
-  | [] => [(sig, 1, cube)]
-  | (s, cnt, minc) :: rest =>
-      if s == sig then
-        let minc := if cube < minc then cube else minc
-        (s, cnt + 1, minc) :: rest
-      else
-        (s, cnt, minc) :: updateGroup sig cube rest
-
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def collectCandidates (k : Nat) (groups : List (Array Nat × Nat × Nat)) : List Nat :=
-  match groups with
-  | [] => []
-  | (_, cnt, minc) :: rest =>
-      if cnt == k then minc :: collectCandidates k rest else collectCandidates k rest
-
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def listMin (xs : List Nat) : Nat :=
-  match xs with
-  | [] => 0
-  | x :: xs => xs.foldl (fun acc v => if v < acc then v else acc) x
-
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def smallestCubeWithKPermutations (k : Nat) : Nat :=
-  let rec loop (n : Nat) (currentLen : Nat) (groups : List (Array Nat × Nat × Nat)) : Nat :=
-    let cube := n * n * n
-    let l := (toString cube).length
-    if l > currentLen then
-      let candidates := collectCandidates k groups
-      if candidates != [] then
-        listMin candidates
-      else
-        loop n l []
-    else
-      let sig := digitSignature cube
-      let groups := updateGroup sig cube groups
-      loop (n + 1) currentLen groups
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  loop 1 1 []
-
-
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-example : smallestCubeWithKPermutations 3 = 41063625 := by
-  native_decide
-
-
-def solve (limit target : Nat) :=
-  let _ := limit
-  smallestCubeWithKPermutations target
 end ProjectEulerSolutions.P62

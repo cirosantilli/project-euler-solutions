@@ -1,36 +1,18 @@
 import ProjectEulerStatements.P63
-import ProjectEulerSolutions.Termination.P63
+import ProjectEulerSolutions.Lib.PowerfulDigitCounts
+
 namespace ProjectEulerSolutions.P63
 
-def solve (limit : Nat) : Nat :=
-  let rec loopN (n : Nat) (total : Nat) : Nat :=
-    if n > limit then
-      total
-    else
-      let len9 := (toString (Nat.pow 9 n)).length
-      if len9 < n then
-        total
-      else
-        let rec loopA (a : Nat) (acc : Nat) : Nat :=
-          if a > 9 then
-            acc
-          else
-            let len := (toString (Nat.pow a n)).length
-            let acc := if len == n then acc + 1 else acc
-            loopA (a + 1) acc
-        termination_by 0
-        decreasing_by all_goals exact Termination.decreases
-        loopN (n + 1) (loopA 1 total)
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  loopN 1 0
+/-- Scan one seed's powers, stopping as soon as its digit count falls behind. -/
+def countPowers (base seed exponent : Nat) : Nat → Nat
+  | 0 => 0
+  | remaining + 1 =>
+      if base ^ (exponent - 1) ≤ seed ^ exponent then
+        1 + countPowers base seed (exponent + 1) remaining
+      else 0
 
+def solve (base : Nat) : Nat :=
+  ((PowerfulDigits.seeds base).map fun seed =>
+    countPowers base seed 1 (PowerfulDigits.bound base - 1)).sum
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-example : (toString (Nat.pow 7 5)).length = 5 := by
-  native_decide
-
-example : (toString (Nat.pow 8 9)).length = 9 := by
-  native_decide
 end ProjectEulerSolutions.P63

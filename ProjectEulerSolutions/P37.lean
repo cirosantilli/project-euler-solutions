@@ -1,121 +1,30 @@
-import ProjectEulerStatements.P37
-import ProjectEulerSolutions.Termination.P37
+import ProjectEulerStatements.Lib.TruncatablePrimeBase
+import ProjectEulerStatements.Lib.TruncatablePrimeDecimal
 namespace ProjectEulerSolutions.P37
+open ProjectEulerStatements.TruncatablePrimeBase
 
-def sieve (limit : Nat) : Array Bool :=
-  if limit == 0 then
-    #[]
+/-- Expand the right-truncatable frontier, accumulating only left-truncatable children. -/
+def search (base : Nat) (success : Exhausts base) (depth : Nat) (frontier : List Nat) (total : Nat)
+    (frontierCorrect : frontier = level base depth) (before : depth ≤ Nat.find success) : Nat :=
+  if empty : frontier = [] then total
   else
-    let arr0 := (Array.replicate (limit + 1) true)
-      |>.set! 0 false
-      |>.set! 1 false
-    let rec markEven (i : Nat) (arr : Array Bool) : Array Bool :=
-      if i > limit then arr else markEven (i + 2) (arr.set! i false)
-    termination_by 0
-    decreasing_by all_goals exact Termination.decreases
-    let arr := if limit >= 4 then markEven 4 arr0 else arr0
-    let rec loopP (p : Nat) (arr : Array Bool) : Array Bool :=
-      if p * p > limit then
-        arr
-      else
-        if arr[p]! then
-          let rec loop (x : Nat) (arr : Array Bool) : Array Bool :=
-            if x > limit then
-              arr
-            else
-              loop (x + 2 * p) (arr.set! x false)
-          termination_by 0
-          decreasing_by all_goals exact Termination.decreases
-          loopP (p + 2) (loop (p * p) arr)
-        else
-          loopP (p + 2) arr
-    termination_by 0
-    decreasing_by all_goals exact Termination.decreases
-    loopP 3 arr
+    let next := frontier.flatMap (children base)
+    search base success (depth+1) next (total + (next.filter (leftCheck base)).sum)
+      (by simp [next, frontierCorrect, level]) (by
+        have different : depth ≠ Nat.find success := by
+          intro same
+          exact empty (by rw [frontierCorrect, same]; exact Nat.find_spec success)
+        omega)
+termination_by Nat.find success - depth
+decreasing_by
+  have nonempty : frontier ≠ [] := by assumption
+  have different : depth ≠ Nat.find success := by
+    intro same
+    exact nonempty (by rw [frontierCorrect, same]; exact Nat.find_spec success)
+  omega
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def digitsCount (n : Nat) : Nat :=
-  let rec loop (m c : Nat) : Nat :=
-    if m < 10 then c + 1 else loop (m / 10) (c + 1)
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  if n == 0 then 1 else loop n 0
+def solve (base : Nat) (success : Exhausts base) : Nat :=
+  search base success 0 (roots base) 0 rfl (Nat.zero_le _)
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def pow10 (k : Nat) : Nat :=
-  Nat.pow 10 k
-
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def isTruncatablePrime (n : Nat) (isPrime : Array Bool) : Bool :=
-  if n < 10 then
-    false
-  else
-    let len := digitsCount n
-    let rec loopR (m : Nat) : Bool :=
-      if m == 0 then true
-      else if !isPrime[m]! then false else loopR (m / 10)
-    termination_by 0
-    decreasing_by all_goals exact Termination.decreases
-    let rec loopL (k : Nat) : Bool :=
-      if k == 0 then true
-      else
-        let m := n % pow10 k
-        if !isPrime[m]! then false else loopL (k - 1)
-    termination_by 0
-    decreasing_by all_goals exact Termination.decreases
-    loopR n && loopL (len - 1)
-
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def solve (limit : Nat) : Nat :=
-  let isPrime := sieve limit
-  let rec loop (n found total : Nat) : Nat :=
-    if n > limit then
-      total
-    else if found == 11 then
-      total
-    else
-      if n % 2 == 1 && isPrime[n]! && isTruncatablePrime n isPrime then
-        loop (n + 2) (found + 1) (total + n)
-      else
-        loop (n + 2) found total
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  loop 11 0 0
-
-
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-example :
-    let isPrime := sieve 1000000
-    isPrime[3797]! = true := by
-  native_decide
-
-example :
-    let isPrime := sieve 1000000
-    isTruncatablePrime 3797 isPrime = true := by
-  native_decide
-
-example :
-    let isPrime := sieve 1000000
-    isTruncatablePrime 2 isPrime = false := by
-  native_decide
-
-example :
-    let isPrime := sieve 1000000
-    isTruncatablePrime 3 isPrime = false := by
-  native_decide
-
-example :
-    let isPrime := sieve 1000000
-    isTruncatablePrime 5 isPrime = false := by
-  native_decide
-
-example :
-    let isPrime := sieve 1000000
-    isTruncatablePrime 7 isPrime = false := by
-  native_decide
+theorem defaultExhausts : Exhausts 10 := ⟨8, Decimal.exhausted⟩
 end ProjectEulerSolutions.P37

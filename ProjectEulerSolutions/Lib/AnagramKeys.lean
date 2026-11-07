@@ -1,60 +1,10 @@
-import ProjectEulerStatements.Lib.StringSorting
+import ProjectEulerStatements.Lib.AnagramKeys
 import lang.py.FormalSW.HeapCalls
 
-/-! The sorted-character list and joined key identify exactly the same anagram classes. -/
 namespace ProjectEulerSolutions.AnagramKeys
 open FormalSW.PyAst HeapCalls ProjectEulerStatements.StringSorting
-set_option Elab.async false
-
-def characters (word : String) : List String := word.toList.map String.singleton
-def ordered (word : String) : List String := ScalarSort.strings (characters word)
-def key (word : String) : String := String.intercalate "" (ordered word)
 def values (word : String) : List Mutable.Value :=
   (ordered word).map fun letter => .scalar (.string letter)
-
-private theorem intercalate_empty (items : List (List α)) :
-    [].intercalate items = items.flatten := by
-  induction items with
-  | nil => rfl
-  | cons head tail ih => cases tail <;> simp_all
-
-theorem key_permutation (word : String) : (key word).toList.Perm word.toList := by
-  have permutation := (ScalarSort.strings_perm (characters word)).flatMap_right String.toList
-  simpa [key, ordered, characters, String.toList_intercalate, List.flatMap_map,
-    Function.comp_def, intercalate_empty, ← List.flatMap_def] using permutation
-
-theorem ordered_of_permutation (left right : String) (permutation : left.toList.Perm right.toList) :
-    ordered left = ordered right :=
-  List.Perm.eq_of_pairwise (fun _ _ _ _ lower upper => le_antisymm lower upper)
-    (strings_ordered _) (strings_ordered _)
-    ((ScalarSort.strings_perm _).trans
-      ((permutation.map String.singleton).trans (ScalarSort.strings_perm _).symm))
-
-theorem key_eq_iff_permutation (left right : String) :
-    key left = key right ↔ left.toList.Perm right.toList := by
-  constructor
-  · intro equal
-    exact (key_permutation left).symm.trans (equal ▸ key_permutation right)
-  · intro permutation
-    exact congrArg (String.intercalate "") (ordered_of_permutation left right permutation)
-
-theorem ordered_eq_iff_key_eq (left right : String) : ordered left = ordered right ↔ key left = key right :=
-  ⟨congrArg (String.intercalate ""), fun equal =>
-    ordered_of_permutation left right ((key_eq_iff_permutation left right).mp equal)⟩
-
-theorem key_length (word : String) : (key word).toList.length = word.toList.length :=
-  (key_permutation word).length_eq
-
-theorem distinct_nonempty (left right : String) (different : left ≠ right) (equal : key left = key right) :
-    left.toList ≠ [] ∧ right.toList ≠ [] := by
-  have permutation := (key_eq_iff_permutation left right).mp equal
-  constructor
-  · intro empty
-    have other : right.toList = [] := by simpa [empty] using permutation.symm
-    exact different (String.toList_inj.mp (empty.trans other.symm))
-  · intro empty
-    have other : left.toList = [] := by simpa [empty] using permutation
-    exact different (String.toList_inj.mp (other.trans empty.symm))
 
 theorem equal_elements (left right : List String) :
     equalElements (left.map fun text => .scalar (.string text))

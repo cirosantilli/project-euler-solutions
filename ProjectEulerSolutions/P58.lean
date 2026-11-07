@@ -1,123 +1,26 @@
 import ProjectEulerStatements.P58
-import ProjectEulerSolutions.Termination.P58
+
 namespace ProjectEulerSolutions.P58
+open SpiralPrimes ProjectEulerStatements.P58
 
-def powMod (a d n : Nat) : Nat :=
-  let rec loop (base exp acc : Nat) : Nat :=
-    if exp == 0 then
-      acc
-    else
-      let acc := if exp % 2 == 1 then (acc * base) % n else acc
-      loop ((base * base) % n) (exp / 2) acc
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  if n == 1 then 0 else loop (a % n) d 1
+def scan (num den : Nat) (success : Terminates num den) (previous primes : Nat)
+    (counted : primes = count previous) (before : previous < Nat.find success) : Nat :=
+  let layer := previous + 1
+  let updated := primes + row layer
+  if crossed : den * updated < num * total layer then side layer
+  else scan num den success layer updated (by simp only [updated, layer, count_succ, counted]) (by
+    have first := Nat.find_spec success
+    have notLast : layer ≠ Nat.find success := by
+      intro same
+      apply crossed
+      have crossing := first.2
+      change den * count (Nat.find success) < num * total (Nat.find success) at crossing
+      rw [← same] at crossing
+      simpa only [updated, layer, count_succ, counted] using crossing
+    omega)
+termination_by Nat.find success - previous
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def decompose (n : Nat) : Nat × Nat :=
-  let rec loop (d s : Nat) : Nat × Nat :=
-    if d % 2 == 1 then
-      (d, s)
-    else
-      loop (d / 2) (s + 1)
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  loop n 0
+def solve (num den : Nat) (success : Terminates num den) : Nat :=
+  scan num den success 0 0 rfl (Nat.find_spec success).1
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def millerCheck (a n d s : Nat) : Bool :=
-  if a % n == 0 then
-    true
-  else
-    let x := powMod a d n
-    if x == 1 || x == n - 1 then
-      true
-    else
-      let rec loop (r : Nat) (x : Nat) : Bool :=
-        if r == 0 then
-          false
-        else
-          let x := (x * x) % n
-          if x == n - 1 then true else loop (r - 1) x
-      termination_by 0
-      decreasing_by all_goals exact Termination.decreases
-      loop (s - 1) x
-
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def isPrime (n : Nat) : Bool :=
-  if n < 2 then
-    false
-  else
-    let smallPrimes : List Nat := [2,3,5,7,11,13,17,19,23,29,31,37]
-    let rec checkSmall (ps : List Nat) : Bool :=
-      match ps with
-      | [] => true
-      | p :: ps => if n == p then true else if n % p == 0 then false else checkSmall ps
-    termination_by 0
-    decreasing_by all_goals exact Termination.decreases
-    if checkSmall smallPrimes == false then
-      false
-    else
-      let (d, s) := decompose (n - 1)
-      let bases : List Nat := [2, 325, 9375, 28178, 450775, 9780504, 1795265022]
-      let rec loop (bs : List Nat) : Bool :=
-        match bs with
-        | [] => true
-        | a :: bs => if millerCheck a n d s then loop bs else false
-      termination_by 0
-      decreasing_by all_goals exact Termination.decreases
-      loop bases
-
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def solve (ratioNum ratioDen : Nat) : Nat :=
-  if ratioDen == 0 then
-    0
-  else
-    let rec loop (k primeCount totalDiag : Nat) : Nat :=
-      let side := 2 * k + 1
-      let step := side - 1
-      let sq := side * side
-      let corners := [sq - step, sq - 2 * step, sq - 3 * step]
-      let primeCount := primeCount + corners.foldl (fun acc x => if isPrime x then acc + 1 else acc) 0
-      let totalDiag := totalDiag + 4
-      if primeCount * ratioDen < totalDiag * ratioNum then
-        side
-      else
-        loop (k + 1) primeCount totalDiag
-    termination_by 0
-    decreasing_by all_goals exact Termination.decreases
-    loop 1 0 1
-
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def countDiagPrimes (side : Nat) : Nat × Nat :=
-  let rec loop (k : Nat) (primeCount totalDiag : Nat) : Nat × Nat :=
-    if k > (side - 1) / 2 then
-      (primeCount, totalDiag)
-    else
-      let s := 2 * k + 1
-      let step := s - 1
-      let sq := s * s
-      let corners := [sq - step, sq - 2 * step, sq - 3 * step]
-      let primeCount := primeCount + corners.foldl (fun acc x => if isPrime x then acc + 1 else acc) 0
-      let totalDiag := totalDiag + 4
-      loop (k + 1) primeCount totalDiag
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  if side % 2 == 0 || side == 0 then
-    (0, 0)
-  else
-    loop 1 0 1
-
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-example : countDiagPrimes 7 = (8, 13) := by
-  native_decide
-
-example : countDiagPrimes 5 = (5, 9) := by
-  native_decide
 end ProjectEulerSolutions.P58

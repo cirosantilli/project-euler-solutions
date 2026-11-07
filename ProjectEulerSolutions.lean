@@ -200,408 +200,202 @@ import ProjectEulerSolutions.Equiv.P99
 import ProjectEulerSolutions.P100
 import ProjectEulerSolutions.Equiv.P100
 
-example : ProjectEulerStatements.P1.naive = ProjectEulerSolutions.P1.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P1.equiv
-
-example : ProjectEulerStatements.P2.naive = ProjectEulerSolutions.P2.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P2.equiv
-
-example : ProjectEulerStatements.P3.naive = ProjectEulerSolutions.P3.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P3.equiv
-
-example : ProjectEulerStatements.P4.naive = ProjectEulerSolutions.P4.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P4.equiv
-
-example : ProjectEulerStatements.P5.naive = ProjectEulerSolutions.P5.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P5.equiv
-
-example : ProjectEulerStatements.P6.naive = ProjectEulerSolutions.P6.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P6.equiv
-
-example : ProjectEulerStatements.P7.naive = ProjectEulerSolutions.P7.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P7.equiv
-
-example : ProjectEulerStatements.P8.naive = ProjectEulerSolutions.P8.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P8.equiv
-
-example : ProjectEulerStatements.P9.naive = ProjectEulerSolutions.P9.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P9.equiv
-
-example : ProjectEulerStatements.P10.naive = ProjectEulerSolutions.P10.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P10.equiv
-
-example : ProjectEulerStatements.P11.naive = ProjectEulerSolutions.P11.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P11.equiv
-
-example : ProjectEulerStatements.P12.naive = ProjectEulerSolutions.P12.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P12.equiv
-
-example : ProjectEulerStatements.P13.naive = ProjectEulerSolutions.P13.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P13.equiv
-
-example : ProjectEulerStatements.P14.naive = ProjectEulerSolutions.P14.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P14.equiv
-
-example : ProjectEulerStatements.P15.naive = ProjectEulerSolutions.P15.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P15.equiv
-
-example : ProjectEulerStatements.P16.naive = ProjectEulerSolutions.P16.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P16.equiv
-
-example (n : Nat) (bound : n ≤ 1000) : ProjectEulerStatements.P17.naive n = ProjectEulerSolutions.P17.solve n :=
-  ProjectEulerSolutions.P17.equiv n bound
-
-example : ProjectEulerStatements.P18.naive = ProjectEulerSolutions.P18.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P18.equiv
-
-example (startYear endYear : Nat) (epoch : 1900 ≤ startYear)
-    (ordered : startYear ≤ endYear) :
-    ProjectEulerStatements.P19.naive (ProjectEulerStatements.P19.firstOfYear startYear) (ProjectEulerStatements.P19.lastOfYear endYear) =
-      ProjectEulerSolutions.P19.solve (ProjectEulerStatements.P19.firstOfYear startYear) (ProjectEulerStatements.P19.lastOfYear endYear) :=
-  ProjectEulerSolutions.P19.equiv startYear endYear epoch ordered
+example := @ProjectEulerSolutions.P1.equiv
 
-example : ProjectEulerStatements.P20.naive = ProjectEulerSolutions.P20.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P20.equiv
+example := @ProjectEulerSolutions.P2.equiv
 
-example : ProjectEulerStatements.P21.naive = ProjectEulerSolutions.P21.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P21.equiv
+example := @ProjectEulerSolutions.P3.equiv
 
-example : ProjectEulerStatements.P22.naive = ProjectEulerSolutions.P22.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P22.equiv
+example := @ProjectEulerSolutions.P4.equiv
 
-example : ProjectEulerStatements.P23.naive = ProjectEulerSolutions.P23.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P23.equiv
+example := @ProjectEulerSolutions.P5.equiv
 
-example : ProjectEulerStatements.P24.naive = ProjectEulerSolutions.P24.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P24.equiv
+example := @ProjectEulerSolutions.P6.equiv
 
-example : ProjectEulerStatements.P25.naive = ProjectEulerSolutions.P25.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P25.equiv
+example := @ProjectEulerSolutions.P7.equiv
 
-example : ProjectEulerStatements.P26.naive = ProjectEulerSolutions.P26.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P26.equiv
+example := @ProjectEulerSolutions.P8.equiv
 
-example : ProjectEulerStatements.P27.naive = ProjectEulerSolutions.P27.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P27.equiv
+example := @ProjectEulerSolutions.P9.equiv
 
-example : ProjectEulerStatements.P28.naive = ProjectEulerSolutions.P28.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P28.equiv
+example := @ProjectEulerSolutions.P10.equiv
 
-example : ProjectEulerStatements.P29.naive = ProjectEulerSolutions.P29.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P29.equiv
+example := @ProjectEulerSolutions.P11.equiv
 
-example : ProjectEulerStatements.P30.naive = ProjectEulerSolutions.P30.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P30.equiv
+example := @ProjectEulerSolutions.P12.equiv
 
-example : ProjectEulerStatements.P31.naive = ProjectEulerSolutions.P31.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P31.equiv
+example := @ProjectEulerSolutions.P13.equiv
 
-example : ProjectEulerStatements.P32.naive = ProjectEulerSolutions.P32.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P32.equiv
+example := @ProjectEulerSolutions.P14.equiv
 
-example : ProjectEulerStatements.P33.naive = ProjectEulerSolutions.P33.solve := by
-  exact ProjectEulerSolutions.P33.equiv
+example := @ProjectEulerSolutions.P15.equiv
 
-example : ProjectEulerStatements.P34.naive = ProjectEulerSolutions.P34.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P34.equiv
+example := @ProjectEulerSolutions.P16.equiv
 
-example : ProjectEulerStatements.P35.naive = ProjectEulerSolutions.P35.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P35.equiv
+example := @ProjectEulerSolutions.P17.equiv
 
-example : ProjectEulerStatements.P36.naive = ProjectEulerSolutions.P36.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P36.equiv
+example := @ProjectEulerSolutions.P18.equiv
 
-example : ProjectEulerStatements.P37.naive = ProjectEulerSolutions.P37.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P37.equiv
+example := @ProjectEulerSolutions.P19.equiv
 
-example : ProjectEulerStatements.P38.naive = ProjectEulerSolutions.P38.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P38.equiv
+example := @ProjectEulerSolutions.P20.equiv
 
-example : ProjectEulerStatements.P39.naive = ProjectEulerSolutions.P39.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P39.equiv
+example := @ProjectEulerSolutions.P21.equiv
 
-example : ProjectEulerStatements.P40.naive = ProjectEulerSolutions.P40.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P40.equiv
+example := @ProjectEulerSolutions.P22.equiv
 
-example : ProjectEulerStatements.P41.naive = ProjectEulerSolutions.P41.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P41.equiv
+example := @ProjectEulerSolutions.P23.equiv
 
-example : ProjectEulerStatements.P42.naive = ProjectEulerSolutions.P42.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P42.equiv
+example := @ProjectEulerSolutions.P24.equiv
 
-example : ProjectEulerStatements.P43.naive = ProjectEulerSolutions.P43.solve := by
-  exact ProjectEulerSolutions.P43.equiv
+example := @ProjectEulerSolutions.P25.equiv
 
-example : ProjectEulerStatements.P44.naive = ProjectEulerSolutions.P44.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P44.equiv
+example := @ProjectEulerSolutions.P26.equiv
 
-example : ProjectEulerStatements.P45.naive = ProjectEulerSolutions.P45.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P45.equiv
+example := @ProjectEulerSolutions.P27.equiv
 
-example : ProjectEulerStatements.P46.naive = ProjectEulerSolutions.P46.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P46.equiv
+example := @ProjectEulerSolutions.P28.equiv
 
-example : ProjectEulerStatements.P47.naive = ProjectEulerSolutions.P47.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P47.equiv
+example := @ProjectEulerSolutions.P29.equiv
 
-example : ProjectEulerStatements.P48.naive = ProjectEulerSolutions.P48.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P48.equiv
+example := @ProjectEulerSolutions.P30.equiv
 
-example : ProjectEulerStatements.P49.naive = ProjectEulerSolutions.P49.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P49.equiv
+example := @ProjectEulerSolutions.P31.equiv
 
-example : ProjectEulerStatements.P50.naive = ProjectEulerSolutions.P50.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P50.equiv
+example := @ProjectEulerSolutions.P32.equiv
 
-example : ProjectEulerStatements.P51.naive = ProjectEulerSolutions.P51.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P51.equiv
+example := @ProjectEulerSolutions.P33.equiv
 
-example : ProjectEulerStatements.P52.naive = ProjectEulerSolutions.P52.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P52.equiv
+example := @ProjectEulerSolutions.P34.equiv
 
-example : ProjectEulerStatements.P53.naive = ProjectEulerSolutions.P53.solve := by
-  exact ProjectEulerSolutions.P53.equiv
+example := @ProjectEulerSolutions.P35.equiv
 
-example : ProjectEulerStatements.P54.naive = ProjectEulerSolutions.P54.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P54.equiv
+example := @ProjectEulerSolutions.P36.equiv
 
-example : ProjectEulerStatements.P55.naive = ProjectEulerSolutions.P55.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P55.equiv
+example := @ProjectEulerSolutions.P37.equiv
 
-example : ProjectEulerStatements.P56.naive = ProjectEulerSolutions.P56.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P56.equiv
+example := @ProjectEulerSolutions.P38.equiv
 
-example : ProjectEulerStatements.P57.naive = ProjectEulerSolutions.P57.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P57.equiv
+example := @ProjectEulerSolutions.P39.equiv
 
-example : ProjectEulerStatements.P58.naive = ProjectEulerSolutions.P58.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P58.equiv
+example := @ProjectEulerSolutions.P40.equiv
 
-example : ProjectEulerStatements.P59.naive = ProjectEulerSolutions.P59.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P59.equiv
+example := @ProjectEulerSolutions.P41.equiv
 
-example : ProjectEulerStatements.P60.naive = ProjectEulerSolutions.P60.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P60.equiv
+example := @ProjectEulerSolutions.P42.equiv
 
-example : ProjectEulerStatements.P61.naive = ProjectEulerSolutions.P61.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P61.equiv
+example := @ProjectEulerSolutions.P43.equiv
 
-example : ProjectEulerStatements.P62.naive = ProjectEulerSolutions.P62.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P62.equiv
+example := @ProjectEulerSolutions.P44.equiv
 
-example : ProjectEulerStatements.P63.naive = ProjectEulerSolutions.P63.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P63.equiv
+example := @ProjectEulerSolutions.P45.equiv
 
-example : ProjectEulerStatements.P64.naive = ProjectEulerSolutions.P64.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P64.equiv
+example := @ProjectEulerSolutions.P46.equiv
 
-example : ProjectEulerStatements.P65.naive = ProjectEulerSolutions.P65.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P65.equiv
+example := @ProjectEulerSolutions.P47.equiv
 
-example : ProjectEulerStatements.P66.naive = ProjectEulerSolutions.P66.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P66.equiv
+example := @ProjectEulerSolutions.P48.equiv
 
-example : ProjectEulerStatements.P67.naive = ProjectEulerSolutions.P67.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P67.equiv
+example := @ProjectEulerSolutions.P49.equiv
 
-example : @ProjectEulerStatements.P68.naive = @ProjectEulerSolutions.P68.solve := by
-  exact ProjectEulerSolutions.P68.equiv
+example := @ProjectEulerSolutions.P50.equiv
 
-example : ProjectEulerStatements.P69.naive = ProjectEulerSolutions.P69.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P69.equiv
+example := @ProjectEulerSolutions.P51.equiv
 
-example : ProjectEulerStatements.P70.naive = ProjectEulerSolutions.P70.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P70.equiv
+example := @ProjectEulerSolutions.P52.equiv
 
-example :
-    (fun limit : Int => ProjectEulerStatements.P71.naive limit) =
-      (fun limit : Int => ProjectEulerSolutions.P71.solve limit) :=
-  funext (fun limit => ProjectEulerSolutions.P71.equiv limit 3 7 (by decide) (by decide))
+example := @ProjectEulerSolutions.P53.equiv
 
-example (num den : Int) (positive : 0 < num) (proper : num < den) :
-    (fun limit : Int => ProjectEulerStatements.P71.naive limit num den) =
-      (fun limit : Int => ProjectEulerSolutions.P71.solve limit num den) :=
-  funext (fun limit => ProjectEulerSolutions.P71.equiv limit num den positive proper)
+example := @ProjectEulerSolutions.P54.equiv
 
-example : ProjectEulerStatements.P72.naive = ProjectEulerSolutions.P72.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P72.equiv
+example := @ProjectEulerSolutions.P55.equiv
 
-example :
-    (fun limit : Int => ProjectEulerStatements.P73.naive limit) =
-      (fun limit : Int => ProjectEulerSolutions.P73.solve limit) :=
-  funext (fun limit => ProjectEulerSolutions.P73.equiv limit 1 3 1 2 (by decide) (by decide))
+example := @ProjectEulerSolutions.P56.equiv
 
-example (ln ld un ud : Int) (lo : 0 < ld) (hi : 0 < ud) :
-    (fun limit : Int => ProjectEulerStatements.P73.naive limit ln ld un ud) =
-      (fun limit : Int => ProjectEulerSolutions.P73.solve limit ln ld un ud) :=
-  funext (fun limit => ProjectEulerSolutions.P73.equiv limit ln ld un ud lo hi)
+example := @ProjectEulerSolutions.P57.equiv
 
-example : @ProjectEulerStatements.P74.naive = @ProjectEulerSolutions.P74.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P74.equiv
+example := @ProjectEulerSolutions.P58.equiv
 
-example : ProjectEulerStatements.P75.naive = ProjectEulerSolutions.P75.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P75.equiv
+example := @ProjectEulerSolutions.P59.equiv
 
-example : ProjectEulerStatements.P76.naive = ProjectEulerSolutions.P76.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P76.equiv
+example := @ProjectEulerSolutions.P60.equiv
 
-example : ProjectEulerStatements.P77.naive = ProjectEulerSolutions.P77.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P77.equiv
+example := @ProjectEulerSolutions.P61.equiv
 
-example : ProjectEulerStatements.P78.naive = ProjectEulerSolutions.P78.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P78.equiv
+example := @ProjectEulerSolutions.P62.equiv
 
-example : ProjectEulerStatements.P79.naive = ProjectEulerSolutions.P79.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P79.equiv
+example := @ProjectEulerSolutions.P63.equiv
 
-example : ProjectEulerStatements.P80.naive = ProjectEulerSolutions.P80.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P80.equiv
+example := @ProjectEulerSolutions.P64.equiv
 
-example : ProjectEulerStatements.P81.naive = ProjectEulerSolutions.P81.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P81.equiv
+example := @ProjectEulerSolutions.P65.equiv
 
-example : ProjectEulerStatements.P82.naive = ProjectEulerSolutions.P82.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P82.equiv
+example := @ProjectEulerSolutions.P66.equiv
 
-example : ProjectEulerStatements.P83.naive = ProjectEulerSolutions.P83.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P83.equiv
+example := @ProjectEulerSolutions.P67.equiv
 
-example : ProjectEulerStatements.P84.naive = ProjectEulerSolutions.P84.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P84.equiv
+example := @ProjectEulerSolutions.P68.equiv
 
-example : ProjectEulerStatements.P85.naive = ProjectEulerSolutions.P85.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P85.equiv
+example := @ProjectEulerSolutions.P69.equiv
 
-example : ProjectEulerStatements.P86.naive = ProjectEulerSolutions.P86.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P86.equiv
+example := @ProjectEulerSolutions.P70.equiv
 
-example : ProjectEulerStatements.P87.naive = ProjectEulerSolutions.P87.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P87.equiv
+example := @ProjectEulerSolutions.P71.equiv
 
-example : ProjectEulerStatements.P88.naive = ProjectEulerSolutions.P88.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P88.equiv
+example := @ProjectEulerSolutions.P72.equiv
 
-example : ProjectEulerStatements.P89.naive = ProjectEulerSolutions.P89.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P89.equiv
+example := @ProjectEulerSolutions.P73.equiv
 
-example : ProjectEulerStatements.P90.naive = ProjectEulerSolutions.P90.solve := by
-  exact ProjectEulerSolutions.P90.equiv
+example := @ProjectEulerSolutions.P74.equiv
 
-example : ProjectEulerStatements.P91.naive = ProjectEulerSolutions.P91.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P91.equiv
+example := @ProjectEulerSolutions.P75.equiv
 
-example : ProjectEulerStatements.P92.naive = ProjectEulerSolutions.P92.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P92.equiv
+example := @ProjectEulerSolutions.P76.equiv
 
-example : ProjectEulerStatements.P93.naive = ProjectEulerSolutions.P93.solve := by
-  exact ProjectEulerSolutions.P93.equiv
+example := @ProjectEulerSolutions.P77.equiv
 
-example : ProjectEulerStatements.P94.naive = ProjectEulerSolutions.P94.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P94.equiv
+example := @ProjectEulerSolutions.P78.equiv
 
-example : ProjectEulerStatements.P95.naive = ProjectEulerSolutions.P95.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P95.equiv
+example := @ProjectEulerSolutions.P79.equiv
 
-example : ProjectEulerStatements.P96.naive = ProjectEulerSolutions.P96.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P96.equiv
+example := @ProjectEulerSolutions.P80.equiv
 
-example : ProjectEulerStatements.P97.naive = ProjectEulerSolutions.P97.solve := by
-  exact ProjectEulerSolutions.P97.equiv
+example := @ProjectEulerSolutions.P81.equiv
 
-example : ProjectEulerStatements.P98.naive = ProjectEulerSolutions.P98.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P98.equiv
+example := @ProjectEulerSolutions.P82.equiv
 
-example : ProjectEulerStatements.P99.naive = ProjectEulerSolutions.P99.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P99.equiv
+example := @ProjectEulerSolutions.P83.equiv
 
-example : ProjectEulerStatements.P100.naive = ProjectEulerSolutions.P100.solve := by
-  apply (funext_iff).2
-  simpa [funext_iff] using ProjectEulerSolutions.P100.equiv
+example := @ProjectEulerSolutions.P84.equiv
+
+example := @ProjectEulerSolutions.P85.equiv
+
+example := @ProjectEulerSolutions.P86.equiv
+
+example := @ProjectEulerSolutions.P87.equiv
+
+example := @ProjectEulerSolutions.P88.equiv
+
+example := @ProjectEulerSolutions.P89.equiv
+
+example := @ProjectEulerSolutions.P90.equiv
+
+example := @ProjectEulerSolutions.P91.equiv
+
+example := @ProjectEulerSolutions.P92.equiv
+
+example := @ProjectEulerSolutions.P93.equiv
+
+example := @ProjectEulerSolutions.P94.equiv
+
+example := @ProjectEulerSolutions.P95.equiv
+
+example := @ProjectEulerSolutions.P96.equiv
+
+example := @ProjectEulerSolutions.P97.equiv
+
+example := @ProjectEulerSolutions.P98.equiv
+
+example := @ProjectEulerSolutions.P99.equiv
+
+example := @ProjectEulerSolutions.P100.equiv

@@ -1,5 +1,4 @@
 import ProjectEulerStatements.P11
-import ProjectEulerSolutions.Termination.P11
 namespace ProjectEulerSolutions.P11
 
 abbrev grid : Array (Array Nat) := #[
@@ -37,105 +36,8 @@ def gridToArray (grid : List (List Nat)) : Array (Array Nat) :=
 def gridList : List (List Nat) :=
   arrayToList (grid.map arrayToList)
 
-def prodRight (g : Array (Array Nat)) (i j k : Nat) : Nat :=
-  let rec loop (t acc : Nat) : Nat :=
-    if t >= k then
-      acc
-    else
-      loop (t + 1) (acc * (g[i]!)[j + t]!)
-  termination_by k - t
-  decreasing_by
-    simp_wf
-    exact Termination.sub_succ_lt_sub (by assumption)
-  loop 0 1
-
-def prodDown (g : Array (Array Nat)) (i j k : Nat) : Nat :=
-  let rec loop (t acc : Nat) : Nat :=
-    if t >= k then
-      acc
-    else
-      loop (t + 1) (acc * (g[i + t]!)[j]!)
-  termination_by k - t
-  decreasing_by
-    simp_wf
-    exact Termination.sub_succ_lt_sub (by assumption)
-  loop 0 1
-
-def prodDownRight (g : Array (Array Nat)) (i j k : Nat) : Nat :=
-  let rec loop (t acc : Nat) : Nat :=
-    if t >= k then
-      acc
-    else
-      loop (t + 1) (acc * (g[i + t]!)[j + t]!)
-  termination_by k - t
-  decreasing_by
-    simp_wf
-    exact Termination.sub_succ_lt_sub (by assumption)
-  loop 0 1
-
-def prodDownLeft (g : Array (Array Nat)) (i j k : Nat) : Nat :=
-  let rec loop (t acc : Nat) : Nat :=
-    if t >= k then
-      acc
-    else
-      loop (t + 1) (acc * (g[i + t]!)[j - t]!)
-  termination_by k - t
-  decreasing_by
-    simp_wf
-    exact Termination.sub_succ_lt_sub (by assumption)
-  loop 0 1
-
-def maxAdjacentProduct (g : Array (Array Nat)) (k : Nat) : Nat :=
-  let n := g.size
-  let m := if n == 0 then 0 else g[0]!.size
-  let rec loopI (i best : Nat) : Nat :=
-    if i >= n then
-      best
-    else
-      let rec loopJ (j best : Nat) : Nat :=
-        if j >= m then
-          best
-        else
-          let best1 :=
-            if j + k <= m then
-              let p := prodRight g i j k
-              if p > best then p else best
-            else
-              best
-          let best2 :=
-            if i + k <= n then
-              let p := prodDown g i j k
-              if p > best1 then p else best1
-            else
-              best1
-          let best3 :=
-            if i + k <= n && j + k <= m then
-              let p := prodDownRight g i j k
-              if p > best2 then p else best2
-            else
-              best2
-          let best4 :=
-            if i + k <= n && (k - 1) <= j then
-              let p := prodDownLeft g i j k
-              if p > best3 then p else best3
-            else
-              best3
-          loopJ (j + 1) best4
-      termination_by m - j
-      decreasing_by
-        simp_wf
-        exact Termination.sub_succ_lt_sub (by assumption)
-      loopI (i + 1) (loopJ 0 best)
-  termination_by n - i
-  decreasing_by
-    simp_wf
-    exact Termination.sub_succ_lt_sub (by assumption)
-  loopI 0 0
-
-
+/-- Scan each grid position and the four directions, as in the Python solver. -/
 def solve (grid : List (List Nat)) (k : Nat) : Nat :=
-  maxAdjacentProduct (gridToArray grid) k
+  (ProjectEulerStatements.Grid.scannedProducts grid 20 20 k).foldl max 0
 
-example : 26 * 63 * 78 * 14 = 1788696 := by
-  native_decide
 end ProjectEulerSolutions.P11

@@ -292,7 +292,7 @@
   solvers/eulersolve/49.py: 0.067
   solvers/49.c: 0.002
   solvers/eulersolve/49.cpp: 0.002
-  solvers/49.lean: "error: expected 296962999629, got 2975308629"
+  solvers/49.lean: 0.031
 50:
   solvers/50.py: 0.150
   solvers/eulersolve/50.py: 0.087

@@ -1,75 +1,39 @@
-import ProjectEulerStatements.P14
-import ProjectEulerSolutions.Termination.P14
+import ProjectEulerStatements.Lib.Collatz
+import ProjectEulerStatements.Lib.ArgMaximum
 namespace ProjectEulerSolutions.P14
+open ProjectEulerStatements.P14 ProjectEulerStatements.Collatz
 
-def collatzNext (n : Nat) : Nat :=
-  ProjectEulerStatements.P14.collatzStep n
+/-- A cache covers both small and large visited values. Zero denotes a miss. -/
+structure Cache where
+  values : Nat → Nat
+  valid : ValidCache values
 
-def collatzLength (n : Nat) : Nat :=
-  if n = 0 then
-    0
-  else if n = 1 then
-    1
+def initialCache : Cache := ⟨fun n => if n = 1 then 1 else 0, initialCache_valid⟩
+
+def store (cache : Cache) (n length : Nat) (correct : length = collatzLen n) : Cache :=
+  ⟨Function.update cache.values n length, by rw [correct]; exact cache.valid.update n⟩
+
+/-- Follow uncached links and cache their lengths while unwinding the path. -/
+def memoLength (n : Nat) (cache : Cache) : { result : Nat × Cache // result.1 = collatzLen n } :=
+  if zero : n = 0 then ⟨(0, cache), by simp [zero]⟩
+  else if one : n = 1 then ⟨(1, cache), by simp [one]⟩
+  else if hit : cache.values n ≠ 0 then
+    ⟨(cache.values n, cache), (cache.valid n).hit hit⟩
   else
-    1 + collatzLength (collatzNext n)
-termination_by ProjectEulerStatements.P14.collatzMeasure n
-decreasing_by
-  unfold collatzNext
-  exact ProjectEulerStatements.P14.collatzMeasure_decreases
-    (Nat.pos_of_ne_zero (by assumption)) (by assumption)
+    let suffix := memoLength (collatzStep n) cache
+    let length := suffix.val.1 + 1
+    have correct : length = collatzLen n := unwind_length n suffix.val.1 (by omega) one suffix.property
+    ⟨(length, store suffix.val.2 n length correct), correct⟩
+termination_by collatzMeasure n
+decreasing_by exact collatzMeasure_decreases (by omega) (by assumption)
 
-def collatzLengthMemo (n limit : Nat) (cache : Array Nat) : Nat × Array Nat :=
-  let rec loop (m : Nat) (path : List Nat) (cache : Array Nat) : Nat × Array Nat × List Nat :=
-    if m = 0 then
-      (0, cache, path)
-    else if m = 1 then
-      (1, cache, path)
-    else if m <= limit then
-      let cm := cache[m]!
-      if cm != 0 then
-        (cm, cache, path)
-      else
-        loop (collatzNext m) (m :: path) cache
-    else
-      loop (collatzNext m) (m :: path) cache
-  termination_by ProjectEulerStatements.P14.collatzMeasure m
-  decreasing_by
-    all_goals
-      unfold collatzNext
-      exact ProjectEulerStatements.P14.collatzMeasure_decreases
-        (Nat.pos_of_ne_zero (by assumption)) (by assumption)
-  let (len, cache1, path) := loop n [] cache
-  let rec propagate (path : List Nat) (len : Nat) (cache : Array Nat) : Nat × Array Nat :=
-    match path with
-    | [] => (len, cache)
-    | v :: vs =>
-        let len' := len + 1
-        let cache' := if v <= limit then cache.set! v len' else cache
-        propagate vs len' cache'
-  propagate path len cache1
+def scan : List Nat → Nat → Cache → Nat
+  | [], best, _ => best
+  | n :: rest, best, cache =>
+      let current := memoLength n cache
+      let previous := memoLength best current.val.2
+      scan rest (if previous.val.1 < current.val.1 then n else best) previous.val.2
 
-def longestCollatzUnder (limit : Nat) : Nat × Nat :=
-  let cache0 := (Array.replicate (limit + 1) 0).set! 1 1
-  let rec loop (n bestN bestLen : Nat) (cache : Array Nat) : Nat × Nat :=
-    if n >= limit then
-      (bestN, bestLen)
-    else
-      let (len, cache') := collatzLengthMemo n limit cache
-      let (bestN', bestLen') := if len > bestLen then (n, len) else (bestN, bestLen)
-      loop (n + 1) bestN' bestLen' cache'
-  termination_by limit - n
-  decreasing_by
-    simp_wf
-    exact Termination.sub_succ_lt_sub (by assumption)
-  loop 1 1 1 cache0
-
-
-def solve (limit : Nat) : Nat :=
-  (longestCollatzUnder limit).1
-
-example : collatzLength 1 = 1 := by
-  native_decide
-
-example : collatzLength 13 = 10 := by
-  native_decide
+/-- Include the supplied limit, matching the Python call to longest_collatz_under(limit+1). -/
+def solve (limit : Nat) : Nat := scan (List.range' 1 limit) 0 initialCache
 end ProjectEulerSolutions.P14

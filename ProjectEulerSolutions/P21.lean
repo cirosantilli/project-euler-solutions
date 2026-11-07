@@ -1,76 +1,35 @@
-import ProjectEulerStatements.P21
-import ProjectEulerSolutions.Termination.P21
+import ProjectEulerSolutions.Lib.P21DivisorSieve
+import ProjectEulerStatements.Lib.DivisorSumFactors
 namespace ProjectEulerSolutions.P21
+open ProjectEulerStatements.DivisorSumFactors ProjectEulerStatements.FactorDivisors
 
-def properDivisorSumsSieve (nMax : Nat) : Array Nat :=
-  let rec loopI (i : Nat) (arr : Array Nat) : Array Nat :=
-    if i > nMax / 2 then
-      arr
-    else
-      let rec loopJ (j : Nat) (arr : Array Nat) : Array Nat :=
-        if j > nMax then
-          arr
-        else
-          loopJ (j + i) (arr.set! j (arr[j]! + i))
-      termination_by 0
-      decreasing_by all_goals exact Termination.decreases
-      loopI (i + 1) (loopJ (i * 2) arr)
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  loopI 1 (Array.replicate (nMax + 1) 0)
+theorem strip_smaller (n : Nat) (large : 1 < n) : (strip n n.minFac).1 < n := by
+  have prime := Nat.minFac_prime (by omega : n ≠ 1)
+  have bound := strip_le n n.minFac (by omega) prime
+  have excluded := (strip_spec n n.minFac (by omega) prime).2.1
+  have different : (strip n n.minFac).1 ≠ n := by
+    intro same
+    rw [same] at excluded
+    exact excluded (Nat.minFac_dvd n)
+  omega
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def stripFactor (x p exp : Nat) : Nat × Nat :=
-  if x % p == 0 then
-    stripFactor (x / p) p (exp + 1)
-  else
-    (x, exp)
+/-- Factor the uncached partner and multiply the prime-power geometric sums. -/
+def sigmaFast (n : Nat) : Nat :=
+  if n ≤ 1 then n else
+    let factor := n.minFac
+    let removed := strip n factor
+    geometric factor removed.2 * sigmaFast removed.1
+termination_by n
+decreasing_by exact strip_smaller n (by omega)
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def properDivisorSumFactorization (n : Nat) : Nat :=
-  if n <= 1 then
-    0
-  else
-    let rec loop (x p sigma : Nat) : Nat :=
-      if p * p > x then
-        let sigma' := if x > 1 then sigma * (1 + x) else sigma
-        sigma' - n
-      else if x % p == 0 then
-        let (x', exp) := stripFactor x p 0
-        let term := (List.range (exp + 1)).foldl (fun acc k => acc + p ^ k) 0
-        loop x' (p + 2) (sigma * term)
-      else
-        loop x (p + 2) sigma
-    termination_by 0
-    decreasing_by all_goals exact Termination.decreases
-    let (x2, exp2) := stripFactor n 2 0
-    let sigma2 :=
-      if exp2 == 0 then 1 else (List.range (exp2 + 1)).foldl (fun acc k => acc + 2 ^ k) 0
-    loop x2 3 sigma2
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
+/-- Reuse the sieve within its allocated interval; compute a divisor sum for larger partners. -/
+def cachedSum (sums : Array Nat) (n : Nat) : Nat :=
+  if n < sums.size then sums[n]! else sigmaFast n - n
+
 def solve (limit : Nat) : Nat :=
-  let divsum := properDivisorSumsSieve (limit - 1)
-  let d := fun x => if x < divsum.size then divsum[x]! else properDivisorSumFactorization x
-  let rec loop (a total : Nat) : Nat :=
-    if a >= limit then
-      total
-    else
-      let b := d a
-      let total' := if b != a && d b == a then total + a else total
-      loop (a + 1) total'
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  loop 2 0
-
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-example : properDivisorSumFactorization 220 = 284 := by
-  native_decide
-
-example : properDivisorSumFactorization 284 = 220 := by
-  native_decide
+  let sums := P21DivisorSieve.compute (limit-1)
+  ((List.range' 1 (limit-1)).filter fun n =>
+    let partner := cachedSum sums n
+    decide (partner ≠ n ∧ cachedSum sums partner = n)).sum
 end ProjectEulerSolutions.P21

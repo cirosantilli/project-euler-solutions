@@ -1,40 +1,36 @@
-import Std
 import ProjectEulerStatements.P99
-import ProjectEulerSolutions.Termination.P99
 namespace ProjectEulerSolutions.P99
+open ProjectEulerSolutions.PowerIntervals
 
-def parseNat (s : String) : Nat :=
-  s.data.foldl (fun acc c => acc * 10 + (c.toNat - '0'.toNat)) 0
+/-- Sign normalization and common-exponent cancellation before adaptive interval refinement. -/
+def comparePositive (a : Nat) (m : Int) (b : Nat) (n : Int)
+    (ha : 0 < a) (hb : 0 < b) : Int :=
+  let m := if a = 1 then 0 else m
+  let n := if b = 1 then 0 else n
+  if m = 0 ∧ n = 0 then 0
+  else if m ≤ 0 ∧ 0 ≤ n then -1
+  else if 0 ≤ m ∧ n ≤ 0 then 1
+  else if a = b then integerComparison m n
+  else
+    let left := (if m < 0 then -m else m).toNat
+    let right := (if m < 0 then -n else n).toNat
+    (if m < 0 then -1 else 1) *
+      refine a (left / left.gcd right) b (right / left.gcd right) ha hb 16 (by decide)
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def parsePairs (text : String) : List (Nat × Nat) :=
-  let lines := text.splitOn "\n" |>.filter (fun ln => ln != "")
-  lines.map (fun ln =>
-    let parts := ln.splitOn ","
-    let b := parseNat (parts.getD 0 "0")
-    let e := parseNat (parts.getD 1 "0")
-    (b, e))
+def comparePowers (a : Nat) (m : Int) (b : Nat) (n : Int) : Int :=
+  if ha : 0 < a then if hb : 0 < b then comparePositive a m b n ha hb else 0 else 0
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def bestLineNumber (pairs : List (Nat × Nat)) : Nat :=
-  let rec loop (ps : List (Nat × Nat)) (idx bestIdx : Nat) (bestScore : Float) : Nat :=
-    match ps with
-    | [] => bestIdx
-    | (b, e) :: ps =>
-        let score := (Float.ofNat e) * (Float.log (Float.ofNat b))
-        if score > bestScore then
-          loop ps (idx + 1) idx score
-        else
-          loop ps (idx + 1) bestIdx bestScore
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  loop pairs 1 0 (-1.0)
+def scan : List (Nat × Int) → Nat → Nat → (Nat × Int) → Nat
+  | [], _, best, _ => best
+  | current :: rest, next, best, incumbent =>
+      if best = 0 ∨ 0 < comparePowers current.1 current.2 incumbent.1 incumbent.2 then
+        scan rest (next + 1) next current
+      else scan rest (next + 1) best incumbent
 
+def solve (pairs : List (Nat × Int)) : Nat := scan pairs 1 0 (1, 0)
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def solve (pairs : List (Nat × Nat)) : Nat :=
-  bestLineNumber pairs
+def parsePairs (text : String) : List (Nat × Int) :=
+  (text.splitOn "\n" |>.filter (· != "")).map fun line =>
+    let parts := line.splitOn ","
+    ((parts[0]?.getD "0").toNat?.getD 0, (parts[1]?.getD "0").toInt?.getD 0)
 end ProjectEulerSolutions.P99

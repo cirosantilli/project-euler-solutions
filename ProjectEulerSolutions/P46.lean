@@ -1,99 +1,39 @@
-import ProjectEulerStatements.P46
-import ProjectEulerSolutions.Termination.P46
+import ProjectEulerSolutions.Lib.PrimeTwiceSquareSuccessor
+import ProjectEulerSolutions.Lib.PrimeTwiceSquareSearch
 namespace ProjectEulerSolutions.P46
+open PrimeTwiceSquare PrimeTwiceSquareSuccessor
 
-def isPrimeWithList (n : Nat) (primes : List Nat) : Bool :=
-  if n < 2 then
-    false
-  else
-    let rec loop (ps : List Nat) : Bool :=
-      match ps with
-      | [] => true
-      | p :: ps =>
-          if p * p > n then
-            true
-          else if n % p == 0 then
-            false
-          else
-            loop ps
-    termination_by 0
-    decreasing_by all_goals exact Termination.decreases
-    loop primes
+/-- Check only square offsets; use the six-step trial primality test. -/
+def acceptsFast (after : Int) (n : Nat) : Bool :=
+  decide (after < (n : Int)) && oddComposite n && !certifiedFast n
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def lastOr (xs : List Nat) (default : Nat) : Nat :=
-  match xs.reverse with
-  | [] => default
-  | x :: _ => x
+theorem acceptsFast_correct (after : Int) (n : Nat) : acceptsFast after n = accepts after n := by
+  simp [acceptsFast, accepts, counterexample, certifiedFast_correct, Bool.and_assoc]
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def ensurePrimesUpTo (n : Nat) (primes : List Nat) : List Nat :=
-  let rec loop (candidate : Nat) (primes : List Nat) : List Nat :=
-    if lastOr primes 0 >= n then
-      primes
-    else
-      let primes := if isPrimeWithList candidate primes then primes ++ [candidate] else primes
-      loop (candidate + 2) primes
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  if lastOr primes 0 >= n then primes else loop (lastOr primes 0 + 2) primes
+/-- The witness is erased; execution scans odd candidates until a counterexample is found. -/
+def search (after : Int) (success : Success after) (index : Nat)
+    (before : index ≤ winnerIndex after success) : Nat :=
+  if found : acceptsFast after (value index) then value index
+  else search after success (index+1) (by
+    have different : index ≠ winnerIndex after success := by
+      intro same
+      have hit := winner_accepted after success
+      exact found (by simpa [acceptsFast_correct, answer, same] using hit)
+    omega)
+termination_by winnerIndex after success - index
+decreasing_by
+  have failed : ¬ acceptsFast after (value index) = true := by assumption
+  have different : index ≠ winnerIndex after success := by
+    intro same
+    have hit := winner_accepted after success
+    exact failed (by simpa [acceptsFast_correct, answer, same] using hit)
+  omega
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def sqrtIfSquare (n : Nat) : Nat :=
-  let rec loop (i : Nat) : Nat :=
-    if i * i > n then 0 else if i * i == n then i else loop (i + 1)
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  loop 1
+def solve (after : Int) (success : Success after) : Nat := search after success 0 (Nat.zero_le _)
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def canBeWritten (n : Nat) (primes : List Nat) : Bool :=
-  let primes := ensurePrimesUpTo n primes
-  let rec loop (ps : List Nat) : Bool :=
-    match ps with
-    | [] => false
-    | p :: ps =>
-        if p >= n then
-          false
-        else
-          let rem := n - p
-          if rem % 2 != 0 then
-            loop ps
-          else
-            let t := rem / 2
-            let s := sqrtIfSquare t
-            if s != 0 then
-              true
-            else
-              loop ps
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  loop primes
-
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def solve (limit : Nat) : Nat :=
-  let rec loop (n : Nat) (primes : List Nat) : Nat :=
-    if n >= limit then
-      0
-    else
-    let primes := ensurePrimesUpTo n primes
-    if !isPrimeWithList n primes && !canBeWritten n primes then
-      n
-    else
-      loop (n + 2) primes
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  loop 9 [2, 3]
-
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-example :
-    let primes := [2, 3]
-    [9, 15, 21, 25, 27, 33].all (fun x => canBeWritten x primes) = true := by
-  native_decide
+theorem defaultSuccess : Success 0 := by
+  refine ⟨2884, ?_⟩
+  apply accepts_of
+  · decide
+  · exact PrimeTwiceSquareSearch.winner_accepted
 end ProjectEulerSolutions.P46

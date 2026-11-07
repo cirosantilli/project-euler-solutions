@@ -1009,7 +1009,9 @@ def parse_other_results_table(lines: list[str]) -> dict[int, dict[str, str]]:
         if not entry_match:
             continue
         path_text = entry_match.group(1).strip()
-        cell = entry_match.group(2).strip()
+        cell = re.sub(r"\. link:[^\s]+\[\]", "", entry_match.group(2)).strip()
+        if cell.endswith(" s") and looks_numeric(cell[:-2]):
+            cell = cell[:-2]
         if not path_text or not cell:
             continue
         path_pid = parse_solver_id(Path(path_text))
@@ -1116,7 +1118,20 @@ def format_other_results_list(rows: dict[int, dict[str, str]]) -> list[str]:
             continue
         list_lines.append(f"* {pid}")
         for path in sorted(row_values, key=other_result_path_sort_key):
-            list_lines.append(f"** link:{path}[]: {row_values[path]}")
+            proof_paths = []
+            if path == f"solvers/{pid}.py":
+                proof_paths.append(f"solvers/p{pid}_nagini.py")
+            elif path == f"solvers/{pid}.lean":
+                proof_paths.append(f"ProjectEulerSolutions/Equiv/P{pid}.lean")
+            proof_links = "".join(
+                f". link:{proof_path}[]"
+                for proof_path in proof_paths
+                if (ROOT / proof_path).is_file()
+            )
+            value = row_values[path]
+            if looks_numeric(value):
+                value += " s"
+            list_lines.append(f"** link:{path}[]: {value}{proof_links}")
     return list_lines
 
 

@@ -1,62 +1,75 @@
-import ProjectEulerStatements.P47
-import ProjectEulerSolutions.Termination.P47
+import ProjectEulerSolutions.Lib.P47FactorSieve
+import ProjectEulerSolutions.Lib.ConsecutiveFactors
 namespace ProjectEulerSolutions.P47
+open ProjectEulerStatements.P47 ConsecutiveFactors P21DivisorSieve
+set_option Elab.async false
 
-def distinctPrimeFactorCounts (limit : Nat) : Array Nat :=
-  let counts := Array.replicate (limit + 1) 0
-  let rec loopP (p : Nat) (counts : Array Nat) : Array Nat :=
-    if p > limit then
-      counts
-    else
-      if counts[p]! == 0 then
-        let rec loopM (m : Nat) (counts : Array Nat) : Array Nat :=
-          if m > limit then
-            counts
-          else
-            loopM (m + p) (counts.set! m (counts[m]! + 1))
-        termination_by 0
-        decreasing_by all_goals exact Termination.decreases
-        loopP (p + 1) (loopM p counts)
-      else
-        loopP (p + 1) counts
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  loopP 2 counts
+/-- Scan the completed sieve once, retaining the current run length. -/
+def scan (k maximum next run : Nat) (cells : Array Nat) : Option Nat :=
+  if next ≤ maximum then
+    let updated := if cells[next]! = k then run+1 else 0
+    if updated = k then some (next-k+1)
+    else scan k maximum (next+1) updated cells
+  else none
+termination_by maximum+1-next
+decreasing_by omega
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-def firstConsecutiveWithKFactors (k runLen startLimit : Nat) : Nat :=
-  let rec loopLimit (limit : Nat) : Nat :=
-    let counts := distinctPrimeFactorCounts limit
-    let rec loopN (n streak : Nat) : Nat :=
-      if n > limit then
-        0
-      else if counts[n]! == k then
-        if streak + 1 == runLen then
-          n - runLen + 1
-        else
-          loopN (n + 1) (streak + 1)
-      else
-        loopN (n + 1) 0
-    termination_by 0
-    decreasing_by all_goals exact Termination.decreases
-    let found := loopN 2 0
-    if found != 0 then found else loopLimit (limit * 2)
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  loopLimit startLimit
+theorem scan_correct (k maximum next run : Nat) (positive : 0 < k)
+    (before : next ≤ lastIndex k) (invariant : run = streak (good k) next) :
+    scan k maximum next run (encode (maximum+1) numDistinctPrimeFactors) =
+      if lastIndex k ≤ maximum then some (least k) else none := by
+  rw [scan]
+  split
+  · rename_i inside
+    have get : (encode (maximum+1) numDistinctPrimeFactors)[next]! = numDistinctPrimeFactors next := by
+      simp [encode, show next < maximum+1 by omega]
+    rw [get]
+    have update : (if numDistinctPrimeFactors next = k then run+1 else 0) = streak (good k) (next+1) := by
+      simp [streak, good, invariant]
+    rw [update]
+    by_cases last : next = lastIndex k
+    · subst next
+      rw [streak_winner k positive, if_pos rfl, if_pos inside]
+      congr 1
+      have lower := least_lower k positive
+      simp only [lastIndex]
+      omega
+    · have earlier : next+1 < least k+k := by dsimp [lastIndex] at before last; omega
+      have shorter := streak_before k (next+1) earlier
+      rw [if_neg (by omega)]
+      exact scan_correct k maximum (next+1) _ positive (by omega) rfl
+  · rename_i done
+    rw [if_neg (by omega : ¬ lastIndex k ≤ maximum)]
+termination_by maximum+1-next
+decreasing_by omega
 
+theorem scan_initial (k maximum : Nat) (positive : 0 < k) :
+    scan k maximum 2 0 (P47FactorSieve.compute maximum) =
+      if lastIndex k ≤ maximum then some (least k) else none := by
+  rw [P47FactorSieve.compute_correct]
+  apply scan_correct _ _ _ _ positive
+  · have := least_lower k positive
+    dsimp [lastIndex]; omega
+  · exact (streak_two k positive).symm
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-example : firstConsecutiveWithKFactors 2 2 100 = 14 := by
-  native_decide
+theorem missing_bound (k maximum : Nat) (positive : 0 < k)
+    (missing : scan k maximum 2 0 (P47FactorSieve.compute maximum) = none) : maximum < lastIndex k := by
+  rw [scan_initial k maximum positive] at missing
+  split at missing
+  · contradiction
+  · omega
 
-example : firstConsecutiveWithKFactors 3 3 2000 = 644 := by
-  native_decide
+/-- Recompute the factor-count sieve at twice the bound after an unsuccessful scan. -/
+def search (k maximum : Nat) (positive : 0 < k) (nonzero : 0 < maximum) : Nat :=
+  match found : scan k maximum 2 0 (P47FactorSieve.compute maximum) with
+  | some answer => answer
+  | none => search k (2*maximum) positive (by omega)
+termination_by lastIndex k + 1 - maximum
+decreasing_by
+  have missing : scan k maximum 2 0 (P47FactorSieve.compute maximum) = none := by assumption
+  have := missing_bound k maximum positive missing
+  omega
 
-
-def solve (n : Nat) :=
-  let _ := ProjectEulerStatements.P47.exists_consecutive_with_n_factors n
-  firstConsecutiveWithKFactors n n (n + 10)
+def solve (k startLimit : Nat) (positive : 0 < k) (nonzero : 0 < startLimit) : Nat :=
+  search k startLimit positive nonzero
 end ProjectEulerSolutions.P47

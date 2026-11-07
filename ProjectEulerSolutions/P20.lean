@@ -1,5 +1,4 @@
 import ProjectEulerStatements.P20
-import ProjectEulerSolutions.Termination.P20
 namespace ProjectEulerSolutions.P20
 
 def digitSum (n : Nat) : Nat :=
@@ -13,9 +12,7 @@ def solve (n : Nat) : Nat :=
     else
       loop (k + 1) (acc * k)
   termination_by n + 1 - k
-  decreasing_by
-    simp_wf
-    exact Termination.loop_decreases (by assumption)
+  decreasing_by omega
   loop 2 1
 
 example : solve 10 = 27 := by

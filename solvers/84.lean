@@ -1,6 +1,3 @@
 import ProjectEulerSolutions.P84
 
-open ProjectEulerSolutions.P84
-
-def main : IO Unit := do
-  IO.println (solve 0)
+def main : IO Unit := IO.println (ProjectEulerSolutions.P84.solve 4 (by decide))

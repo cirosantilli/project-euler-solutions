@@ -11,9 +11,6 @@ OUTPUT = ROOT / "ProjectEulerSolutions.lean"
 
 IDENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
-# Kind of sad but apparently you can't have functions without arguments in Lean?
-CONST_EQUIV = {"33", "43", "53", "68", "90", "93", "97"}
-
 
 def module_name(stem: str) -> str:
     if IDENT_RE.match(stem):
@@ -41,39 +38,12 @@ def main() -> int:
 
     lines.append("")
 
+    # Preserve each theorem's actual domain, including proof arguments and the
+    # shared mathematical references used by the Python source proofs.
     for stem in lib_stems:
         if not stem.startswith("P") or not stem[1:].isdigit():
             continue
-        n = stem[1:]
-        lhs_expr = f"ProjectEulerStatements.P{n}.naive"
-        rhs_expr = f"ProjectEulerSolutions.P{n}.solve"
-        if n == "74":
-            lhs_expr = "@" + lhs_expr
-            rhs_expr = "@" + rhs_expr
-        # These equivalences apply only on the domains proved by their modules.
-        if n == "17":
-            lines.append(f"example (n : Nat) (bound : n ≤ 1000) : {lhs_expr} n = {rhs_expr} n :=")
-            lines.append("  ProjectEulerSolutions.P17.equiv n bound")
-            lines.append("")
-            continue
-        if n == "19":
-            lines.append("example (startYear endYear : Nat) (epoch : 1900 ≤ startYear)")
-            lines.append("    (ordered : startYear ≤ endYear) :")
-            start = "(ProjectEulerStatements.P19.firstOfYear startYear)"
-            end = "(ProjectEulerStatements.P19.lastOfYear endYear)"
-            lines.append(f"    {lhs_expr} {start} {end} =")
-            lines.append(f"      {rhs_expr} {start} {end} :=")
-            lines.append("  ProjectEulerSolutions.P19.equiv startYear endYear epoch ordered")
-            lines.append("")
-            continue
-        lines.append(f"example : {lhs_expr} = {rhs_expr} := by")
-        if n in CONST_EQUIV:
-            lines.append(f"  exact ProjectEulerSolutions.P{n}.equiv")
-        else:
-            lines.append("  apply (funext_iff).2")
-            lines.append(
-                f"  simpa [funext_iff] using ProjectEulerSolutions.P{n}.equiv"
-            )
+        lines.append(f"example := @ProjectEulerSolutions.{stem}.equiv")
         lines.append("")
 
     OUTPUT.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")

@@ -93,7 +93,8 @@ private theorem range_loop (program : Module) (name : String) (element : Expr) (
         (values ++ [encode first]) (garbage ++ extra) bound
       refine ⟨finalEnv, finalGarbage, ?_⟩
       apply BlockContinues.range_step (by simp [Calls.rangeContinues]; omega)
-      simpa only [Calls.loopContinuation, Calls.loopControl, Calls.loopControlStmt,
+      simpa only [Calls.loopContinuation, Calls.loopControl,
+        show Calls.loopControlStmt (.comprehensionAppend base.length element) = false from rfl,
         Bool.false_or, Bool.false_eq_true, if_false, List.range'_succ, List.map_cons,
         List.append_assoc, List.singleton_append, Int.natCast_add, Int.natCast_one] using emitted.append rest
 

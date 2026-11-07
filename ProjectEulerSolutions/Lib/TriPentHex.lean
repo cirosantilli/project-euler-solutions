@@ -1,11 +1,11 @@
 import ProjectEulerSolutions.Lib.PentagonalDiscriminant
+import ProjectEulerStatements.Lib.TriangularNumbers
 
 /-! The generic polygonal-number facts used to compare the two searches for problem 45. -/
 namespace ProjectEulerSolutions.TriPentHex
 
 set_option Elab.async false
 
-def triangular (n : Nat) : Nat := n*(n+1)/2
 def hexagonal (n : Nat) : Nat := n*(2*n-1)
 abbrev pentagonal := PentagonalDiscriminant.pentagonal
 
@@ -13,20 +13,6 @@ def isPent (x : Nat) : Bool := (List.range (x+1)).any fun n => decide (pentagona
 def isHex (x : Nat) : Bool := (List.range (x+1)).any fun n => decide (hexagonal n=x)
 def common (n : Nat) : Bool := isPent (triangular n) && isHex (triangular n)
 def hexTest (n : Nat) : Bool := PentagonalDiscriminant.discriminant (hexagonal n)
-
-/-- The division by two is exact for every nonnegative triangular index. -/
-theorem twice_triangular (n : Nat) : 2*triangular n=n*(n+1) := by
-  have parity : n%2=0 ∨ n%2=1 := by omega
-  have even : (n*(n+1))%2=0 := by
-    rcases parity with h | h <;> simp [Nat.mul_mod, Nat.add_mod, h]
-  have divided := Nat.mod_add_div (n*(n+1)) 2
-  simpa only [even, Nat.zero_add, triangular] using divided
-
-theorem triangular_strictMono : StrictMono triangular := by
-  intro a b less
-  have pa := twice_triangular a
-  have pb := twice_triangular b
-  nlinarith
 
 theorem hex_positive (n : Nat) (positive : 0<n) : 0<hexagonal n := by
   have bound : 0<2*n-1 := by omega
@@ -64,7 +50,7 @@ theorem hex_witness (n : Nat) : isHex (hexagonal n)=true :=
   hex_iff _ |>.mpr ⟨n, hex_index_le n, rfl⟩
 
 /-- A positive triangular number is hexagonal only at an odd index, with the same unique witness. -/
-theorem common_hex (index : Nat) (positive : 0<index) (accepted : common index=true) :
+theorem common_hex (index : Nat) (positive : 0 < index) (accepted : common index=true) :
     ∃ n, 0<n ∧ index=2*n-1 ∧ hexTest n=true := by
   obtain ⟨pent, hex⟩ := Bool.and_eq_true_iff.mp accepted
   obtain ⟨n, _, equal⟩ := (hex_iff (triangular index)).mp hex

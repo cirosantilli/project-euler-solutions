@@ -1,28 +1,11 @@
-import ProjectEulerStatements.P57
-import ProjectEulerSolutions.Termination.P57
+import ProjectEulerSolutions.Lib.SqrtConvergents
+
 namespace ProjectEulerSolutions.P57
 
+/-- The Python recurrence, with the finite range represented by a decreasing count. -/
 def countSqrt2Convergents (limit : Nat) : Nat :=
-  let rec loop (i : Nat) (p q : Nat) (cnt : Nat) : Nat :=
-    if i > limit then
-      cnt
-    else
-      let cnt := if (toString p).length > (toString q).length then cnt + 1 else cnt
-      loop (i + 1) (p + 2 * q) (p + q) cnt
-  termination_by 0
-  decreasing_by all_goals exact Termination.decreases
-  loop 1 3 2 0
+  SqrtConvergents.loop limit 3 2 0
 
+def solve (limit : Nat) : Nat := countSqrt2Convergents limit
 
-termination_by 0
-decreasing_by all_goals exact Termination.decreases
-example : countSqrt2Convergents 7 = 0 := by
-  native_decide
-
-example : countSqrt2Convergents 8 = 1 := by
-  native_decide
-
-
-def solve (limit : Nat) :=
-  countSqrt2Convergents limit
 end ProjectEulerSolutions.P57

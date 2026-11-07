@@ -2,11 +2,19 @@
 
 This audit covers the Python solver and reference interfaces for problems 1 through 100, their `Requires` annotations, default adapters, and the documented proof claims.
 
-Every Python solver for problems 1 through 100 has a current adjacent `.py.lean` source proof. The claims below retain their specified input domains, including supported divergence where generalized searches need not terminate. Problems 14 and 47 use the documented Collatz and consecutive-factor existence assumptions. The framework development notes below include unfinished extensions to broader custom-iterator domains; those extensions are outside the completed public Python contracts. Separate standalone Lean models retain their own completion status.
+Every Python solver for problems 1 through 100 has a current adjacent `.py.lean` source proof. The claims below retain their specified input domains, including supported divergence where generalized searches need not terminate. Problems 14 and 47 use the documented Collatz and consecutive-factor existence assumptions. The framework development notes below include unfinished extensions to broader custom-iterator domains; those extensions are outside the completed public Python contracts. The standalone Lean theorem domains and validation are described below.
 
 Validation with Lean 4.30.0 checked all 100 solver files, 99 distinct reference implementations, and the shared reference helper: 627 marker properties plus the adjacent manual proof files. Problem 67 reexports problem 18's reference. The axiom audit covered every theorem declared in the 100 public source-proof modules and its transitive dependencies, finding only standard Lean axioms and the two documented assumptions above.
 
 Prefer a meaningful argument shared by both implementations. A reference-only search limit changes an unbounded problem into a bounded one and is not an acceptable substitute. A mathematical bound derived from the inputs or the problem definition is acceptable. For a fixed problem without a useful parameter, retain `Equiv` and prefer structural proofs through shared mathematical models. A completed interpreter observation can establish termination; running out of observation fuel cannot.
+
+== Standalone Lean equivalence
+
+All 100 `ProjectEulerSolutions/Equiv/P<n>.lean` modules have checked proofs, linked beside their Lean benchmark entries. The aggregate preserves each theorem's actual domain, including explicit termination premises and references shared with the Python proofs. Shared mathematics lives in the statements library where both implementations need it; forwarding imports preserve the existing Python proof APIs.
+
+The transitive axiom audit finds no `sorryAx`. Problems 14 and 47 retain the documented Collatz and consecutive-factor assumptions. The five existing constant-result proofs for 33, 43, 53, 90, and 97 retain their `native_decide` dependencies. All other equivalence theorems use only standard Lean axioms. The old `Termination` modules have been removed; recursion uses structural descent or a decreasing measure at its definition.
+
+The theorem headers remain authoritative for domains. In particular, 27 verifies the fixed Python search, 37 requires exhaustion of the truncatable-prime tree, 46 and 51 require a successful search, 58 requires a positive spiral crossing, and 63 requires a numeral base of at least two. Default search premises are supplied by existing certificates. Problem 52 compares the unbounded sorted-digit and counter searches, including divergence when no positive witness exists. Problem 62 shares Python's unbounded digit-width search and compares partial results for every signed class size, including absent classes. Problem 96 compares the two Sudoku search orders on the validated input domain.
 
 == Reference interfaces corrected
 
