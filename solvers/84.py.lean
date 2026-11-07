@@ -1,4 +1,4 @@
-import solvers.«84.py.lean.d».StationaryResult
+import solvers.«84.py.lean.d».SolveResult
 
 namespace solvers.«84».encode_state
 open FormalSW.PyAst HeapCalls
@@ -51,3 +51,18 @@ theorem «Supported» (sides : Nat) (positive : 0 < sides) :
   («Returns» sides positive).supported
 
 end solvers.«84».build_transition
+
+namespace solvers.«84».solve
+open FormalSW.PyAst
+
+theorem «Returns» (sides : Nat) (positive : 0 < sides) (heap : Mutable.Heap := [])
+    (globals : Mutable.Globals := []) :
+    (HeapMemoCalls.call program "solve" [.scalar (.int sides)] heap globals).Returns :=
+  (result sides positive heap globals).returns
+
+theorem «Supported» (sides : Nat) (positive : 0 < sides) (heap : Mutable.Heap := [])
+    (globals : Mutable.Globals := []) :
+    (HeapMemoCalls.call program "solve" [.scalar (.int sides)] heap globals).Supported :=
+  («Returns» sides positive heap globals).supported
+
+end solvers.«84».solve
