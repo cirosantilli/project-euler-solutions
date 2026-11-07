@@ -1,5 +1,4 @@
-import solvers.«93.py.lean.d».ResultAgreement
-import solvers.«93.py.lean.d».Consecutive
+import solvers.«93.py.lean.d».Equivalence
 
 namespace solvers.«93».rational
 open FormalSW.PyAst

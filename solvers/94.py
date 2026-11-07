@@ -4,9 +4,6 @@ from __future__ import annotations
 from typing import List, Tuple
 
 
-LIMIT = 1_000_000_000
-
-
 def triangle_area_isosceles(a: int, b: int) -> int:
     """
     Isosceles triangle with equal sides a,a and base b.
@@ -62,4 +59,4 @@ if __name__ == "__main__":
     # Check first few perimeters
     assert generate_almost_equilateral_perimeters(1000) == [16, 50, 196, 722]
 
-    print(solve(LIMIT))
+    print(solve(1_000_000_000))

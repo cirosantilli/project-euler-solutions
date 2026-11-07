@@ -3,6 +3,10 @@ from typing import Final
 
 
 def solve() -> int:
+    """
+    @formalsw: Py from project_euler_statements.p97 import naive
+    @formalsw: Equiv(naive)
+    """
     MOD: Final[int] = 10**10
     # Compute (28433 * 2^7830457 + 1) mod 10^10
     return (28433 * pow(2, 7830457, MOD) + 1) % MOD

@@ -28,6 +28,11 @@ def blue_red_for_total_limit(limit: int) -> tuple[int, int, int]:
 
 
 def solve(limit: int) -> int:
+    """
+    @formalsw: Py from project_euler_statements.p100 import naive
+    @formalsw: Equiv(naive)
+    @formalsw: Returns
+    """
     return blue_red_for_total_limit(limit)[0]
 
 

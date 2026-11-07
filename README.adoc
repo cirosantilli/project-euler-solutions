@@ -609,6 +609,12 @@ Problem 75 has structural source termination and equivalence proofs for every si
 
 Problem 76 has structural source termination and equivalence proofs for every signed integer input. The recursive reference preserves an exact cache keyed by both the remaining sum and maximum part. The optimized proof executes list allocation, initialization, ascending part and sum loops, in-place additions, and the final indexed read. A coin-change frontier connects the complete table to the unordered partition recurrence. Negative inputs return zero, and zero counts the empty partition. Caller heap objects are preserved. The proofs use only standard Lean axioms and do not evaluate either whole program. The standalone Lean array solver shares the signed interface and has proved termination and equivalence.
 
+Problem 93 has structural source termination and equivalence proofs for every signed maximum operand, including the omitted default argument. Exact expression-tree enumeration agrees with memoized canonical rational-pair reduction. The optimized proof covers every set traversal order, positive-integer collection, consecutive-run scoring, and first-on-tie winner selection. Bounds below three return an empty tuple. Caller objects are preserved, and the proofs use only standard Lean axioms without evaluating either complete program.
+
+Problem 97 has structural source equivalence for its fixed expression. The reference's repeated modular multiplication agrees with Python's three-argument `pow`; the proof does not evaluate the complete programs. Both terminate, and the reference helper also covers negative exponents and signed nonzero moduli. The proofs use only standard Lean axioms.
+
+Problem 100 has structural source termination and equivalence for every signed total-disc threshold. The optimized Pell coordinates and reference disc counts follow the same increasing recurrence. Both stop when the total strictly exceeds the threshold, without an iteration budget or whole-program evaluation. The proofs use only standard Lean axioms.
+
 The proof-domain cleanup and remaining restrictions are tracked in link:proof-domain-audit.adoc[]. Fixed-input functions should retain `Equiv`, using structural source proofs instead of whole-program computation; meaningful shared parameters are preferred whenever the problem admits them.
 
 ====== Problem 14: Collatz termination
@@ -783,14 +789,14 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/90.py[90.py] | link:solvers/90.md[90.md] | link:solvers/90.py.lean[90.py.lean] | 0.155 | 1217 |
 | link:solvers/91.py[91.py] | link:solvers/91.md[91.md] | link:solvers/91.py.lean[91.py.lean] | 0.113 | 14234 |
 | link:solvers/92.py[92.py] | link:solvers/92.md[92.md] |  | 0.231 | 8581146 |
-| link:solvers/93.py[93.py] | link:solvers/93.md[93.md] |  | 1.740 | 1258 |
+| link:solvers/93.py[93.py] | link:solvers/93.md[93.md] | link:solvers/93.py.lean[93.py.lean] | 1.740 | 1258 |
 | link:solvers/94.py[94.py] | link:solvers/94.md[94.md] |  | 0.060 | 518408346 |
 | link:solvers/95.py[95.py] | link:solvers/95.md[95.md] |  | 0.370 | 14316 |
 | link:solvers/96.py[96.py] | link:solvers/96.md[96.md] |  | 0.175 | 24702 |
-| link:solvers/97.py[97.py] | link:solvers/97.md[97.md] |  | 0.117 | 8739992577 |
+| link:solvers/97.py[97.py] | link:solvers/97.md[97.md] | link:solvers/97.py.lean[97.py.lean] | 0.117 | 8739992577 |
 | link:solvers/98.py[98.py] | link:solvers/98.md[98.md] |  | 0.226 | 18769 |
 | link:solvers/99.py[99.py] | link:solvers/99.md[99.md] |  | 0.064 | 709 |
-| link:solvers/100.py[100.py] | link:solvers/100.md[100.md] |  | 0.116 | 756872327473 |
+| link:solvers/100.py[100.py] | link:solvers/100.md[100.md] | link:solvers/100.py.lean[100.py.lean] | 0.116 | 756872327473 |
 | link:solvers/101.py[101.py] | link:solvers/101.md[101.md] |  | 0.134 | 37076114526 |
 | link:solvers/102.py[102.py] | link:solvers/102.md[102.md] |  | 0.107 | 228 |
 | link:solvers/103.py[103.py] | link:solvers/103.md[103.md] |  | 1.412 | 20313839404245 |

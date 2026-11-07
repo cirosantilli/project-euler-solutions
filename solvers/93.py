@@ -93,6 +93,11 @@ def consecutive_length(digits: tuple[int, ...]) -> tuple[int, set[int]]:
 
 
 def solve(max_digit: int = 9) -> tuple[int, ...]:
+    """
+    @formalsw: Py from project_euler_statements.p93 import naive
+    @formalsw: Equiv(naive)
+    @formalsw: Returns
+    """
     best_length = -1
     best_digits = ()
     for digits in combinations(range(max_digit + 1), 4):
