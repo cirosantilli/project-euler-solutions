@@ -1,4 +1,5 @@
-import solvers.«98.py.lean.d».GroupCoverage
+import solvers.«98.py.lean.d».Lengths
+import solvers.«98.py.lean.d».SquareCoverage
 
 namespace solvers.«98».pattern_signature
 open FormalSW.PyAst HeapCalls
@@ -42,6 +43,21 @@ theorem pair_result (word digits : String) (heap : Mutable.Heap) :
     simp [keys]
 
 end solvers.«98».pattern_signature
+
+namespace solvers.«98».squares_with_length
+open FormalSW.PyAst HeapCalls
+open pattern_signature (program number)
+
+theorem «Returns» (width : Nat) (positive : 0 < width) :
+    (HeapCalls.call program "squares_with_length" [number width] []).Returns := by
+  obtain ⟨_, _, _, returned, _⟩ := result width positive []
+  exact returned.returns
+
+theorem «Supported» (width : Nat) (positive : 0 < width) :
+    (HeapCalls.call program "squares_with_length" [number width] []).Supported :=
+  («Returns» width positive).supported
+
+end solvers.«98».squares_with_length
 
 namespace solvers.«98».mapping
 open FormalSW.PyAst HeapCalls ProjectEulerSolutions.AnagramSquares
