@@ -21,6 +21,8 @@ def generate_almost_equilateral_perimeters(limit: int) -> List[int]:
     Generates perimeters of almost equilateral triangles (a,a,a±1)
     with integral sides and integral area, perimeter <= limit.
     Uses solutions to x^2 - 3y^2 = 4.
+
+    @formalsw: Returns
     """
     # First non-degenerate solution to x^2 - 3y^2 = 4 that yields a valid triangle:
     # (x,y) = (14,8) -> a=5, b=6, perimeter=16
@@ -49,6 +51,9 @@ def generate_almost_equilateral_perimeters(limit: int) -> List[int]:
 
 
 def solve(limit: int) -> int:
+    """
+    @formalsw: Returns
+    """
     return sum(generate_almost_equilateral_perimeters(limit))
 
 
