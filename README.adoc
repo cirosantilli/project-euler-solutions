@@ -506,7 +506,11 @@ Once that is working, you can verify proofs for link:solvers/1.py[] with:
 data/project-euler-statements/formalsw/formalsw solvers/1.py
 ----
 
-The proofs of FormalSW statements such as `Equiv` as present in .py.lean files present next to each .py file, e.g.: link:solvers/1.py.lean[]. These files are very complicated for humans to understand, but that's fine, we just have LLMs deal with it for us, and Lean checks that the required proof checks out. When proofs are larger and this can make compilation run faster, we also by convention create a `solvers/N.py.lean.d` diretory from which `py.lean` can import partial results from, see e.g. link:
+The proofs of FormalSW statements such as `Equiv` as present in .py.lean files present next to each .py file, e.g.: link:solvers/1.py.lean[]. These files are very complicated for humans to understand, but that's fine, we just have LLMs deal with it for us, and Lean checks that the required proof checks out.
+
+When proofs are larger and this can make compilation run faster, we also by convention create a `solvers/N.py.lean.d` diretory from which `py.lean` can import partial results from, see e.g. link:
+
+Reusable mathematical concepts and lemmas are stored under link:ProjectEulerSolutions/Lib/[] so that they may be used across multiple programming languages and problems as needed.
 
 [[formalization-assumptions]]
 ===== Formalization assumptions and research
