@@ -1,3 +1,4 @@
+import solvers.«11.py.lean.d».RuntimeCost
 import «.formalsw».solvers.«11.py.ast»
 import data.«project-euler-statements».data.py.project_euler_statements.«p11.py»
 import ProjectEulerStatements.P11
@@ -9,7 +10,6 @@ namespace solvers.«11»
 open FormalSW.PyAst
 open ProjectEulerStatements.Grid
 private abbrev program := Solvers.P11Ast.module
-abbrev GridView := data.«project-euler-statements».data.py.project_euler_statements.p11.GridView
 
 /-- Direct Python indexing agrees with the padded mathematical accessor whenever
 both coordinates are inside the represented grid. -/
@@ -315,14 +315,6 @@ theorem requires_solve_0_supported (heap : Mutable.Heap) (grid : Nat) (k : Int)
     (HeapCalls.evaluate program (countEnv k) Solvers.P11Ast.requires_solve_0 heap).Supported :=
   Execution.supported_of_finishes (count_condition heap k).finishes
 
-/-- The four direction pairs are Python tuples stored in a Python list. -/
-structure DirectionView (heap : Mutable.Heap) (address : Nat) (choices : List Direction) where
-  pairs : List Nat
-  found : heap[address]? = some (.list (pairs.map Mutable.Value.ref))
-  size : pairs.length = choices.length
-  contents : ∀ i (within : i < pairs.length), heap[pairs[i]]? = some (.tuple
-    [.scalar (.int (choices[i]'(by omega)).rowStep), .scalar (.int (choices[i]'(by omega)).columnStep)])
-
 private theorem directions.loop (heap : Mutable.Heap) (address table : Nat)
     (grid : List (List Nat)) (view : GridView heap address grid) (choices : List Direction)
     (tableView : DirectionView heap table choices) (columns r c n position : Nat)
@@ -532,20 +524,6 @@ private theorem rows.loop (heap : Mutable.Heap) (address table : Nat)
 termination_by grid.length - position
 decreasing_by omega
 
-private def pairObject (direction : Direction) : Mutable.Object :=
-  .tuple [.scalar (.int direction.rowStep), .scalar (.int direction.columnStep)]
-
-private def directionObjects (heap : Mutable.Heap) : Mutable.Heap :=
-  directions.map pairObject ++ [.list ([heap.length, heap.length + 1, heap.length + 2, heap.length + 3].map Mutable.Value.ref)]
-
-private def directionView (heap : Mutable.Heap) :
-    DirectionView (heap ++ directionObjects heap) (heap.length + 4) directions := by
-  refine ⟨[heap.length, heap.length + 1, heap.length + 2, heap.length + 3], ?_, rfl, ?_⟩
-  · simp [directionObjects, directions]
-  · intro i within
-    have bound : i < 4 := within
-    interval_cases i <;> simp [directionObjects, directions, pairObject]
-
 private abbrev directionExpression : Expr := .list
   [.tuple [.constant (.int 0), .constant (.int 1)],
     .tuple [.constant (.int 1), .constant (.int 0)],
@@ -579,9 +557,6 @@ private theorem directions.allocate (heap : Mutable.Heap) (env : HeapCalls.Env) 
       (by simp : ([.scalar (.int 1), .scalar (.int (-1))] : List Mutable.Value) ≠ []))
   simpa [directionObjects, directions, List.append_assoc] using
     HeapCalls.Evaluates.list (.cons first (.cons second (.cons third (.cons fourth .nil))))
-
-private abbrev directionAnnotation : Expr :=
-  .subscript (.name "list") (.subscript (.name "tuple") (.tuple [.name "int", .name "int"]))
 
 /-- The optimized source returns the cell-first mathematical maximum, extending
 only the private heap with its direction table. -/
@@ -627,12 +602,7 @@ theorem solve.exact (heap : Mutable.Heap) (address : Nat)
       (heap ++ directionObjects heap) finalEnv (heap ++ directionObjects heap) :=
     HeapCalls.BlockContinues.for_range (.cons (HeapCalls.Evaluates.lookup rfl) .nil) rfl scan
   apply HeapCalls.BlockReturns.function (args := args)
-    (body := [.expr (.constant (.string "\n    @formalsw: Py from project_euler_statements.p11 import naive\n    @formalsw: Requires(k >= 0)\n    @formalsw: Requires(is_euler_grid(grid))\n    @formalsw: Equiv(naive)\n    ")),
-      .assign [.name "n"] (.builtinCall .len [.name "grid"]),
-      .assign [.name "m"] (.ifExp (.name "n") (.builtinCall .len [.subscript (.name "grid") (.constant (.int 0))]) (.constant (.int 0))),
-      .annAssign (.name "directions") directionAnnotation (some directionExpression),
-      .assign [.name "best"] (.constant (.int 0)),
-      .forIn (.name "i") (.call (.name "range") [.name "n"]) columnLoop [], .return (.name "best")]) rfl rfl
+    (body := ((findFunctionIn program.body "solve").getD ([], [])).2) rfl rfl
   apply HeapCalls.BlockReturns.assign getLength
   apply HeapCalls.BlockReturns.assign getWidth
   apply HeapCalls.BlockContinues.returns (HeapCalls.BlockContinues.annAssign (directions.allocate heap withColumns))
@@ -928,5 +898,24 @@ theorem solve.«Supported» :
     exact (solve.exact heap address grid view 20 k (by omega) rectangle).returns.supported
   · intro heap address k valid typed _ _
     exact data.«project-euler-statements».data.py.project_euler_statements.p11.naive.«Supported» heap address k valid typed
+
+theorem solve.«BigO(1, n = abs(k) + 1)» :
+    HeapCalls.Runtime.IsBigO .word program "solve"
+      (fun input : List (List Int) × Int => [.ref 0, .scalar (.int input.2)])
+      (fun input : List (List Int) × Int => HeapCalls.Runtime.NestedIntList.heap input.1)
+      (fun input =>
+        HeapCalls.Condition program (countEnv input.2) Solvers.P11Ast.requires_solve_0
+          (HeapCalls.Runtime.NestedIntList.heap input.1) ∧
+        HeapCalls.Condition program (gridEnv 0) Solvers.P11Ast.requires_solve_1
+          (HeapCalls.Runtime.NestedIntList.heap input.1))
+      (fun input : List (List Int) × Int => input.2.natAbs+1) (fun _ => 1) := by
+  refine ⟨1783572, 1, fun input requires _ => ?_⟩
+  obtain ⟨rows, k⟩ := input
+  have nonnegative : 0 ≤ k := by
+    simpa using (count_condition (HeapCalls.Runtime.NestedIntList.heap rows) k).condition_iff.mp requires.1
+  lift k to Nat using nonnegative
+  obtain ⟨grid, ⟨view⟩, size, rectangle⟩ := grid_domain_of_condition _ 0
+    (HeapCalls.Runtime.NestedIntList.typed rows) requires.2
+  exact runtimeCost.source_bound _ 0 grid view k size rectangle
 
 end solvers.«11»

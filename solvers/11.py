@@ -54,6 +54,7 @@ def solve(grid: list[list[int]], k: int = 4) -> int:
     @formalsw: Requires(k >= 0)
     @formalsw: Requires(is_euler_grid(grid))
     @formalsw: Equiv(naive)
+    @formalsw: BigO(1, n = abs(k) + 1)
     """
     n = len(grid)
     m = len(grid[0]) if n else 0
