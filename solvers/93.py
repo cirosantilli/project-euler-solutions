@@ -1,23 +1,4 @@
 #!/usr/bin/env python
-"""
-@formalsw: theorem rational_source (numerator denominator : Int)
-  (heap : FormalSW.PyAst.Mutable.Heap) (globals : FormalSW.PyAst.Mutable.Globals) :
-  denominator ≠ 0 → solvers.«93».rational.Verified numerator denominator heap globals
-@formalsw: theorem pair_results_source (a b : ProjectEulerSolutions.RationalPair.Pair)
-  (left right : Nat) (heap : FormalSW.PyAst.Mutable.Heap) (globals : FormalSW.PyAst.Mutable.Globals) :
-  0 < a.2 → 0 < b.2 →
-    heap[left]? = some (ProjectEulerSolutions.RationalPair.Heap.object a) →
-      heap[right]? = some (ProjectEulerSolutions.RationalPair.Heap.object b) →
-        solvers.«93».pair_results.Verified a b left right heap globals
-@formalsw: theorem recursive_base_source (heap : FormalSW.PyAst.Mutable.Heap)
-  (globals : FormalSW.PyAst.Mutable.Globals) : solvers.«93».all_results.BaseCasesVerified heap globals
-@formalsw: theorem recursive_source (heap : FormalSW.PyAst.Mutable.Heap)
-  (globals : FormalSW.PyAst.Mutable.Globals) : solvers.«93».all_results.RecursiveCallsVerified heap globals
-@formalsw: theorem all_results_source (digits : List Int) (address : Nat)
-  (heap : FormalSW.PyAst.Mutable.Heap) (globals : FormalSW.PyAst.Mutable.Globals) :
-  heap[address]? = some (.tuple (digits.map ProjectEulerSolutions.RationalPair.Heap.number)) →
-    solvers.«93».all_results.Verified digits address heap globals
-"""
 from __future__ import annotations
 
 from itertools import combinations

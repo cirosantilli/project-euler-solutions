@@ -1,10 +1,4 @@
 #!/usr/bin/env python
-"""
-@formalsw: theorem solve_list_source_equivalence
-  (heap : FormalSW.PyAst.Mutable.Heap) (address : Nat) (attempts : List String) :
-  heap.Valid → heap[address]? = some (.list (attempts.map (fun s => .scalar (.string s)))) →
-    solvers.«79».source_equivalence.Verified heap address
-"""
 from __future__ import annotations
 
 import heapq
