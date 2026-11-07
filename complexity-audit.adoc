@@ -59,9 +59,9 @@ The following implementations have runtime proofs following their generated Pyth
 |link:data/project-euler-statements/data/py/project_euler_statements/p13.py.lean.d/RuntimeCost.lean[O(n)]
 |n is list length plus the sum of integer bit lengths. Fixed arithmetic; the optimized source costs at most `40n+101`, and the reference at most `80n+341`. Both cover signed elements with a nonnegative sum. The reference also covers negative slice stops. Text operations, list growth, slicing, reversal and digit reconstruction are charged by size. No asymptotic improvement claimed.
 |14
-|Pending
+|link:solvers/14.py.lean.d/RuntimeCost.lean[O((W(n)+1)²)]
 |link:data/project-euler-statements/data/py/project_euler_statements/p14.py.lean.d/RuntimeCost.lean[O((W(n)+1)²)]
-|W(n) = n+1 + the sum of Collatz chain lengths for starts 0 through n, defined in link:data/project-euler-statements/data/lean/ProjectEulerStatements/Lib/CollatzWork.lean[]. The reference bound includes actual memoized recursion, cache hits and insertions, and the maximum-selection scan, with collision-chain dictionary costs and fixed arithmetic. It uses the existing Collatz conjecture and makes no polynomial-in-n claim. The optimized runtime proof remains unfinished.
+|W(n) = n+1 + the sum of Collatz chain lengths for starts 0 through n, defined in link:data/project-euler-statements/data/lean/ProjectEulerStatements/Lib/CollatzWork.lean[]. The reference bound includes actual memoized recursion, cache hits and insertions, and the maximum-selection scan, with collision-chain dictionary costs and fixed arithmetic. The optimized bound also covers small-cache allocation, forward probes, path appends, reverse cache writes and the outer search. Both use the existing Collatz conjecture; neither establishes a polynomial bound in n or an asymptotic improvement.
 |15
 |link:solvers/15.py.lean.d/RuntimeCost.lean[O(n)]
 |link:data/project-euler-statements/data/py/project_euler_statements/p15.py.lean.d/RuntimeCost.lean[O(n)]
@@ -130,17 +130,16 @@ With this project's Lean/formalsw dependencies installed:
 
 [source,sh]
 ----
-python3 tools/check_complexity.py 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20
-python3 tools/check_complexity.py --reference-only 14
+python3 tools/check_complexity.py 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
 ----
 
-The link:tools/check_complexity.py[checker] regenerates the selected optimized and reference ASTs using formalsw's existing frontend, recompiles them, and checks the cost library, regressions, and source proofs through a shared process lock, with one Lean thread, a 2.5 GiB Lean heap limit and a watchdog that stops checks above 3 GiB resident memory. It does not depend on the earlier generated AST binaries being fresh. It does not rebuild the full Mathlib dependency tree. It also audits the exported proof theorems, accepting Lean’s standard `propext`, `Classical.choice` and `Quot.sound` axioms. Only problem 14 may additionally use the existing `ProjectEulerStatements.P14.collatzConjecture`; the generic memoization rules are audited separately without that exception. Pass problem numbers to check a subset, for example `python3 tools/check_complexity.py 1 3 9`.
+The link:tools/check_complexity.py[checker] regenerates the selected optimized and reference ASTs using formalsw's existing frontend, recompiles them, and checks the cost library, regressions, and source proofs through a shared process lock, with one Lean thread, a 2.5 GiB Lean heap limit and a watchdog that stops checks above 3 GiB resident memory. It does not depend on the earlier generated AST binaries being fresh. It does not rebuild the full Mathlib dependency tree. It also audits the exported proof theorems, accepting Lean’s standard `propext`, `Classical.choice` and `Quot.sound` axioms. Only problem 14 may additionally use the existing `ProjectEulerStatements.P14.collatzConjecture`; the generic memoization and mutable-collection rules are audited separately without that exception. Pass problem numbers to check a subset, for example `python3 tools/check_complexity.py 1 3 9`.
 
-The checked runtime pairs share arithmetic and scalar-operation policies. Problem 4 uses `Calls` for the optimized string algorithm and `HeapCalls` for the reference's digit lists, with collection work charged in both. Problems 7 and 10 use `HeapCalls` for their bytearray sieves and `Calls` for their references; both charge the square-root library work. Both P8 functions use `HeapCalls`, with list length as their size and bounds uniform over all list contents and valid window widths. Both P9 implementations use `HeapCalls`, charging set operations, sorting, tuple construction and unpacking. Problems 11, 12, 13, 16, 17, 18, 19 and 20 also use `HeapCalls` on both sides. The other completed pairs use `Calls` on both sides. The earlier weighted P8 pair uses `HeapCalls` on both sides; its allocation costs, and the earlier transition counts, remain partial models. Existing functional-equivalence proofs remain separate.
+The checked runtime pairs share arithmetic and scalar-operation policies. Problem 4 uses `Calls` for the optimized string algorithm and `HeapCalls` for the reference's digit lists, with collection work charged in both. Problems 7 and 10 use `HeapCalls` for their bytearray sieves and `Calls` for their references; both charge the square-root library work. Both P8 functions use `HeapCalls`, with list length as their size and bounds uniform over all list contents and valid window widths. Both P9 implementations use `HeapCalls`, charging set operations, sorting, tuple construction and unpacking. Problems 11, 12, 13, 16, 17, 18, 19 and 20 also use `HeapCalls` on both sides. Problem 14 uses `HeapCalls` for its explicit mutable caches and `MemoCalls` for the cached recursive reference. The other completed pairs use `Calls` on both sides. The earlier weighted P8 pair uses `HeapCalls` on both sides; its allocation costs, and the earlier transition counts, remain partial models. Existing functional-equivalence proofs remain separate.
 
-== Extending coverage to 11–20
+== Coverage for 11–20
 
-Problems 11–13 and 15–20 have runtime proofs on both sides. Problem 14 now has a reference runtime proof; its optimized runtime proof remains unfinished. The Collatz-dependent measure above and the existing conjecture do not establish a polynomial bound in the starting limit.
+Problems 11–20 have runtime proofs on both sides. The Collatz-dependent measure above and the existing conjecture do not establish a polynomial bound in the starting limit.
 
 == Size and cost conventions for the audit
 

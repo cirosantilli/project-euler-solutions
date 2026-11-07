@@ -90,7 +90,7 @@ def main():
     lean = subprocess.check_output(
         ["lake", "env", "which", "lean"], text=True, env=environment
     ).strip()
-    for name in ("ExecutionCost", "ExecutionCostDomain", "CallsCost", "CallsCostLoops", "CallsCostControl", "HeapCallsCost", "HeapCallsCostLists", "ScalarSortCost", "WeightedExecutionCost", "AllocationCost", "HeapReadCost", "BufferCost", "BufferCostSlice", "RuntimeCost", "PrimitiveWork", "PrimitiveWorkBounds", "CallsRuntimeCost", "CallsRuntimeCostLoops", "CallsRuntimeCostControl", "CallsRuntimeCostFunctions", "CallsRuntimeCostScaled", "CallsRuntimeCostBitBounds", "CallsRuntimeCostNumberBounds", "CallsRuntimeCostLinking", "CallsRuntimeCostBlocks", "DecimalWorkBounds", "IntegerListWork", "FactorialWorkBounds", "CallsRuntimeCostStrings", "CallsRuntimeCostRanges", "LcmRuntimeCost", "FibonacciRuntimeCost", "HeapMapWork", "HeapRecordWork", "HeapSetWork", "HeapSortWork", "HeapBufferWork", "HeapSequenceWork", "DynamicArrayWork", "AmortizedRuntimeCost", "HeapRuntimeCost", "HeapRuntimeInputs", "HeapRuntimeCostLists", "HeapRuntimeCostControl", "HeapRuntimeCostRecords", "HeapRuntimeCostLibrary", "HeapRuntimeCostRanges", "HeapRuntimeCostBuffers", "HeapRuntimeCostBufferLoops", "HeapRuntimeCostReturns", "HeapRuntimeCostPrimitives", "HeapRuntimeCostExtrema", "HeapRuntimeCostSequences", "HeapRuntimeCostStrings", "HeapRuntimeCostComprehensions", "HeapRuntimeCostRangeComprehensions", "HeapRuntimeCostLoopControl", "HeapRuntimeCostListCopies", "HeapRuntimeCostClasses", "HeapRuntimeCostListExtension", "HeapRuntimeCostSetup", "HeapRuntimeCostListLoops", "HeapRuntimeCostUnpacking", "HeapRuntimeCostSumGenerators", "HeapRuntimeCostRangeSums", "HeapRuntimeCostSums", "DecimalSumRuntimeCost", "HeapRuntimeCostSets", "HeapRuntimeCostComparisons", "HeapRuntimeCostSorting", "HeapRuntimeCostMembership", "HeapRuntimeCostBooleans", "HeapRuntimeCostDictionaries", "HeapRuntimeCostScalarPairs", "HeapRuntimeCostDictionaryWrites", "MemoRuntimeCost", "MemoRuntimeCostRules", "MemoRuntimeCostFunctions", "MemoRuntimeCostExpressions", "MemoRuntimeCostExtrema"):
+    for name in ("ExecutionCost", "ExecutionCostDomain", "CallsCost", "CallsCostLoops", "CallsCostControl", "HeapCallsCost", "HeapCallsCostLists", "ScalarSortCost", "WeightedExecutionCost", "AllocationCost", "HeapReadCost", "BufferCost", "BufferCostSlice", "RuntimeCost", "PrimitiveWork", "PrimitiveWorkBounds", "CallsRuntimeCost", "CallsRuntimeCostLoops", "CallsRuntimeCostControl", "CallsRuntimeCostFunctions", "CallsRuntimeCostScaled", "CallsRuntimeCostBitBounds", "CallsRuntimeCostNumberBounds", "CallsRuntimeCostLinking", "CallsRuntimeCostBlocks", "DecimalWorkBounds", "IntegerListWork", "FactorialWorkBounds", "CallsRuntimeCostStrings", "CallsRuntimeCostRanges", "LcmRuntimeCost", "FibonacciRuntimeCost", "HeapMapWork", "HeapRecordWork", "HeapSetWork", "HeapSortWork", "HeapBufferWork", "HeapSequenceWork", "DynamicArrayWork", "AmortizedRuntimeCost", "HeapRuntimeCost", "HeapRuntimeInputs", "HeapRuntimeCostLists", "HeapRuntimeCostControl", "HeapRuntimeCostRecords", "HeapRuntimeCostLibrary", "HeapRuntimeCostRanges", "HeapRuntimeCostBuffers", "HeapRuntimeCostBufferLoops", "HeapRuntimeCostReturns", "HeapRuntimeCostPrimitives", "HeapRuntimeCostExtrema", "HeapRuntimeCostSequences", "HeapRuntimeCostStrings", "HeapRuntimeCostComprehensions", "HeapRuntimeCostRangeComprehensions", "HeapRuntimeCostLoopControl", "HeapRuntimeCostListCopies", "HeapRuntimeCostClasses", "HeapRuntimeCostListExtension", "HeapRuntimeCostSetup", "HeapRuntimeCostListLoops", "HeapRuntimeCostUnpacking", "HeapRuntimeCostSumGenerators", "HeapRuntimeCostRangeSums", "HeapRuntimeCostSums", "DecimalSumRuntimeCost", "HeapRuntimeCostSets", "HeapRuntimeCostComparisons", "HeapRuntimeCostSorting", "HeapRuntimeCostMembership", "HeapRuntimeCostBooleans", "HeapRuntimeCostDictionaries", "HeapRuntimeCostScalarPairs", "HeapRuntimeCostDictionaryWrites", "HeapRuntimeCostListWrites", "HeapRuntimeCostReverseLoops", "HeapRuntimeCostListRepetition", "MemoRuntimeCost", "MemoRuntimeCostRules", "MemoRuntimeCostFunctions", "MemoRuntimeCostExpressions", "MemoRuntimeCostExtrema"):
         check(FORMALSW / f"lang/py/FormalSW/{name}.lean",
               FORMALSW / f".lake/build/lib/lean/lang/py/FormalSW/{name}.olean")
     if 11 in problems:
@@ -210,6 +210,9 @@ def main():
     check(FORMALSW / "tests/py/runtime_dictionaries.lean")
     check(FORMALSW / "tests/py/runtime_globals.lean")
     check(FORMALSW / "tests/py/runtime_dictionary_writes.lean")
+    check(FORMALSW / "tests/py/runtime_list_writes.lean")
+    check(FORMALSW / "tests/py/runtime_reverse_loops.lean")
+    check(FORMALSW / "tests/py/runtime_list_repetition.lean")
     check(FORMALSW / "tests/py/runtime_extremum.lean")
     check(FORMALSW / "tests/py/runtime_memo.lean")
     with tempfile.TemporaryDirectory(prefix="formalsw-runtime-inputs-") as directory:
@@ -326,7 +329,7 @@ def main():
             source = Path(f"data/project-euler-statements/data/py/project_euler_statements/p14.py.lean.d/{name}.lean")
             check(source.resolve(), build / source.with_suffix(".olean"))
         if not args.reference_only:
-            for name in ("State", "Source", "CacheWork"):
+            for name in ("State", "Source", "CacheWork", "WalkRuntime", "UnwindRuntime", "ReturnRuntime", "LengthRuntime", "SearchRuntime"):
                 source = Path(f"solvers/14.py.lean.d/{name}.lean")
                 check(source.resolve(), build / source.with_suffix(".olean"))
     if 17 in problems:
@@ -444,7 +447,7 @@ def main():
                 sources.extend(Path(f"data/project-euler-statements/data/py/project_euler_statements/p14.py.lean.d/{name}.lean")
                                for name in ("LengthRuntime", "ScanRuntime"))
                 if not args.reference_only:
-                    sources.extend(Path(f"solvers/14.py.lean.d/{name}.lean") for name in ("State", "CacheWork"))
+                    sources.extend(Path(f"solvers/14.py.lean.d/{name}.lean") for name in ("State", "CacheWork", "WalkRuntime", "UnwindRuntime", "ReturnRuntime", "LengthRuntime", "SearchRuntime"))
             if problem == 17:
                 sources.extend(Path(f"data/project-euler-statements/data/py/project_euler_statements/p17.py.lean.d/{name}.lean")
                                for name in ("LookupRuntime", "WordRuntime", "SourceRuntime"))
@@ -466,6 +469,8 @@ def main():
                 sources.append(Path("solvers/18.py.lean"))
             sources = list(dict.fromkeys(sources))
             names = [name for source in sources for name in public_theorems(source)]
+            if problem == 14:
+                names.extend(public_theorems(ROOT / "data/project-euler-statements/data/lean/ProjectEulerStatements/Lib/CollatzWork.lean"))
             if problem == 17:
                 for name in ("HeapRuntimeCostDictionaries", "HeapRuntimeCostScalarPairs"):
                     names.extend(public_theorems(FORMALSW / f"lang/py/FormalSW/{name}.lean"))
@@ -497,11 +502,11 @@ def main():
                 extra_axioms=("ProjectEulerStatements.P14.collatzConjecture",) if problem == 14 else ())
         if 14 in problems:
             modules = ("MemoRuntimeCost", "MemoRuntimeCostRules", "MemoRuntimeCostFunctions",
-                       "MemoRuntimeCostExpressions", "MemoRuntimeCostExtrema", "HeapRuntimeCostDictionaryWrites")
+                       "MemoRuntimeCostExpressions", "MemoRuntimeCostExtrema", "HeapRuntimeCostDictionaryWrites", "HeapRuntimeCostListWrites", "HeapRuntimeCostReverseLoops", "HeapRuntimeCostListRepetition", "HeapRuntimeCostSorting")
             imports = "".join(f"import lang.py.FormalSW.{name}\n" for name in modules)
             names = [theorem for name in modules for theorem in
                      public_theorems(FORMALSW / f"lang/py/FormalSW/{name}.lean")]
-            audited += audit_group("memo and dictionary runtime rules", imports, names)
+            audited += audit_group("memo and mutable collection runtime rules", imports, names)
         if set(problems) & {7, 12}:
             sources = [ROOT / f"data/project-euler-statements/data/lean/ProjectEulerStatements/Lib/{name}.lean"
                        for name in ("ArithmeticBertrand", "NthPrimeBounds")]

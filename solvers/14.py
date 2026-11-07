@@ -67,6 +67,7 @@ def solve(limit: int) -> int:
     """
     @formalsw: Py from project_euler_statements.p14 import naive
     @formalsw: Equiv(naive)
+    @formalsw: BigO((ProjectEulerStatements.Collatz.prefixWork n + 1)^2, n = limit)
     """
     if limit <= 0:
         return 0
