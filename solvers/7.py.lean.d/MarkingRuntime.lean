@@ -117,7 +117,7 @@ theorem source_mark (env : HeapCalls.Env) (heap : Mutable.Heap) (address index :
     have evaluated : EvaluatesIn .word program e4
         (.binOp (.constant (.bytes [0])) .mult (.name "count")) heap
         (count.toNat + 7) (.scalar (.bytes (List.replicate count.toNat 0))) heap := by
-      have run := EvaluatesIn.binary (arithmetic := .word) (module := program)
+      have run := EvaluatesIn.binary (globals := []) (arithmetic := .word) (module := program)
         (env := e4) (a := .constant (.bytes [0])) (b := .name "count") (op := .mult)
         (heap := heap) (value := .scalar (.bytes (List.replicate count.toNat 0))) (work := count.toNat + 2) EvaluatesIn.constant (EvaluatesIn.lookup rfl)
         (by simp [Mutable.binary, scalarBinary])

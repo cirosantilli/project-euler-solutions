@@ -23,7 +23,7 @@ theorem parsing_element (heap : Heap) (env : HeapCalls.Env) (n : Int)
     change scalarResult (Calls.integerConversion [.string (toString n)]) heap = _
     rw [Calls.integerConversion_int]
     rfl
-  have run := EvaluatesIn.builtin_single (arithmetic := .word) (module := program)
+  have run := EvaluatesIn.builtin_single (globals := []) (arithmetic := .word) (module := program)
     (builtin := .int) (heap := heap) (work := (toString n).length+1)
     (by intro h; cases h) (by intro h; cases h) (EvaluatesIn.lookup lookup) parsed rfl
   exact run.mono (by have width := IntegerListWork.decimal_value_length n; omega)

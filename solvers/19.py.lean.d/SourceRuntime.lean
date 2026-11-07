@@ -82,9 +82,9 @@ theorem source_bound (first last : Int) :
     (EvaluatesIn.constant (module := program) (env := initial) (heap := []) (value := .int 1900))
     (EvaluatesIn.binary (op := .add) (work := 1) (av := .int last) (bv := .int 1)
       (EvaluatesIn.lookup (name := "end_year") rfl) EvaluatesIn.constant rfl rfl) loop
-  have dayInit := BlockContinuesIn.assign (arithmetic := .word) (module := program) (env := env) (heap := [])
+  have dayInit := BlockContinuesIn.assign (globals := []) (arithmetic := .word) (module := program) (env := env) (heap := [])
     (name := "dow_first_of_month") (EvaluatesIn.constant (value := .int 0))
-  have countInit := BlockContinuesIn.assign (arithmetic := .word) (module := program) (env := withDay) (heap := [])
+  have countInit := BlockContinuesIn.assign (globals := []) (arithmetic := .word) (module := program) (env := withDay) (heap := [])
     (name := "count") (EvaluatesIn.constant (value := .int 0))
   have returned := ((dayInit.append countInit).append forLoop).returns
     (BlockReturnsIn.return_value (following := []) (EvaluatesIn.lookup finalSaved.2.2.2))

@@ -94,7 +94,7 @@ theorem scan_bound (digits : List Int) (heap : Mutable.Heap) (address start stop
         (by simp [HeapCalls.setLocal]) (by simp [HeapCalls.setLocal, notCount, count])
     · rfl
     · apply BlockContinuesIn.append (middleEnv := HeapCalls.setLocal env name (.scalar (.int (start+1 : Nat))))
-      · have increment := BlockContinuesIn.augAssign (arithmetic := .word) (module := program)
+      · have increment := BlockContinuesIn.augAssign (globals := []) (arithmetic := .word) (module := program)
           (env := HeapCalls.setLocal env name (.scalar (.int start))) (name := name) (heap := heap)
           (op := .add) (left := .int start) (right := .int 1)
           (value := .scalar (.int (start+1 : Nat))) (by simp [HeapCalls.setLocal]) EvaluatesIn.constant

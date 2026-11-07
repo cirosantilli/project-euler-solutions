@@ -202,6 +202,7 @@ def main():
     check(FORMALSW / "tests/py/runtime_extrema.lean")
     check(FORMALSW / "tests/py/runtime_unpacking.lean")
     check(FORMALSW / "tests/py/runtime_dictionaries.lean")
+    check(FORMALSW / "tests/py/runtime_globals.lean")
     with tempfile.TemporaryDirectory(prefix="formalsw-runtime-inputs-") as directory:
         generated = Path(directory) / "ListInputs.lean"
         subprocess.run([sys.executable, str(FORMALSW / "tests/py/execution_complexity_checks"),
@@ -315,6 +316,10 @@ def main():
         for name in ("WordTables", "LookupRuntime", "WordRuntime", "SourceRuntime"):
             source = Path(f"data/project-euler-statements/data/py/project_euler_statements/p17.py.lean.d/{name}.lean")
             check(source.resolve(), build / source.with_suffix(".olean"))
+        if not args.reference_only:
+            for name in ("TableState", "TableRuntime", "BelowHundredRuntime", "NumberRuntime", "SourceRuntime"):
+                source = Path(f"solvers/17.py.lean.d/{name}.lean")
+                check(source.resolve(), build / source.with_suffix(".olean"))
     for source, runtime in (pair for problem in problems for pair in runtime_proofs(problem, reference_only=args.reference_only)):
         check(runtime.resolve(), build / runtime.with_suffix(".olean"))
         module = frontend["source_module"](source)
@@ -421,6 +426,9 @@ def main():
             if problem == 17:
                 sources.extend(Path(f"data/project-euler-statements/data/py/project_euler_statements/p17.py.lean.d/{name}.lean")
                                for name in ("LookupRuntime", "WordRuntime", "SourceRuntime"))
+                if not args.reference_only:
+                    sources.extend(Path(f"solvers/17.py.lean.d/{name}.lean") for name in
+                                   ("TableState", "TableRuntime", "BelowHundredRuntime", "NumberRuntime", "SourceRuntime"))
             if problem == 19:
                 sources.extend(Path(f"data/project-euler-statements/data/py/project_euler_statements/p19.py.lean.d/{name}.lean") for name in
                                ("CalendarRuntime", "MonthLengthRuntime", "CalendarSumsRuntime", "DateRuntime", "CountingMonthRuntime", "CountingLoopsRuntime", "SourceRuntime"))

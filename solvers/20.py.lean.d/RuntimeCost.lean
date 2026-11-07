@@ -66,7 +66,7 @@ theorem source_bound (n : Nat) :
     (source := .name "fact") final (PrimitiveWork.factorialDigits n)
     (by simp [PrimitiveWork.factorialDigits])
     (Nat.lt_of_le_of_lt size (PrimitiveWork.power_factorial_decimal n)) (EvaluatesIn.lookup found)
-  have initialized := BlockContinuesIn.assign (arithmetic := .word) (module := program) (env := env) (heap := [])
+  have initialized := BlockContinuesIn.assign (globals := []) (arithmetic := .word) (module := program) (env := env) (heap := [])
     (name := "fact") (EvaluatesIn.constant (value := .int 1))
   have called := BlockReturnsIn.function (module := program) (name := "solve")
     (args := args) (values := [.scalar (.int n)]) rfl rfl

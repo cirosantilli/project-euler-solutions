@@ -26,7 +26,7 @@ theorem formatting_element (heap : Heap) (env : HeapCalls.Env) (n : Int)
     (lookup : env "n" = some (.scalar (.int n))) :
     EvaluatesIn .word program env formattingElement heap (IntegerListWork.binarySize n+6)
       (.scalar (.string (toString n))) heap := by
-  have run := EvaluatesIn.builtin_single (arithmetic := .word) (module := program)
+  have run := EvaluatesIn.builtin_single (globals := []) (arithmetic := .word) (module := program)
     (builtin := .str) (heap := heap) (work := PrimitiveWork.bitLength n+1)
     (by intro h; cases h) (by intro h; cases h) (EvaluatesIn.lookup lookup) (by rfl) rfl
   exact run.mono (by have width := IntegerListWork.width_le_slot n; omega)

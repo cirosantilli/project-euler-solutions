@@ -111,7 +111,7 @@ theorem loop (limit maxI next : Nat) (sieve : Array Bool)
   · have equal : next = maxI+1 := by omega
     refine ⟨env, ?_, Stable.refl env⟩
     rw [sieveLoop.eq_def, if_pos (by omega), heap_set_same heap address _ found]
-    have done := BlockContinuesIn.range_done (module := program) (env := env) (heap := heap)
+    have done := BlockContinuesIn.range_done (globals := []) (module := program) (env := env) (heap := heap)
       (name := "i") (next := (next : Int)) (stop := ((maxI+1 : Nat) : Int)) (stride := 1)
       (body := iterationBlock) (by simp [Calls.rangeContinues]; omega) BlockContinuesIn.nil
     simpa [loopWork, equal] using done

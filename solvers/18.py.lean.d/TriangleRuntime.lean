@@ -45,7 +45,7 @@ theorem triangle_loop (remaining : Nat) (heap : Heap) (env : HeapCalls.Env)
           (by intros a b c h; cases h) (EvaluatesIn.lookup localBelow) EvaluatesIn.constant getBelow
           (Mutable.getItem_list heap belowAddress 0 (encode below) getBelow (by simpa using (show 0 < below.length by omega)))
         simpa using run
-      have done := BlockContinuesIn.range_done (module := program) (env := env) (name := "r")
+      have done := BlockContinuesIn.range_done (globals := []) (module := program) (env := env) (name := "r")
         (next := -1) (stop := -1) (stride := -1) (body := triangleBody) (otherwise := []) (heap := heap)
         rfl BlockContinuesIn.nil
       simpa [rowWork, finalReturn] using done.returns (BlockReturnsIn.return_value read)

@@ -15,9 +15,9 @@ private theorem endpointCondition.result (heap : Mutable.Heap) (env : HeapCalls.
     (getRows : env "n" = some (.scalar (.int rows))) (getColumns : env "m" = some (.scalar (.int columns))) :
     EvaluatesIn .word program env endpointCondition heap 30
       (.scalar (.bool (decide ((0 ≤ ni ∧ ni < rows) ∧ (0 ≤ nj ∧ nj < columns))))) heap := by
-  have row := EvaluatesIn.nonnegative_below (module := program) (heap := heap)
+  have row := EvaluatesIn.nonnegative_below (globals := []) (module := program) (heap := heap)
     (EvaluatesIn.lookup getNI) (EvaluatesIn.lookup getRows)
-  have column := EvaluatesIn.nonnegative_below (module := program) (heap := heap)
+  have column := EvaluatesIn.nonnegative_below (globals := []) (module := program) (heap := heap)
     (EvaluatesIn.lookup getNJ) (EvaluatesIn.lookup getColumns)
   by_cases validRow : 0 ≤ ni ∧ ni < rows
   · simp only [validRow, true_and]

@@ -20,7 +20,7 @@ theorem first_digits_cost (heap : Heap) (address : Nat) (items : List Int) (k : 
   have sum := summation_cost heap address items env found rfl
   have formatted : EvaluatesIn .word program after (.builtinCall .str [.name "total"]) heap
       (IntegerListWork.size items+6) (.scalar (.string (toString total))) heap := by
-    have run := EvaluatesIn.builtin_single (arithmetic := .word) (module := program)
+    have run := EvaluatesIn.builtin_single (globals := []) (arithmetic := .word) (module := program)
       (builtin := .str) (heap := heap) (work := PrimitiveWork.bitLength total+1)
       (by intro h; cases h) (by intro h; cases h)
       (EvaluatesIn.lookup (env := after) (name := "total") rfl) (by rfl) rfl

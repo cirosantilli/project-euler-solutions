@@ -74,6 +74,7 @@ def solve(n: int = 1000) -> int:
     @formalsw: Requires({2: "twenty", 3: "thirty", 4: "forty", 5: "fifty", 6: "sixty", 7: "seventy", 8: "eighty", 9: "ninety"} == TENS)
     @formalsw: Py from project_euler_statements.p17 import naive
     @formalsw: Equiv(naive)
+    @formalsw: BigO(n + 1)
     """
     return sum(letters_in_number(i) for i in range(1, n + 1))
 
