@@ -517,7 +517,9 @@ Reusable mathematical concepts and lemmas are stored under link:ProjectEulerSolu
 [[formalization-assumptions]]
 ===== Formalization assumptions and research
 
-The Python formalization work continues through problem 100. Conjectural termination assumptions must be stated explicitly and researched before adding a minimal axiom. Implementation correctness and execution coverage still require proofs, and axiom audits must identify each conjectural dependency.
+Python source equivalence proofs cover problems 1 through 100 on the domains documented below and in link:proof-domain-audit.adoc[]. Generalized searches distinguish termination from supported divergence. Problems 14 and 47 retain the two documented conjectural assumptions; the other source contracts use only standard Lean axioms. The separate standalone Lean models retain their own completion status.
+
+Conjectural termination assumptions must be stated explicitly and researched before adding a minimal axiom. Implementation correctness and execution coverage require proofs, and axiom audits must identify each conjectural dependency.
 
 Problem 14’s naive implementation has source-checked termination and exact-result proofs. The optimized implementation has a complete source-level equivalence proof, including both caches, forward search, path unwinding, and first-on-tie maximum selection. Both depend on the existing Collatz axiom.
 
@@ -525,7 +527,7 @@ Problem 21’s source-level equivalence proof covers the divisor sieve, terminat
 
 Problem 22’s source-level equivalence proof covers sorting and weighted name scores for lists of uppercase ASCII names, including empty names and an empty list. The prerequisite is checked by a terminating Python predicate; the proofs use only standard Lean axioms.
 
-Problem 23’s source-level equivalence proof covers the divisor sieve, abundant-number collection, pair-sum marking, and final sum for limits of at least 28, as required by the optimized solver’s assertions. The naive proof covers every set traversal order and terminates for every integer limit. The proofs use only standard Lean axioms.
+Problem 23’s source-level equivalence proof covers the divisor sieve, abundant-number collection, pair-sum marking, and final sum for every integer limit. Negative limits return zero, and small nonnegative limits cover empty abundant lists and marking loops. The naive proof covers every set traversal order. Both functions terminate, and the proofs use only standard Lean axioms.
 
 Problem 24’s source-level equivalence proof covers factorial precomputation, indexed removal, and string formatting for strictly increasing integer lists and valid one-based ranks. The Python prerequisite checks that domain and terminates on all typed inputs; both reference functions also terminate for duplicate entries and out-of-range ranks. Empty inputs and negative or multi-digit entries are covered. The proofs preserve the input heap and use only standard Lean axioms.
 
