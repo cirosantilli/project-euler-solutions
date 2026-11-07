@@ -1,6 +1,6 @@
 import «.formalsw».solvers.«15.py.ast»
 import data.«project-euler-statements».data.py.project_euler_statements.«p15.py»
-import FormalSW
+import solvers.«15.py.lean.d».RuntimeCost
 import ProjectEulerSolutions.Equiv.P15
 
 namespace solvers.«15»

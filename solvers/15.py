@@ -27,6 +27,7 @@ def solve(n: int) -> int:
     @formalsw: Requires(n >= 0)
     @formalsw: Py from project_euler_statements.p15 import naive
     @formalsw: Equiv(naive)
+    @formalsw: BigO(n)
     """
     return lattice_paths(n, n)
 

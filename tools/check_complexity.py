@@ -37,7 +37,7 @@ def public_theorems(source):
 
 
 def proof_path(problem):
-    name = "MarkingWork" if problem in (7, 10) else "Complexity"
+    name = "RuntimeCost" if problem > 10 else "MarkingWork" if problem in (7, 10) else "Complexity"
     return Path(f"solvers/{problem}.py.lean.d/{name}.lean")
 
 
@@ -52,7 +52,7 @@ def runtime_proofs(problem):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("problems", type=int, nargs="*", default=list(range(1, 11)), choices=range(1, 11))
+    parser.add_argument("problems", type=int, nargs="*", default=list(range(1, 11)), choices=range(1, 21))
     args = parser.parse_args()
     problems = sorted(set(args.problems))
     os.chdir(ROOT)
@@ -87,7 +87,7 @@ def main():
     lean = subprocess.check_output(
         ["lake", "env", "which", "lean"], text=True, env=environment
     ).strip()
-    for name in ("ExecutionCost", "ExecutionCostDomain", "CallsCost", "CallsCostLoops", "CallsCostControl", "HeapCallsCost", "HeapCallsCostLists", "ScalarSortCost", "WeightedExecutionCost", "AllocationCost", "HeapReadCost", "BufferCost", "BufferCostSlice", "RuntimeCost", "PrimitiveWork", "PrimitiveWorkBounds", "CallsRuntimeCost", "CallsRuntimeCostLoops", "CallsRuntimeCostControl", "CallsRuntimeCostScaled", "CallsRuntimeCostBitBounds", "CallsRuntimeCostNumberBounds", "CallsRuntimeCostLinking", "CallsRuntimeCostBlocks", "DecimalWorkBounds", "CallsRuntimeCostStrings", "CallsRuntimeCostRanges", "LcmRuntimeCost", "FibonacciRuntimeCost", "HeapMapWork", "HeapSetWork", "HeapSortWork", "HeapBufferWork", "HeapSequenceWork", "DynamicArrayWork", "AmortizedRuntimeCost", "HeapRuntimeCost", "HeapRuntimeCostLists", "HeapRuntimeCostControl", "HeapRuntimeCostRanges", "HeapRuntimeCostBuffers", "HeapRuntimeCostBufferLoops", "HeapRuntimeCostReturns", "HeapRuntimeCostPrimitives", "HeapRuntimeCostSequences", "HeapRuntimeCostLoopControl", "HeapRuntimeCostListCopies", "HeapRuntimeCostListLoops", "HeapRuntimeCostSets", "HeapRuntimeCostComparisons", "HeapRuntimeCostSorting", "HeapRuntimeCostBooleans"):
+    for name in ("ExecutionCost", "ExecutionCostDomain", "CallsCost", "CallsCostLoops", "CallsCostControl", "HeapCallsCost", "HeapCallsCostLists", "ScalarSortCost", "WeightedExecutionCost", "AllocationCost", "HeapReadCost", "BufferCost", "BufferCostSlice", "RuntimeCost", "PrimitiveWork", "PrimitiveWorkBounds", "CallsRuntimeCost", "CallsRuntimeCostLoops", "CallsRuntimeCostControl", "CallsRuntimeCostFunctions", "CallsRuntimeCostScaled", "CallsRuntimeCostBitBounds", "CallsRuntimeCostNumberBounds", "CallsRuntimeCostLinking", "CallsRuntimeCostBlocks", "DecimalWorkBounds", "CallsRuntimeCostStrings", "CallsRuntimeCostRanges", "LcmRuntimeCost", "FibonacciRuntimeCost", "HeapMapWork", "HeapSetWork", "HeapSortWork", "HeapBufferWork", "HeapSequenceWork", "DynamicArrayWork", "AmortizedRuntimeCost", "HeapRuntimeCost", "HeapRuntimeCostLists", "HeapRuntimeCostControl", "HeapRuntimeCostRanges", "HeapRuntimeCostBuffers", "HeapRuntimeCostBufferLoops", "HeapRuntimeCostReturns", "HeapRuntimeCostPrimitives", "HeapRuntimeCostSequences", "HeapRuntimeCostLoopControl", "HeapRuntimeCostListCopies", "HeapRuntimeCostListLoops", "HeapRuntimeCostSets", "HeapRuntimeCostComparisons", "HeapRuntimeCostSorting", "HeapRuntimeCostBooleans"):
         check(FORMALSW / f"lang/py/FormalSW/{name}.lean",
               FORMALSW / f".lake/build/lib/lean/lang/py/FormalSW/{name}.olean")
     if 3 in problems:
@@ -206,12 +206,11 @@ def main():
             runtime, frontend["lean_module_for_path"](runtime),
             [replace(requirement, dependencies=()) for requirement in requirements]).emit())
         check(wrapper)
-    for problem in sorted(set(problems) & {7, 8, 9, 10}):
+    for problem in sorted(set(problems) & ({7, 8, 9, 10} | set(range(11, 21)))):
         source = Path(f"data/project-euler-statements/data/py/project_euler_statements/p{problem}.py.lean")
         check(source.resolve(), frontend["olean_path_for_lean"](source))
-        if problem in (7, 8, 9, 10):
-            source = Path(f"solvers/{problem}.py.lean")
-            check(source.resolve(), frontend["olean_path_for_lean"](source))
+        source = Path(f"solvers/{problem}.py.lean")
+        check(source.resolve(), frontend["olean_path_for_lean"](source))
     if 8 in problems:
         source = Path("solvers/8.py.lean.d/Source.lean")
         check(source.resolve(), build / source.with_suffix(".olean"))
@@ -272,6 +271,7 @@ def main():
             if problem == 4:
                 sources.append(Path("data/project-euler-statements/data/py/project_euler_statements/p4.py.lean.d/RuntimeDigits.lean"))
             sources.extend(runtime for _, runtime in runtime_proofs(problem))
+            sources = list(dict.fromkeys(sources))
             names = [name for source in sources for name in public_theorems(source)]
             if problem in (7, 10):
                 names.extend(public_theorems(ROOT / "data/project-euler-statements/data/lean/ProjectEulerStatements/Lib/ReciprocalSum.lean"))

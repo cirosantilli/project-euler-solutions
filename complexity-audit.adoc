@@ -1,4 +1,4 @@
-= Python complexity exploration: problems 1–10
+= Python complexity exploration: problems 1–20
 :toc:
 
 The following implementations have runtime proofs following their generated Python ASTs, using fixed-cost arithmetic unless stated otherwise. Each function keeps one `BigO` annotation using the most informative arithmetic model. Both models charge collections and library work separately from arithmetic.
@@ -46,6 +46,10 @@ The following implementations have runtime proofs following their generated Pyth
 |link:solvers/10.py.lean.d/RuntimeCost.lean[O(n log n)]
 |link:data/project-euler-statements/data/py/project_euler_statements/p10.py.lean.d/RuntimeCost.lean[O(n sqrt n)]
 |Fixed arithmetic. Includes every primality test, its square-root library call, and filtering/summation overhead. The link:data/project-euler-statements/data/py/project_euler_statements/common.py.lean.d/PrimeRuntimeCost.lean[shared primality proof] also supplies problem 3's bit-cost bound. The optimized bound includes buffer allocation, square-root work, every candidate iteration, slice writes and the final sum. These are upper bounds; no tight reference lower bound is claimed.
+|15
+|link:solvers/15.py.lean.d/RuntimeCost.lean[O(n)]
+|link:data/project-euler-statements/data/py/project_euler_statements/p15.py.lean.d/RuntimeCost.lean[O(n)]
+|Fixed arithmetic. The Python multiplicative loop costs `27n+93`; the reference costs `8n+24` under the explicit multiplicative-recurrence tariff for `math.comb`. Both include call overhead. No asymptotic improvement claimed.
 |===
 
 The optional `arithmetic=bits` model charges addition by the sum of operand widths and multiplication/division by their product. Problem 6's link:solvers/6.py.lean.d/RuntimeCost.lean[runtime proof file] also checks a quadratic bound in input bit length as validation of that model, without adding a second source annotation.
@@ -90,12 +94,24 @@ With this project's Lean/formalsw dependencies installed:
 
 [source,sh]
 ----
-python3 tools/check_complexity.py 1 2 3 4 5 6 7 8 9 10
+python3 tools/check_complexity.py 1 2 3 4 5 6 7 8 9 10 15
 ----
 
 The link:tools/check_complexity.py[checker] regenerates the selected optimized and reference ASTs using formalsw's existing frontend, recompiles them, and checks the cost library, regressions, and source proofs through a shared process lock, with one Lean thread, a 2.5 GiB Lean heap limit and a watchdog that stops checks above 3 GiB resident memory. It does not depend on the earlier generated AST binaries being fresh. It does not rebuild the full Mathlib dependency tree. It also audits the exported proof theorems, accepting only Lean’s standard `propext`, `Classical.choice` and `Quot.sound` axioms. Pass problem numbers to check a subset, for example `python3 tools/check_complexity.py 1 3 9`.
 
 The checked runtime pairs share arithmetic and scalar-operation policies. Problem 4 uses `Calls` for the optimized string algorithm and `HeapCalls` for the reference's digit lists, with collection work charged in both. Problems 7 and 10 use `HeapCalls` for their bytearray sieves and `Calls` for their references; both charge the square-root library work. Both P8 functions use `HeapCalls`, with list length as their size and bounds uniform over all list contents and valid window widths. Both P9 implementations use `HeapCalls`, charging set operations, sorting, tuple construction and unpacking. The other completed pairs use `Calls` on both sides. The earlier weighted P8 pair uses `HeapCalls` on both sides; its allocation costs, and the earlier transition counts, remain partial models. Existing functional-equivalence proofs remain separate.
+
+== Extending coverage to 11–20
+
+Problem 15 has runtime proofs on both sides. The other problems in this group remain unfinished. Their source shapes require the following extensions:
+
+* 11 and 18: nested-list input families and traversal/copy costs. Problem 11's optimized domain fixes the grid at 20×20; a bound must respect that domain.
+* 12: prime-table mutation and a search bound expressed through the first qualifying triangular index.
+* 13: a size measure including integer widths; list length alone cannot bound decimal conversion.
+* 14: memoized execution, dictionary costs and an explicit Collatz-chain measure. The existing functional proofs assume the Collatz conjecture; no polynomial bound in the starting limit follows from that assumption alone.
+* 16 and 20: exponentiation/factorial work followed by all digit conversions and summation.
+* 17: the supplied global word tables and their lookup costs.
+* 19: two integer inputs and the repeated calendar traversals in the reference.
 
 == Size and cost conventions for the audit
 
