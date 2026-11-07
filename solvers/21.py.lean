@@ -3,6 +3,7 @@ import data.«project-euler-statements».data.py.project_euler_statements.«p21.
 import FormalSW
 import ProjectEulerStatements.Lib.DivisorSieve
 import ProjectEulerStatements.Lib.DivisorSumFactors
+import Mathlib.Tactic.IntervalCases
 
 namespace solvers.«21»
 open FormalSW.PyAst FormalSW.PyAst.HeapCalls
@@ -379,7 +380,7 @@ private theorem strip_test (p n exponent : Nat) (isNamed : Bool) (prime : Nat.Pr
   · apply Evaluates.binary (Evaluates.lookup locals.current) (factor_evaluates p isNamed env heap locals.factor)
     simp [Mutable.binary, scalarBinary, number, prime.ne_zero, prime.pos]
   · exact Evaluates.constant
-  · simp [HeapCalls.compare, scalarCompare, evalCmpOp, Int.natCast_dvd_natCast]
+  · simp [HeapCalls.compare, scalarCompare, evalCmpOp, ← Int.dvd_iff_emod_eq_zero, Int.natCast_dvd_natCast]
 
 /-- Repeated prime division computes the entire geometric term and leaves other locals unchanged. -/
 private theorem strip_loop_result (n p exponent : Nat) (isNamed : Bool) (positive : 0 < n)
@@ -435,7 +436,7 @@ private theorem divisibility_test (p n acc : Nat) (isNamed : Bool) (positive : 0
   · apply Evaluates.binary (Evaluates.lookup locals.current) (factor_evaluates p isNamed env heap locals.factor)
     simp [Mutable.binary, scalarBinary, number, positive.ne', positive]
   · exact Evaluates.constant
-  · simp [HeapCalls.compare, scalarCompare, evalCmpOp, Int.natCast_dvd_natCast]
+  · simp [HeapCalls.compare, scalarCompare, evalCmpOp, ← Int.dvd_iff_emod_eq_zero, Int.natCast_dvd_natCast]
 
 private theorem pass_body_result (p n acc : Nat) (isNamed : Bool) (positive : 0 < n)
     (prime : Nat.Prime p) (env : Mutable.Env) (heap : Mutable.Heap) (locals : PassLocals env n acc p isNamed) :
