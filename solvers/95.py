@@ -7,14 +7,13 @@ from typing import Dict, List, Tuple
 def compute_sum_proper_divisors(limit: int) -> List[int]:
     """
     Returns array s where s[n] = sum of proper divisors of n, for 0<=n<=limit.
+
+    @formalsw: Returns
     """
     s = [0] * (limit + 1)
-    half = limit // 2
     # Add divisor i to all multiples 2i, 3i, ... <= limit
-    for i in range(1, half + 1):
-        step = i
-        start = i + i
-        for j in range(start, limit + 1, step):
+    for i in range(1, limit // 2 + 1):
+        for j in range(i * 2, limit + 1, i):
             s[j] += i
     return s
 
@@ -23,6 +22,8 @@ def amicable_chain_best(limit: int) -> Tuple[int, int]:
     """
     Finds the longest amicable chain where all elements are <= limit.
     Returns (best_length, smallest_member_of_best_chain).
+
+    @formalsw: Returns
     """
     s = compute_sum_proper_divisors(limit)
 
@@ -75,6 +76,9 @@ def amicable_chain_best(limit: int) -> Tuple[int, int]:
 
 
 def solve(limit: int) -> int:
+    """
+    @formalsw: Returns
+    """
     return amicable_chain_best(limit)[1]
 
 
