@@ -19,7 +19,7 @@ LEAN_EQUIV_DIR = LEAN_SOLVERS_DIR / "Equiv"
 LEAN_TERMINATION_DIR = LEAN_SOLVERS_DIR / "Termination"
 VALID_PYTHON_SHEBANG = "#!/usr/bin/env python"
 SOURCE_EXTENSIONS = (".py", ".c", ".cpp")
-LEAN_STATUS_MARKER = "// LEAN STATUS TABLE"
+FORMAL_STATUS_MARKER = "// FORMAL STATUS TABLE"
 
 LINE_RE = re.compile(r"^(\d+)\.\s+(.*)$")
 LEAN_SOLUTION_STEM_RE = re.compile(r"^P(\d+)$")
@@ -486,7 +486,7 @@ def parse_args() -> argparse.Namespace:
         "-A",
         "--autoupdate",
         action="store_true",
-        help="Update the Lean status list in README.adoc.",
+        help="Update the Python formalsw and Lean status lists in README.adoc.",
     )
     parser.add_argument(
         "paths",
@@ -499,12 +499,6 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    if args.autoupdate and args.language not in (None, "lean"):
-        print(
-            "error: --autoupdate currently only supports Lean status updates",
-            file=sys.stderr,
-        )
-        return 2
     if args.paths:
         paths = sorted(args.paths)
     else:
@@ -530,11 +524,11 @@ def main() -> int:
         paths = [path for path in paths if path.suffix != ".lean"]
     if args.autoupdate:
         try:
-            lean_status_lines = autoupdate_lean_status()
+            formal_status_lines = autoupdate_formal_status()
         except (OSError, ValueError) as exc:
-            print(f"error: failed to update Lean status table: {exc}", file=sys.stderr)
+            print(f"error: failed to update formal status table: {exc}", file=sys.stderr)
             return 2
-        for line in lean_status_lines:
+        for line in formal_status_lines:
             print(line)
     violations = lint_paths(paths, scan_code_answers=args.source_set is not None)
     output_lines = format_violations(violations)
@@ -587,9 +581,9 @@ def compute_lean_status() -> tuple[dict[int, bool], int]:
     return solved_by_pid, max_pid
 
 
-def build_lean_status_lines(solved_by_pid: dict[int, bool], max_pid: int) -> list[str]:
+def build_formal_status_lines(solved_by_pid: dict[int, bool], max_pid: int) -> list[str]:
     if max_pid == 0:
-        return ["* no Lean entries found"]
+        return ["** no entries found"]
     raw_groups: list[tuple[int, int, int, int, list[int]]] = []
     for start in range(1, max_pid + 1, 10):
         end = min(start + 9, max_pid)
@@ -607,7 +601,7 @@ def build_lean_status_lines(solved_by_pid: dict[int, bool], max_pid: int) -> lis
     def flush_done() -> None:
         nonlocal pending_done_start, pending_done_end
         if pending_done_start is not None and pending_done_end is not None:
-            output.append(f"* **{pending_done_start}-{pending_done_end}**: done")
+            output.append(f"** **{pending_done_start}-{pending_done_end}**: done")
         pending_done_start = None
         pending_done_end = None
 
@@ -618,7 +612,7 @@ def build_lean_status_lines(solved_by_pid: dict[int, bool], max_pid: int) -> lis
             pending_done_end = end
             continue
         flush_done()
-        line = f"* **{start}-{end}**: {solved}/{total}"
+        line = f"** **{start}-{end}**: {solved}/{total}"
         if missing:
             line += " (TODO: " + ", ".join(str(pid) for pid in missing) + ")"
         output.append(line)
@@ -626,29 +620,67 @@ def build_lean_status_lines(solved_by_pid: dict[int, bool], max_pid: int) -> lis
     return output
 
 
-def compute_lean_status_lines() -> list[str]:
-    solved_by_pid, max_pid = compute_lean_status()
-    return build_lean_status_lines(solved_by_pid, max_pid)
+def compute_formalsw_status() -> tuple[dict[int, bool], int]:
+    # Track the proof work's scope, not every unannotated Python solution.
+    sources = {
+        int(path.stem): path
+        for path in SOLVERS_DIR.glob("*.py")
+        if path.stem.isdigit()
+    }
+    ids = {
+        pid for pid, path in sources.items()
+        if "@formalsw:" in path.read_text()
+    }
+    ids.update(
+        int(path.name.removesuffix(".py.lean"))
+        for path in SOLVERS_DIR.glob("*.py.lean")
+        if path.name.removesuffix(".py.lean").isdigit()
+    )
+    max_pid = max(ids, default=0)
+    solved_by_pid: dict[int, bool] = {}
+    for pid in range(1, max_pid + 1):
+        source = sources.get(pid)
+        proof = SOLVERS_DIR / f"{pid}.py.lean"
+        solved_by_pid[pid] = False
+        if source is None or not proof.exists():
+            continue
+        code = lean_code_without_comments(proof.read_text())
+        # Some entry modules import their contracts instead of declaring them here.
+        solved_by_pid[pid] = bool(code.strip()) and not re.search(
+            r"\b(?:axiom|admit|sorry)\b", code
+        )
+    return solved_by_pid, max_pid
 
 
-def update_readme_lean_status(
+def compute_formal_status_lines() -> list[str]:
+    lines: list[str] = []
+    for heading, compute in (
+        ("Python <<formalsw>>", compute_formalsw_status),
+        ("Lean", compute_lean_status),
+    ):
+        lines.append(f"* {heading}:")
+        lines.extend(build_formal_status_lines(*compute()))
+    return lines
+
+
+def update_readme_formal_status(
     lines: list[str], status_lines: list[str]
 ) -> list[str]:
     for idx, line in enumerate(lines):
-        if line.strip() != LEAN_STATUS_MARKER:
+        if line.strip() != FORMAL_STATUS_MARKER:
             continue
         start = idx + 1
         end = start
-        while end < len(lines) and lines[end].startswith("* "):
+        while end < len(lines) and re.match(r"^\*+ ", lines[end]):
             end += 1
         return lines[:start] + status_lines + lines[end:]
-    raise ValueError(f"{LEAN_STATUS_MARKER} marker not found")
+    raise ValueError(f"{FORMAL_STATUS_MARKER} marker not found")
 
 
-def autoupdate_lean_status(readme_path: Path = README_PATH) -> list[str]:
+def autoupdate_formal_status(readme_path: Path = README_PATH) -> list[str]:
     lines = readme_path.read_text().splitlines()
-    status_lines = compute_lean_status_lines()
-    updated_lines = update_readme_lean_status(lines, status_lines)
+    status_lines = compute_formal_status_lines()
+    updated_lines = update_readme_formal_status(lines, status_lines)
     readme_path.write_text("\n".join(updated_lines) + "\n")
     return status_lines
 

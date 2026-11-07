@@ -15,13 +15,15 @@ This repo aims to solve **ALL** https://projecteuler.net[Project Euler] problems
 // STATUS TABLE
 * **1-1015**: done
 
-Tested on Python 3.13.7, PyPy 7.3.20, Ubuntu 25.10.
-
 **Ridiculous stretch goal**: formally prove correctness for the first 100 problems by proving that optimized programs have the same output for every input as their naive counterparts which we have created to match Project Euler English descriptions:
 
-// LEAN STATUS TABLE
-* Python <<formalsw>>: **1-100**: done
-* Lean **1-100**: done
+// FORMAL STATUS TABLE
+* Python <<formalsw>>:
+** **1-100**: done
+* Lean:
+** **1-100**: done
+
+Tested on Python 3.13.7, PyPy 7.3.20, Ubuntu 25.10.
 
 .https://commons.wikimedia.org/wiki/File:Leonhard_Euler_2.jpg[Portrait of Leonard Euler by Jakob Emanuel Handmann c.1756] with https://knowyourmeme.com/memes/deal-with-it[Deal With It meme sunglasses] added on it by ChatGPT with prompt "Extract bust and add meme sunglasses."
 image::logo.jpg[]
@@ -405,11 +407,14 @@ because it rules out many things which were very awkward to check in lean self-i
 
 * `partial`: nothing can be partial, all our functions must terminate, partial is only allowed on the problem statements as a helper
 
-The Lean status table in this README can be automatically updated with:
+The formal status table in this README tracks Python formalsw and Lean proofs.
+The updater inventories Python proof files and lints Lean entries; it does not rerun verification.
+Completed ranges are merged; incomplete ranges are grouped by ten under each proof system.
+Update both lists with:
 
 [source,shell]
 ----
-./lean.py -A -l lean
+./lint.py -A -l lean
 ----
 
 This is how things are organized:
