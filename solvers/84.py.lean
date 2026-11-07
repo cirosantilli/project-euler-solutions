@@ -1,4 +1,4 @@
-import solvers.«84.py.lean.d».TransitionIndex
+import solvers.«84.py.lean.d».StationarySetup
 
 namespace solvers.«84».encode_state
 open FormalSW.PyAst HeapCalls
