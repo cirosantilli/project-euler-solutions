@@ -1,19 +1,22 @@
 #include <assert.h>
+#include <inttypes.h>
+#include <stdint.h>
 #include <stdio.h>
 
-static long long sum_of_multiples(long long m, long long n) {
-    long long max_range = n / m;
-    return m * max_range * (max_range + 1) / 2;
+static int64_t sum_of_multiples(int64_t m, int64_t n) {
+    int64_t count = n / m;
+    return m * count * (count + 1) / 2;
 }
 
-static long long sum_of_multiples_of_either_3_or_5(long long n) {
-    n -= 1;
-    return sum_of_multiples(3, n) + sum_of_multiples(5, n)
-           - sum_of_multiples(15, n);
+int64_t solve(int64_t n) {
+    if (n <= 1)
+        return 0;
+    --n;
+    return sum_of_multiples(3, n) + sum_of_multiples(5, n) - sum_of_multiples(15, n);
 }
 
 int main(void) {
-    assert(sum_of_multiples_of_either_3_or_5(10) == 23);
-    printf("%lld\n", sum_of_multiples_of_either_3_or_5(1000));
+    assert(solve(10) == 23);
+    printf("%" PRId64 "\n", solve(1000));
     return 0;
 }

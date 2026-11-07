@@ -1,6 +1,7 @@
 CC := gcc
 CXX := g++
 CFLAGS := -O3 -std=c11 -Wall -Wextra -Werror
+LDLIBS := -lm
 CXXFLAGS := -O3 -std=c++17 -Wall -Wextra -Werror
 
 C_SOURCES := $(filter-out %.lean.c, $(wildcard *.c))
@@ -15,8 +16,8 @@ all: $(C_OUTPUTS) $(CPP_OUTPUTS)
 c: $(C_OUTPUTS)
 cpp: $(CPP_OUTPUTS)
 
-%_c.out: %.c
-	$(CC) $(CFLAGS) -o $@ $<
+%_c.out: %.c $(wildcard ../data/project-euler-statements/data/c/*.h)
+	$(CC) $(CFLAGS) -o $@ $< $(LDLIBS)
 
 %_cpp.out: %.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $<
