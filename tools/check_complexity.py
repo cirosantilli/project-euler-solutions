@@ -41,9 +41,11 @@ def proof_path(problem):
     return Path(f"solvers/{problem}.py.lean.d/{name}.lean")
 
 
-def runtime_proofs(problem):
+def runtime_proofs(problem, reference_only=False):
     for source in (Path(f"solvers/{problem}.py"), Path(
             f"data/project-euler-statements/data/py/project_euler_statements/p{problem}.py")):
+        if reference_only and source.parts[0] == "solvers":
+            continue
         proof = source.with_name(source.name + ".lean.d") / "RuntimeCost.lean"
         if not proof.is_file():
             raise RuntimeError(f"Missing runtime proof: {proof}")
@@ -53,6 +55,7 @@ def runtime_proofs(problem):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("problems", type=int, nargs="*", default=list(range(1, 11)), choices=range(1, 21))
+    parser.add_argument("--reference-only", action="store_true", help="Check reference BigO declarations without requiring an optimized runtime proof")
     args = parser.parse_args()
     problems = sorted(set(args.problems))
     os.chdir(ROOT)
@@ -87,7 +90,7 @@ def main():
     lean = subprocess.check_output(
         ["lake", "env", "which", "lean"], text=True, env=environment
     ).strip()
-    for name in ("ExecutionCost", "ExecutionCostDomain", "CallsCost", "CallsCostLoops", "CallsCostControl", "HeapCallsCost", "HeapCallsCostLists", "ScalarSortCost", "WeightedExecutionCost", "AllocationCost", "HeapReadCost", "BufferCost", "BufferCostSlice", "RuntimeCost", "PrimitiveWork", "PrimitiveWorkBounds", "CallsRuntimeCost", "CallsRuntimeCostLoops", "CallsRuntimeCostControl", "CallsRuntimeCostFunctions", "CallsRuntimeCostScaled", "CallsRuntimeCostBitBounds", "CallsRuntimeCostNumberBounds", "CallsRuntimeCostLinking", "CallsRuntimeCostBlocks", "DecimalWorkBounds", "IntegerListWork", "FactorialWorkBounds", "CallsRuntimeCostStrings", "CallsRuntimeCostRanges", "LcmRuntimeCost", "FibonacciRuntimeCost", "HeapMapWork", "HeapRecordWork", "HeapSetWork", "HeapSortWork", "HeapBufferWork", "HeapSequenceWork", "DynamicArrayWork", "AmortizedRuntimeCost", "HeapRuntimeCost", "HeapRuntimeInputs", "HeapRuntimeCostLists", "HeapRuntimeCostControl", "HeapRuntimeCostRecords", "HeapRuntimeCostLibrary", "HeapRuntimeCostRanges", "HeapRuntimeCostBuffers", "HeapRuntimeCostBufferLoops", "HeapRuntimeCostReturns", "HeapRuntimeCostPrimitives", "HeapRuntimeCostExtrema", "HeapRuntimeCostSequences", "HeapRuntimeCostStrings", "HeapRuntimeCostComprehensions", "HeapRuntimeCostRangeComprehensions", "HeapRuntimeCostLoopControl", "HeapRuntimeCostListCopies", "HeapRuntimeCostListExtension", "HeapRuntimeCostSetup", "HeapRuntimeCostListLoops", "HeapRuntimeCostUnpacking", "HeapRuntimeCostSumGenerators", "HeapRuntimeCostRangeSums", "HeapRuntimeCostSums", "DecimalSumRuntimeCost", "HeapRuntimeCostSets", "HeapRuntimeCostComparisons", "HeapRuntimeCostSorting", "HeapRuntimeCostMembership", "HeapRuntimeCostBooleans"):
+    for name in ("ExecutionCost", "ExecutionCostDomain", "CallsCost", "CallsCostLoops", "CallsCostControl", "HeapCallsCost", "HeapCallsCostLists", "ScalarSortCost", "WeightedExecutionCost", "AllocationCost", "HeapReadCost", "BufferCost", "BufferCostSlice", "RuntimeCost", "PrimitiveWork", "PrimitiveWorkBounds", "CallsRuntimeCost", "CallsRuntimeCostLoops", "CallsRuntimeCostControl", "CallsRuntimeCostFunctions", "CallsRuntimeCostScaled", "CallsRuntimeCostBitBounds", "CallsRuntimeCostNumberBounds", "CallsRuntimeCostLinking", "CallsRuntimeCostBlocks", "DecimalWorkBounds", "IntegerListWork", "FactorialWorkBounds", "CallsRuntimeCostStrings", "CallsRuntimeCostRanges", "LcmRuntimeCost", "FibonacciRuntimeCost", "HeapMapWork", "HeapRecordWork", "HeapSetWork", "HeapSortWork", "HeapBufferWork", "HeapSequenceWork", "DynamicArrayWork", "AmortizedRuntimeCost", "HeapRuntimeCost", "HeapRuntimeInputs", "HeapRuntimeCostLists", "HeapRuntimeCostControl", "HeapRuntimeCostRecords", "HeapRuntimeCostLibrary", "HeapRuntimeCostRanges", "HeapRuntimeCostBuffers", "HeapRuntimeCostBufferLoops", "HeapRuntimeCostReturns", "HeapRuntimeCostPrimitives", "HeapRuntimeCostExtrema", "HeapRuntimeCostSequences", "HeapRuntimeCostStrings", "HeapRuntimeCostComprehensions", "HeapRuntimeCostRangeComprehensions", "HeapRuntimeCostLoopControl", "HeapRuntimeCostListCopies", "HeapRuntimeCostClasses", "HeapRuntimeCostListExtension", "HeapRuntimeCostSetup", "HeapRuntimeCostListLoops", "HeapRuntimeCostUnpacking", "HeapRuntimeCostSumGenerators", "HeapRuntimeCostRangeSums", "HeapRuntimeCostSums", "DecimalSumRuntimeCost", "HeapRuntimeCostSets", "HeapRuntimeCostComparisons", "HeapRuntimeCostSorting", "HeapRuntimeCostMembership", "HeapRuntimeCostBooleans"):
         check(FORMALSW / f"lang/py/FormalSW/{name}.lean",
               FORMALSW / f".lake/build/lib/lean/lang/py/FormalSW/{name}.olean")
     if 11 in problems:
@@ -96,6 +99,14 @@ def main():
                          Path("ProjectEulerStatements/Lib/ListMaximum.lean"),
                          Path("ProjectEulerStatements/Lib/GridProducts.lean"),
                          Path("ProjectEulerStatements/P11.lean")):
+            check(statements_lean / relative,
+                  statements_lean / ".lake/build/lib/lean" / relative.with_suffix(".olean"),
+                  source_root=statements_lean)
+    if 12 in problems:
+        statements_lean = ROOT / "data/project-euler-statements/data/lean"
+        for relative in (Path("ProjectEulerStatements/P12.lean"),
+                         Path("ProjectEulerStatements/Lib/FactorDivisors.lean"),
+                         Path("ProjectEulerStatements/Lib/PrimeCacheBounds.lean")):
             check(statements_lean / relative,
                   statements_lean / ".lake/build/lib/lean" / relative.with_suffix(".olean"),
                   source_root=statements_lean)
@@ -139,7 +150,7 @@ def main():
         f"solvers/{problem}.py",
         f"data/project-euler-statements/data/py/project_euler_statements/p{problem}.py",
     )]
-    if set(problems) & {3, 4, 7, 10, 13, 16, 20}:
+    if set(problems) & {3, 4, 7, 10, 12, 13, 16, 20}:
         sources.append("data/project-euler-statements/data/py/project_euler_statements/common.py")
     for relative in sources:
         source = Path(relative)
@@ -169,6 +180,7 @@ def main():
     check(FORMALSW / "tests/py/runtime_strings.lean")
     check(FORMALSW / "tests/py/runtime_membership.lean")
     check(FORMALSW / "tests/py/runtime_records.lean")
+    check(FORMALSW / "tests/py/runtime_classes.lean")
     check(FORMALSW / "tests/py/runtime_range_sums.lean")
     check(FORMALSW / "tests/py/runtime_list_extension.lean")
     check(FORMALSW / "tests/py/runtime_range_comprehensions.lean")
@@ -243,6 +255,19 @@ def main():
         # Reuse the checked interpretation of the actual grid precondition.
         source = Path("solvers/11.py.lean")
         check(source.resolve(), frontend["olean_path_for_lean"](source))
+    if 12 in problems:
+        reference = Path("data/project-euler-statements/data/py/project_euler_statements")
+        source = reference / "common.py.lean.d/DivisorsRuntimeCost.lean"
+        check(source.resolve(), build / source.with_suffix(".olean"))
+        for name in ("HelpersRuntime", "SourceRuntime", "RuntimeCost"):
+            source = reference / f"p12.py.lean.d/{name}.lean"
+            check(source.resolve(), build / source.with_suffix(".olean"))
+        source = reference / "p12.py.lean"
+        check(source.resolve(), frontend["olean_path_for_lean"](source))
+        if not args.reference_only:
+            for name in ("Source", "SetupRuntime", "PrimeRuntime", "EnsureRuntime", "EnsureLoopRuntime", "EnsureMethodRuntime", "FactorSource", "StripRuntime", "FactorTailRuntime", "FactorLoopRuntime", "FactorMethodRuntime"):
+                source = Path(f"solvers/12.py.lean.d/{name}.lean")
+                check(source.resolve(), build / source.with_suffix(".olean"))
     if 13 in problems:
         for name in ("DigitsBERuntimeCost", "OfDigitsRuntimeCost", "OfDigitsBERuntimeCost"):
             source = Path(f"data/project-euler-statements/data/py/project_euler_statements/common.py.lean.d/{name}.lean")
@@ -270,7 +295,7 @@ def main():
         for source in (Path("data/project-euler-statements/data/py/project_euler_statements/p18.py.lean"),
                        Path("solvers/18.py.lean")):
             check(source.resolve(), frontend["olean_path_for_lean"](source))
-    for source, runtime in (pair for problem in problems for pair in runtime_proofs(problem)):
+    for source, runtime in (pair for problem in problems for pair in runtime_proofs(problem, reference_only=args.reference_only)):
         check(runtime.resolve(), build / runtime.with_suffix(".olean"))
         module = frontend["source_module"](source)
         requirements = [requirement for requirement in frontend["collect_requirements"](
@@ -289,8 +314,9 @@ def main():
     for problem in sorted(set(problems) & ({7, 8, 9, 10} | set(range(11, 21)))):
         source = Path(f"data/project-euler-statements/data/py/project_euler_statements/p{problem}.py.lean")
         check(source.resolve(), frontend["olean_path_for_lean"](source))
-        source = Path(f"solvers/{problem}.py.lean")
-        check(source.resolve(), frontend["olean_path_for_lean"](source))
+        if not args.reference_only:
+            source = Path(f"solvers/{problem}.py.lean")
+            check(source.resolve(), frontend["olean_path_for_lean"](source))
     if 8 in problems:
         source = Path("solvers/8.py.lean.d/Source.lean")
         check(source.resolve(), build / source.with_suffix(".olean"))
@@ -298,9 +324,10 @@ def main():
         check(source.resolve(), build / source.with_suffix(".olean"))
         source = Path("solvers/8.py.lean.d/ZeroComplexity.lean")
         check(source.resolve(), build / source.with_suffix(".olean"))
-    for problem in problems:
-        source = proof_path(problem)
-        check(source.resolve(), build / source.with_suffix(".olean"))
+    if not args.reference_only:
+        for problem in problems:
+            source = proof_path(problem)
+            check(source.resolve(), build / source.with_suffix(".olean"))
     if 10 in problems:
         source = Path("solvers/10.py.lean.d/MarkingRuntime.lean")
         check(source.resolve(), build / source.with_suffix(".olean"))
@@ -327,7 +354,7 @@ def main():
             return len(names)
 
         for problem in problems:
-            sources = [proof_path(problem)]
+            sources = [] if args.reference_only else [proof_path(problem)]
             if problem == 7:
                 sources.extend(Path(f"solvers/7.py.lean.d/{name}.lean") for name in
                                ("MarkingRuntime", "SieveRuntime", "ScanRuntime", "SetupRuntime", "RetryRuntime", "InitialRuntime"))
@@ -358,6 +385,13 @@ def main():
                                for name in ("ProductRuntime", "DirectionRuntime", "ScanRuntime", "BodyRuntime"))
                 sources.extend(Path(f"data/project-euler-statements/data/py/project_euler_statements/p11.py.lean.d/{name}.lean")
                                for name in ("GridRuntime", "ProductRuntime", "ComprehensionRuntime", "CollectionRuntime", "SourceRuntime"))
+            if problem == 12:
+                sources.append(Path("data/project-euler-statements/data/py/project_euler_statements/common.py.lean.d/DivisorsRuntimeCost.lean"))
+                sources.extend(Path(f"data/project-euler-statements/data/py/project_euler_statements/p12.py.lean.d/{name}.lean")
+                               for name in ("HelpersRuntime", "SourceRuntime"))
+                if not args.reference_only:
+                    sources.extend(Path(f"solvers/12.py.lean.d/{name}.lean") for name in
+                                   ("SetupRuntime", "PrimeRuntime", "EnsureRuntime", "EnsureLoopRuntime", "EnsureMethodRuntime", "StripRuntime", "FactorTailRuntime", "FactorLoopRuntime", "FactorMethodRuntime"))
             if problem == 13:
                 sources.extend(Path(f"data/project-euler-statements/data/py/project_euler_statements/common.py.lean.d/{name}.lean") for name in
                                ("DigitsBERuntimeCost", "OfDigitsRuntimeCost", "OfDigitsBERuntimeCost"))
@@ -371,7 +405,7 @@ def main():
                                ("CalendarRuntime", "MonthRuntime", "SourceRuntime"))
             if problem == 4:
                 sources.append(Path("data/project-euler-statements/data/py/project_euler_statements/p4.py.lean.d/RuntimeDigits.lean"))
-            sources.extend(runtime for _, runtime in runtime_proofs(problem))
+            sources.extend(runtime for _, runtime in runtime_proofs(problem, reference_only=args.reference_only))
             if problem == 18:
                 sources.extend(Path(f"data/project-euler-statements/data/py/project_euler_statements/p18.py.lean.d/{name}.lean")
                                for name in ("RowHeap", "RowRuntime", "HelperRuntime", "TriangleRuntime"))

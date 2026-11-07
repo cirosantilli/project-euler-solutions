@@ -1,6 +1,7 @@
+import solvers.«12.py.lean.d».Source
 import «.formalsw».solvers.«12.py.ast»
 import data.«project-euler-statements».data.py.project_euler_statements.«p12.py»
-import FormalSW
+import lang.py.FormalSW.ClassCalls
 import ProjectEulerStatements.Lib.PrimeTrialDivision
 import ProjectEulerStatements.Lib.TriangularDivisors
 import ProjectEulerStatements.Lib.FactorDivisors
@@ -8,20 +9,6 @@ import ProjectEulerStatements.Lib.FactorDivisors
 namespace solvers.«12»
 open FormalSW.PyAst
 private abbrev program := Solvers.P12Ast.module
-private def origin : String := (program.classOrigins.lookup "PrimeTable").getD ""
-
-def primeValues (ps : List Nat) : List Mutable.Value :=
-  ps.map fun p : Nat => .scalar (.int (p : Int))
-
-/-- The table and its prime list retain distinct, stable heap addresses. -/
-def TableView (heap : Mutable.Heap) (address : Nat) (ps : List Nat) : Prop :=
-  ∃ storage, heap[address]? = some (.instance origin "PrimeTable" [("primes", .ref storage)]) ∧
-    heap[storage]? = some (.list (primeValues ps))
-
-private def initialized (heap : Mutable.Heap) : Mutable.Heap :=
-  ((heap ++ [Mutable.Object.instance origin "PrimeTable" []]) ++ [Mutable.Object.list (primeValues [2])]).set heap.length
-    (.instance origin "PrimeTable" [("primes", .ref (heap.length + 1))])
-
 /-- Construct the actual source class, including its annotated list field. -/
 theorem primeTable.result (heap : Mutable.Heap) :
     HeapCalls.ReturnsValue program "PrimeTable" [] heap (.ref heap.length) (initialized heap) := by
@@ -38,10 +25,6 @@ theorem primeTable.result (heap : Mutable.Heap) :
     apply HeapCalls.Reaches.next rfl
     simp only [initialized, primeValues, List.length_append, List.length_cons, List.length_nil]
     exact .refl
-
-theorem initialized_eq (heap : Mutable.Heap) : initialized heap = heap ++
-    [.instance origin "PrimeTable" [("primes", .ref (heap.length + 1))], .list (primeValues [2])] := by
-  simp [initialized, List.append_assoc, List.set_append_right]
 
 theorem primeTable.view (heap : Mutable.Heap) : TableView (initialized heap) heap.length [2] := by
   rw [initialized_eq]
@@ -97,7 +80,7 @@ theorem isPrime.loop (n : Nat) (heap : Mutable.Heap) (storage : Nat) (ps : List 
             (HeapCalls.Evaluates.lookup (by simpa [boundEnv, HeapCalls.setLocal] using getX))
             (HeapCalls.Evaluates.lookup rfl) (by simp [Mutable.binary, scalarBinary, pPositive, pPositive.ne']))
           HeapCalls.Evaluates.constant
-        simp [HeapCalls.compare, scalarCompare, evalCmpOp, Int.natCast_dvd_natCast, Nat.dvd_iff_mod_eq_zero]
+        simp [HeapCalls.compare, scalarCompare, evalCmpOp, ← Int.dvd_iff_emod_eq_zero, Int.natCast_dvd_natCast, Nat.dvd_iff_mod_eq_zero]
       apply HeapCalls.BlockReturns.sequence_step (source := .ref storage) sequence item
       apply HeapCalls.BlockReturns.branch (flag := false) (by simpa [stop] using tested) rfl
       by_cases divides : n % p = 0
@@ -442,7 +425,7 @@ theorem divisorCount.strip (x p exponent : Nat) (positive : 0 < x) (prime : Nat.
     apply HeapCalls.Evaluates.compare (av := .scalar (.int (x % p))) (middle := heap)
       (HeapCalls.Evaluates.binary (HeapCalls.Evaluates.lookup getX) (HeapCalls.Evaluates.lookup getP)
         (by simp [Mutable.binary, scalarBinary, prime.pos, prime.ne_zero])) HeapCalls.Evaluates.constant
-    simp [HeapCalls.compare, scalarCompare, evalCmpOp, Int.natCast_dvd_natCast]
+    simp [HeapCalls.compare, scalarCompare, evalCmpOp, ← Int.dvd_iff_emod_eq_zero, Int.natCast_dvd_natCast]
   by_cases divides : p ∣ x
   · let divided := HeapCalls.setLocal env "x" (.scalar (.int (x / p : Nat)))
     let advanced := HeapCalls.setLocal divided "exp" (.scalar (.int (exponent + 1 : Nat)))
@@ -552,7 +535,7 @@ theorem divisorCount.loop (x total : Nat) (positive : 0 < x) (heap : Mutable.Hea
             (HeapCalls.Evaluates.lookup (by simpa [boundEnv, HeapCalls.setLocal] using getX))
             (HeapCalls.Evaluates.lookup rfl)
             (by simp [Mutable.binary, scalarBinary, prime.pos, prime.ne_zero])) HeapCalls.Evaluates.constant
-        simp [HeapCalls.compare, scalarCompare, evalCmpOp, Int.natCast_dvd_natCast]
+        simp [HeapCalls.compare, scalarCompare, evalCmpOp, ← Int.dvd_iff_emod_eq_zero, Int.natCast_dvd_natCast]
       apply HeapCalls.BlockReturns.sequence_step (source := .ref storage) sequence item
       apply HeapCalls.BlockReturns.branch (flag := false) (by simpa [stop] using stopTest) rfl
       by_cases divides : p ∣ x
