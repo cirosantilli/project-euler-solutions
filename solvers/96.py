@@ -101,14 +101,16 @@ def solve_cands(cands):
 
 def parse_puzzles(text: str):
     lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+    puzzles = []
     i = 0
     while i < len(lines):
         if lines[i].startswith("Grid"):
             grid = lines[i + 1 : i + 10]
             i += 10
-            yield grid
+            puzzles.append(grid)
         else:
             i += 1
+    return puzzles
 
 
 def grid_to_cands(grid_lines):
