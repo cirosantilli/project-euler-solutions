@@ -4,6 +4,7 @@ Run one Lean check at a time, with heap limits and a resident-memory watchdog.
 
 Use inside lake env, passing the Lean executable and its arguments after --.
 The inherited lock also protects against a launcher dying before its child.
+Touch /tmp/project-euler-lean.cancel to stop the active check and release its lock.
 """
 
 import fcntl
@@ -14,6 +15,7 @@ import sys
 import time
 
 LOCK = Path("/tmp/project-euler-lean.lock")
+CANCEL = Path("/tmp/project-euler-lean.cancel")
 HEAP_MIB = 2560
 RESIDENT_MIB = 3072
 
@@ -31,6 +33,7 @@ def run_lean(command, *, env=None, **kwargs):
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
             raise RuntimeError("Another Lean check holds /tmp/project-euler-lean.lock") from None
+        CANCEL.unlink(missing_ok=True)
         check = kwargs.pop("check", False)
         timeout = kwargs.pop("timeout", 300)
         if kwargs.pop("capture_output", False):
@@ -42,6 +45,8 @@ def run_lean(command, *, env=None, **kwargs):
                               pass_fds=(lock.fileno(),), **kwargs) as process:
             try:
                 while True:
+                    if CANCEL.exists():
+                        raise InterruptedError("Lean check cancelled through /tmp/project-euler-lean.cancel")
                     try:
                         status = Path(f"/proc/{process.pid}/status").read_text()
                     except FileNotFoundError:
@@ -61,6 +66,8 @@ def run_lean(command, *, env=None, **kwargs):
                 process.kill()
                 process.communicate()
                 raise
+            finally:
+                CANCEL.unlink(missing_ok=True)
             result = subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
             if check:
                 result.check_returncode()
