@@ -31,7 +31,9 @@ private theorem term_result (first m : Nat) (positive : 0<m) (heap : Mutable.Hea
       heap (number (selfPower first m)) heap := by
   rw [selfPower_exact first (m : Int) (by omega)]
   apply Evaluates.builtin (.cons (Evaluates.lookup getI) (.cons (Evaluates.lookup getI) (.cons (Evaluates.lookup getMod) .nil)))
-  simp only [primitive, Calls.modularPower, scalarNumber,
+  change scalarResult (Calls.modularPower (.int ((first + 1 : Nat) : Int))
+    (.int ((first + 1 : Nat) : Int)) (.int m)) heap = _
+  simp only [Calls.modularPower, scalarNumber,
     FormalSW.Py.Builtin.Int.powMod_nonnegative ((first+1 : Nat) : Int) (first+1) m positive]
   rfl
 

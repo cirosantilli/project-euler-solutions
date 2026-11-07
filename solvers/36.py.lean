@@ -40,12 +40,13 @@ private theorem even_text (n : Nat) (positive : 0 < n) :
     decimalDigits_evenPalindrome n positive]
   simp [evenDigits, List.map_reverse]
 
+set_option maxHeartbeats 1000000 in
 private theorem integer_evaluates (n : Nat) (expression : Expr)
     (env : HeapCalls.Env) (heap : Mutable.Heap)
     (evaluated : Evaluates program env expression heap (text n) heap) :
     Evaluates program env (.builtinCall .int [expression]) heap (number n) heap := by
   apply Evaluates.builtin (.cons evaluated .nil)
-  simp only [primitive, text, decimal, List.mapM_cons, List.mapM_nil, pure_bind]
+  change scalarResult (Calls.integerConversion [.string (toString (n : Int))]) heap = _
   rw [Calls.integerConversion_int]
   rfl
 

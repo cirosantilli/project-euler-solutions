@@ -33,7 +33,8 @@ private theorem inner (count start a : Nat) (stop : Int) (length : (stop - start
       have power : Evaluates program bound (.builtinCall .pow [.name "a", .name "b"])
           (heap ++ [.set (keys before)]) (num (a ^ start)) (heap ++ [.set (keys before)]) := by
         apply Evaluates.builtin (.cons (Evaluates.lookup getA') (.cons (Evaluates.lookup rfl) .nil))
-        simp [primitive, scalarResult, scalarBinary, num, show ¬ (start : Int) < 0 by omega]
+        change scalarResult (scalarBinary .pow (.int a) (.int start)) _ = _
+        simp [scalarResult, scalarBinary, num, show ¬ (start : Int) < 0 by omega]
       have added : BlockContinues program bound body (heap ++ [.set (keys before)]) bound
           (heap ++ [.set (keys (insertUnique before (a ^ start)))]) := by
         apply BlockContinues.discard (value := .scalar .none)

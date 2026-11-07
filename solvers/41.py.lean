@@ -192,7 +192,7 @@ private theorem loop (items remaining : List Nat) (position address total : Nat)
       have ord : Evaluates program bound (.builtinCall .ord [.name "ch"]) heap
           (number (head+48)) heap := by
         apply Evaluates.builtin (.cons (Evaluates.lookup getCh) .nil)
-        simp only [primitive]
+        change scalarResult (some (Strings.ord (.string (toString head)))) heap = _
         rw [ordinal ⟨head, decimal head (by simp)⟩]
         rfl
       have suffixTail : items.drop (position+1) = tail := by simp [List.drop_add_one_eq_tail_drop, suffix]

@@ -52,6 +52,7 @@ private theorem indexed_character (n index : Nat) (positive : 0 < n)
   simp only [Mutable.getItem, got]
   rfl
 
+set_option maxHeartbeats 1000000 in
 private theorem digit_expression (n index : Nat) (positive : 0 < n)
     (bounded : index < (P40.digitsBE n).length) (heap : Mutable.Heap) (env : HeapCalls.Env)
     (getNum : env "num" = some (number n)) (getPos : env "pos" = some (number index)) :
@@ -62,7 +63,7 @@ private theorem digit_expression (n index : Nat) (positive : 0 < n)
     (Evaluates.subscript (by intros; simp)
       (Evaluates.builtin (.cons (Evaluates.lookup getNum) .nil) rfl)
       (Evaluates.lookup getPos) (indexed_character n index positive bounded heap)) .nil)
-  simp only [primitive, List.mapM_cons, List.mapM_nil, pure_bind]
+  change scalarResult (Calls.integerConversion [.string (toString ((P40.digitsBE n).getD index 0))]) heap = _
   rw [Calls.integerConversion_nat]
   rfl
 

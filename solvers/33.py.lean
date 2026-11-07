@@ -56,7 +56,7 @@ private theorem digit_integer_evaluates (n : Nat) (single : n < 10)
     (evaluated : Evaluates program env expression heap (text n) heap globals) :
     Evaluates program env (.builtinCall .int [expression]) heap (number n) heap globals := by
   apply Evaluates.builtin (.cons evaluated .nil)
-  simp only [primitive, text, List.mapM_cons, List.mapM_nil, pure_bind]
+  change scalarResult (Calls.integerConversion [.string (decimal n)]) heap = _
   rw [(one_digit_facts ⟨n, single⟩).2.1]
   rfl
 

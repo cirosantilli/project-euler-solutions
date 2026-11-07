@@ -1466,7 +1466,7 @@ private theorem format_result (heap : Mutable.Heap) (env : HeapCalls.Env)
     rw [← winner_text]
     exact Evaluates.binary (Evaluates.binary (Evaluates.binary Evaluates.constant aText rfl) bText rfl) cText rfl
   apply Evaluates.builtin (.cons joined .nil)
-  simp only [primitive, List.mapM_cons, List.mapM_nil, pure_bind]
+  change scalarResult (Calls.integerConversion [.string (toString (296962999629 : Int))]) heap = _
   rw [Calls.integerConversion_int]
   rfl
 
