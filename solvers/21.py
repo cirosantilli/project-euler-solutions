@@ -58,6 +58,7 @@ def solve(limit: int) -> int:
     """
     @formalsw: Py from project_euler_statements.p21 import naive
     @formalsw: Equiv(naive)
+    @formalsw: BigO(limit^2)
     """
     divsum = proper_divisor_sums_sieve(limit - 1)
 

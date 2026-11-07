@@ -87,9 +87,9 @@ The following implementations have runtime proofs following their generated Pyth
 |link:data/project-euler-statements/data/py/project_euler_statements/p20.py.lean.d/RuntimeCost.lean[O(n log n)]
 |Fixed arithmetic. With `D = n*(log2(n+1)+1)+1`, the optimized source costs at most `11n+24D+60`, and the reference at most `8n+39D+70`. The shared factorial bound covers both intermediate products and final decimal length. The optimized proof follows each multiplication; the reference uses an explicit linear `math.factorial` tariff. Both charge all digit processing. No asymptotic improvement claimed.
 |21
-|Whole solver unfinished; link:solvers/21.py.lean.d/SieveFunction.lean[sieve helper: O(n log n)]
+|link:solvers/21.py.lean.d/RuntimeCost.lean[O(n²)]
 |link:data/project-euler-statements/data/py/project_euler_statements/p21.py.lean.d/RuntimeCost.lean[O(n³)]
-|Fixed arithmetic. The reference bound includes both divisor scans and short-circuit evaluation, using the conservative value bound `d(n) <= n²`. The optimized helper includes allocation, both sieve loops and return; its bound uses the shared reciprocal-sum lemma. The factorization fallback and final scan still need runtime proofs, so no whole-solver comparison is claimed.
+|Fixed arithmetic. Both bounds cover the complete source execution. The optimized proof includes sieve allocation and loops, cached lookups, factorization fallback and the final scan. The shared bound `d(a) <= a²` limits each fallback to `250*(a+1)` work; logarithmic potential accounts for repeated factor stripping across trial divisors. The reference bound includes both divisor scans and short-circuit evaluation. These are conservative upper bounds, without a matching reference lower bound.
 |28
 |link:solvers/28.py.lean.d/RuntimeCost.lean[O(1)]
 |link:data/project-euler-statements/data/py/project_euler_statements/p28.py.lean.d/RuntimeCost.lean[O(n)]
@@ -140,7 +140,7 @@ With this project's Lean/formalsw dependencies installed:
 ----
 python3 tools/check_complexity.py 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
 python3 tools/check_complexity.py 28
-python3 tools/check_complexity.py --reference-only 21
+python3 tools/check_complexity.py 21
 ----
 
 The link:tools/check_complexity.py[checker] regenerates the selected optimized and reference ASTs using formalsw's existing frontend, recompiles them, and checks the cost library, regressions, and source proofs through a shared process lock, with one Lean thread, a 2.5 GiB Lean heap limit and a watchdog that stops checks above 3 GiB resident memory. It does not depend on the earlier generated AST binaries being fresh. It does not rebuild the full Mathlib dependency tree. It also audits the exported proof theorems, accepting Lean’s standard `propext`, `Classical.choice` and `Quot.sound` axioms. Only problem 14 may additionally use the existing `ProjectEulerStatements.P14.collatzConjecture`; the generic memoization and mutable-collection rules are audited separately without that exception. Pass problem numbers to check a subset, for example `python3 tools/check_complexity.py 1 3 9`.
@@ -153,7 +153,7 @@ Problems 11–20 have runtime proofs on both sides. The Collatz-dependent measur
 
 == Coverage for 21–30
 
-Problem 28 has runtime proofs on both sides. Problem 21 has a reference runtime proof and an optimized sieve-helper proof; `--reference-only 21` checks both without asserting a whole optimized-solver bound. Its factorization fallback and final scan remain unfinished, as do the runtime pairs for 22–27 and 29–30. The existing functional-equivalence proofs do not establish these runtime bounds.
+Problems 21 and 28 have runtime proofs on both sides. Runtime pairs for 22–27 and 29–30 remain unfinished. The existing functional-equivalence proofs do not establish these runtime bounds.
 
 == Size and cost conventions for the audit
 
