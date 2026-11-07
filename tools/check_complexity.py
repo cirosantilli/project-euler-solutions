@@ -90,7 +90,7 @@ def main():
     lean = subprocess.check_output(
         ["lake", "env", "which", "lean"], text=True, env=environment
     ).strip()
-    for name in ("ExecutionCost", "ExecutionCostDomain", "CallsCost", "CallsCostLoops", "CallsCostControl", "HeapCallsCost", "HeapCallsCostLists", "ScalarSortCost", "WeightedExecutionCost", "AllocationCost", "HeapReadCost", "BufferCost", "BufferCostSlice", "RuntimeCost", "PrimitiveWork", "PrimitiveWorkBounds", "CallsRuntimeCost", "CallsRuntimeCostLoops", "CallsRuntimeCostControl", "CallsRuntimeCostFunctions", "CallsRuntimeCostScaled", "CallsRuntimeCostBitBounds", "CallsRuntimeCostNumberBounds", "CallsRuntimeCostLinking", "CallsRuntimeCostBlocks", "DecimalWorkBounds", "IntegerListWork", "FactorialWorkBounds", "CallsRuntimeCostStrings", "CallsRuntimeCostRanges", "LcmRuntimeCost", "FibonacciRuntimeCost", "HeapMapWork", "HeapRecordWork", "HeapSetWork", "HeapSortWork", "HeapBufferWork", "HeapSequenceWork", "DynamicArrayWork", "AmortizedRuntimeCost", "HeapRuntimeCost", "HeapRuntimeInputs", "HeapRuntimeCostLists", "HeapRuntimeCostControl", "HeapRuntimeCostRecords", "HeapRuntimeCostLibrary", "HeapRuntimeCostRanges", "HeapRuntimeCostBuffers", "HeapRuntimeCostBufferLoops", "HeapRuntimeCostReturns", "HeapRuntimeCostPrimitives", "HeapRuntimeCostExtrema", "HeapRuntimeCostSequences", "HeapRuntimeCostStrings", "HeapRuntimeCostComprehensions", "HeapRuntimeCostRangeComprehensions", "HeapRuntimeCostLoopControl", "HeapRuntimeCostListCopies", "HeapRuntimeCostClasses", "HeapRuntimeCostListExtension", "HeapRuntimeCostSetup", "HeapRuntimeCostListLoops", "HeapRuntimeCostUnpacking", "HeapRuntimeCostSumGenerators", "HeapRuntimeCostRangeSums", "HeapRuntimeCostSums", "DecimalSumRuntimeCost", "HeapRuntimeCostSets", "HeapRuntimeCostComparisons", "HeapRuntimeCostSorting", "HeapRuntimeCostMembership", "HeapRuntimeCostBooleans", "HeapRuntimeCostDictionaries", "HeapRuntimeCostScalarPairs"):
+    for name in ("ExecutionCost", "ExecutionCostDomain", "CallsCost", "CallsCostLoops", "CallsCostControl", "HeapCallsCost", "HeapCallsCostLists", "ScalarSortCost", "WeightedExecutionCost", "AllocationCost", "HeapReadCost", "BufferCost", "BufferCostSlice", "RuntimeCost", "PrimitiveWork", "PrimitiveWorkBounds", "CallsRuntimeCost", "CallsRuntimeCostLoops", "CallsRuntimeCostControl", "CallsRuntimeCostFunctions", "CallsRuntimeCostScaled", "CallsRuntimeCostBitBounds", "CallsRuntimeCostNumberBounds", "CallsRuntimeCostLinking", "CallsRuntimeCostBlocks", "DecimalWorkBounds", "IntegerListWork", "FactorialWorkBounds", "CallsRuntimeCostStrings", "CallsRuntimeCostRanges", "LcmRuntimeCost", "FibonacciRuntimeCost", "HeapMapWork", "HeapRecordWork", "HeapSetWork", "HeapSortWork", "HeapBufferWork", "HeapSequenceWork", "DynamicArrayWork", "AmortizedRuntimeCost", "HeapRuntimeCost", "HeapRuntimeInputs", "HeapRuntimeCostLists", "HeapRuntimeCostControl", "HeapRuntimeCostRecords", "HeapRuntimeCostLibrary", "HeapRuntimeCostRanges", "HeapRuntimeCostBuffers", "HeapRuntimeCostBufferLoops", "HeapRuntimeCostReturns", "HeapRuntimeCostPrimitives", "HeapRuntimeCostExtrema", "HeapRuntimeCostSequences", "HeapRuntimeCostStrings", "HeapRuntimeCostComprehensions", "HeapRuntimeCostRangeComprehensions", "HeapRuntimeCostLoopControl", "HeapRuntimeCostListCopies", "HeapRuntimeCostClasses", "HeapRuntimeCostListExtension", "HeapRuntimeCostSetup", "HeapRuntimeCostListLoops", "HeapRuntimeCostUnpacking", "HeapRuntimeCostSumGenerators", "HeapRuntimeCostRangeSums", "HeapRuntimeCostSums", "DecimalSumRuntimeCost", "HeapRuntimeCostSets", "HeapRuntimeCostComparisons", "HeapRuntimeCostSorting", "HeapRuntimeCostMembership", "HeapRuntimeCostBooleans", "HeapRuntimeCostDictionaries", "HeapRuntimeCostScalarPairs", "HeapRuntimeCostDictionaryWrites", "MemoRuntimeCost", "MemoRuntimeCostRules", "MemoRuntimeCostFunctions", "MemoRuntimeCostExpressions", "MemoRuntimeCostExtrema"):
         check(FORMALSW / f"lang/py/FormalSW/{name}.lean",
               FORMALSW / f".lake/build/lib/lean/lang/py/FormalSW/{name}.olean")
     if 11 in problems:
@@ -118,6 +118,12 @@ def main():
             check(statements_lean / relative,
                   statements_lean / ".lake/build/lib/lean" / relative.with_suffix(".olean"),
                   source_root=statements_lean)
+    if 14 in problems:
+        statements_lean = ROOT / "data/project-euler-statements/data/lean"
+        relative = Path("ProjectEulerStatements/Lib/CollatzWork.lean")
+        check(statements_lean / relative,
+              statements_lean / ".lake/build/lib/lean" / relative.with_suffix(".olean"),
+              source_root=statements_lean)
     if 18 in problems:
         statements_lean = ROOT / "data/project-euler-statements/data/lean"
         for relative in (Path("ProjectEulerStatements/P18.lean"),
@@ -203,6 +209,9 @@ def main():
     check(FORMALSW / "tests/py/runtime_unpacking.lean")
     check(FORMALSW / "tests/py/runtime_dictionaries.lean")
     check(FORMALSW / "tests/py/runtime_globals.lean")
+    check(FORMALSW / "tests/py/runtime_dictionary_writes.lean")
+    check(FORMALSW / "tests/py/runtime_extremum.lean")
+    check(FORMALSW / "tests/py/runtime_memo.lean")
     with tempfile.TemporaryDirectory(prefix="formalsw-runtime-inputs-") as directory:
         generated = Path(directory) / "ListInputs.lean"
         subprocess.run([sys.executable, str(FORMALSW / "tests/py/execution_complexity_checks"),
@@ -312,6 +321,14 @@ def main():
         for source in (Path("data/project-euler-statements/data/py/project_euler_statements/p18.py.lean"),
                        Path("solvers/18.py.lean")):
             check(source.resolve(), frontend["olean_path_for_lean"](source))
+    if 14 in problems:
+        for name in ("State", "LengthRuntime", "ScanRuntime"):
+            source = Path(f"data/project-euler-statements/data/py/project_euler_statements/p14.py.lean.d/{name}.lean")
+            check(source.resolve(), build / source.with_suffix(".olean"))
+        if not args.reference_only:
+            for name in ("State", "Source", "CacheWork"):
+                source = Path(f"solvers/14.py.lean.d/{name}.lean")
+                check(source.resolve(), build / source.with_suffix(".olean"))
     if 17 in problems:
         for name in ("WordTables", "LookupRuntime", "WordRuntime", "SourceRuntime"):
             source = Path(f"data/project-euler-statements/data/py/project_euler_statements/p17.py.lean.d/{name}.lean")
@@ -359,7 +376,7 @@ def main():
     audited = 0
     with tempfile.TemporaryDirectory(prefix="formalsw-cost-axioms-") as directory:
         audit = Path(directory) / "Audit.lean"
-        def audit_group(label, imports, names):
+        def audit_group(label, imports, names, extra_axioms=()):
             audit.write_text(imports + "".join(f"#print axioms {name}\n" for name in names))
             result = run_lean(
                 [lean, str(audit)],
@@ -371,7 +388,7 @@ def main():
                 raise RuntimeError(f"Incomplete axiom audit for {label}: {result.stdout}")
             for dependency in dependencies:
                 unexpected = set(dependency.replace("\n", " ").replace(",", " ").split()) - {
-                    "propext", "Classical.choice", "Quot.sound",
+                    "propext", "Classical.choice", "Quot.sound", *extra_axioms,
                 }
                 if unexpected:
                     raise RuntimeError(f"Unexpected proof axioms for {label}: {unexpected}")
@@ -423,6 +440,11 @@ def main():
                 sources.append(Path("data/project-euler-statements/data/py/project_euler_statements/p13.py.lean.d/SourceRuntime.lean"))
                 sources.extend(Path(f"solvers/13.py.lean.d/{name}.lean") for name in
                                ("FormattingRuntime", "ParsingRuntime", "FirstDigitsRuntime", "LeadingRuntime", "SourceRuntime"))
+            if problem == 14:
+                sources.extend(Path(f"data/project-euler-statements/data/py/project_euler_statements/p14.py.lean.d/{name}.lean")
+                               for name in ("LengthRuntime", "ScanRuntime"))
+                if not args.reference_only:
+                    sources.extend(Path(f"solvers/14.py.lean.d/{name}.lean") for name in ("State", "CacheWork"))
             if problem == 17:
                 sources.extend(Path(f"data/project-euler-statements/data/py/project_euler_statements/p17.py.lean.d/{name}.lean")
                                for name in ("LookupRuntime", "WordRuntime", "SourceRuntime"))
@@ -471,7 +493,15 @@ def main():
             if not names:
                 raise RuntimeError(f"No theorem declarations found for problem {problem}")
             imports = "".join(f'import {frontend["lean_module_for_path"](source)}\n' for source in sources)
-            audited += audit_group(f"problem {problem}", imports, names)
+            audited += audit_group(f"problem {problem}", imports, names,
+                extra_axioms=("ProjectEulerStatements.P14.collatzConjecture",) if problem == 14 else ())
+        if 14 in problems:
+            modules = ("MemoRuntimeCost", "MemoRuntimeCostRules", "MemoRuntimeCostFunctions",
+                       "MemoRuntimeCostExpressions", "MemoRuntimeCostExtrema", "HeapRuntimeCostDictionaryWrites")
+            imports = "".join(f"import lang.py.FormalSW.{name}\n" for name in modules)
+            names = [theorem for name in modules for theorem in
+                     public_theorems(FORMALSW / f"lang/py/FormalSW/{name}.lean")]
+            audited += audit_group("memo and dictionary runtime rules", imports, names)
         if set(problems) & {7, 12}:
             sources = [ROOT / f"data/project-euler-statements/data/lean/ProjectEulerStatements/Lib/{name}.lean"
                        for name in ("ArithmeticBertrand", "NthPrimeBounds")]
@@ -481,7 +511,8 @@ def main():
                 imports += "import ProjectEulerSolutions.Equiv.P7\n"
             names = [name for source in sources for name in public_theorems(source)]
             audited += audit_group("prime bounds", imports, names)
-    print(f"Audited {audited} theorems: only standard Lean axioms.")
+    qualification = "; existing Collatz assumption allowed only for P14" if 14 in problems else ""
+    print(f"Audited {audited} theorems: standard Lean axioms{qualification}.")
     print("Complexity proofs and cost-model regressions passed.")
 
 
