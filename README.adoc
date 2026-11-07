@@ -794,7 +794,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/81.py[81.py] | link:solvers/81.md[81.md] | link:solvers/81.py.lean[81.py.lean] | 0.116 | 427337 |
 | link:solvers/82.py[82.py] | link:solvers/82.md[82.md] | link:solvers/82.py.lean[82.py.lean] | 0.111 | 260324 |
 | link:solvers/83.py[83.py] | link:solvers/83.md[83.md] | link:solvers/83.py.lean[83.py.lean] | 0.240 | 425185 |
-| link:solvers/84.py[84.py] | link:solvers/84.md[84.md] |  | 0.134 | 101524 |
+| link:solvers/84.py[84.py] | link:solvers/84.md[84.md] | link:solvers/84.py.lean[84.py.lean] | 0.134 | 101524 |
 | link:solvers/85.py[85.py] | link:solvers/85.md[85.md] | link:solvers/85.py.lean[85.py.lean] | 0.119 | 2772 |
 | link:solvers/86.py[86.py] | link:solvers/86.md[86.md] | link:solvers/86.py.lean[86.py.lean] | 0.455 | 1818 |
 | link:solvers/87.py[87.py] | link:solvers/87.md[87.md] | link:solvers/87.py.lean[87.py.lean] | 0.295 | 1097343 |
@@ -806,9 +806,9 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/93.py[93.py] | link:solvers/93.md[93.md] | link:solvers/93.py.lean[93.py.lean] | 1.740 | 1258 |
 | link:solvers/94.py[94.py] | link:solvers/94.md[94.md] | link:solvers/94.py.lean[94.py.lean] | 0.060 | 518408346 |
 | link:solvers/95.py[95.py] | link:solvers/95.md[95.md] | link:solvers/95.py.lean[95.py.lean] | 0.370 | 14316 |
-| link:solvers/96.py[96.py] | link:solvers/96.md[96.md] |  | 0.175 | 24702 |
+| link:solvers/96.py[96.py] | link:solvers/96.md[96.md] | link:solvers/96.py.lean[96.py.lean] | 0.175 | 24702 |
 | link:solvers/97.py[97.py] | link:solvers/97.md[97.md] | link:solvers/97.py.lean[97.py.lean] | 0.117 | 8739992577 |
-| link:solvers/98.py[98.py] | link:solvers/98.md[98.md] |  | 0.226 | 18769 |
+| link:solvers/98.py[98.py] | link:solvers/98.md[98.md] | link:solvers/98.py.lean[98.py.lean] | 0.226 | 18769 |
 | link:solvers/99.py[99.py] | link:solvers/99.md[99.md] | link:solvers/99.py.lean[99.py.lean] | 0.064 | 709 |
 | link:solvers/100.py[100.py] | link:solvers/100.md[100.md] | link:solvers/100.py.lean[100.py.lean] | 0.116 | 756872327473 |
 | link:solvers/101.py[101.py] | link:solvers/101.md[101.md] |  | 0.134 | 37076114526 |

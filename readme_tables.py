@@ -35,6 +35,13 @@ def split_table_row(line: str) -> list[str]:
     return [cell.strip() for cell in parts[1:]]
 
 
+def has_column(header: str, name: str) -> bool:
+    return any(
+        cell == name or (cell.startswith("<<") and cell.endswith(f",{name}>>"))
+        for cell in split_table_row(header)
+    )
+
+
 def iter_table_rows(
     lines: list[str], marker: str
 ) -> Iterable[tuple[int, str, list[str]]]:

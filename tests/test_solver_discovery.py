@@ -1,4 +1,4 @@
-"""Language proof sidecars are not standalone Project Euler executables."""
+"""Proof sidecars preserve solver discovery and README result columns."""
 
 import importlib.util
 from pathlib import Path
@@ -26,6 +26,26 @@ class SolverDiscoveryTests(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertEqual(runner.parse_solver_id(Path(name)), 1)
                 self.assertEqual(runner.detect_language(Path(name)), "lean")
+
+
+class ReadmeProofTests(unittest.TestCase):
+    def test_proof_headers_preserve_result_columns(self):
+        for heading in ("Proof", "<<formalsw,Proof>>"):
+            for proof in ("", "link:solvers/84.py.lean[84.py.lean]"):
+                with self.subTest(heading=heading, proof=proof):
+                    rows = runner.parse_primary_python_row_map([
+                        "// RESULTS TABLE",
+                        "|===",
+                        f"| ID | Explanation | {heading} | Runtime (s) | Output | Error",
+                        "| link:solvers/84.py[84.py] | link:solvers/84.md[84.md] "
+                        f"| {proof} | 0.134 | 101524 | error: example error",
+                        "|===",
+                    ])
+                    self.assertEqual(
+                        rows[(84, "py")],
+                        "| link:solvers/84.py[84.py] | link:solvers/84.md[84.md] "
+                        "| link:solvers/84.py.lean[84.py.lean] | 0.134 | 101524 | error: example error",
+                    )
 
 
 if __name__ == "__main__":

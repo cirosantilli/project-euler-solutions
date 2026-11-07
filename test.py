@@ -25,7 +25,7 @@ LINE_RE = re.compile(r"^(\d+)\.\s+(.*)$")
 NUMERIC_RE = re.compile(r"^\d+(?:\.\d+)?$")
 EXPECTED_GOT_RE = re.compile(r"expected (.+), got (.+)")
 LANG_HINT_RE = re.compile(r"^(\d+)\.(py|c|cpp|lean)$")
-PRIMARY_RESULTS_HEADER = "| ID | Explanation | Proof | Runtime (s) | Output | Error"
+PRIMARY_RESULTS_HEADER = "| ID | Explanation | <<formalsw,Proof>> | Runtime (s) | Output | Error"
 MISSING_REFERENCE_MESSAGE = "missing reference answer"
 MISSING_REFERENCE_ERROR = f"error: {MISSING_REFERENCE_MESSAGE}"
 TestId = int | str
@@ -884,7 +884,7 @@ def parse_id_cell(cell: str) -> int | None:
 
 def parse_primary_python_row_map(lines: list[str]) -> dict[tuple[TestId, str], str]:
     start, end = readme_tables.find_table_block(lines, "// RESULTS TABLE")
-    proof_column = "Proof" in readme_tables.split_table_row(lines[start + 1])
+    proof_column = readme_tables.has_column(lines[start + 1], "Proof")
     row_re = re.compile(r"^\|\s+link:([^\[]+)\[")
     plain_re = re.compile(r"^\|\s+(\d+)\.py\s+\|")
     row_map: dict[tuple[TestId, str], str] = {}
@@ -1249,7 +1249,7 @@ def update_readme(results: list[Result]) -> None:
     readme_path = ROOT / "README.adoc"
     lines = readme_path.read_text().splitlines()
     start, end = readme_tables.find_table_block(lines, "// RESULTS TABLE")
-    proof_column = "Proof" in readme_tables.split_table_row(lines[start + 1])
+    proof_column = readme_tables.has_column(lines[start + 1], "Proof")
 
     header_line = PRIMARY_RESULTS_HEADER
     row_re = re.compile(r"^\|\s+link:([^\[]+)\[")
@@ -1346,7 +1346,7 @@ def update_readme_links() -> None:
     readme_path = ROOT / "README.adoc"
     lines = readme_path.read_text().splitlines()
     start, end = readme_tables.find_table_block(lines, "// RESULTS TABLE")
-    proof_column = "Proof" in readme_tables.split_table_row(lines[start + 1])
+    proof_column = readme_tables.has_column(lines[start + 1], "Proof")
 
     header_line = PRIMARY_RESULTS_HEADER
     row_re = re.compile(r"^\|\s+link:([^\[]+)\[")
@@ -1408,7 +1408,7 @@ def update_readme_not_found() -> None:
     readme_path = ROOT / "README.adoc"
     lines = readme_path.read_text().splitlines()
     start, end = readme_tables.find_table_block(lines, "// RESULTS TABLE")
-    proof_column = "Proof" in readme_tables.split_table_row(lines[start + 1])
+    proof_column = readme_tables.has_column(lines[start + 1], "Proof")
     existing_other_rows = load_benchmark_results(lines)
     existing_other_paths = {
         path for path_values in existing_other_rows.values() for path in path_values
