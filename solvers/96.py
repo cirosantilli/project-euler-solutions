@@ -12,13 +12,6 @@ def bit_to_digit(bit: int) -> int:
     return (bit.bit_length() - 1) + 1
 
 
-def iter_bits(mask: int):
-    while mask:
-        b = mask & -mask
-        yield b
-        mask -= b
-
-
 def build_peers_units():
     units = []
     # rows
@@ -94,12 +87,15 @@ def solve_cands(cands):
         (cands[i].bit_count(), i) for i in range(81) if cands[i].bit_count() > 1
     )
 
-    for b in iter_bits(cands[idx]):
+    mask = cands[idx]
+    while mask:
+        b = mask & -mask
         nxt = cands.copy()
         nxt[idx] = b
         res = solve_cands(nxt)
         if res is not None:
             return res
+        mask -= b
     return None
 
 
