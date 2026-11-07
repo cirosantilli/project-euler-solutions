@@ -40,6 +40,6 @@ theorem binom_eq_choose (n k : Nat) : binom n k = Nat.choose n k := by
       ProjectEulerStatements.Binomial.choose_min n k (by omega)] using result
 
 theorem equiv (n : Nat) : ProjectEulerStatements.P15.naive n = solve n := by
-  simp only [ProjectEulerStatements.P15.naive, solve, latticePaths, binom_eq_choose, two_mul]
+  simp only [ProjectEulerStatements.P15.naive, solve, latticePaths, binom_eq_choose, Nat.two_mul]
 
 end ProjectEulerSolutions.P15
