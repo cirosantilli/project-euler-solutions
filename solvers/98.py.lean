@@ -1,5 +1,4 @@
-import solvers.«98.py.lean.d».Lengths
-import solvers.«98.py.lean.d».SquareCoverage
+import solvers.«98.py.lean.d».Others
 
 namespace solvers.«98».pattern_signature
 open FormalSW.PyAst HeapCalls
