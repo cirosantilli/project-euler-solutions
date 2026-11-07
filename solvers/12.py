@@ -55,6 +55,7 @@ def solve(k: int) -> int:
     @formalsw: Py from project_euler_statements.p12 import naive
     @formalsw: Requires(k >= 0)
     @formalsw: Equiv(naive)
+    @formalsw: BigO((ProjectEulerStatements.P12.firstIndex n + 1)^2, n = k)
 
     Find the first triangular number T_n = n(n+1)/2 having > k divisors.
     Uses gcd(n, n+1)=1 so divisor_count(T_n)=div(a)*div(b) where (a,b) are

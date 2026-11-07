@@ -32,7 +32,7 @@ def public_theorems(source):
             namespaces.append(line.split(maxsplit=1)[1])
         elif line.startswith("end "):
             namespaces.pop()
-        elif match := re.match(r"(?:protected\s+)?(?:theorem|lemma)\s+((?:«[^»]*»|[^\s(«])+)", line):
+        elif match := re.match(r"(?:public\s+)?(?:protected\s+)?(?:theorem|lemma)\s+((?:«[^»]*»|[^\s(«])+)", line):
             yield ".".join([*namespaces, match[1]])
 
 
@@ -106,6 +106,7 @@ def main():
         statements_lean = ROOT / "data/project-euler-statements/data/lean"
         for relative in (Path("ProjectEulerStatements/P12.lean"),
                          Path("ProjectEulerStatements/Lib/FactorDivisors.lean"),
+                         Path("ProjectEulerStatements/Lib/TriangularDivisors.lean"),
                          Path("ProjectEulerStatements/Lib/PrimeCacheBounds.lean")):
             check(statements_lean / relative,
                   statements_lean / ".lake/build/lib/lean" / relative.with_suffix(".olean"),
@@ -136,6 +137,13 @@ def main():
         check(statements_lean / relative,
               statements_lean / ".lake/build/lib/lean" / relative.with_suffix(".olean"),
               source_root=statements_lean)
+    if set(problems) & {7, 12}:
+        statements_lean = ROOT / "data/project-euler-statements/data/lean"
+        for name in ("ArithmeticBertrand", "NthPrimeBounds"):
+            relative = Path(f"ProjectEulerStatements/Lib/{name}.lean")
+            check(statements_lean / relative,
+                  statements_lean / ".lake/build/lib/lean" / relative.with_suffix(".olean"),
+                  source_root=statements_lean)
     if 7 in problems:
         statements_lean = ROOT / "data/project-euler-statements/data/lean"
         for relative in (Path("ProjectEulerStatements/P7.lean"),
@@ -265,7 +273,7 @@ def main():
         source = reference / "p12.py.lean"
         check(source.resolve(), frontend["olean_path_for_lean"](source))
         if not args.reference_only:
-            for name in ("Source", "SetupRuntime", "PrimeRuntime", "EnsureRuntime", "EnsureLoopRuntime", "EnsureMethodRuntime", "FactorSource", "StripRuntime", "FactorTailRuntime", "FactorLoopRuntime", "FactorMethodRuntime"):
+            for name in ("Source", "SetupRuntime", "PrimeRuntime", "EnsureRuntime", "EnsureLoopRuntime", "EnsureMethodRuntime", "FactorSource", "StripRuntime", "FactorTailRuntime", "FactorLoopRuntime", "FactorMethodRuntime", "CacheRuntime", "SearchSource", "SearchScalarRuntime", "SearchLoopRuntime", "SourceRuntime", "SearchBudget"):
                 source = Path(f"solvers/12.py.lean.d/{name}.lean")
                 check(source.resolve(), build / source.with_suffix(".olean"))
     if 13 in problems:
@@ -391,7 +399,7 @@ def main():
                                for name in ("HelpersRuntime", "SourceRuntime"))
                 if not args.reference_only:
                     sources.extend(Path(f"solvers/12.py.lean.d/{name}.lean") for name in
-                                   ("SetupRuntime", "PrimeRuntime", "EnsureRuntime", "EnsureLoopRuntime", "EnsureMethodRuntime", "StripRuntime", "FactorTailRuntime", "FactorLoopRuntime", "FactorMethodRuntime"))
+                                   ("SetupRuntime", "PrimeRuntime", "EnsureRuntime", "EnsureLoopRuntime", "EnsureMethodRuntime", "StripRuntime", "FactorTailRuntime", "FactorLoopRuntime", "FactorMethodRuntime", "CacheRuntime", "SearchSource", "SearchScalarRuntime", "SearchLoopRuntime", "SourceRuntime", "SearchBudget"))
             if problem == 13:
                 sources.extend(Path(f"data/project-euler-statements/data/py/project_euler_statements/common.py.lean.d/{name}.lean") for name in
                                ("DigitsBERuntimeCost", "OfDigitsRuntimeCost", "OfDigitsBERuntimeCost"))
@@ -438,12 +446,15 @@ def main():
                 raise RuntimeError(f"No theorem declarations found for problem {problem}")
             imports = "".join(f'import {frontend["lean_module_for_path"](source)}\n' for source in sources)
             audited += audit_group(f"problem {problem}", imports, names)
-        if 7 in problems:
-            # The module interface avoids loading Bertrand's private analytic dependencies.
-            sources = [ROOT / "data/project-euler-statements/data/lean/ProjectEulerStatements/Lib/NthPrimeBounds.lean",
-                       ROOT / "ProjectEulerSolutions/Equiv/P7.lean"]
+        if set(problems) & {7, 12}:
+            sources = [ROOT / f"data/project-euler-statements/data/lean/ProjectEulerStatements/Lib/{name}.lean"
+                       for name in ("ArithmeticBertrand", "NthPrimeBounds")]
+            imports = "module\nimport ProjectEulerStatements.Lib.ArithmeticBertrand\nimport ProjectEulerStatements.Lib.NthPrimeBounds\n"
+            if 7 in problems:
+                sources.append(ROOT / "ProjectEulerSolutions/Equiv/P7.lean")
+                imports += "import ProjectEulerSolutions.Equiv.P7\n"
             names = [name for source in sources for name in public_theorems(source)]
-            audited += audit_group("prime bounds", "module\nimport ProjectEulerSolutions.Equiv.P7\n", names)
+            audited += audit_group("prime bounds", imports, names)
     print(f"Audited {audited} theorems: only standard Lean axioms.")
     print("Complexity proofs and cost-model regressions passed.")
 
