@@ -54,7 +54,8 @@ def solve(words: List[str]) -> int:
     # Group by anagram class
     groups: Dict[str, List[str]] = {}
     for w in words:
-        groups.setdefault("".join(sorted(w)), []).append(w)
+        if w:
+            groups.setdefault("".join(sorted(w)), []).append(w)
 
     anagram_groups = [g for g in groups.values() if len(g) >= 2]
     if not anagram_groups:
