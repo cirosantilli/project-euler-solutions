@@ -35,7 +35,7 @@ theorem evaluate
       (comprehensionTargetBody target (comprehensionFilters filters
         (comprehensionTargetsBody (sumBody element []) generators))) [])
       (comprehensionTargetsEnv env ((target, .permutationsIterable expressions, filters) :: generators)) :: stack,
-    middle⟩) (by simp [HeapCalls.step, sumGeneratorTargetsStart, HeapCalls.run, captured])
+    middle⟩) (by simp [HeapCalls.step, sumGeneratorTargetsStart, itemsReceiver, HeapCalls.run, captured])
   apply (started anchors _).trans
   exact .next (by simp [HeapCalls.step, sumEnter, HeapCalls.run, accepted])
     ((executed anchors (.generatorEnd :: stack)).trans (.next rfl .refl))
