@@ -87,7 +87,7 @@ def main():
     lean = subprocess.check_output(
         ["lake", "env", "which", "lean"], text=True, env=environment
     ).strip()
-    for name in ("ExecutionCost", "ExecutionCostDomain", "CallsCost", "CallsCostLoops", "CallsCostControl", "HeapCallsCost", "HeapCallsCostLists", "ScalarSortCost", "WeightedExecutionCost", "AllocationCost", "HeapReadCost", "BufferCost", "BufferCostSlice", "RuntimeCost", "PrimitiveWork", "PrimitiveWorkBounds", "CallsRuntimeCost", "CallsRuntimeCostLoops", "CallsRuntimeCostControl", "CallsRuntimeCostFunctions", "CallsRuntimeCostScaled", "CallsRuntimeCostBitBounds", "CallsRuntimeCostNumberBounds", "CallsRuntimeCostLinking", "CallsRuntimeCostBlocks", "DecimalWorkBounds", "CallsRuntimeCostStrings", "CallsRuntimeCostRanges", "LcmRuntimeCost", "FibonacciRuntimeCost", "HeapMapWork", "HeapSetWork", "HeapSortWork", "HeapBufferWork", "HeapSequenceWork", "DynamicArrayWork", "AmortizedRuntimeCost", "HeapRuntimeCost", "HeapRuntimeCostLists", "HeapRuntimeCostControl", "HeapRuntimeCostRanges", "HeapRuntimeCostBuffers", "HeapRuntimeCostBufferLoops", "HeapRuntimeCostReturns", "HeapRuntimeCostPrimitives", "HeapRuntimeCostSequences", "HeapRuntimeCostLoopControl", "HeapRuntimeCostListCopies", "HeapRuntimeCostListLoops", "HeapRuntimeCostSets", "HeapRuntimeCostComparisons", "HeapRuntimeCostSorting", "HeapRuntimeCostBooleans"):
+    for name in ("ExecutionCost", "ExecutionCostDomain", "CallsCost", "CallsCostLoops", "CallsCostControl", "HeapCallsCost", "HeapCallsCostLists", "ScalarSortCost", "WeightedExecutionCost", "AllocationCost", "HeapReadCost", "BufferCost", "BufferCostSlice", "RuntimeCost", "PrimitiveWork", "PrimitiveWorkBounds", "CallsRuntimeCost", "CallsRuntimeCostLoops", "CallsRuntimeCostControl", "CallsRuntimeCostFunctions", "CallsRuntimeCostScaled", "CallsRuntimeCostBitBounds", "CallsRuntimeCostNumberBounds", "CallsRuntimeCostLinking", "CallsRuntimeCostBlocks", "DecimalWorkBounds", "CallsRuntimeCostStrings", "CallsRuntimeCostRanges", "LcmRuntimeCost", "FibonacciRuntimeCost", "HeapMapWork", "HeapSetWork", "HeapSortWork", "HeapBufferWork", "HeapSequenceWork", "DynamicArrayWork", "AmortizedRuntimeCost", "HeapRuntimeCost", "HeapRuntimeCostLists", "HeapRuntimeCostControl", "HeapRuntimeCostRanges", "HeapRuntimeCostBuffers", "HeapRuntimeCostBufferLoops", "HeapRuntimeCostReturns", "HeapRuntimeCostPrimitives", "HeapRuntimeCostSequences", "HeapRuntimeCostLoopControl", "HeapRuntimeCostListCopies", "HeapRuntimeCostListLoops", "HeapRuntimeCostSumGenerators", "HeapRuntimeCostSums", "DecimalSumRuntimeCost", "HeapRuntimeCostSets", "HeapRuntimeCostComparisons", "HeapRuntimeCostSorting", "HeapRuntimeCostBooleans"):
         check(FORMALSW / f"lang/py/FormalSW/{name}.lean",
               FORMALSW / f".lake/build/lib/lean/lang/py/FormalSW/{name}.olean")
     if 3 in problems:
@@ -116,7 +116,7 @@ def main():
         f"solvers/{problem}.py",
         f"data/project-euler-statements/data/py/project_euler_statements/p{problem}.py",
     )]
-    if set(problems) & {3, 7, 10}:
+    if set(problems) & {3, 4, 7, 10, 16, 20}:
         sources.append("data/project-euler-statements/data/py/project_euler_statements/common.py")
     for relative in sources:
         source = Path(relative)
@@ -141,6 +141,7 @@ def main():
         check(ast_path.resolve(), frontend["olean_path_for_lean"](ast_path))
     check(FORMALSW / "tests/py/execution_cost.lean")
     check(FORMALSW / "tests/py/runtime_cost.lean")
+    check(FORMALSW / "tests/py/runtime_sums.lean")
     with tempfile.TemporaryDirectory(prefix="formalsw-runtime-inputs-") as directory:
         generated = Path(directory) / "ListInputs.lean"
         subprocess.run([sys.executable, str(FORMALSW / "tests/py/execution_complexity_checks"),
@@ -155,6 +156,12 @@ def main():
         check(source.resolve(), build / source.with_suffix(".olean"))
     if 7 in problems:
         source = Path("data/project-euler-statements/data/py/project_euler_statements/common.py.lean.d/PrimeRuntimeResult.lean")
+        check(source.resolve(), build / source.with_suffix(".olean"))
+    if set(problems) & {4, 16, 20}:
+        source = Path("data/project-euler-statements/data/py/project_euler_statements/common.py.lean.d/DigitsRuntimeCost.lean")
+        check(source.resolve(), build / source.with_suffix(".olean"))
+    if set(problems) & {16, 20}:
+        source = Path("data/project-euler-statements/data/py/project_euler_statements/common.py.lean.d/DigitSumRuntimeCost.lean")
         check(source.resolve(), build / source.with_suffix(".olean"))
     if 4 in problems:
         source = Path("data/project-euler-statements/data/py/project_euler_statements/p4.py.lean.d/RuntimeDigits.lean")
@@ -268,6 +275,10 @@ def main():
                                for name in ("Source", "InnerRuntime", "LoopRuntime"))
                 sources.extend(Path(f"solvers/9.py.lean.d/{name}.lean") for name in
                                ("SortingRuntime", "ScalarRuntime", "GuardRuntime", "CandidateRuntime", "RangeRuntime", "OuterRuntime", "TailRuntime"))
+            if problem in (4, 16, 20):
+                sources.append(Path("data/project-euler-statements/data/py/project_euler_statements/common.py.lean.d/DigitsRuntimeCost.lean"))
+            if problem in (16, 20):
+                sources.append(Path("data/project-euler-statements/data/py/project_euler_statements/common.py.lean.d/DigitSumRuntimeCost.lean"))
             if problem == 4:
                 sources.append(Path("data/project-euler-statements/data/py/project_euler_statements/p4.py.lean.d/RuntimeDigits.lean"))
             sources.extend(runtime for _, runtime in runtime_proofs(problem))

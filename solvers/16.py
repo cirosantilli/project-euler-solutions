@@ -10,6 +10,7 @@ def solve(n: int = 1000) -> int:
     @formalsw: Requires(n >= 0)
     @formalsw: Py from project_euler_statements.p16 import naive
     @formalsw: Equiv(naive)
+    @formalsw: BigO(n)
     """
     return digit_sum(2**n)
 
