@@ -66,6 +66,10 @@ The following implementations have runtime proofs following their generated Pyth
 |link:solvers/16.py.lean.d/RuntimeCost.lean[O(n)]
 |link:data/project-euler-statements/data/py/project_euler_statements/p16.py.lean.d/RuntimeCost.lean[O(n)]
 |Fixed arithmetic, including exponentiation and all digit processing. The optimized bound is `26n+75`; the reference bound is `41n+100`. Both use the shared decimal-length bound for 2^n. The optimized proof charges formatting and each character parse; the reference charges repeated division, list resizing and summation. No asymptotic improvement claimed.
+|17
+|Pending
+|link:data/project-euler-statements/data/py/project_euler_statements/p17.py.lean.d/RuntimeCost.lean[O(n+1)]
+|Fixed arithmetic. The reference bound is `20000*(n+1)`, including each dictionary display, size-sensitive lookup, `divmod` pair allocation and summation step. It covers all natural inputs, including values above 1000 for which the reference returns zero word length. The optimized proof still needs global-table runtime support.
 |18
 |link:solvers/18.py.lean[O(n)]
 |link:data/project-euler-statements/data/py/project_euler_statements/p18.py.lean.d/RuntimeCost.lean[O(n)]
@@ -123,6 +127,7 @@ With this project's Lean/formalsw dependencies installed:
 [source,sh]
 ----
 python3 tools/check_complexity.py 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 18 19 20
+python3 tools/check_complexity.py --reference-only 17
 ----
 
 The link:tools/check_complexity.py[checker] regenerates the selected optimized and reference ASTs using formalsw's existing frontend, recompiles them, and checks the cost library, regressions, and source proofs through a shared process lock, with one Lean thread, a 2.5 GiB Lean heap limit and a watchdog that stops checks above 3 GiB resident memory. It does not depend on the earlier generated AST binaries being fresh. It does not rebuild the full Mathlib dependency tree. It also audits the exported proof theorems, accepting only Lean’s standard `propext`, `Classical.choice` and `Quot.sound` axioms. Pass problem numbers to check a subset, for example `python3 tools/check_complexity.py 1 3 9`.
@@ -134,7 +139,7 @@ The checked runtime pairs share arithmetic and scalar-operation policies. Proble
 Problems 11, 12, 13, 15, 16, 18, 19 and 20 have runtime proofs on both sides. The other problems in this group remain unfinished. Their source shapes require the following extensions:
 
 * 14: memoized execution, dictionary costs and an explicit Collatz-chain measure. The existing functional proofs assume the Collatz conjecture; no polynomial bound in the starting limit follows from that assumption alone.
-* 17: the supplied global word tables and their lookup costs.
+* 17: the reference bound is complete; the optimized proof still needs the supplied global word tables carried through runtime calls.
 
 == Size and cost conventions for the audit
 

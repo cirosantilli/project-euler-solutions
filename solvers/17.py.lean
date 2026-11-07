@@ -212,7 +212,7 @@ private theorem letters_in_number.hundreds (heap : Mutable.Heap) (globals : Muta
           (.lookup getR) .constant
           (by
             simp [HeapCalls.compare, scalarCompare, evalCmpOp]
-            exact_mod_cast (Nat.dvd_iff_mod_eq_zero.not.mpr zero))) rfl
+            exact_mod_cast zero)) rfl
       apply HeapCalls.BlockReturns.augAssign (left := .scalar (.int total))
         (right := .scalar (.int 3)) (value := .scalar (.int (total + 3)))
         (middle := heap ++ [pair]) (afterOperation := heap ++ [pair])
