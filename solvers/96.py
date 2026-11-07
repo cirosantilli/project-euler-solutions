@@ -90,7 +90,7 @@ def solve_cands(cands):
     mask = cands[idx]
     while mask:
         b = mask & -mask
-        nxt = cands.copy()
+        nxt = cands[:]
         nxt[idx] = b
         res = solve_cands(nxt)
         if res is not None:
