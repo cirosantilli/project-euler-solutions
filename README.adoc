@@ -468,6 +468,7 @@ Let me know if you want that change.
 ....
 * link:solvers/44.lean[]: TODO
 
+[[formalsw]]
 ===== Python source proofs with FormalSW
 
 While trying to create Lean versions of each solution and proofs, we've realized that we didn't really want to learn Lean, and so instead we created https://github.com/cirosantilli/formalsw[FormalSW] which converts Python to a format Lean understand and then proves things in Lean from there.
@@ -689,7 +690,7 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 
 // RESULTS TABLE
 |===
-| ID | Explanation | Proof | Runtime (s) | Output | Error
+| ID | Explanation | <<formalsw,Proof>> | Runtime (s) | Output | Error
 | link:solvers/1.py[1.py] | link:solvers/1.md[1.md] | link:solvers/1.py.lean[1.py.lean] | 0.054 | 233168 |
 | link:solvers/2.py[2.py] | link:solvers/2.md[2.md] | link:solvers/2.py.lean[2.py.lean] | 0.104 | 4613732 |
 | link:solvers/3.py[3.py] | link:solvers/3.md[3.md] | link:solvers/3.py.lean[3.py.lean] | 0.120 | 6857 |
