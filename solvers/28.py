@@ -9,6 +9,7 @@ def solve(n: int) -> int:
     @formalsw: Py from project_euler_statements.p28 import naive
     @formalsw: Requires(n >= 1 and n % 2 == 1)
     @formalsw: Equiv(naive)
+    @formalsw: BigO(1)
     """
     assert n >= 1 and n % 2 == 1
     m = (n - 1) // 2  # number of "layers" around the center

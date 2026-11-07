@@ -1,6 +1,7 @@
 import ProjectEulerSolutions.P28
 import Mathlib.Algebra.BigOperators.Intervals
-import Mathlib.Tactic
+import Mathlib.Algebra.BigOperators.Ring.Finset
+import Mathlib.Tactic.Linarith
 open scoped BigOperators
 namespace ProjectEulerSolutions.P28
 

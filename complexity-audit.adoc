@@ -1,4 +1,4 @@
-= Python complexity exploration: problems 1–20
+= Python complexity exploration: problems 1–30
 :toc:
 
 The following implementations have runtime proofs following their generated Python ASTs, using fixed-cost arithmetic unless stated otherwise. Each function keeps one `BigO` annotation using the most informative arithmetic model. Both models charge collections and library work separately from arithmetic.
@@ -86,6 +86,10 @@ The following implementations have runtime proofs following their generated Pyth
 |link:solvers/20.py.lean.d/RuntimeCost.lean[O(n log n)]
 |link:data/project-euler-statements/data/py/project_euler_statements/p20.py.lean.d/RuntimeCost.lean[O(n log n)]
 |Fixed arithmetic. With `D = n*(log2(n+1)+1)+1`, the optimized source costs at most `11n+24D+60`, and the reference at most `8n+39D+70`. The shared factorial bound covers both intermediate products and final decimal length. The optimized proof follows each multiplication; the reference uses an explicit linear `math.factorial` tariff. Both charge all digit processing. No asymptotic improvement claimed.
+|28
+|link:solvers/28.py.lean.d/RuntimeCost.lean[O(1)]
+|link:data/project-euler-statements/data/py/project_euler_statements/p28.py.lean.d/RuntimeCost.lean[O(n)]
+|Fixed arithmetic. The optimized formula costs at most 256. For positive n, the reference costs at least `13*(floor((n-1)/2)+1)+4` and at most `200*(n+1)`, ruling out O(1). Includes each conditional layer-helper call, exponentiation by two, and the actual generator traversal.
 |===
 
 The optional `arithmetic=bits` model charges addition by the sum of operand widths and multiplication/division by their product. Problem 6's link:solvers/6.py.lean.d/RuntimeCost.lean[runtime proof file] also checks a quadratic bound in input bit length as validation of that model, without adding a second source annotation.
@@ -131,6 +135,7 @@ With this project's Lean/formalsw dependencies installed:
 [source,sh]
 ----
 python3 tools/check_complexity.py 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
+python3 tools/check_complexity.py 28
 ----
 
 The link:tools/check_complexity.py[checker] regenerates the selected optimized and reference ASTs using formalsw's existing frontend, recompiles them, and checks the cost library, regressions, and source proofs through a shared process lock, with one Lean thread, a 2.5 GiB Lean heap limit and a watchdog that stops checks above 3 GiB resident memory. It does not depend on the earlier generated AST binaries being fresh. It does not rebuild the full Mathlib dependency tree. It also audits the exported proof theorems, accepting Lean’s standard `propext`, `Classical.choice` and `Quot.sound` axioms. Only problem 14 may additionally use the existing `ProjectEulerStatements.P14.collatzConjecture`; the generic memoization and mutable-collection rules are audited separately without that exception. Pass problem numbers to check a subset, for example `python3 tools/check_complexity.py 1 3 9`.
@@ -140,6 +145,10 @@ The checked runtime pairs share arithmetic and scalar-operation policies. Proble
 == Coverage for 11–20
 
 Problems 11–20 have runtime proofs on both sides. The Collatz-dependent measure above and the existing conjecture do not establish a polynomial bound in the starting limit.
+
+== Coverage for 21–30
+
+Problem 28 has runtime proofs on both sides. Problems 21–27 and 29–30 remain unfinished; the existing functional-equivalence proofs do not establish their runtime bounds.
 
 == Size and cost conventions for the audit
 
