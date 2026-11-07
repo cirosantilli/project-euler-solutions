@@ -1,4 +1,4 @@
-import solvers.«98.py.lean.d».GroupProperties
+import solvers.«98.py.lean.d».Execution
 
 namespace solvers.«98».pattern_signature
 open FormalSW.PyAst HeapCalls
@@ -81,3 +81,20 @@ theorem checker_agrees (word digits : String) (heap : Mutable.Heap) (env : HeapC
   exact accepts.trans ((labels_eq_iff_substitution '0' _ _).trans keys.symm)
 
 end solvers.«98».mapping
+
+namespace solvers.«98».solve
+open FormalSW.PyAst HeapCalls
+open pattern_signature (program)
+
+theorem «Returns» (words : List String) (heap : Mutable.Heap) (address : Nat)
+    (found : heap[address]? = some (.list (words.map text))) :
+    (HeapCalls.call program "solve" [.ref address] heap).Returns := by
+  obtain ⟨_, _, returned, _⟩ := result words heap address found
+  exact returned.returns
+
+theorem «Supported» (words : List String) (heap : Mutable.Heap) (address : Nat)
+    (found : heap[address]? = some (.list (words.map text))) :
+    (HeapCalls.call program "solve" [.ref address] heap).Supported :=
+  («Returns» words heap address found).supported
+
+end solvers.«98».solve
