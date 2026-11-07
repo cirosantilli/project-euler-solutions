@@ -1,4 +1,4 @@
-import solvers.«98.py.lean.d».CandidateLoop
+import solvers.«98.py.lean.d».GroupProperties
 
 namespace solvers.«98».pattern_signature
 open FormalSW.PyAst HeapCalls
