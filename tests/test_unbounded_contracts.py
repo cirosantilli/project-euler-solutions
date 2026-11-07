@@ -24,11 +24,23 @@ def implementations(problem):
 
 class UnboundedContractTests(unittest.TestCase):
     def test_shared_arguments(self):
-        for problem in (66, 68, 74, 77, 78, 79, 85, 88, 90, 92, 93, 100):
+        for problem in (66, 68, 74, 77, 78, 79, 84, 85, 88, 90, 92, 93, 95, 96, 98, 100):
             with self.subTest(problem=problem):
                 reference, optimized = implementations(problem)
                 self.assertEqual(list(inspect.signature(reference.naive).parameters),
                                  list(inspect.signature(optimized["solve"]).parameters))
+
+    def test_amicable_chain_bounds_ties_and_visit_order(self):
+        reference, optimized = implementations(95)
+        for limit, expected in ((-10, 0), (0, 0), (5, 0), (6, 6), (28, 6),
+                                (220, 6), (283, 6), (284, 220), (300, 220)):
+            with self.subTest(limit=limit):
+                self.assertEqual(reference.naive(limit), expected)
+                self.assertEqual(optimized["solve"](limit), expected)
+        self.assertEqual(reference.chain(220, 284), [220, 284])
+        self.assertEqual(reference.chain(284, 284), [284, 220])
+        self.assertEqual(reference.chain(220, 283), [])
+        self.assertEqual(reference.chain(25, 30), [])
 
     def test_die_faces_and_required_pairs(self):
         reference, optimized = implementations(90)
