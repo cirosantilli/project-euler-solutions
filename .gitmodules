@@ -4,3 +4,6 @@
 [submodule "data/projecteuler-solutions"]
 	path = data/projecteuler-solutions
 	url = https://github.com/lucky-bai/projecteuler-solutions
+[submodule "nagini"]
+	path = nagini
+	url = https://github.com/marcoeilers/nagini.git

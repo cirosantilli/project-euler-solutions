@@ -514,6 +514,37 @@ When proofs are larger and this can make compilation run faster, we also by conv
 
 Reusable mathematical concepts and lemmas are stored under link:ProjectEulerSolutions/Lib/[] so that they may be used across multiple programming languages and problems as needed.
 
+[[nagini]]
+====== Python source proofs with Nagini
+
+https://github.com/marcoeilers/nagini[Nagini] is a Python formal verification system. It verifies the contracts in link:solvers/1.py[] using the solver equivalence proof in link:solvers/p1_nagini.py[]. The reference's own termination check stays beside it in link:data/project-euler-statements/data/py/project_euler_statements/p1_nagini.py[].
+
+Install Python 3.12 (including venv support and development headers) and Java 11 or newer, then run from this repository's root:
+
+[source,bash]
+----
+git submodule update --init nagini data/project-euler-statements
+python3.12 -m venv nagini/.venv
+. nagini/.venv/bin/activate
+python -m pip install -e ./nagini -e ./data/project-euler-statements
+----
+
+The editable installs expose both packages, including local Nagini fixes; the reference package's `py.typed` marker makes it visible to Nagini's type checker. No `PYTHONPATH` or `MYPYPATH` is needed. In later shells, activate the same environment and run:
+
+[source,bash]
+----
+. nagini/.venv/bin/activate
+nagini --verifier silicon solvers/1.py
+nagini --verifier silicon data/project-euler-statements/data/py/project_euler_statements/p1_nagini.py
+----
+
+Successful verification outputs something like this:
+
+----
+Verification successful
+Verification took 8.72 seconds.
+----
+
 [[formalization-assumptions]]
 ===== Formalization assumptions and research
 
