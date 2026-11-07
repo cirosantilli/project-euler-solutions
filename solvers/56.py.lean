@@ -80,7 +80,8 @@ private theorem cell (a b : Nat) (best : Int) (heap : Heap) (env : HeapCalls.Env
       finalEnv "a" = env "a" ∧ finalEnv "limit" = env "limit" := by
   have power : Evaluates program env (.builtinCall .pow [.name "a", .name "b"]) heap (number (a^b)) heap globals := by
     apply Evaluates.builtin (.cons (Evaluates.lookup getA) (.cons (Evaluates.lookup getB) .nil))
-    simp [primitive, scalarResult, scalarBinary, number, show ¬ (b : Int) < 0 by omega]
+    change scalarResult (scalarBinary .pow (.int a) (.int b)) _ = _
+    simp [scalarResult, scalarBinary, number, show ¬ (b : Int) < 0 by omega]
   have scored : Evaluates program env scoreExpression heap (number (PowerDigitSum.score a b)) heap globals :=
     Evaluates.call (.cons power .nil) (digit_sum.result (a^b) heap globals)
   let ready := setLocal env "s" (number (PowerDigitSum.score a b))
