@@ -1,6 +1,8 @@
+import solvers.«4.py.lean.d».RuntimeCost
 import «.formalsw».solvers.«4.py.ast»
 import data.«project-euler-statements».data.py.project_euler_statements.«p4.py»
-import FormalSW
+import lang.py.FormalSW.Calls
+import Mathlib.Tactic.Lift
 import ProjectEulerSolutions.Equiv.P4
 
 namespace solvers.«4»

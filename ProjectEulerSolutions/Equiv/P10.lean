@@ -1,5 +1,8 @@
 import ProjectEulerSolutions.P10
-import Mathlib.Tactic
+import Mathlib.Tactic.IntervalCases
+import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.Use
+import Mathlib.Tactic.Push
 namespace ProjectEulerSolutions.P10
 
 open scoped BigOperators
@@ -20,7 +23,7 @@ lemma naive_one : ProjectEulerStatements.P10.naive 1 = 0 := by
 
 lemma naive_two : ProjectEulerStatements.P10.naive 2 = 0 := by
   rw [show 2 = 1 + 1 by rfl, naive_succ, naive_one]
-  norm_num
+  simp [Nat.not_prime_one]
 
 lemma naive_three : ProjectEulerStatements.P10.naive 3 = 2 := by
   rw [show 3 = 2 + 1 by rfl, naive_succ, naive_two]
@@ -203,7 +206,7 @@ lemma exists_prime_dvd_sq_le_of_not_prime {n : Nat} (hn2 : 2 ≤ n) (hnp : ¬ Na
   have hnotall : ¬ ∀ m, 2 ≤ m → m ≤ Nat.sqrt n → ¬ m ∣ n := by
     intro h
     exact hnp ((Nat.prime_def_le_sqrt).2 ⟨hn2, h⟩)
-  push_neg at hnotall
+  push Not at hnotall
   rcases hnotall with ⟨m, hm2, hmsqrt, hmdvd⟩
   obtain ⟨p, hp, hpdvdm⟩ := Nat.exists_prime_and_dvd (by omega : m ≠ 1)
   refine ⟨p, hp, dvd_trans hpdvdm hmdvd, ?_⟩
@@ -388,7 +391,7 @@ theorem equiv (n : Nat) : ProjectEulerStatements.P10.naive n = solve n := by
       rw [go_correct (limit := n) (candidate := 3) (sum := 2) (primes := #[2])]
       · exact hgt
       · norm_num
-      · norm_num
+      · exact ⟨1, rfl⟩
       · omega
       · exact naive_three.symm
       · exact primeArrayOK_initial

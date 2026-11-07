@@ -7,6 +7,7 @@ def solve(total: int) -> int:
     @formalsw: Requires(total >= 0)
     @formalsw: Requires(naive(total) > 0)
     @formalsw: Equiv(naive)
+    @formalsw: BigO(total)
     """
     best = 0
     m = 2

@@ -6,6 +6,7 @@ def solve(limit: int) -> int:
     @formalsw: Py from project_euler_statements.p2 import naive
     @formalsw: Requires(limit > 1)
     @formalsw: Equiv(naive)
+    @formalsw: BigO(Nat.log2 limit)
 
     Returns the sum of even Fibonacci numbers not exceeding `limit`,
     with Fibonacci starting at 1, 2, ...

@@ -7,6 +7,7 @@ def solve(n: int) -> int:
     @formalsw: Py from project_euler_statements.p3 import naive
     @formalsw: Requires(n >= 2)
     @formalsw: Equiv(naive)
+    @formalsw: BigO(Nat.sqrt n * (Nat.log2 (n + 1) + 1)^2, arithmetic=bits)
 
     Return the largest prime factor of n.
     """

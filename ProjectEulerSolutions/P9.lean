@@ -1,5 +1,5 @@
 import ProjectEulerStatements.P9
-import Mathlib.Tactic
+import Mathlib.Tactic.Linarith
 namespace ProjectEulerSolutions.P9
 
 def loopN (total m n : Nat) : Nat :=

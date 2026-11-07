@@ -30,6 +30,7 @@ def solve(n: int) -> int:
     @formalsw: Py from project_euler_statements.p4 import naive
     @formalsw: Requires(n >= 0)
     @formalsw: Equiv(naive)
+    @formalsw: BigO(10 ^ (2 * n) * (n + 1))
     """
     lo = 0 if n == 0 else 10 ** (n - 1)
     hi = 10 ** n - 1

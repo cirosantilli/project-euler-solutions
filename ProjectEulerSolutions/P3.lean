@@ -2,7 +2,6 @@ import ProjectEulerStatements.P3
 import Mathlib.Data.Nat.Prime.Basic
 import Mathlib.Data.Nat.Find
 import Mathlib.Data.Prod.Basic
-import Mathlib.Tactic
 
 namespace ProjectEulerSolutions.P3
 

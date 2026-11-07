@@ -1,7 +1,9 @@
 import ProjectEulerSolutions.P4
 import Init.Data.Nat.ToString
 import Batteries.Data.String.Lemmas
-import Mathlib.Tactic
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.IntervalCases
+import Mathlib.Tactic.NormNum
 
 namespace ProjectEulerSolutions.P4
 

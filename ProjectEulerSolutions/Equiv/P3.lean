@@ -1,6 +1,8 @@
 import ProjectEulerSolutions.P3
 import Mathlib.Data.Nat.Sqrt
-import Mathlib.Tactic
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.Use
 
 namespace ProjectEulerSolutions.P3
 open ProjectEulerStatements.P3
@@ -254,7 +256,7 @@ lemma solve_resultOK (n : ProjectEulerStatements.P3.NatGE2) : ResultOK n.1 (solv
     simpa [hst] using hstrip0
   exact oddLoop_correct (N := n.1) (n := n') (f := 3) (largest := largest') n.2
     hstrip.1 hstrip.2.1 hstrip.2.2.1 hstrip.2.2.2.1 hstrip.2.2.2.2.1
-    (by norm_num) (by norm_num : Odd 3) hstrip.2.2.2.2.2.1 hstrip.2.2.2.2.2.2.1
+    (by norm_num) (show Odd 3 from ⟨1, rfl⟩) hstrip.2.2.2.2.2.1 hstrip.2.2.2.2.2.2.1
     hstrip.2.2.2.2.2.2.2
 
 theorem equiv (n : ProjectEulerStatements.P3.NatGE2) :

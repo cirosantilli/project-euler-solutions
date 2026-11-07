@@ -23,6 +23,7 @@ def solve(n: int) -> int:
     @formalsw: Py from project_euler_statements.p1 import naive
     @formalsw: Requires(n > 1)
     @formalsw: Equiv(naive)
+    @formalsw: BigO(1)
     """
     # Nagini
     Requires(n > 1)

@@ -1121,6 +1121,10 @@ def format_other_results_list(rows: dict[int, dict[str, str]]) -> list[str]:
             proof_paths = []
             if path == f"solvers/{pid}.py":
                 proof_paths.append(f"solvers/p{pid}_nagini.py")
+                runtime_proof = f"solvers/{pid}.py.lean.d/RuntimeCost.lean"
+                proof_paths.append(runtime_proof if (ROOT / runtime_proof).is_file()
+                                   else f"solvers/{pid}.py.lean.d/Complexity.lean")
+                proof_paths.append(f"solvers/{pid}.py.lean.d/MarkingWork.lean")
             elif path == f"solvers/{pid}.lean":
                 proof_paths.append(f"ProjectEulerSolutions/Equiv/P{pid}.lean")
             proof_links = "".join(

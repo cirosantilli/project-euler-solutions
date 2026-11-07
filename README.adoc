@@ -468,6 +468,8 @@ Let me know if you want that change.
 [[formalsw]]
 ===== Python source proofs with FormalSW
 
+Runtime complexity work for Python problems 1–10 is tracked in link:complexity-audit.adoc[]. `@formalsw: BigO(...)` defaults to fixed-cost arithmetic; add `arithmetic=bits` when integer widths matter. Keep one annotation per function, choosing the model that best explains its algorithm. Runtime proofs cover both optimized and primary reference implementations for problems 1–10, with one source annotation and an adjacent proof per function. Run `python3 tools/check_complexity.py 1 2 3 4 5 6 7 8 9 10` to check the current declarations and cost-model regressions.
+
 While trying to create Lean versions of each solution and proofs, we've realized that we didn't really want to learn Lean, and so instead we created https://github.com/cirosantilli/formalsw[FormalSW] which converts Python to a format Lean understand and then proves things in Lean from there.
 
 FormalSW theorems are stated in Python docstrings for each function e.g. link:solvers/1.py[] contains:
@@ -1832,62 +1834,62 @@ Some of the Python implementations are missing for eulersolve, often for the har
 
 // BENCHMARK TABLE
 * 1
-** link:solvers/1.py[]: 0.054 s. link:solvers/p1_nagini.py[]
+** link:solvers/1.py[]: 0.054 s. link:solvers/p1_nagini.py[]. link:solvers/1.py.lean.d/RuntimeCost.lean[]
 ** link:solvers/eulersolve/1.py[]: 0.087 s
 ** link:solvers/1.c[]: 0.001 s
 ** link:solvers/1.cpp[]: 0.003 s
 ** link:solvers/eulersolve/1.cpp[]: 0.004 s
 ** link:solvers/1.lean[]: 0.203 s. link:ProjectEulerSolutions/Equiv/P1.lean[]
 * 2
-** link:solvers/2.py[]: 0.104 s
+** link:solvers/2.py[]: 0.104 s. link:solvers/2.py.lean.d/RuntimeCost.lean[]
 ** link:solvers/eulersolve/2.py[]: 0.086 s
 ** link:solvers/2.c[]: 0.001 s
 ** link:solvers/eulersolve/2.cpp[]: 0.003 s
 ** link:solvers/2.lean[]: 0.164 s. link:ProjectEulerSolutions/Equiv/P2.lean[]
 * 3
-** link:solvers/3.py[]: 0.120 s
+** link:solvers/3.py[]: 0.120 s. link:solvers/3.py.lean.d/RuntimeCost.lean[]
 ** link:solvers/eulersolve/3.py[]: 0.075 s
 ** link:solvers/3.c[]: 0.001 s
 ** link:solvers/eulersolve/3.cpp[]: 0.003 s
 ** link:solvers/3.lean[]: 0.067 s. link:ProjectEulerSolutions/Equiv/P3.lean[]
 * 4
-** link:solvers/4.py[]: 0.126 s
+** link:solvers/4.py[]: 0.126 s. link:solvers/4.py.lean.d/RuntimeCost.lean[]
 ** link:solvers/eulersolve/4.py[]: 0.083 s
 ** link:solvers/4.c[]: 0.001 s
 ** link:solvers/eulersolve/4.cpp[]: 0.003 s
 ** link:solvers/4.lean[]: 0.071 s. link:ProjectEulerSolutions/Equiv/P4.lean[]
 * 5
-** link:solvers/5.py[]: 0.111 s
+** link:solvers/5.py[]: 0.111 s. link:solvers/5.py.lean.d/RuntimeCost.lean[]
 ** link:solvers/eulersolve/5.py[]: 0.065 s
 ** link:solvers/5.c[]: 0.001 s
 ** link:solvers/eulersolve/5.cpp[]: 0.003 s
 ** link:solvers/5.lean[]: 0.211 s. link:ProjectEulerSolutions/Equiv/P5.lean[]
 * 6
-** link:solvers/6.py[]: 0.106 s
+** link:solvers/6.py[]: 0.106 s. link:solvers/6.py.lean.d/RuntimeCost.lean[]
 ** link:solvers/eulersolve/6.py[]: 0.062 s
 ** link:solvers/6.c[]: 0.002 s
 ** link:solvers/eulersolve/6.cpp[]: 0.003 s
 ** link:solvers/6.lean[]: 0.095 s. link:ProjectEulerSolutions/Equiv/P6.lean[]
 * 7
-** link:solvers/7.py[]: 0.114 s
+** link:solvers/7.py[]: 0.114 s. link:solvers/7.py.lean.d/RuntimeCost.lean[]. link:solvers/7.py.lean.d/MarkingWork.lean[]
 ** link:solvers/eulersolve/7.py[]: 0.065 s
 ** link:solvers/7.c[]: 0.002 s
 ** link:solvers/eulersolve/7.cpp[]: 0.003 s
 ** link:solvers/7.lean[]: 0.143 s. link:ProjectEulerSolutions/Equiv/P7.lean[]
 * 8
-** link:solvers/8.py[]: 0.113 s
+** link:solvers/8.py[]: 0.113 s. link:solvers/8.py.lean.d/RuntimeCost.lean[]. link:solvers/8.py.lean.d/Complexity.lean[]
 ** link:solvers/eulersolve/8.py[]: 0.061 s
 ** link:solvers/8.c[]: 0.001 s
 ** link:solvers/eulersolve/8.cpp[]: 0.003 s
 ** link:solvers/8.lean[]: 0.008 s. link:ProjectEulerSolutions/Equiv/P8.lean[]
 * 9
-** link:solvers/9.py[]: 0.103 s
+** link:solvers/9.py[]: 0.103 s. link:solvers/9.py.lean.d/RuntimeCost.lean[]
 ** link:solvers/eulersolve/9.py[]: 0.061 s
 ** link:solvers/9.c[]: 0.001 s
 ** link:solvers/eulersolve/9.cpp[]: 0.003 s
 ** link:solvers/9.lean[]: 0.093 s. link:ProjectEulerSolutions/Equiv/P9.lean[]
 * 10
-** link:solvers/10.py[]: 0.116 s
+** link:solvers/10.py[]: 0.116 s. link:solvers/10.py.lean.d/RuntimeCost.lean[]. link:solvers/10.py.lean.d/MarkingWork.lean[]
 ** link:solvers/eulersolve/10.py[]: 0.112 s
 ** link:solvers/10.c[]: 0.003 s
 ** link:solvers/eulersolve/10.cpp[]: 0.009 s

@@ -1,8 +1,9 @@
-import «.formalsw».solvers.«8.py.ast»
+import solvers.«8.py.lean.d».Source
+import solvers.«8.py.lean.d».RuntimeCost
 import data.«project-euler-statements».data.py.project_euler_statements.«p8.py»
-import FormalSW
 import ProjectEulerSolutions.Equiv.P8
-import Mathlib.Tactic
+import Mathlib.Tactic.ByContra
+import Mathlib.Algebra.BigOperators.Ring.List
 
 namespace ProjectEulerSolutions.P8.Python
 open data.«project-euler-statements».data.py.project_euler_statements.p8 (windowValues)
@@ -59,7 +60,9 @@ theorem maximumWindow_short (digits : List Int) (width : Nat) (short : digits.le
   cases digits with
   | nil => rfl
   | cons head tail =>
-      have shorter : (tail.length : Int) + 1 < (width : Int) := by simpa using (show ((head :: tail).length : Int) < width by exact_mod_cast short)
+      have shorter : (tail.length : Int) + 1 < (width : Int) := by
+        simp only [List.length_cons] at short
+        omega
       simp [maximumWindow, windowValues, shorter, maximum]
 
 theorem maximumWindow_cons (head : Int) (tail : List Int) (width : Nat)
@@ -254,17 +257,6 @@ namespace solvers.«8»
 open FormalSW.PyAst
 open data.«project-euler-statements».data.py.project_euler_statements.p8 (windowValues)
 private abbrev program := Solvers.P8Ast.module
-private def ints (xs : List Int) : List Mutable.Value := xs.map fun x => .scalar (.int x)
-
-private def scanTest (name : String) (zeros : Bool) : Expr :=
-  .boolOp .and [
-    .compare (.name name) [(.lt, .name "digit_count")],
-    .compare (.subscript (.name "digits") (.name name))
-      [(if zeros then .eq else .notEq, .constant (.int 0))]]
-
-private def scanLoop (name : String) (zeros : Bool) : Stmt :=
-  .whileDo (scanTest name zeros) [.augAssign (.name name) .add (.constant (.int 1))] []
-
 private theorem read_digit (digits : List Int) (heap : Mutable.Heap) (address position : Nat)
     (env : HeapCalls.Env) (indexName : String)
     (found : heap[address]? = some (.list (ints digits))) (valid : position < digits.length)
@@ -307,33 +299,6 @@ private theorem scanTest_read (digits : List Int) (heap : Mutable.Heap) (address
         HeapCalls.Evaluates.constant
       cases zeros <;> simp [HeapCalls.compare, scalarCompare, evalCmpOp]
     · rfl
-
-private theorem setLocal_shadow (env : HeapCalls.Env) (name : String) (a b : Mutable.Value) :
-    HeapCalls.setLocal (HeapCalls.setLocal env name a) name b = HeapCalls.setLocal env name b := by
-  funext query
-  by_cases equal : query = name <;> simp [HeapCalls.setLocal, equal]
-
-private theorem setLocal_current (env : HeapCalls.Env) (name : String) (value : Mutable.Value)
-    (current : env name = some value) : HeapCalls.setLocal env name value = env := by
-  funext query
-  by_cases equal : query = name <;> simp_all [HeapCalls.setLocal]
-
-private theorem scan_bounds (digits : List Int) (start : Nat) (zeros : Bool) (bounded : start ≤ digits.length) :
-    ∃ stop, start ≤ stop ∧ ∃ upper : stop ≤ digits.length,
-      (∀ index, start ≤ index → (bound : index < stop) →
-        (decide (digits[index]'(by omega) = 0) == zeros) = true) ∧
-      (∀ bound : stop < digits.length, (decide (digits[stop]'bound = 0) == zeros) = false) := by
-  by_cases valid : start < digits.length
-  · by_cases selected : (decide (digits[start] = 0) == zeros) = true
-    · obtain ⟨stop, ordered, bounded, inside, outside⟩ := scan_bounds digits (start + 1) zeros (by omega)
-      refine ⟨stop, by omega, bounded, ?_, outside⟩
-      intro index lower upper
-      by_cases equal : index = start
-      · subst index; exact selected
-      · exact inside index (by omega) upper
-    · exact ⟨start, le_rfl, bounded, by intros; omega, by intros; simpa using selected⟩
-  · exact ⟨start, le_rfl, bounded, by intros; omega, by intros; omega⟩
-termination_by digits.length - start
 
 /-- Both source scans traverse exactly their selected interval and preserve the input heap. -/
 private theorem scan_result (digits : List Int) (heap : Mutable.Heap) (address start stop : Nat)
@@ -382,9 +347,6 @@ private theorem scan_result (digits : List Int) (heap : Mutable.Heap) (address s
           notDigits notCount (by omega) bounded (fun index lower upper => selected index (by omega) upper) finished
 termination_by stop - start
 
-private def productBody : List Stmt :=
-  [.augAssign (.name "prod") .mult (.subscript (.name "digits") (.name "t"))]
-
 /-- The first product loop multiplies each indexed digit once, without allocating or mutating. -/
 private theorem product_range (digits : List Int) (heap : Mutable.Heap) (address start stop : Nat)
     (env : HeapCalls.Env) (product : Int)
@@ -430,21 +392,6 @@ private theorem product_range (digits : List Int) (heap : Mutable.Heap) (address
 termination_by stop - start
 
 /-- Python floor division agrees with Lean's floor quotient for either divisor sign. -/
-private theorem divide (a b : Int) (heap : Mutable.Heap) (nonzero : b ≠ 0) :
-    Mutable.binary .floorDiv (.scalar (.int a)) (.scalar (.int b)) heap =
-      some (.ok (.scalar (.int (a.fdiv b))), heap) := by
-  by_cases positive : 0 < b
-  · simp [Mutable.binary, scalarBinary, nonzero, positive,
-      Int.fdiv_eq_ediv_of_nonneg a (by omega : 0 ≤ b)]
-  · have quotient : a.fdiv b = (-a) / (-b) := by
-      rw [← Int.neg_fdiv_neg, Int.fdiv_eq_ediv_of_nonneg _ (by omega : 0 ≤ -b)]
-    simp [Mutable.binary, scalarBinary, nonzero, positive, quotient]
-
-private def rollExpression : Expr :=
-  .binOp (.binOp (.name "prod") .floorDiv
-    (.subscript (.name "digits") (.binOp (.name "t") .sub (.name "k")))) .mult
-    (.subscript (.name "digits") (.name "t"))
-
 private theorem roll_value (digits : List Int) (heap : Mutable.Heap) (address index width : Nat)
     (env : HeapCalls.Env) (found : heap[address]? = some (.list (ints digits)))
     (receiver : env "digits" = some (.ref address))
@@ -479,9 +426,6 @@ private theorem roll_value (digits : List Int) (heap : Mutable.Heap) (address in
   · exact read_digit digits heap address index env "t" found bounded receiver counter
   · simpa [Mutable.binary, scalarBinary] using roll
 
-private def updateBest : Stmt :=
-  .ifThen (.compare (.name "prod") [(.gt, .name "best")]) [.assign [.name "best"] (.name "prod")] []
-
 private theorem update_best (env : HeapCalls.Env) (heap : Mutable.Heap) (product best : Int)
     (current : env "prod" = some (.scalar (.int product)))
     (previous : env "best" = some (.scalar (.int best))) :
@@ -507,8 +451,6 @@ private theorem update_best (env : HeapCalls.Env) (heap : Mutable.Heap) (product
     · intros; rfl
 
 open ProjectEulerSolutions.P8.Python
-
-private def rollingBody : List Stmt := [.assign [.name "prod"] rollExpression, updateBest]
 
 /-- Each rolling iteration divides by a nonzero leaving digit and incorporates the new product. -/
 private theorem rolling_range (digits : List Int) (heap : Mutable.Heap) (address width start stop : Nat)
@@ -565,12 +507,6 @@ private theorem rolling_range (digits : List Int) (heap : Mutable.Heap) (address
 termination_by stop - start
 
 /-- The source statements executed for a segment long enough to contain a window. -/
-private def segmentBody : List Stmt := [
-  .assign [.name "prod"] (.constant (.int 1)),
-  .forIn (.name "t") (.call (.name "range") [.name "i", .binOp (.name "i") .add (.name "k")]) productBody [],
-  updateBest,
-  .forIn (.name "t") (.call (.name "range") [.binOp (.name "i") .add (.name "k"), .name "j"]) rollingBody []]
-
 private theorem segment_result (digits : List Int) (heap : Mutable.Heap) (address start stop width : Nat)
     (env : HeapCalls.Env) (best : Int)
     (found : heap[address]? = some (.list (ints digits)))
@@ -638,10 +574,6 @@ private theorem segment_result (digits : List Int) (heap : Mutable.Heap) (addres
   · intro name notProduct notIndex notBest
     rw [preservedRoll name notProduct notIndex notBest, kept name notProduct notIndex notBest]
 
-private def processSegment : List Stmt := [
-  .assign [.name "seg_len"] (.binOp (.name "j") .sub (.name "i")),
-  .ifThen (.compare (.name "seg_len") [(.gtE, .name "k")]) segmentBody []]
-
 private theorem process_segment (digits : List Int) (heap : Mutable.Heap) (address start stop width : Nat)
     (env : HeapCalls.Env) (best : Int)
     (found : heap[address]? = some (.list (ints digits)))
@@ -690,15 +622,6 @@ private theorem process_segment (digits : List Int) (heap : Mutable.Heap) (addre
       simpa [lengthEnv, HeapCalls.setLocal] using previous
     · intro name _ _ _ notLength
       simp [lengthEnv, HeapCalls.setLocal, notLength]
-
-private def outerBody : List Stmt := [
-  scanLoop "i" true,
-  .ifThen (.compare (.name "i") [(.gtE, .name "digit_count")]) [.breakLoop] [],
-  .assign [.name "j"] (.name "i"),
-  scanLoop "j" false] ++ processSegment ++ [.assign [.name "i"] (.name "j")]
-
-private def outerLoop : Stmt :=
-  .whileDo (.compare (.name "i") [(.lt, .name "digit_count")]) outerBody []
 
 /-- The outer source loop partitions the input at zeroes and preserves every heap object. -/
 private theorem outer_result (digits : List Int) (heap : Mutable.Heap) (address width start : Nat)

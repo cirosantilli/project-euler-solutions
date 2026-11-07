@@ -1,11 +1,13 @@
 import «.formalsw».solvers.«9.py.ast»
 import data.«project-euler-statements».data.py.project_euler_statements.«p9.py»
 import ProjectEulerSolutions.Equiv.P9
-import FormalSW
-import Mathlib.Tactic
+import solvers.«9.py.lean.d».Source
+import solvers.«9.py.lean.d».RuntimeCost
+import Mathlib.Tactic.Positivity
+import Mathlib.Tactic.Linarith
 
 namespace solvers.«9»
-open FormalSW.PyAst
+open FormalSW.PyAst solvers.«9».runtimeSource
 private abbrev program := Solvers.P9Ast.module
 private def scalarEnv (total : Int) : ScalarEnv :=
   fun name => if name = "total" then some (.int total) else none
@@ -153,12 +155,6 @@ theorem euclid_candidate (total m n : Nat) (totalPositive : 0 < total)
   refine ⟨by simp [candidate, valid], lt_min apos bpos, ?_⟩
   simpa only [min_add_max] using sum
 
-private def triple (a b c : Int) : List Mutable.Value :=
-  [.scalar (.int a), .scalar (.int b), .scalar (.int c)]
-private abbrev sortedExpression : Expr :=
-  .builtinCall .sorted [.tuple [.name "a", .name "b", .name "c"]]
-private def sortedHeap (heap : Mutable.Heap) (a b c : Int) : Mutable.Heap :=
-  heap ++ [.tuple (triple a b c), .list (triple (min a b) (max a b) c)]
 
 /-- Execute the actual tuple display and sorted call, retaining both allocations. -/
 theorem sortedExpression.result (env : HeapCalls.Env) (heap : Mutable.Heap) (a b c : Int)
@@ -186,14 +182,6 @@ theorem sortedAssignment.result (env : HeapCalls.Env) (heap : Mutable.Heap) (a b
   · simp [Mutable.sequence, sortedHeap, triple]
   · rfl
 
-private abbrev square (name : String) : Expr := .binOp (.name name) .mult (.name name)
-private abbrev triangleCondition : Expr := .boolOp .and
-  [.compare (.name "a") [(.gt, .constant (.int 0))],
-   .compare (.binOp (square "a") .add (square "b")) [(.eq, square "c")],
-   .compare (.binOp (.binOp (.name "a") .add (.name "b")) .add (.name "c")) [(.eq, .name "total")]]
-private abbrev productExpression : Expr := .binOp (.binOp (.name "a") .mult (.name "b")) .mult (.name "c")
-private abbrev updateBest : List Stmt :=
-  [.ifThen triangleCondition [.assign [.name "best"] (.builtinCall .max [.name "best", productExpression])] []]
 
 theorem triangleCondition.result (env : HeapCalls.Env) (heap : Mutable.Heap) (total a b c : Int)
     (ht : env "total" = some (.scalar (.int total)))
@@ -247,14 +235,6 @@ theorem updateBest.result (env : HeapCalls.Env) (heap : Mutable.Heap) (total a b
   · simp [HeapCalls.primitive, Calls.positionalMaximum, Calls.maximumFrom,
       HeapCalls.scalarResult, scalarCompare, evalCmpOp, larger, max_eq_left (le_of_not_gt larger)]
 
-private abbrev kExpression : Expr := .binOp (.name "total") .floorDiv (.name "s")
-private abbrev aExpression : Expr := .binOp (.name "k") .mult (.binOp (square "m") .sub (square "n"))
-private abbrev bExpression : Expr := .binOp (.name "k") .mult
-  (.binOp (.binOp (.constant (.int 2)) .mult (.name "m")) .mult (.name "n"))
-private abbrev cExpression : Expr := .binOp (.name "k") .mult (.binOp (square "m") .add (square "n"))
-private abbrev coefficientBody : List Stmt :=
-  [.assign [.name "k"] kExpression, .assign [.name "a"] aExpression,
-   .assign [.name "b"] bExpression, .assign [.name "c"] cExpression]
 private def coefficientEnv (env : HeapCalls.Env) (total m n : Nat) :=
   HeapCalls.setLocal (HeapCalls.setLocal (HeapCalls.setLocal
     (HeapCalls.setLocal env "k" (.scalar (.int (euclidK total m n))))
@@ -315,9 +295,6 @@ theorem coefficientBody.result (env : HeapCalls.Env) (heap : Mutable.Heap) (tota
   exact HeapCalls.BlockContinues.assign (cExpression.result _ heap total m n rfl
     (by simpa [HeapCalls.setLocal] using hm) (by simpa [HeapCalls.setLocal] using hn))
 
-private abbrev sortedStatement : Stmt :=
-  .assign [.tuple [.name "a", .name "b", .name "c"]] sortedExpression
-private abbrev successBody : List Stmt := coefficientBody ++ [sortedStatement] ++ updateBest
 private def sortedEnv (env : HeapCalls.Env) (total m n : Nat) : HeapCalls.Env :=
   HeapCalls.assignNames (coefficientEnv env total m n) ["a", "b", "c"]
     (triple (min (euclidA total m n : Int) (euclidB total m n))
@@ -366,12 +343,6 @@ theorem successBody.result (env : HeapCalls.Env) (heap : Mutable.Heap) (total m 
   have composed := HeapCalls.BlockContinues.append (HeapCalls.BlockContinues.append coefficients ordered) updated
   simpa only [successBody, sortedStatement, successEnv, sortedEnv, product, Nat.cast_max] using composed
 
-private abbrev sExpression : Expr :=
-  .binOp (.binOp (.constant (.int 2)) .mult (.name "m")) .mult (.binOp (.name "m") .add (.name "n"))
-private abbrev skipCondition : Expr :=
-  .compare (.binOp (.name "total") .mod (.name "s")) [(.notEq, .constant (.int 0))]
-private abbrev innerBody : List Stmt :=
-  [.assign [.name "s"] sExpression, .ifThen skipCondition [.continueLoop] []] ++ successBody
 
 theorem sExpression.result (env : HeapCalls.Env) (heap : Mutable.Heap) (m n : Nat)
     (hm : env "m" = some (.scalar (.int m))) (hn : env "n" = some (.scalar (.int n))) :
@@ -460,13 +431,6 @@ theorem innerRange.result (total m n best : Nat) (totalPositive : 0 < total) (po
 termination_by m - n
 decreasing_by all_goals omega
 
-private abbrev outerCondition : Expr := .compare
-  (.binOp (.binOp (.constant (.int 2)) .mult (.name "m")) .mult
-    (.binOp (.name "m") .add (.constant (.int 1)))) [(.ltE, .name "total")]
-private abbrev outerBody : List Stmt :=
-  [.forIn (.name "n") (.call (.name "range") [.constant (.int 1), .name "m"]) innerBody [],
-   .augAssign (.name "m") .add (.constant (.int 1))]
-private abbrev outerLoop : Stmt := .whileDo outerCondition outerBody []
 
 theorem outerCondition.result (env : HeapCalls.Env) (heap : Mutable.Heap) (total m : Nat)
     (ht : env "total" = some (.scalar (.int total))) (hm : env "m" = some (.scalar (.int m))) :

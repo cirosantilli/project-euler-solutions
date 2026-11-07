@@ -15,7 +15,7 @@ lemma fib_lt_succ (i : Nat) :
   cases i with
   | zero =>
       change 1 < 2
-      exact Nat.lt.base 1
+      exact Nat.lt_add_one 1
   | succ i =>
       change ProjectEulerStatements.P2.fib (i + 1) < ProjectEulerStatements.P2.fib (i + 2)
       rw [fib_add_two i]

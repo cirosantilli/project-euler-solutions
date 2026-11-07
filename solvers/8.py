@@ -30,6 +30,7 @@ def solve(digits: list[int], k: int) -> int:
     @formalsw: Py from project_euler_statements.p8 import naive
     @formalsw: Requires(k >= 0)
     @formalsw: Equiv(naive)
+    @formalsw: BigO(n, n = len(digits))
     """
     digit_count = len(digits)
     if k == 0:

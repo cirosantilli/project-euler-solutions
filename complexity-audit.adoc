@@ -1,0 +1,254 @@
+= Python complexity exploration: problems 1–10
+:toc:
+
+The following implementations have runtime proofs following their generated Python ASTs, using fixed-cost arithmetic unless stated otherwise. Each function keeps one `BigO` annotation using the most informative arithmetic model. Both models charge collections and library work separately from arithmetic.
+
+[cols="1,2,2,3",options="header"]
+|===
+|Problem |Optimized |Reference |Comparison
+|1
+|link:solvers/1.py.lean.d/RuntimeCost.lean[O(1)]
+|link:data/project-euler-statements/data/py/project_euler_statements/p1.py.lean.d/RuntimeCost.lean[O(n)]
+|Reference cost is between `47n+14` and `60n+14`, ruling out O(1). Includes recursion and short-circuit branches.
+|2
+|link:solvers/2.py.lean.d/RuntimeCost.lean[O(log n)]
+|link:data/project-euler-statements/data/py/project_euler_statements/p2.py.lean.d/RuntimeCost.lean[O(log n)]
+|Shared Fibonacci growth proof; both source loops take at most `98*(log₂ n+1)+30` work. No strict improvement claimed.
+|3
+|link:solvers/3.py.lean.d/RuntimeCost.lean[O(sqrt(n) * (log₂(n+1)+1)²)]
+|link:data/project-euler-statements/data/py/project_euler_statements/p3.py.lean.d/RuntimeCost.lean[O(n * (log₂(n+1)+1)²)]
+|Bit arithmetic on both sides. Includes both optimized stripping loops and the reference primality helper, including its square-root library call. Shared operand-width and divisor-count lemmas establish these upper bounds.
+|4
+|link:solvers/4.py.lean.d/RuntimeCost.lean[O(10^(2n) * (n+1))]
+|link:data/project-euler-statements/data/py/project_euler_statements/p4.py.lean.d/RuntimeCost.lean[O(10^(2n) * (n+1))]
+|Fixed arithmetic, with n measuring decimal digits. Optimized work includes pruning and decimal string operations; reference work includes digit extraction, list resizing, reversal and comparison. Both include exponentiation and range setup. No strict asymptotic improvement claimed.
+|5
+|link:solvers/5.py.lean.d/RuntimeCost.lean[O(n log n)]
+|link:data/project-euler-statements/data/py/project_euler_statements/p5.py.lean.d/RuntimeCost.lean[O(n log n)]
+|Shared range-fold proof, charging gcd by the smaller operand's bit length. Both costs are at most `(log₂ n+25)*n+26`. No asymptotic improvement claimed.
+|6
+|link:solvers/6.py.lean.d/RuntimeCost.lean[O(1)]
+|link:data/project-euler-statements/data/py/project_euler_statements/p6.py.lean.d/RuntimeCost.lean[O(n)]
+|Reference cost is exactly `33n+62`, ruling out O(1). Includes both helper traversals.
+|7
+|link:solvers/7.py.lean.d/RuntimeCost.lean[O(P * (log₂(P+1)+1)²)]
+|link:data/project-euler-statements/data/py/project_euler_statements/p7.py.lean.d/RuntimeCost.lean[O(P sqrt P)]
+|P is the nth prime, expressed by `ProjectEulerStatements.P7.naive n` in the annotations. The optimized proof includes the integer initial estimate, allocation, square roots, every marking and scanning iteration, retries and return. It first proves O(B log B) for B = max(initial estimate, 2P); the displayed bound uses only the elementary ordinal bound n <= P. The reference includes every primality call and uses its exact result to establish where the search stops. These are upper bounds; no reference lower bound or prime-density estimate in n is assumed.
+|8
+|link:solvers/8.py.lean.d/RuntimeCost.lean[O(n)]
+|link:data/project-euler-statements/data/py/project_euler_statements/p8.py.lean.d/RuntimeCost.lean[O(n²)]
+|n is list length. Both bounds are uniform in the signed list elements and window argument, subject to the optimized source's nonnegative-width precondition. The optimized proof includes both scans, initial products, rolling division and early exits. The reference includes every slice copy, concatenation, recursive call, product and maximum fold. Fixed arithmetic; these are runtime upper bounds, separate from the allocation lower bound below.
+|9
+|link:solvers/9.py.lean.d/RuntimeCost.lean[O(n)]
+|link:data/project-euler-statements/data/py/project_euler_statements/p9.py.lean.d/RuntimeCost.lean[O(n²)]
+|Fixed arithmetic, including both nested ranges, worst-case set search/rebuilding and the final maximum scan. At most one insertion occurs per outer-loop row, keeping set work quadratic. The optimized bound includes every triangular-range iteration, tuple allocation, sorting, unpacking, continue, and both function exits, including exception-message formatting.
+|10
+|link:solvers/10.py.lean.d/RuntimeCost.lean[O(n log n)]
+|link:data/project-euler-statements/data/py/project_euler_statements/p10.py.lean.d/RuntimeCost.lean[O(n sqrt n)]
+|Fixed arithmetic. Includes every primality test, its square-root library call, and filtering/summation overhead. The link:data/project-euler-statements/data/py/project_euler_statements/common.py.lean.d/PrimeRuntimeCost.lean[shared primality proof] also supplies problem 3's bit-cost bound. The optimized bound includes buffer allocation, square-root work, every candidate iteration, slice writes and the final sum. These are upper bounds; no tight reference lower bound is claimed.
+|===
+
+The optional `arithmetic=bits` model charges addition by the sum of operand widths and multiplication/division by their product. Problem 6's link:solvers/6.py.lean.d/RuntimeCost.lean[runtime proof file] also checks a quadratic bound in input bit length as validation of that model, without adding a second source annotation.
+
+The remaining results below count interpreter transitions or selected allocation/write work. They are not completed runtime bounds: map operations, string operations and arithmetic can hide nonconstant work inside a transition. These lemmas remain useful for the operation-sensitive proofs. The short `BigO` marker now requires a runtime-cost derivation with no missing primitive tariffs; the old structural classifier is exposed only as `ShapeBound`. All optimized and primary reference implementations for problems 1–10 now have the runtime upper bounds above. These do not automatically establish matching lower bounds.
+
+[cols="1,3,3",options="header"]
+|===
+|Problem |Checked result |Cost model / limits
+|link:solvers/1.py.lean.d/Complexity.lean[1]
+|Optimized exactly 109 transitions; reference between `39n+11` and `49n+11`. O(1) versus O(n), reference not O(1).
+|Scalar calls; explicit Nagini ghost-syntax erasure described below.
+|link:solvers/2.py.lean.d/Complexity.lean[2]
+|Both O(log n), using growth over pairs of Fibonacci iterations.
+|Scalar calls; logarithmic upper bounds, no strict separation claimed.
+|link:solvers/3.py.lean.d/Complexity.lean[3]
+|Optimized O(sqrt n), reference O(n). A linear lower bound on even inputs proves the reference is not O(sqrt n).
+|Scalar calls, including the reference's primality loop; arithmetic and isqrt are atomic.
+|link:solvers/4.py.lean.d/Complexity.lean[4]
+|Both have the envelope O(10^(2d)*(d+1)); the reference includes its Python digit-extraction loop.
+|Separate scalar/heap backends; conversion and collection primitives atomic. No strict cross-backend comparison claimed.
+|link:solvers/5.py.lean.d/Complexity.lean[5]
+|Optimized exactly `17*max(n-1,0)+18`; reference exactly `17n+18`. Both O(n), with linear lower bounds.
+|Scalar calls; gcd is atomic.
+|link:solvers/6.py.lean.d/Complexity.lean[6]
+|Optimized exactly 51 transitions; reference exactly `14n+42`. O(1) versus O(n), reference not O(1).
+|Scalar calls, including both reference helpers and generator traversals.
+|link:solvers/8.py.lean.d/Complexity.lean[8]
+|Reference allocates exactly `N²+2N` list slots at width 1, so its weighted cost is not O(N). On all-zero lists, optimized cost is exactly `26N+47` for N>0 and is O(N).
+|Same heap model for both, charging transitions plus net new list slots. This earlier allocation-only result is separate from the uniform runtime upper bound above; see link:solvers/8.py.lean.d/ZeroComplexity.lean[].
+|link:solvers/9.py.lean.d/Complexity.lean[9]
+|Optimized trace is at most `81T+44`, hence O(T); reference has quadratic upper and lower bounds and is not O(T). Its result set has at most T entries; sorting three integers needs at most three comparisons.
+|Same heap backend; set primitives are atomic. Optimized bound includes ValueError termination. The operation-sensitive bounds for both implementations appear above.
+|link:solvers/7.py.lean.d/MarkingWork.lean[7] / link:solvers/10.py.lean.d/MarkingWork.lean[10]
+|Source-linked byte-slice write counts are at most `size*(log₂ size+2)` per pass, using the shared link:data/project-euler-statements/data/lean/ProjectEulerStatements/Lib/ReciprocalSum.lean[reciprocal-sum bound]. Problem 10's link:solvers/10.py.lean.d/MarkingRuntime.lean[successful marking branch] costs at most `6*writes+300`, including scalar expressions, RHS construction and slice replacement.
+|P7's link:solvers/7.py.lean.d/SieveRuntime.lean[marking-loop runtime proof] bounds the complete marking range by `6s*(log₂ s+2)+321s+4`, where s is the buffer length. It includes the possible empty final slice's conservative deletion tariff. Both whole-function runtime bounds appear above. The earlier `BufferCost` write-transition charge is only a partial model.
+|===
+
+== Reproduce the proof
+
+With this project's Lean/formalsw dependencies installed:
+
+[source,sh]
+----
+python3 tools/check_complexity.py 1 2 3 4 5 6 7 8 9 10
+----
+
+The link:tools/check_complexity.py[checker] regenerates the selected optimized and reference ASTs using formalsw's existing frontend, recompiles them, and checks the cost library, regressions, and source proofs through a shared process lock, with one Lean thread, a 2.5 GiB Lean heap limit and a watchdog that stops checks above 3 GiB resident memory. It does not depend on the earlier generated AST binaries being fresh. It does not rebuild the full Mathlib dependency tree. It also audits the exported proof theorems, accepting only Lean’s standard `propext`, `Classical.choice` and `Quot.sound` axioms. Pass problem numbers to check a subset, for example `python3 tools/check_complexity.py 1 3 9`.
+
+The checked runtime pairs share arithmetic and scalar-operation policies. Problem 4 uses `Calls` for the optimized string algorithm and `HeapCalls` for the reference's digit lists, with collection work charged in both. Problems 7 and 10 use `HeapCalls` for their bytearray sieves and `Calls` for their references; both charge the square-root library work. Both P8 functions use `HeapCalls`, with list length as their size and bounds uniform over all list contents and valid window widths. Both P9 implementations use `HeapCalls`, charging set operations, sorting, tuple construction and unpacking. The other completed pairs use `Calls` on both sides. The earlier weighted P8 pair uses `HeapCalls` on both sides; its allocation costs, and the earlier transition counts, remain partial models. Existing functional-equivalence proofs remain separate.
+
+== Size and cost conventions for the audit
+
+The heap runtime model uses grow-only dynamic arrays with doubling capacity. An append that resizes pays for copying the existing elements; a potential proof bounds copying and writing by three units per append overall, plus source-execution overhead. Allocation and reversal also pay for their output size and any credits retained by the new array. This is an explicit abstract representation, not CPython's exact allocation schedule. Shrinking operations remain without runtime tariffs until their capacity changes are modeled.
+
+The following table describes the actual source algorithms, including helpers. It uses unit-cost arithmetic, comparisons, and indexing, but charges for every visited or copied sequence element. The scalar transition model alone does not implement that richer convention; weighted list allocations are implemented separately for P8. All bounds refer to growing arguments, not the fixed examples in `__main__`.
+
+Numeric inputs are measured by value, not their binary encoding length. Let `ell(x) = ceil(log2(x+2))`. A linear bound in `x` can be exponential in the input's bit length. P4 instead takes a decimal digit count `d`; P8 has list length `N` and window width `k`.
+
+Opaque helpers need contracts. Below, `I(x)` is the cost of `math.isqrt(x)`, `G(a,b)` the cost of `math.gcd(a,b)`, and `C_dec(d)` the cost of converting an integer with at most `2d` decimal digits to text. Where stated, a square-root model with `I(x)=O(log(x+2))` and a Euclidean-division gcd model are assumed; these are not proofs about CPython's C implementation.
+
+[cols="1,2,3,3,3",options="header"]
+|===
+|Problem |Size |Reference |Optimized |Conclusion
+|link:solvers/1.py[1] / link:data/project-euler-statements/data/py/project_euler_statements/p1.py[ref]
+|`n > 1`
+|Theta(n), with Theta(n) recursive frames.
+|Theta(1): three fixed arithmetic helper calls.
+|Strict unit-arithmetic improvement proved after explicit Nagini ghost-syntax normalization.
+|link:solvers/2.py[2] / link:data/project-euler-statements/data/py/project_euler_statements/p2.py[ref]
+|Fibonacci value limit `L`
+|Theta(log L).
+|Theta(log L).
+|Same Fibonacci recurrence; no asymptotic improvement.
+|link:solvers/3.py[3] / link:data/project-euler-statements/data/py/project_euler_statements/p3.py[ref]
+|`n >= 2`
+|Worst-case Theta(n) under the root model; prime inputs Theta(sqrt n).
+|O(sqrt n), attained on prime inputs; powers of two take Theta(log n).
+|Worst-case improvement. Primality is tested only for divisors, and the reference returns early.
+|link:solvers/4.py[4] / link:data/project-euler-statements/data/py/project_euler_statements/p4.py[ref]
+|Digit count `d`; `W=9*10^(d-1)`
+|Theta(W^2*d).
+|O(W^2*(d+C_dec(d))).
+|Pruning helps, but a better worst-case order has not been established. Both already exploit symmetry.
+|link:solvers/5.py[5] / link:data/project-euler-statements/data/py/project_euler_statements/p5.py[ref]
+|LCM endpoint `n`
+|`n` LCM steps.
+|`max(n-1,0)` LCM steps.
+|Same order: Theta(n) with atomic gcd; O(n log(n+1)) with Euclidean divisions. Dividing first reduces intermediate size.
+|link:solvers/6.py[6] / link:data/project-euler-statements/data/py/project_euler_statements/p6.py[ref]
+|`n >= 0`
+|Exactly `14*n+42` scalar transitions.
+|Exactly 51 scalar transitions.
+|Strict O(n) to O(1) improvement proved, including reference helpers.
+|link:solvers/7.py[7] / link:data/project-euler-statements/data/py/project_euler_statements/p7.py[ref]
+|Prime ordinal `q`, output prime `P`, final sieve extent `B`
+|O(P^(3/2)+P*I(P)).
+|O(B log(B+2)) plus square roots per pass; `B=O(max(P,q log(q+2)))`.
+|Improved conservative upper bound. Exact comparison in `q` needs prime-distribution facts and a reference lower bound.
+|link:solvers/8.py[8] / link:data/project-euler-statements/data/py/project_euler_statements/p8.py[ref]
+|Decimal digits, `1 <= k <= N`; `w=N-k+1`
+|Theta(N*w), including copying; Theta(N*w) peak auxiliary list slots.
+|Theta(N), with a constant number of auxiliary index/product objects.
+|Quadratic-to-linear for fixed positive k. At k=N both are linear; at k>N the reference returns in constant work.
+|link:solvers/9.py[9] / link:data/project-euler-statements/data/py/project_euler_statements/p9.py[ref]
+|Total `T` with a positive triple
+|Theta(T^2).
+|Theta(T).
+|Clear loop-count improvement. The source proof domain excludes totals for which the solver raises ValueError.
+|link:solvers/10.py[10] / link:data/project-euler-statements/data/py/project_euler_statements/p10.py[ref]
+|Numeric limit `L`
+|O(L^(3/2)+L*I(L)).
+|O(L log(L+2)+I(L)), with Theta(L) sieve bytes.
+|Improved conservative upper bound. This does not establish a tight reference bound or strict separation by itself.
+|===
+
+=== Details that change the comparison
+
+* P3: the reference visits `n-p+1` candidates, where `p` is the largest prime divisor. There are at most `2*floor(sqrt n)` divisors, each primality test costs at most O(sqrt n) under the stated root model, and the outer scan costs O(n). Thus O(n) suffices. Powers of two give a matching linear family; prime inputs return after just one primality test. In the solver, trial factors reach at most sqrt of the original input and successful divisions total O(log n).
+* P4: the reference visits exactly `W(W+1)/2` pairs and extracts/copies Theta(d) digits per product. The solver visits at most this many pairs, with a separate decimal-conversion cost. Smaller measured counts do not prove a better worst-case exponent. The d=0 case is constant-sized.
+* P5: each gcd has second operand `x`; one remainder reduces the large accumulated LCM modulo x, followed by O(log(x+1)) Euclidean divisions. The optimized version changes the arithmetic order, not this iteration count.
+* P7/P10: charging sieve assignments by their lengths gives a harmonic-sum O(B log B) upper bound without using a theorem on prime reciprocals. The sharper familiar O(B log log B) bound is not proved here. Geometrically doubled retry sizes in P7 sum to O(B); the final B is bounded by the initial estimate or twice the required prime P. Using only q<=P gives an O(P log^2(P+2)) envelope for the solver under the root model. Two different upper bounds alone are not a strict-separation proof.
+* P9: the reference visits all T^2 pairs. For each a, substituting c=T-a-b gives at most one accepted b, so there are only O(T) set insertions; even linear collision work per insertion remains O(T^2). The solver visits every n<m for m up to Theta(sqrt T), totaling Theta(T) pairs. Sorting three integers is constant work.
+
+=== P8: copying dominates the reference
+
+The actual reference expression is `[list_product(xs[:k])] + window_products(k, xs[1:])`. For `1 <= k <= N`, its `w=N-k+1` productive recursive calls perform:
+
+* `k*w` product-loop iterations and `k*w` prefix-slice copies.
+* `w*(N-1) - w*(w-1)/2` suffix-slice copies.
+* `w*(w+1)/2` concatenation copies.
+
+Total copied list slots are exactly `(N+k)*w`. For fixed k, this is quadratic even though product loops and Python line events are linear. Live recursive frames retain their suffix lists. The final list maximum adds O(w) work.
+
+For a solver segment of length s>=k, initializing the first product takes k operations and sliding takes s-k; summing over disjoint segments gives O(N). Zeros are skipped without division. Decimal nonnegative digits are part of this audit's domain; `k >= 0` alone does not encode that restriction.
+
+At k>N the reference returns immediately but the solver scans the input. At k=0 both return one for nonempty input and zero for empty input, but the reference still copies quadratically while the solver returns immediately.
+
+== What formalsw can establish now
+
+The legacy link:data/project-euler-statements/formalsw/lang/py/FormalSW/Model.lean[structural classifier] counts AST syntax once, then chooses a growth class from top-level loop shapes. It does not generally compose helper costs, bound nested loops, derive recurrence costs, or count copying. Its special direct-unary-call delegation is not a general call-graph analysis.
+
+For example, it classifies both P6 functions as constant because neither contains a top-level loop; it misses the reference's two helper traversals. It would also miss P1's integer recursion and P9's reference helper loops. P8's two-argument signature is outside its one-dimensional analysis. Frontend support checks may reject a marker before classification; these observations do not claim that every source is accepted by the short DSL.
+
+The new link:data/project-euler-statements/formalsw/lang/py/FormalSW/ExecutionCost.lean[ExecutionCost] API provides:
+
+* `FinishesIn`: an exact count of actual transitions, with uniqueness of cost and outcome.
+* `ReachesIn`: costed prefixes that compose additively in a continuation.
+* `Execution.TimeBound`: finite execution within a bound, implying termination; unsupported states and divergence cannot acquire a certificate.
+* `Execution.IsBigO`: a uniform bound over an input family, domain predicate, and size function. The family can have multiple arguments.
+
+link:data/project-euler-statements/formalsw/lang/py/FormalSW/CallsCost.lean[CallsCost] adds compositional scalar-expression and range-sum rules. The P6 proof uses these rules to count both complete reference traversals and their call overhead. `reference_not_constant` rules out every eventual constant bound, so the improvement is stronger than merely proving O(n) above.
+
+This is an explicit Lean proof API for transition counts. It is not a runtime `@formalsw: BigO(...)` proof. The old short-form classifier is now named `ShapeBound`. P6's complexity file can be checked independently of its functional-equivalence file. The cost-model regressions also cover exact costs, too-small bounds, unsupported execution, divergence, and multi-argument input families.
+
+P1 now regenerates from its current annotated source. The new Nagini normalization recognizes canonical imported ghost names and erases only bare `@Pure` and leading contract statements. Contract arguments and ghost-only imports are not evaluated. Rebindings, aliases, wildcard imports and runtime annotation uses are rejected. This is an explicit source-language convention, not a claim of equivalence to executing the Nagini library in CPython, and it does not verify Nagini's contracts. AST JSON records the original source SHA-256, erased lines and dialect. The regression suite includes 36 rejection cases and verifies non-evaluation and source snapshots.
+
+Reusable `CallsCostLoops`, `CallsCostControl`, `HeapCallsCost` and `HeapCallsCostLists` rules compose counted expressions, calls, loops, branches and collection operations. `ScalarSortCost` relates comparison counts to the actual modeled insertion sort.
+
+The weighted API provides `FinishesWith`, `ReachesWith` and `Execution.WeightedBigO`. `AllocationCost` charges each transition plus net new list slots, including unreachable objects; it does not model garbage collection. The strengthened existing P8 reference execution proof records its exact allocation growth, and a general potential theorem turns that growth into a lower bound on every weighted terminating trace. The all-zero optimized family allocates no lists, allowing a strict comparison in the identical weighted model.
+
+== Cost-model limits
+
+Bit costs remain separate. P1/P6 perform a constant number of arithmetic operations on O(ell(n))-bit operands, so neither is constant time in bits. P5's LCM grows well beyond a machine word. For bounded digits, P8 products have O(k) bits and sliding division must be weighted accordingly; arbitrary integer elements also require an input-width parameter. C helpers need specified cost models rather than assumptions based on source-line counts.
+
+As elsewhere in formalsw, asymptotics use idealized growing resources. P1/P8 eventually hit a real Python interpreter's recursion limit. The measurements leave recursion and conversion limits unchanged.
+
+== Reproduce the bounded observations
+
+[source,sh]
+----
+python3 -I -B tools/complexity_probe.py > /tmp/complexity-probe.json
+----
+
+The link:tools/complexity_probe.py[probe] loads the actual source files in a private module namespace, excludes module initialization, and records source hashes. It counts Python line events and observes actual slice/concatenation sizes and sieve slice-write lengths. P1's Nagini imports, decorators, and contract calls are explicitly erased in memory using the same normalization as the proof frontend before imports execute; no solver file is modified. No Nagini postcondition lambda or proof dependency is evaluated.
+
+These are measurements, not asymptotic or equivalence proofs. C-level gcd work and the internal loop of `sum(range(...))` are invisible to Python line tracing. Identity observation wrappers preserve expression results but add instrumentation; line counts are not wall times or portable performance ratios. The process has a 20-second deadline and a two-million-source-line budget per call.
+
+Observed with CPython 3.14.4:
+
+[cols="1,3,2,2,4",options="header"]
+|===
+|Problem |Input |Reference lines |Solver lines |Observation
+|1 |16 → 128 |66 → 514 |8 → 8 |Recursion versus fixed formulas.
+|2 |16 → 65536 |28 → 102 |24 → 81 |Both follow Fibonacci growth.
+|3 |64 → 1024 |150 → 2086 |24 → 36 |Powers of two separate scan and halving behavior.
+|4 |d=1 / d=2 |627 / 79932 |223 / 185 |Pruning changes substantially with the input.
+|5 |8 → 64 |19 → 131 |17 → 129 |Gcd internals are not counted.
+|6 |16 → 128 |20 → 132 |5 → 5 |Line tracing misses the builtin range-sum loop; the Lean proof counts it.
+|7 |q=16 → 64 |545 → 3914 |127 → 515 |Solver byte-slice writes: 37 → 249.
+|9 |T=12 → 120 |462 → 43448 |18 → 143 |These totals have positive solutions.
+|10 |16 → 128 |106 → 1144 |36 → 196 |Solver byte-slice writes: 2 → 38.
+|===
+
+For P8 with all digits two and k=4:
+
+[cols="1,2,2,2",options="header"]
+|===
+|N |Reference copied slots |Reference lines |Solver lines
+|16 |260 |215 |95
+|32 |1044 |471 |175
+|64 |4148 |983 |335
+|128 |16500 |2007 |655
+|===
+
+All 52 in-domain measured cases agreed. The additional deliberately out-of-domain P9 input 11 returned zero in the reference and raised ValueError in the solver. Probe validation compared all 106 instrumented outcomes against uninstrumented source executions with the same P1 erasure, checked the P8 copying formulas, and reproduced identical JSON on repeated runs. These checks do not replace the existing functional-equivalence proofs.

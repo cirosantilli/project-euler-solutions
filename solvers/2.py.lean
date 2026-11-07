@@ -1,7 +1,9 @@
+import solvers.«2.py.lean.d».RuntimeCost
 import «.formalsw».solvers.«2.py.ast»
 import data.«project-euler-statements».data.py.project_euler_statements.«p2.py»
 import lang.py.FormalSW.Calls
 import ProjectEulerSolutions.Equiv.P2
+import Mathlib.Tactic.Lift
 
 namespace solvers.«2»
 open FormalSW.PyAst FormalSW.PyAst.Calls
@@ -44,7 +46,8 @@ private theorem loop_result (limit a b total : Nat) (ha : 0 < a) (hab : a < b)
             apply Evaluates.compare (av := .int ↑(a % 2)) (bv := .int 0)
             · exact Evaluates.binary (Evaluates.lookup hea) Evaluates.constant (by simp [scalarBinary])
             · exact Evaluates.constant
-            · simp [scalarCompare, evalCmpOp, Int.ofNat_dvd_natCast, Nat.dvd_iff_mod_eq_zero]
+            · simp [scalarCompare, evalCmpOp]
+              omega
           by_cases heven : a % 2 = 0
           · simp only [heven, ↓reduceIte]
             apply BlockReturns.branch (value := .bool true)

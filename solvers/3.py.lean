@@ -1,6 +1,8 @@
+import solvers.«3.py.lean.d».RuntimeCost
 import «.formalsw».solvers.«3.py.ast»
 import data.«project-euler-statements».data.py.project_euler_statements.«p3.py»
-import FormalSW
+import lang.py.FormalSW.Calls
+import Mathlib.Tactic.Lift
 import ProjectEulerSolutions.Equiv.P3
 
 namespace solvers.«3»
@@ -76,7 +78,7 @@ private theorem mod_result (n f : Nat) (hf : 0 < f) (env : ScalarEnv) (expr : Ex
   apply Evaluates.compare (av := .int ↑(n % f)) (bv := .int 0)
   · exact Evaluates.binary (Evaluates.lookup hn) he (by simp [scalarBinary, hf.ne'])
   · exact Evaluates.constant
-  · simp [scalarCompare, evalCmpOp, Int.natCast_dvd_natCast]
+  · simp [scalarCompare, evalCmpOp, ← Int.dvd_iff_emod_eq_zero, Int.natCast_dvd_natCast]
 
 private theorem finish_result (h : Invariant N n f largest) (stopped : ¬ f * f ≤ n)
     (env : ScalarEnv) (hn : env "n" = some (.int n))

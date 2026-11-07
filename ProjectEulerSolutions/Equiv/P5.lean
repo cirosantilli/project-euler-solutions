@@ -1,7 +1,7 @@
 import ProjectEulerSolutions.P5
 import Mathlib.Algebra.GCDMonoid.Finset
 import Mathlib.Data.Finset.Interval
-import Mathlib.Tactic
+import Mathlib.Tactic.Ext
 namespace ProjectEulerSolutions.P5
 
 lemma lcm_eq_nat_lcm (a b : Nat) : lcm a b = Nat.lcm a b := by

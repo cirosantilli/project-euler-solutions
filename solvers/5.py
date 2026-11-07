@@ -8,6 +8,7 @@ def solve(n: int) -> int:
     @formalsw: Py from project_euler_statements.p5 import naive
     @formalsw: Requires(n >= 0)
     @formalsw: Equiv(naive)
+    @formalsw: BigO(n * Nat.log2 n)
     """
     ans = 1
     for x in range(2, n + 1):

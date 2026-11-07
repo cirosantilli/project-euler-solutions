@@ -1,5 +1,5 @@
 import ProjectEulerSolutions.P8
-import Mathlib.Tactic
+import Mathlib.Data.Nat.Basic
 
 namespace ProjectEulerSolutions.P8
 open ProjectEulerStatements.P8

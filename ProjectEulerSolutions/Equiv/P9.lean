@@ -1,6 +1,9 @@
 import ProjectEulerSolutions.P9
 import Mathlib.NumberTheory.PythagoreanTriples
-import Mathlib.Tactic
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Positivity
+import Mathlib.Tactic.Ring
+import Mathlib.Tactic.NormNum
 namespace ProjectEulerSolutions.P9
 
 def euclidS (m n : Nat) : Nat :=

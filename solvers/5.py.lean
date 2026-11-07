@@ -1,7 +1,9 @@
+import solvers.«5.py.lean.d».RuntimeCost
 import «.formalsw».solvers.«5.py.ast»
 import data.«project-euler-statements».data.py.project_euler_statements.«p5.py»
-import FormalSW
+import lang.py.FormalSW.Calls
 import ProjectEulerSolutions.Equiv.P5
+import Mathlib.Tactic.Lift
 
 namespace solvers.«5»
 open FormalSW.PyAst FormalSW.PyAst.Calls

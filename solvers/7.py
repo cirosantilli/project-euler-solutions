@@ -19,6 +19,7 @@ def solve(n: int) -> int:
     @formalsw: Py from project_euler_statements.p7 import naive
     @formalsw: Requires(n >= 1)
     @formalsw: Equiv(naive)
+    @formalsw: BigO(ProjectEulerStatements.P7.naive n * (Nat.log2 (ProjectEulerStatements.P7.naive n + 1) + 1)^2)
     """
     assert n >= 1
     if n == 1:

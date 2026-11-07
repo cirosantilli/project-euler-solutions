@@ -10,6 +10,7 @@ def solve(limit: int) -> int:
     @formalsw: Py from project_euler_statements.p10 import naive
     @formalsw: Requires(limit >= 0)
     @formalsw: Equiv(naive)
+    @formalsw: BigO(limit * Nat.log2 limit)
     """
     if limit <= 2:
         return 0

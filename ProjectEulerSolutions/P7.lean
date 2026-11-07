@@ -1,4 +1,11 @@
-import ProjectEulerStatements.P7
+module
+
+public import ProjectEulerStatements.P7
+public import Mathlib.Data.Nat.Sqrt
+public meta import Batteries.Data.Nat.Basic
+
+@[expose] public section
+
 namespace ProjectEulerSolutions.P7
 
 def initialLimit (n : Nat) : Nat :=
