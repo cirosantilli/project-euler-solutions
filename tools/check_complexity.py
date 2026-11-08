@@ -207,7 +207,7 @@ def main():
         for source in (Path("ProjectEulerSolutions/P9.lean"), Path("ProjectEulerSolutions/Equiv/P9.lean")):
             check(source.resolve(), build / source.with_suffix(".olean"))
     if 18 in problems:
-        for name in ("RowHeap", "RowRuntime", "HelperRuntime"):
+        for name in ("RowHeap", "RowRuntime", "HelperRuntime", "TriangleRuntime", "RuntimeCost"):
             source = Path(f"data/project-euler-statements/data/py/project_euler_statements/p18.py.lean.d/{name}.lean")
             check(source.resolve(), build / source.with_suffix(".olean"))
         for name in ("RowRuntime", "TriangleRuntime", "RuntimeCost"):
@@ -304,11 +304,14 @@ def main():
             sources.extend(runtime for _, runtime in runtime_proofs(problem))
             if problem == 18:
                 sources.extend(Path(f"data/project-euler-statements/data/py/project_euler_statements/p18.py.lean.d/{name}.lean")
-                               for name in ("RowHeap", "RowRuntime", "HelperRuntime"))
+                               for name in ("RowHeap", "RowRuntime", "HelperRuntime", "TriangleRuntime"))
                 sources.extend(Path(f"solvers/18.py.lean.d/{name}.lean") for name in ("RowRuntime", "TriangleRuntime"))
                 sources.append(Path("solvers/18.py.lean"))
             sources = list(dict.fromkeys(sources))
             names = [name for source in sources for name in public_theorems(source)]
+            if problem == 18:
+                for name in ("HeapRuntimeCostListCopies", "HeapRuntimeCostListLoops"):
+                    names.extend(public_theorems(FORMALSW / f"lang/py/FormalSW/{name}.lean"))
             if problem == 20:
                 names.extend(public_theorems(FORMALSW / "lang/py/FormalSW/FactorialWorkBounds.lean"))
                 names.extend(public_theorems(FORMALSW / "lang/py/FormalSW/HeapRuntimeCostLibrary.lean"))
