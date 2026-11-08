@@ -1,5 +1,6 @@
 import ProjectEulerSolutions.Lib.SudokuCandidates
 import ProjectEulerSolutions.Lib.BitSubsets
+import lang.py.FormalSW.Model
 
 /-! The nine-bit Python representation of Sudoku candidates. -/
 namespace ProjectEulerSolutions.Sudoku.Masks
@@ -98,6 +99,16 @@ theorem and_bit_nonzero (digits : Finset Digit) (digit : Digit) :
   · simp only [member, if_true, iff_true]
     exact Int.ne_of_gt (Int.pow_pos (by decide))
   · simp [member]
+
+/-- The heap interpreter and the primitive integer model agree on signed conjunction. -/
+theorem integerBitAnd_eq (left right : Int) :
+    FormalSW.PyAst.integerBitAnd left right = FormalSW.Py.Builtin.Int.bitAnd left right := by
+  have complement (a b : Nat) : Nat.bitwise (fun x y => x && !y) a b = a ^^^ (a &&& b) := by
+    apply Nat.eq_of_testBit_eq
+    intro index
+    rw [Nat.testBit_bitwise rfl, Nat.testBit_xor, Nat.testBit_and]
+    cases a.testBit index <;> cases b.testBit index <;> rfl
+  cases left <;> cases right <;> simp [FormalSW.PyAst.integerBitAnd, FormalSW.Py.Builtin.Int.bitAnd, complement]
 
 /-- Python's complement is unbounded and signed; intersecting it still removes exactly one bit. -/
 theorem erase (digits : Finset Digit) (digit : Digit) :
