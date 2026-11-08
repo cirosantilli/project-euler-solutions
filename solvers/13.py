@@ -120,6 +120,7 @@ def solve(nums: list[int], k: int) -> int:
     @formalsw: Requires(k >= 0)
     @formalsw: Py from project_euler_statements.p13 import naive
     @formalsw: Equiv(naive)
+    @formalsw: BigO(n, n = sum(1 + value.bit_length() for value in nums))
     """
     leading = first_digits([str(n) for n in nums], k)
     return int(leading) if leading else 0

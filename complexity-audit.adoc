@@ -46,6 +46,10 @@ The following implementations have runtime proofs following their generated Pyth
 |link:solvers/10.py.lean.d/RuntimeCost.lean[O(n log n)]
 |link:data/project-euler-statements/data/py/project_euler_statements/p10.py.lean.d/RuntimeCost.lean[O(n sqrt n)]
 |Fixed arithmetic. Includes every primality test, its square-root library call, and filtering/summation overhead. The link:data/project-euler-statements/data/py/project_euler_statements/common.py.lean.d/PrimeRuntimeCost.lean[shared primality proof] also supplies problem 3's bit-cost bound. The optimized bound includes buffer allocation, square-root work, every candidate iteration, slice writes and the final sum. These are upper bounds; no tight reference lower bound is claimed.
+|13
+|link:solvers/13.py.lean.d/RuntimeCost.lean[O(n)]
+|Pending
+|n is the list length plus the sum of integer bit lengths. Fixed arithmetic; text conversion, parsing, list growth, summation and prefix copying are charged by size. The optimized source costs at most `40n+101`, uniformly in nonnegative k and signed elements whose sum is nonnegative. The reference runtime proof is unfinished.
 |15
 |link:solvers/15.py.lean.d/RuntimeCost.lean[O(n)]
 |link:data/project-euler-statements/data/py/project_euler_statements/p15.py.lean.d/RuntimeCost.lean[O(n)]
@@ -119,7 +123,7 @@ Problems 15, 16, 18 and 20 have runtime proofs on both sides. The other problems
 
 * 11: nested-list families and comprehension costs are modeled. The optimized domain fixes the grid at 20×20; its bound must respect that domain and account for the window argument.
 * 12: prime-table mutation and a search bound expressed through the first qualifying triangular index.
-* 13: integer-width input measures are now available as `n = sum(1 + value.bit_length() for value in values)`. Shared lemmas bound the sum and its decimal output length. The source runtime proofs remain unfinished.
+* 13: the optimized source has a checked integer-width bound. The reference still needs runtime composition for `digits_be` and `of_digits_be`, including their copied and reversed lists.
 * 14: memoized execution, dictionary costs and an explicit Collatz-chain measure. The existing functional proofs assume the Collatz conjecture; no polynomial bound in the starting limit follows from that assumption alone.
 * 17: the supplied global word tables and their lookup costs.
 * 19: two integer inputs and the repeated calendar traversals in the reference.

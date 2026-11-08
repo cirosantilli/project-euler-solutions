@@ -207,6 +207,10 @@ def main():
             check(source.resolve(), build / source.with_suffix(".olean"))
         for source in (Path("ProjectEulerSolutions/P9.lean"), Path("ProjectEulerSolutions/Equiv/P9.lean")):
             check(source.resolve(), build / source.with_suffix(".olean"))
+    if 13 in problems:
+        for name in ("FormattingRuntime", "ParsingRuntime", "FirstDigitsRuntime", "LeadingRuntime", "SourceRuntime"):
+            source = Path(f"solvers/13.py.lean.d/{name}.lean")
+            check(source.resolve(), build / source.with_suffix(".olean"))
     if 18 in problems:
         for name in ("RowHeap", "RowRuntime", "HelperRuntime", "TriangleRuntime", "RuntimeCost"):
             source = Path(f"data/project-euler-statements/data/py/project_euler_statements/p18.py.lean.d/{name}.lean")
@@ -300,6 +304,9 @@ def main():
                 sources.append(Path("data/project-euler-statements/data/py/project_euler_statements/common.py.lean.d/DigitsRuntimeCost.lean"))
             if problem in (16, 20):
                 sources.append(Path("data/project-euler-statements/data/py/project_euler_statements/common.py.lean.d/DigitSumRuntimeCost.lean"))
+            if problem == 13:
+                sources.extend(Path(f"solvers/13.py.lean.d/{name}.lean") for name in
+                               ("FormattingRuntime", "ParsingRuntime", "FirstDigitsRuntime", "LeadingRuntime", "SourceRuntime"))
             if problem == 4:
                 sources.append(Path("data/project-euler-statements/data/py/project_euler_statements/p4.py.lean.d/RuntimeDigits.lean"))
             sources.extend(runtime for _, runtime in runtime_proofs(problem))
@@ -310,6 +317,9 @@ def main():
                 sources.append(Path("solvers/18.py.lean"))
             sources = list(dict.fromkeys(sources))
             names = [name for source in sources for name in public_theorems(source)]
+            if problem == 13:
+                for name in ("IntegerListWork", "HeapRuntimeCostStrings", "HeapRuntimeCostComprehensions", "HeapRuntimeCostSumGenerators"):
+                    names.extend(public_theorems(FORMALSW / f"lang/py/FormalSW/{name}.lean"))
             if problem == 18:
                 for name in ("HeapRuntimeCostListCopies", "HeapRuntimeCostListLoops"):
                     names.extend(public_theorems(FORMALSW / f"lang/py/FormalSW/{name}.lean"))
