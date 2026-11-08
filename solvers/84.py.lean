@@ -1,4 +1,5 @@
 import solvers.«84.py.lean.d».SolveResult
+import data.«project-euler-statements».data.py.project_euler_statements.«p84.py»
 
 namespace solvers.«84».encode_state
 open FormalSW.PyAst HeapCalls
@@ -64,5 +65,28 @@ theorem «Supported» (sides : Nat) (positive : 0 < sides) (heap : Mutable.Heap 
     (globals : Mutable.Globals := []) :
     (HeapMemoCalls.call program "solve" [.scalar (.int sides)] heap globals).Supported :=
   («Returns» sides positive heap globals).supported
+
+/-- Both complete source calls return the same modal string and preserve caller objects and aliases. -/
+theorem «Equiv(naive)» (sides : Nat) (positive : 0 < sides) (heap : Mutable.Heap)
+    (globals : Mutable.Globals) (valid : heap.Valid)
+    (globalsWithin : ∀ entry ∈ globals, entry.2.edge.Within heap.length) :
+    (HeapMemoCalls.call program "solve" [.scalar (.int sides)] heap globals).Equiv
+      (HeapMemoCalls.call P84Ast.module "naive" [.scalar (.int sides)] heap globals) := by
+  obtain ⟨_, leftHeap, ⟨leftWeights, leftValid, rfl, leftFrame⟩, leftFinished⟩ :=
+    (result sides positive heap globals).finishes
+  obtain ⟨_, rightHeap, ⟨rightWeights, rightValid, rfl, rightFrame⟩, rightFinished⟩ :=
+    (data.«project-euler-statements».data.py.project_euler_statements.p84.naive.result
+      sides positive heap globals).finishes
+  have leftPrefix : heap <+: leftHeap := List.prefix_iff_getElem?.mpr
+    (fun index inside => (leftFrame index inside).trans (List.getElem?_eq_getElem inside))
+  have rightPrefix : heap <+: rightHeap := List.prefix_iff_getElem?.mpr
+    (fun index inside => (rightFrame index inside).trans (List.getElem?_eq_getElem inside))
+  obtain ⟨leftExtra, rfl⟩ := leftPrefix
+  obtain ⟨rightExtra, rfl⟩ := rightPrefix
+  rw [ProjectEulerSolutions.MonopolyOutput.answer_equal positive leftValid rightValid] at leftFinished
+  exact Mutable.Call.equiv_of_finishes leftFinished rightFinished
+    (Mutable.Completion.equivalent_allocations heap leftExtra rightExtra
+      (.scalar (.string (ProjectEulerSolutions.MonopolyOutput.answer rightWeights))) globals
+      valid trivial globalsWithin)
 
 end solvers.«84».solve
