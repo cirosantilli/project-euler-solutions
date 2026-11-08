@@ -1,4 +1,5 @@
 import solvers.«84.py.lean.d».LandingBackThree
+import solvers.«84.py.lean.d».LandingWeightDistinct
 
 namespace solvers.«84».resolve_landing.weights
 open FormalSW.PyAst ProjectEulerSolutions
@@ -30,15 +31,22 @@ theorem valid_cards (cards : List Card) (heap : Mutable.Heap) (entries : List En
       exact ih (applyCard entries card) (valid.inserted _ _ _ (views card (by simp)).2)
         (fun item member => views item (by simp [member]))
 
+theorem distinct_cards (cards : List Card) (entries : List Entry) (distinct : Distinct entries) :
+    Distinct (cards.foldl applyCard entries) := by
+  induction cards generalizing entries with
+  | nil => exact distinct
+  | cons card rest ih => exact ih (applyCard entries card) (distinct.added _ _ _)
+
 /-- Each Chance movement adds its exact card contribution and touches only its private dictionary. -/
 theorem move_continue (destination : Int) (env : HeapCalls.Env) (heap : Mutable.Heap) (globals : Mutable.Globals)
     (root : Nat) (entries : List Entry) (found : heap[root]? = some (.keyDict (encode entries)))
-    (valid : Valid heap entries) (getWeights : env "weights" = some (.ref root))
+    (valid : Valid heap entries) (distinct : Distinct entries) (getWeights : env "weights" = some (.ref root))
     (getDestination : env "destination" = some (.scalar (.int destination)))
     (body : List Stmt) (post : Mutable.Value → Mutable.Heap → Prop)
     (rest : ∀ (nextEnv : HeapCalls.Env) (nextEntries : List Entry) (extra : Mutable.Heap),
       nextEnv "weights" = some (.ref root) →
       Valid ((heap ++ extra).set root (.keyDict (encode nextEntries))) nextEntries →
+      Distinct nextEntries →
       (∀ landing, (lookup nextEntries landing).getD 0 = (lookup entries landing).getD 0 + total (moveData destination) landing) →
       HeapMemoCalls.BlockReturnsRel program pool.spec nextEnv body
         ((heap ++ extra).set root (.keyDict (encode nextEntries))) post globals) :
@@ -62,6 +70,7 @@ theorem move_continue (destination : Int) (env : HeapCalls.Env) (heap : Mutable.
       intro entry member
       exact TuplePool.View.frame _ _ (TupleDictionary.tuple_frame (heap ++ extra) root _ _ extended) _ _
         (valid_cards cards (heap ++ extra) entries (valid.append extra) views entry member)
+    · exact distinct_cards cards entries distinct
     · intro landing
       simpa [moveData, community, correspondence] using lookup_cards cards entries landing
   · simp only [community, decide_false]
@@ -84,6 +93,7 @@ theorem move_continue (destination : Int) (env : HeapCalls.Env) (heap : Mutable.
       extended nextWeights (by simp [nextEnv, HeapCalls.setLocal]) key HeapCalls.Evaluates.constant
     apply rest nextEnv (add entries (destination, false) heap.length 16) [pair] nextWeights
     · exact increment_valid middle root entries (destination, false) heap.length 16 extended (valid.append [pair]) key
+    · exact distinct.added _ _ _
     · intro landing
       simpa [total, moveData, community] using lookup_add entries (destination, false) landing heap.length 16
 
