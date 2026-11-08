@@ -41,6 +41,23 @@ def catalog : TuplePool.Catalog := fun query => List.lookup query
 
 abbrev spec := TuplePool.spec catalog
 
+theorem disjoint : HeapMemoCalls.CacheDisjoint program program := by
+  intro name cached
+  simp [program, Solvers.P84Ast.module] at cached
+
+theorem dynamic_pair (expression : Expr) (square : Int) (jailed : Bool)
+    (env : HeapCalls.Env) (heap : Mutable.Heap) (globals : Mutable.Globals)
+    (evaluated : HeapMemoCalls.Evaluates program spec env expression heap (.scalar (.int square)) heap globals) :
+    HeapMemoCalls.EvaluatesRel program spec env (.tuple [expression, .constant (.bool jailed)]) heap
+      (TuplePool.Post heap (.tuple (pair square jailed))) globals := by
+  have allocated := HeapMemoCalls.Evaluates.tuple (.cons evaluated (.cons (HeapMemoCalls.Evaluates.constant (value := .bool jailed)) .nil))
+    (TuplePool.preserves_append catalog heap _) (by simp)
+  apply allocated.rel.consequence
+  rintro value after ⟨rfl, same⟩
+  subst after
+  exact ⟨[.tuple [.scalar (.int square), .scalar (.bool jailed)]], rfl,
+    (TuplePool.view_scalars _ [.int square, .bool jailed] _).mpr ⟨heap.length, rfl, by simp⟩⟩
+
 theorem jail_source : jailKey = HeapMemoCalls.pooledTuple (identity jailKey) [.constant (.int 10), .constant (.bool true)] := rfl
 theorem community_go_source : communityGo = HeapMemoCalls.pooledTuple (identity communityGo) [.constant (.int 0), .constant (.bool false)] := rfl
 theorem community_jail_source : communityJail = HeapMemoCalls.pooledTuple (identity communityJail) [.constant (.int 10), .constant (.bool true)] := rfl
