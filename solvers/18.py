@@ -19,6 +19,7 @@ def solve(triangle: list[list[int]]) -> int:
     @formalsw: Py from project_euler_statements.p18 import naive
     @formalsw: Requires(is_triangle(triangle))
     @formalsw: Equiv(naive)
+    @formalsw: BigO(n, n = len(triangle) + sum(len(row) for row in triangle))
     """
     dp = triangle[-1][:]  # best sums from current row to bottom
     for r in range(len(triangle) - 2, -1, -1):

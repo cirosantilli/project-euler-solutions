@@ -54,6 +54,10 @@ The following implementations have runtime proofs following their generated Pyth
 |link:solvers/16.py.lean.d/RuntimeCost.lean[O(n)]
 |link:data/project-euler-statements/data/py/project_euler_statements/p16.py.lean.d/RuntimeCost.lean[O(n)]
 |Fixed arithmetic, including exponentiation and all digit processing. The optimized bound is `26n+75`; the reference bound is `41n+100`. Both use the shared decimal-length bound for 2^n. The optimized proof charges formatting and each character parse; the reference charges repeated division, list resizing and summation. No asymptotic improvement claimed.
+|18
+|link:solvers/18.py.lean[O(n)]
+|Unfinished
+|n is the number of rows plus entries. Fixed arithmetic, uniform in signed cell values. The optimized whole-function bound is `110n+300`, including the bottom-row copy, reverse-range setup, each comprehension and the final return. Its declared triangle precondition is proved to imply the required shape. The reference runtime bound remains unfinished.
 |20
 |link:solvers/20.py.lean.d/RuntimeCost.lean[O(n log n)]
 |link:data/project-euler-statements/data/py/project_euler_statements/p20.py.lean.d/RuntimeCost.lean[O(n log n)]
@@ -113,7 +117,7 @@ The checked runtime pairs share arithmetic and scalar-operation policies. Proble
 
 Problems 15, 16 and 20 have runtime proofs on both sides. The other problems in this group remain unfinished. Their source shapes require the following extensions:
 
-* 11 and 18: nested-list families and comprehension costs are now modeled. The link:solvers/18.py.lean.d/RowRuntime.lean[optimized P18 row comprehension] has a bound of `64*row.length+17`, and its link:solvers/18.py.lean.d/TriangleRuntime.lean[outer loop] is linear in processed rows plus entries, including shared input rows. Initialization and whole-function bounds remain unfinished. Problem 11's optimized domain fixes the grid at 20×20; its bound must respect that domain.
+* 11 and 18: nested-list families and comprehension costs are modeled. The optimized P18 bound is complete. The reference link:data/project-euler-statements/data/py/project_euler_statements/p18.py.lean.d/HelperRuntime.lean[row helper] has a bound of `60*row.length+7*below.length+300`, including guards, slicing and zip work; the whole reference still needs its outer-loop and setup bounds. Problem 11's optimized domain fixes the grid at 20×20; its bound must respect that domain.
 * 12: prime-table mutation and a search bound expressed through the first qualifying triangular index.
 * 13: a size measure including integer widths; list length alone cannot bound decimal conversion.
 * 14: memoized execution, dictionary costs and an explicit Collatz-chain measure. The existing functional proofs assume the Collatz conjecture; no polynomial bound in the starting limit follows from that assumption alone.

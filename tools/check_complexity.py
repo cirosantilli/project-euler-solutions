@@ -87,9 +87,16 @@ def main():
     lean = subprocess.check_output(
         ["lake", "env", "which", "lean"], text=True, env=environment
     ).strip()
-    for name in ("ExecutionCost", "ExecutionCostDomain", "CallsCost", "CallsCostLoops", "CallsCostControl", "HeapCallsCost", "HeapCallsCostLists", "ScalarSortCost", "WeightedExecutionCost", "AllocationCost", "HeapReadCost", "BufferCost", "BufferCostSlice", "RuntimeCost", "PrimitiveWork", "PrimitiveWorkBounds", "CallsRuntimeCost", "CallsRuntimeCostLoops", "CallsRuntimeCostControl", "CallsRuntimeCostFunctions", "CallsRuntimeCostScaled", "CallsRuntimeCostBitBounds", "CallsRuntimeCostNumberBounds", "CallsRuntimeCostLinking", "CallsRuntimeCostBlocks", "DecimalWorkBounds", "FactorialWorkBounds", "CallsRuntimeCostStrings", "CallsRuntimeCostRanges", "LcmRuntimeCost", "FibonacciRuntimeCost", "HeapMapWork", "HeapSetWork", "HeapSortWork", "HeapBufferWork", "HeapSequenceWork", "DynamicArrayWork", "AmortizedRuntimeCost", "HeapRuntimeCost", "HeapRuntimeInputs", "HeapRuntimeCostLists", "HeapRuntimeCostControl", "HeapRuntimeCostLibrary", "HeapRuntimeCostRanges", "HeapRuntimeCostBuffers", "HeapRuntimeCostBufferLoops", "HeapRuntimeCostReturns", "HeapRuntimeCostPrimitives", "HeapRuntimeCostSequences", "HeapRuntimeCostComprehensions", "HeapRuntimeCostLoopControl", "HeapRuntimeCostListCopies", "HeapRuntimeCostListLoops", "HeapRuntimeCostSumGenerators", "HeapRuntimeCostSums", "DecimalSumRuntimeCost", "HeapRuntimeCostSets", "HeapRuntimeCostComparisons", "HeapRuntimeCostSorting", "HeapRuntimeCostBooleans"):
+    for name in ("ExecutionCost", "ExecutionCostDomain", "CallsCost", "CallsCostLoops", "CallsCostControl", "HeapCallsCost", "HeapCallsCostLists", "ScalarSortCost", "WeightedExecutionCost", "AllocationCost", "HeapReadCost", "BufferCost", "BufferCostSlice", "RuntimeCost", "PrimitiveWork", "PrimitiveWorkBounds", "CallsRuntimeCost", "CallsRuntimeCostLoops", "CallsRuntimeCostControl", "CallsRuntimeCostFunctions", "CallsRuntimeCostScaled", "CallsRuntimeCostBitBounds", "CallsRuntimeCostNumberBounds", "CallsRuntimeCostLinking", "CallsRuntimeCostBlocks", "DecimalWorkBounds", "FactorialWorkBounds", "CallsRuntimeCostStrings", "CallsRuntimeCostRanges", "LcmRuntimeCost", "FibonacciRuntimeCost", "HeapMapWork", "HeapSetWork", "HeapSortWork", "HeapBufferWork", "HeapSequenceWork", "DynamicArrayWork", "AmortizedRuntimeCost", "HeapRuntimeCost", "HeapRuntimeInputs", "HeapRuntimeCostLists", "HeapRuntimeCostControl", "HeapRuntimeCostLibrary", "HeapRuntimeCostRanges", "HeapRuntimeCostBuffers", "HeapRuntimeCostBufferLoops", "HeapRuntimeCostReturns", "HeapRuntimeCostPrimitives", "HeapRuntimeCostSequences", "HeapRuntimeCostComprehensions", "HeapRuntimeCostLoopControl", "HeapRuntimeCostListCopies", "HeapRuntimeCostSetup", "HeapRuntimeCostListLoops", "HeapRuntimeCostSumGenerators", "HeapRuntimeCostSums", "DecimalSumRuntimeCost", "HeapRuntimeCostSets", "HeapRuntimeCostComparisons", "HeapRuntimeCostSorting", "HeapRuntimeCostBooleans"):
         check(FORMALSW / f"lang/py/FormalSW/{name}.lean",
               FORMALSW / f".lake/build/lib/lean/lang/py/FormalSW/{name}.olean")
+    if 18 in problems:
+        statements_lean = ROOT / "data/project-euler-statements/data/lean"
+        for relative in (Path("ProjectEulerStatements/P18.lean"),
+                         Path("ProjectEulerStatements/Lib/TrianglePaths.lean")):
+            check(statements_lean / relative,
+                  statements_lean / ".lake/build/lib/lean" / relative.with_suffix(".olean"),
+                  source_root=statements_lean)
     if 3 in problems:
         statements_lean = ROOT / "data/project-euler-statements/data/lean"
         relative = Path("ProjectEulerStatements/Lib/DivisorBounds.lean")
@@ -199,6 +206,17 @@ def main():
             check(source.resolve(), build / source.with_suffix(".olean"))
         for source in (Path("ProjectEulerSolutions/P9.lean"), Path("ProjectEulerSolutions/Equiv/P9.lean")):
             check(source.resolve(), build / source.with_suffix(".olean"))
+    if 18 in problems:
+        for name in ("RowHeap", "RowRuntime", "HelperRuntime"):
+            source = Path(f"data/project-euler-statements/data/py/project_euler_statements/p18.py.lean.d/{name}.lean")
+            check(source.resolve(), build / source.with_suffix(".olean"))
+        for name in ("RowRuntime", "TriangleRuntime", "RuntimeCost"):
+            source = Path(f"solvers/18.py.lean.d/{name}.lean")
+            check(source.resolve(), build / source.with_suffix(".olean"))
+        # The runtime theorem reuses the functional proof of the shape precondition.
+        for source in (Path("data/project-euler-statements/data/py/project_euler_statements/p18.py.lean"),
+                       Path("solvers/18.py.lean")):
+            check(source.resolve(), frontend["olean_path_for_lean"](source))
     for source, runtime in (pair for problem in problems for pair in runtime_proofs(problem)):
         check(runtime.resolve(), build / runtime.with_suffix(".olean"))
         module = frontend["source_module"](source)
@@ -209,9 +227,10 @@ def main():
             raise RuntimeError(f"Missing or unsupported runtime BigO declarations: {source}")
         wrapper = ROOT / ".formalsw" / source.with_suffix(".runtime-requirements.lean")
         wrapper.parent.mkdir(parents=True, exist_ok=True)
-        # Check the exact runtime propositions independently of equivalence proofs.
+        # Check each exact source proposition against its declared theorem.
+        declaration = source.with_name(source.name + ".lean") if source == Path("solvers/18.py") else runtime
         wrapper.write_text(frontend["RequirementEmitter"](
-            runtime, frontend["lean_module_for_path"](runtime),
+            declaration, frontend["lean_module_for_path"](declaration),
             [replace(requirement, dependencies=()) for requirement in requirements]).emit())
         check(wrapper)
     for problem in sorted(set(problems) & ({7, 8, 9, 10} | set(range(11, 21)))):
@@ -283,6 +302,11 @@ def main():
             if problem == 4:
                 sources.append(Path("data/project-euler-statements/data/py/project_euler_statements/p4.py.lean.d/RuntimeDigits.lean"))
             sources.extend(runtime for _, runtime in runtime_proofs(problem))
+            if problem == 18:
+                sources.extend(Path(f"data/project-euler-statements/data/py/project_euler_statements/p18.py.lean.d/{name}.lean")
+                               for name in ("RowHeap", "RowRuntime", "HelperRuntime"))
+                sources.extend(Path(f"solvers/18.py.lean.d/{name}.lean") for name in ("RowRuntime", "TriangleRuntime"))
+                sources.append(Path("solvers/18.py.lean"))
             sources = list(dict.fromkeys(sources))
             names = [name for source in sources for name in public_theorems(source)]
             if problem == 20:

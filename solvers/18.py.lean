@@ -1,6 +1,6 @@
 import «.formalsw».solvers.«18.py.ast»
 import data.«project-euler-statements».data.py.project_euler_statements.«p18.py»
-import FormalSW
+import solvers.«18.py.lean.d».RuntimeCost
 import ProjectEulerStatements.Lib.TrianglePaths
 
 namespace solvers.«18»
@@ -54,9 +54,9 @@ private theorem rowElement.result (heap : Mutable.Heap) (env : HeapCalls.Env)
     (.cons (index.result heap env "dp" belowAddress (position + 1) below _ getBelow inNext localBelow next (by intros a b c impossible; cases impossible)) .nil))
   by_cases larger : below[position] < below[position + 1]
   · simp [HeapCalls.primitive, Calls.positionalMaximum, Calls.maximumFrom, scalarCompare,
-      evalCmpOp, HeapCalls.scalarResult, List.mapM, List.mapM.loop, larger, max_eq_right (le_of_lt larger)]
+      evalCmpOp, HeapCalls.scalarResult, List.mapM, List.mapM.loop, larger]; omega
   · simp [HeapCalls.primitive, Calls.positionalMaximum, Calls.maximumFrom, scalarCompare,
-      evalCmpOp, HeapCalls.scalarResult, List.mapM, List.mapM.loop, larger, max_eq_left (le_of_not_gt larger)]
+      evalCmpOp, HeapCalls.scalarResult, List.mapM, List.mapM.loop, larger]; omega
 
 private abbrev rowBody (address : Nat) : List Stmt := [.comprehensionAppend address rowElement]
 
@@ -195,7 +195,7 @@ private theorem triangleLoop.result (remaining : Nat) (heap : Mutable.Heap) (env
       apply HeapCalls.BlockReturns.assign readRow
       apply HeapCalls.BlockReturns.assign calculated
       simpa [triangleBody, Calls.loopContinuation, Calls.loopControl,
-        List.append_assoc, sub_eq_add_neg] using continued
+        List.append_assoc, Int.sub_eq_add_neg] using continued
 
 private abbrev lastExpression : Expr :=
   .subscript (.name "triangle") (.unaryOp .uSub (.constant (.int 1)))
@@ -218,7 +218,8 @@ private theorem solve.result (heap : Mutable.Heap) (address : Nat) (rows : Trian
   have shifted : (-1 + (rows.length : Int)).toNat = rows.length - 1 := by omega
   have indexed : Mutable.index (rows.map (fun pair => Mutable.Value.ref pair.1)) (.scalar (.int (-1))) heap =
       some (.ok (rows.length - 1), heap) := by
-    simp [Mutable.index, nonempty, shifted]
+    have inBounds : ¬ (-1 + (rows.length : Int) < 0 ∨ (rows.length : Int) ≤ -1 + (rows.length : Int)) := by omega
+    simp [Mutable.index, shifted, inBounds]
   have last : HeapCalls.Evaluates program env lastExpression heap (.ref bottom.1) heap := by
     apply HeapCalls.Evaluates.subscript (by intros a b c impossible; cases impossible) (.lookup rfl)
       (HeapCalls.Evaluates.unary HeapCalls.Evaluates.constant rfl)
@@ -438,5 +439,25 @@ theorem solve.«Supported» :
     exact executed.returns.supported
   · intro heap address valid typed _
     exact data.«project-euler-statements».data.py.project_euler_statements.p18.naive.«Supported» heap address valid typed
+
+theorem solve.«BigO(n, n = len(triangle) + sum(len(row) for row in triangle))» :
+    HeapCalls.Runtime.IsBigO .word program "solve"
+      (fun _ : List (List Int) => [.ref 0]) HeapCalls.Runtime.NestedIntList.heap
+      (fun rows => HeapCalls.Condition program (triangleEnv 0) Solvers.P18Ast.requires_solve_0
+        (HeapCalls.Runtime.NestedIntList.heap rows)) HeapCalls.Runtime.NestedIntList.size id := by
+  refine ⟨410, 1, fun rows requires large => ?_⟩
+  let pairs := HeapCalls.Runtime.NestedIntList.bindings rows
+  have found := HeapCalls.Runtime.NestedIntList.bindings_root rows
+  have reads := HeapCalls.Runtime.NestedIntList.bindings_row rows
+  rcases is_triangle.result _ 0 pairs found reads with ⟨nonempty, shape, _⟩ | rejected
+  · have bound := runtimeCost.source_bound _ 0 pairs found reads shape nonempty
+    rw [runtimeCost.rowWork_bindings] at bound
+    exact bound.mono (by simp only [id_eq]; omega)
+  · have evaluated : HeapCalls.Evaluates program (triangleEnv 0) Solvers.P18Ast.requires_solve_0
+        (HeapCalls.Runtime.NestedIntList.heap rows) (.scalar (.bool false))
+        (HeapCalls.Runtime.NestedIntList.heap rows) :=
+      HeapCalls.Evaluates.call (.cons (.lookup rfl) .nil) rejected
+    have impossible := evaluated.condition_iff.mp requires
+    simp at impossible
 
 end solvers.«18»
