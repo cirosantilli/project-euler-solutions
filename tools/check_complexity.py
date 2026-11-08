@@ -28,6 +28,13 @@ P21_RUNTIME_HELPERS = (
 )
 
 
+P23_RUNTIME_HELPERS = (
+    "SieveRuntime", "OuterRuntime", "SieveFunction", "AbundantRuntime",
+    "MarkingRuntime", "ScanRuntime", "SetupRuntime", "SourceRuntime",
+)
+P23_REFERENCE_HELPERS = ("HelpersRuntime", "AbundantRuntime", "PairRuntime", "FinalRuntime")
+
+
 def public_theorems(source):
     """Collect the explicit namespace/theorem declarations in these proof files."""
     namespaces = []
@@ -98,7 +105,7 @@ def main():
     lean = subprocess.check_output(
         ["lake", "env", "which", "lean"], text=True, env=environment
     ).strip()
-    for name in ("ExecutionCost", "ExecutionCostDomain", "CallsCost", "CallsCostLoops", "CallsCostControl", "HeapCallsCost", "HeapCallsCostLists", "ScalarSortCost", "WeightedExecutionCost", "AllocationCost", "HeapReadCost", "BufferCost", "BufferCostSlice", "RuntimeCost", "PrimitiveWork", "PrimitiveWorkBounds", "CallsRuntimeCost", "CallsRuntimeCostLoops", "CallsRuntimeCostControl", "CallsRuntimeCostFunctions", "CallsRuntimeCostFilteredSums", "CallsRuntimeCostScaled", "CallsRuntimeCostBitBounds", "CallsRuntimeCostNumberBounds", "CallsRuntimeCostLinking", "CallsRuntimeCostBlocks", "DecimalWorkBounds", "IntegerListWork", "FactorialWorkBounds", "CallsRuntimeCostStrings", "CallsRuntimeCostRanges", "LcmRuntimeCost", "FibonacciRuntimeCost", "HeapMapWork", "HeapRecordWork", "HeapSetWork", "HeapSortWork", "HeapBufferWork", "HeapSequenceWork", "DynamicArrayWork", "AmortizedRuntimeCost", "HeapRuntimeCost", "HeapRuntimeInputs", "StringListWork", "HeapRuntimeCostLists", "HeapRuntimeCostControl", "SetRuntimeCost", "SetRuntimeCostLoops", "HeapRuntimeCostResults", "HeapRuntimeCostRecords", "HeapRuntimeCostLibrary", "HeapRuntimeCostRanges", "HeapRuntimeCostBuffers", "HeapRuntimeCostBufferLoops", "HeapRuntimeCostReturns", "HeapRuntimeCostPrimitives", "HeapRuntimeCostExtrema", "HeapRuntimeCostSequences", "HeapRuntimeCostStrings", "HeapRuntimeCostComprehensions", "HeapRuntimeCostRangeComprehensions", "HeapRuntimeCostLoopControl", "HeapRuntimeCostListCopies", "HeapRuntimeCostClasses", "HeapRuntimeCostListExtension", "HeapRuntimeCostSetup", "HeapRuntimeCostListLoops", "HeapRuntimeCostUnpacking", "HeapRuntimeCostSumGenerators", "HeapRuntimeCostEnumeration", "HeapRuntimeCostEnumeratedSums", "HeapRuntimeCostRangeSums", "HeapRuntimeCostSums", "DecimalSumRuntimeCost", "HeapRuntimeCostSets", "HeapRuntimeCostComparisons", "HeapRuntimeCostSorting", "HeapRuntimeCostStringSorting", "HeapRuntimeCostMembership", "HeapRuntimeCostBooleans", "HeapRuntimeCostDictionaries", "HeapRuntimeCostScalarPairs", "HeapRuntimeCostDictionaryWrites", "HeapRuntimeCostListWrites", "HeapRuntimeCostListAugAssign", "HeapRuntimeCostReverseLoops", "HeapRuntimeCostListRepetition", "MemoRuntimeCost", "MemoRuntimeCostRules", "MemoRuntimeCostFunctions", "MemoRuntimeCostExpressions", "MemoRuntimeCostExtrema"):
+    for name in ("ExecutionCost", "ExecutionCostDomain", "CallsCost", "CallsCostLoops", "CallsCostControl", "HeapCallsCost", "HeapCallsCostLists", "ScalarSortCost", "WeightedExecutionCost", "AllocationCost", "HeapReadCost", "BufferCost", "BufferCostSlice", "RuntimeCost", "PrimitiveWork", "PrimitiveWorkBounds", "CallsRuntimeCost", "CallsRuntimeCostLoops", "CallsRuntimeCostControl", "CallsRuntimeCostFunctions", "CallsRuntimeCostFilteredSums", "CallsRuntimeCostScaled", "CallsRuntimeCostBitBounds", "CallsRuntimeCostNumberBounds", "CallsRuntimeCostLinking", "CallsRuntimeCostBlocks", "DecimalWorkBounds", "IntegerListWork", "FactorialWorkBounds", "CallsRuntimeCostStrings", "CallsRuntimeCostRanges", "LcmRuntimeCost", "FibonacciRuntimeCost", "HeapMapWork", "HeapRecordWork", "HeapSetWork", "HeapSortWork", "HeapBufferWork", "HeapSequenceWork", "DynamicArrayWork", "AmortizedRuntimeCost", "HeapRuntimeCost", "HeapRuntimeInputs", "StringListWork", "HeapRuntimeCostLists", "HeapRuntimeCostControl", "SetRuntimeCost", "SetRuntimeCostLoops", "HeapRuntimeCostResults", "HeapRuntimeCostRecords", "HeapRuntimeCostLibrary", "HeapRuntimeCostRanges", "HeapRuntimeCostBuffers", "HeapRuntimeCostBufferLoops", "HeapRuntimeCostReturns", "HeapRuntimeCostPrimitives", "HeapRuntimeCostExtrema", "HeapRuntimeCostSequences", "HeapRuntimeCostStrings", "HeapRuntimeCostComprehensions", "HeapRuntimeCostRangeComprehensions", "HeapRuntimeCostLoopControl", "HeapRuntimeCostListCopies", "HeapRuntimeCostClasses", "HeapRuntimeCostListExtension", "HeapRuntimeCostSetup", "HeapRuntimeCostListLoops", "HeapRuntimeCostUnpacking", "HeapRuntimeCostSumGenerators", "HeapRuntimeCostEnumeration", "HeapRuntimeCostEnumeratedSums", "HeapRuntimeCostRangeSums", "HeapRuntimeCostSums", "DecimalSumRuntimeCost", "HeapRuntimeCostSets", "HeapRuntimeCostSetComprehensions", "HeapRuntimeCostComparisons", "HeapRuntimeCostSorting", "HeapRuntimeCostStringSorting", "HeapRuntimeCostMembership", "HeapRuntimeCostBooleans", "HeapRuntimeCostDictionaries", "HeapRuntimeCostScalarPairs", "HeapRuntimeCostDictionaryWrites", "HeapRuntimeCostListWrites", "HeapRuntimeCostListAugAssign", "HeapRuntimeCostReverseLoops", "HeapRuntimeCostListRepetition", "MemoRuntimeCost", "MemoRuntimeCostRules", "MemoRuntimeCostFunctions", "MemoRuntimeCostExpressions", "MemoRuntimeCostExtrema"):
         check(FORMALSW / f"lang/py/FormalSW/{name}.lean",
               FORMALSW / f".lake/build/lib/lean/lang/py/FormalSW/{name}.olean")
     if 11 in problems:
@@ -153,13 +160,20 @@ def main():
             check(statements_lean / relative,
                   statements_lean / ".lake/build/lib/lean" / relative.with_suffix(".olean"),
                   source_root=statements_lean)
+    if 23 in problems:
+        statements_lean = ROOT / "data/project-euler-statements/data/lean"
+        for name in ("AbundantSums", "AbundantWork", "DivisorSumBounds"):
+            relative = Path(f"ProjectEulerStatements/Lib/{name}.lean")
+            check(statements_lean / relative,
+                  statements_lean / ".lake/build/lib/lean" / relative.with_suffix(".olean"),
+                  source_root=statements_lean)
     if 3 in problems:
         statements_lean = ROOT / "data/project-euler-statements/data/lean"
         relative = Path("ProjectEulerStatements/Lib/DivisorBounds.lean")
         check(statements_lean / relative,
               statements_lean / ".lake/build/lib/lean" / relative.with_suffix(".olean"),
               source_root=statements_lean)
-    if set(problems) & {7, 10, 21}:
+    if set(problems) & {7, 10, 21, 23}:
         statements_lean = ROOT / "data/project-euler-statements/data/lean"
         relative = Path("ProjectEulerStatements/Lib/ReciprocalSum.lean")
         check(statements_lean / relative,
@@ -186,7 +200,7 @@ def main():
         f"solvers/{problem}.py",
         f"data/project-euler-statements/data/py/project_euler_statements/p{problem}.py",
     )]
-    if set(problems) & {3, 4, 7, 10, 12, 13, 16, 20, 21}:
+    if set(problems) & {3, 4, 7, 10, 12, 13, 16, 20, 21, 23}:
         sources.append("data/project-euler-statements/data/py/project_euler_statements/common.py")
     for relative in sources:
         source = Path(relative)
@@ -212,6 +226,7 @@ def main():
     check(FORMALSW / "tests/py/execution_cost.lean")
     check(FORMALSW / "tests/py/runtime_cost.lean")
     check(FORMALSW / "tests/py/runtime_set_iteration.lean")
+    check(FORMALSW / "tests/py/runtime_set_comprehensions.lean")
     check(FORMALSW / "tests/py/runtime_sums.lean")
     check(FORMALSW / "tests/py/runtime_scalar_range_sums.lean")
     check(FORMALSW / "tests/py/runtime_filtered_sums.lean")
@@ -240,7 +255,7 @@ def main():
                         "--lean-output", str(generated)], check=True)
         run_lean([lean, "-DwarningAsError=true", str(generated)], env=environment, check=True)
     subprocess.run([sys.executable, str(FORMALSW / "tests/py/nagini_erasure_checks")], check=True)
-    if set(problems) & {7, 10, 21}:
+    if set(problems) & {7, 10, 21, 23}:
         source = Path("data/project-euler-statements/data/py/project_euler_statements/common.py.lean")
         check(source.resolve(), frontend["olean_path_for_lean"](source))
     if set(problems) & {3, 7, 10}:
@@ -379,6 +394,16 @@ def main():
             for name in ("NameRuntime", "ScanRuntime"):
                 source = Path(f"solvers/22.py.lean.d/{name}.lean")
                 check(source.resolve(), build / source.with_suffix(".olean"))
+    if 23 in problems:
+        source = Path("data/project-euler-statements/data/py/project_euler_statements/common.py.lean.d/ProperDivisorSumRuntime.lean")
+        check(source.resolve(), build / source.with_suffix(".olean"))
+        for name in P23_REFERENCE_HELPERS:
+            source = Path(f"data/project-euler-statements/data/py/project_euler_statements/p23.py.lean.d/{name}.lean")
+            check(source.resolve(), build / source.with_suffix(".olean"))
+        if not args.reference_only:
+            for name in P23_RUNTIME_HELPERS:
+                source = Path(f"solvers/23.py.lean.d/{name}.lean")
+                check(source.resolve(), build / source.with_suffix(".olean"))
     if 28 in problems:
         source = Path("data/project-euler-statements/data/py/project_euler_statements/p28.py.lean.d/State.lean")
         check(source.resolve(), build / source.with_suffix(".olean"))
@@ -444,7 +469,7 @@ def main():
             print(f"Axiom audit passed for {label}: {len(names)} theorems", flush=True)
             return len(names)
 
-        modules = ("SetRuntimeCost", "SetRuntimeCostLoops")
+        modules = ("SetRuntimeCost", "SetRuntimeCostLoops", "HeapRuntimeCostSetComprehensions")
         imports = "".join(f"import lang.py.FormalSW.{name}\n" for name in modules)
         names = [theorem for name in modules for theorem in
                  public_theorems(FORMALSW / f"lang/py/FormalSW/{name}.lean")]
@@ -532,6 +557,11 @@ def main():
                 if not args.reference_only:
                     sources.extend(Path(f"solvers/22.py.lean.d/{name}.lean")
                                    for name in ("NameRuntime", "ScanRuntime"))
+            if problem == 23:
+                sources.extend(Path(f"data/project-euler-statements/data/py/project_euler_statements/p23.py.lean.d/{name}.lean")
+                               for name in P23_REFERENCE_HELPERS)
+                if not args.reference_only:
+                    sources.extend(Path(f"solvers/23.py.lean.d/{name}.lean") for name in P23_RUNTIME_HELPERS)
             sources = list(dict.fromkeys(sources))
             names = [name for source in sources for name in public_theorems(source)]
             if problem == 22:
@@ -563,6 +593,9 @@ def main():
                 names.extend(public_theorems(FORMALSW / "lang/py/FormalSW/HeapRuntimeCostResults.lean"))
                 for name in ("TrialDivisionWork", "DivisorSumBounds"):
                     names.extend(public_theorems(ROOT / f"data/project-euler-statements/data/lean/ProjectEulerStatements/Lib/{name}.lean"))
+            if problem == 23:
+                names.extend(public_theorems(FORMALSW / "lang/py/FormalSW/HeapSetWork.lean"))
+                names.extend(public_theorems(ROOT / "data/project-euler-statements/data/lean/ProjectEulerStatements/Lib/AbundantWork.lean"))
             if problem == 28:
                 names.extend(["FormalSW.PyAst.Calls.Runtime.rangeSumWithin",
                               "FormalSW.PyAst.Calls.Runtime.EvaluatesIn.call_single",
@@ -570,11 +603,14 @@ def main():
             if problem == 20:
                 names.extend(public_theorems(FORMALSW / "lang/py/FormalSW/FactorialWorkBounds.lean"))
                 names.extend(public_theorems(FORMALSW / "lang/py/FormalSW/HeapRuntimeCostLibrary.lean"))
-            if problem in (7, 10, 21):
+            if problem in (7, 10, 21, 23):
                 names.extend(public_theorems(ROOT / "data/project-euler-statements/data/lean/ProjectEulerStatements/Lib/ReciprocalSum.lean"))
             if not names:
                 raise RuntimeError(f"No theorem declarations found for problem {problem}")
             imports = "".join(f'import {frontend["lean_module_for_path"](source)}\n' for source in sources)
+            if problem == 23:
+                imports += "import ProjectEulerStatements.Lib.AbundantWork\n"
+                imports += "import ProjectEulerStatements.Lib.ReciprocalSum\n"
             if problem == 21:
                 imports += "import ProjectEulerStatements.Lib.TrialDivisionWork\n"
                 imports += "import ProjectEulerStatements.Lib.DivisorSumBounds\n"

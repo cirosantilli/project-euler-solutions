@@ -1,6 +1,7 @@
 import «.formalsw».solvers.«23.py.ast»
 import data.«project-euler-statements».data.py.project_euler_statements.«p23.py»
 import FormalSW
+import solvers.«23.py.lean.d».RuntimeCost
 import ProjectEulerStatements.Lib.DivisorSieve
 import ProjectEulerStatements.Lib.AbundantSums
 

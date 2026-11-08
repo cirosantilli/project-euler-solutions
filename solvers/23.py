@@ -17,6 +17,7 @@ def solve(limit: int = 28123) -> int:
     @formalsw: Py from project_euler_statements.p23 import naive
     @formalsw: Returns
     @formalsw: Equiv(naive)
+    @formalsw: BigO(limit^2)
     """
     if limit < 0:
         return 0
