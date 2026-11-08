@@ -188,5 +188,21 @@ theorem peers_impossible (state : State) (cell : Cell) (digit : Digit) (others :
           rintro ⟨assignment, legal, admitted⟩
           exact impossible ⟨assignment, legal, (remove_equiv state middle cell other digit single peer step assignment legal).mpr admitted⟩
 
+def dequeued (state : State) (remaining : List Cell) : State := { state with queued := remaining }
+
+theorem dequeued_potential (state : State) (remaining : List Cell) (cell : Cell)
+    (queued : state.queued = remaining ++ [cell]) : potential (dequeued state remaining) < potential state := by
+  simp [potential, dequeued, queued]
+
+theorem dequeued_progress (state : State) (remaining : List Cell) (cell : Cell)
+    (queued : state.queued = remaining ++ [cell]) : Progress state (dequeued state remaining) :=
+  ⟨fun _ => Finset.Subset.refl _, (dequeued_potential state remaining cell queued).le,
+    Nat.le_refl _, fun changed => Or.inl changed, id⟩
+
+theorem dequeued_singles (state : State) (remaining : List Cell) (cell : Cell)
+    (queued : state.queued = remaining ++ [cell]) (singles : Singles state) : Singles (dequeued state remaining) := by
+  intro position member
+  exact singles position (by rw [queued]; exact List.mem_append_left _ member)
+
 end
 end ProjectEulerSolutions.Sudoku.Propagation
