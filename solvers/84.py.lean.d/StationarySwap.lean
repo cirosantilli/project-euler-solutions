@@ -1,4 +1,5 @@
 import solvers.«84.py.lean.d».StationaryHeapView
+import ProjectEulerSolutions.Lib.MatrixRowSwapCalls
 
 namespace solvers.«84».stationary_weights
 open FormalSW.PyAst HeapCalls ProjectEulerSolutions
@@ -35,37 +36,18 @@ theorem swap_result (matrix : Matrix (Fin 120) (Fin 121) Int) (heap : Mutable.He
       (swappedHeap heap root addresses first second) globals ∧
     MutableIntegerMatrix.View (IntegerRowSwap.swap matrix first second)
       (swappedHeap heap root addresses first second) root (addresses ∘ Equiv.swap first second) := by
-  have afterView := view.reindex (Equiv.swap first second)
+  obtain ⟨swapped, afterView⟩ := MatrixRowSwapCalls.result program matrix heap root addresses view first second env globals
+    getMatrix getFirst getSecond
   refine ⟨?_, afterView⟩
-  let saved := setLocal env "pivot_values" (.ref (addresses second))
-  let intermediate := heap.set root
-    (.list ((List.ofFn fun row => Mutable.Value.ref (addresses row)).set second.val (.ref (addresses first))))
-  have savedMatrix : saved "matrix" = some (.ref root) := by simpa [saved, setLocal] using getMatrix
-  have savedFirst : saved "column" = some (.scalar (.int first.val)) := by simpa [saved, setLocal] using getFirst
-  have savedSecond : saved "pivot_row" = some (.scalar (.int second.val)) := by simpa [saved, setLocal] using getSecond
-  have values := BlockContinues.assign (name := "pivot_values")
-    (view.row_result program env globals (.name "matrix") (.name "pivot_row") second
-      (.lookup getMatrix) (.lookup getSecond) (by intros; simp))
-  have firstWrite : BlockContinues program saved
-      [.assign [.subscript (.name "matrix") (.name "pivot_row")] (.subscript (.name "matrix") (.name "column"))]
-      heap saved intermediate globals := by
-    apply BlockContinues.setItem (by intros; simp)
-      (view.row_result program saved globals (.name "matrix") (.name "column") first
-        (.lookup savedMatrix) (.lookup savedFirst) (by intros; simp))
-      (.cons (.lookup savedMatrix) (.cons (.lookup savedSecond) .nil))
-    exact (view.swap_operations first second).1
-  have secondWrite : BlockContinues program saved
-      [.assign [.subscript (.name "matrix") (.name "column")] (.name "pivot_values")]
-      intermediate saved (swappedHeap heap root addresses first second) globals := by
-    apply BlockContinues.setItem (by intros; simp) (.lookup rfl)
-      (.cons (.lookup savedMatrix) (.cons (.lookup savedFirst) .nil))
-    exact (view.swap_operations first second).2
+  let saved := MatrixRowSwapCalls.savedEnv env addresses second
+  have savedFirst : saved "column" = some (.scalar (.int first.val)) := by
+    simpa [saved, MatrixRowSwapCalls.savedEnv, setLocal] using getFirst
   have pivot : Evaluates program saved (.subscript (.name "pivot_values") (.name "column"))
       (swappedHeap heap root addresses first second) (.scalar (.int (matrix second first.castSucc)))
       (swappedHeap heap root addresses first second) globals := by
-    simpa only [Function.comp_apply, Equiv.swap_apply_left] using
+    simpa only [IntegerRowSwap.swap, Function.comp_apply, Equiv.swap_apply_left] using
       afterView.entry_result program saved globals (.name "pivot_values") (.name "column") first first.castSucc
-        (.lookup (by simp [saved, setLocal])) (.lookup savedFirst) (by intros; simp)
-  exact values.append (firstWrite.append (secondWrite.append (BlockContinues.assign pivot)))
+        (.lookup (by simp [saved, MatrixRowSwapCalls.savedEnv, setLocal])) (.lookup savedFirst) (by intros; simp)
+  exact swapped.append (BlockContinues.assign pivot)
 
 end solvers.«84».stationary_weights

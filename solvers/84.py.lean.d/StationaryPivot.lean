@@ -1,67 +1,17 @@
 import solvers.«84.py.lean.d».StationarySwap
-import lang.py.FormalSW.NextCalls
+import ProjectEulerSolutions.Lib.MatrixPivotCalls
 
 namespace solvers.«84».stationary_weights
 open FormalSW.PyAst HeapCalls ProjectEulerSolutions
 set_option Elab.async false
 
-def pivotCondition : Expr := .subscript (.subscript (.name "matrix") (.name "row")) (.name "column")
-def pivotExpression : Expr :=
-  .consumeGenerator (nextConsumer (some (.constant .none))) (.name "row")
-    [(.name "row", .call (.name "range") [.name "column", .name "size"], [pivotCondition])]
+abbrev pivotCondition := ProjectEulerSolutions.MatrixPivotCalls.condition
+abbrev pivotExpression := ProjectEulerSolutions.MatrixPivotCalls.expression
 
 theorem pivot_source : eliminationBody.head? = some (.assign [.name "pivot_row"] pivotExpression) := rfl
 
-theorem pivot_scan (matrix : Matrix (Fin 120) (Fin 121) Int) (heap : Mutable.Heap)
-    (root : Nat) (addresses : Fin 120 → Nat) (view : MutableIntegerMatrix.View matrix heap root addresses)
-    (column candidate : Fin 120) (nonzero : matrix candidate column.castSucc ≠ 0)
-    (first : Nat) (bound : first ≤ candidate.val)
-    (zeros : ∀ row : Fin 120, first ≤ row.val → row.val < candidate.val → matrix row column.castSucc = 0)
-    (env : HeapCalls.Env) (globals : Mutable.Globals)
-    (getMatrix : env "matrix" = some (.ref root))
-    (getColumn : env "column" = some (.scalar (.int column.val))) (following : List Stmt) :
-    BlockReturns program env (.rangeStepLoop "row" first 120 1
-      [.ifThen pivotCondition [.return (.name "row")] []] [] :: following)
-      heap (.scalar (.int candidate.val)) heap globals := by
-  have inside : first < 120 := lt_of_le_of_lt bound candidate.isLt
-  let row : Fin 120 := ⟨first, inside⟩
-  let boundEnv := setLocal env "row" (.scalar (.int first))
-  have boundMatrix : boundEnv "matrix" = some (.ref root) := by simpa [boundEnv, setLocal] using getMatrix
-  have boundColumn : boundEnv "column" = some (.scalar (.int column.val)) := by simpa [boundEnv, setLocal] using getColumn
-  have tested : Evaluates program boundEnv pivotCondition heap (.scalar (.int (matrix row column.castSucc))) heap globals :=
-    view.entry_result program boundEnv globals _ _ row column.castSucc
-      (view.row_result program boundEnv globals _ _ row (.lookup boundMatrix) (.lookup rfl) (by intros; simp))
-      (.lookup boundColumn) (by intros; simp)
-  apply BlockReturns.range_step (by simp [Calls.rangeContinues]; omega)
-  by_cases found : first = candidate.val
-  · have same : row = candidate := Fin.ext found
-    apply BlockReturns.branch (flag := true) tested
-      (by simp [Mutable.truth, scalarTruth, same, nonzero])
-    exact BlockReturns.return_value (.lookup (by simp [boundEnv, setLocal, found]))
-  · have before : first < candidate.val := by omega
-    have zero := zeros row (Nat.le_refl _) before
-    apply BlockReturns.branch (flag := false) tested (by simp [Mutable.truth, scalarTruth, zero])
-    have rest := pivot_scan matrix heap root addresses view column candidate nonzero (first + 1) (by omega)
-      (fun row lower upper => zeros row (by omega) upper) boundEnv globals boundMatrix boundColumn following
-    simpa [Calls.loopContinuation, Calls.loopControl, Calls.loopControlStmt] using rest
-termination_by candidate.val - first
-decreasing_by omega
-
-/-- A nonzero pivot is found by the actual filtered range generator, without exhausting the range. -/
-theorem pivot_result (matrix : Matrix (Fin 120) (Fin 121) Int) (heap : Mutable.Heap)
-    (root : Nat) (addresses : Fin 120 → Nat) (view : MutableIntegerMatrix.View matrix heap root addresses)
-    (column candidate : Fin 120) (bound : column.val ≤ candidate.val)
-    (nonzero : matrix candidate column.castSucc ≠ 0)
-    (zeros : ∀ row : Fin 120, column.val ≤ row.val → row.val < candidate.val → matrix row column.castSucc = 0)
-    (env : HeapCalls.Env) (globals : Mutable.Globals)
-    (getMatrix : env "matrix" = some (.ref root))
-    (getColumn : env "column" = some (.scalar (.int column.val)))
-    (getSize : env "size" = some (.scalar (.int 120))) :
-    Evaluates program env pivotExpression heap (.scalar (.int candidate.val)) heap globals := by
-  apply Evaluates.next_generator_range (.cons (.lookup getColumn) (.cons (.lookup getSize) .nil)) rfl Evaluates.constant
-  exact pivot_scan matrix heap root addresses view column candidate nonzero column.val bound zeros _ globals
-    (by simpa [nextEnv, nextDefault, comprehensionTargetsEnv, targetLocals, setLocal] using getMatrix)
-    (by simpa [nextEnv, nextDefault, comprehensionTargetsEnv, targetLocals, setLocal] using getColumn) _
+abbrev pivot_scan := ProjectEulerSolutions.MatrixPivotCalls.scan program
+abbrev pivot_result := ProjectEulerSolutions.MatrixPivotCalls.result program
 
 theorem first_pivot {k : Nat} (state : Bareiss.State (Monopoly.augmentedMatrix sides) k) (unfinished : k < 120) :
     ∃ candidate : Fin 120, k ≤ candidate.val ∧ state.matrix candidate ⟨k, by omega⟩ ≠ 0 ∧

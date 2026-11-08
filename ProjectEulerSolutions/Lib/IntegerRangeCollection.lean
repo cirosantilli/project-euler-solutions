@@ -4,14 +4,15 @@ import ProjectEulerSolutions.Lib.TriangleBufferCalls
 namespace ProjectEulerSolutions.IntegerRangeCollection
 open FormalSW.PyAst HeapCalls ProjectEulerSolutions.TriangleBufferCalls
 set_option Elab.async false
+variable {globals : Mutable.Globals}
 
 theorem collect_loop (program : Module) (base : Mutable.Heap) (env : HeapCalls.Env)
     (name : String) (element : Expr) (values output : List Int) (cursor : Nat)
     (bounded : cursor ≤ values.length)
     (evaluate : ∀ (collected : List Int) (index : Nat) (inside : index < values.length),
-      Evaluates program (setLocal env name (number index)) element (working base collected)
+      Evaluates (globals := globals) program (setLocal env name (number index)) element (working base collected)
         (number values[index]) (working base collected)) :
-    ∃ after, BlockContinues program env
+    ∃ after, BlockContinues (globals := globals) program env
       [.rangeStepLoop name cursor values.length 1 [.comprehensionAppend base.length element] []]
       (working base output) after (working base (output ++ values.drop cursor)) := by
   by_cases active : cursor < values.length
@@ -43,12 +44,12 @@ decreasing_by omega
 
 theorem collect (program : Module) (base : Mutable.Heap) (env : HeapCalls.Env)
     (name : String) (element : Expr) (values : List Int) (expressions : List Expr) (arguments : List Mutable.Value)
-    (evaluated : Evaluates.Arguments program env expressions base arguments base)
+    (evaluated : Evaluates.Arguments (globals := globals) program env expressions base arguments base)
     (bounds : rangeBounds arguments = .ok (0, values.length, 1))
     (evaluate : ∀ (collected : List Int) (index : Nat) (inside : index < values.length),
-      Evaluates program (setLocal (comprehensionEnv env [(name, .call (.name "range") expressions, [])]) name (number index))
+      Evaluates (globals := globals) program (setLocal (comprehensionEnv env [(name, .call (.name "range") expressions, [])]) name (number index))
         element (working base collected) (number values[index]) (working base collected)) :
-    Evaluates program env (.listComp element [(name, .call (.name "range") expressions, [])]) base
+    Evaluates (globals := globals) program env (.listComp element [(name, .call (.name "range") expressions, [])]) base
       (.ref base.length) (working base values) := by
   obtain ⟨after, loop⟩ := collect_loop program base
     (comprehensionEnv env [(name, .call (.name "range") expressions, [])]) name element values [] 0 (by omega) evaluate
