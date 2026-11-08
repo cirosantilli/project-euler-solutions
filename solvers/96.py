@@ -70,7 +70,8 @@ def reduce_cands(cands):
         # Only-choice in each unit
         for unit in UNITS:
             # For each digit bit, see where it can go
-            for dbit in (1 << k for k in range(9)):
+            for k in range(9):
+                dbit = 1 << k
                 places = [i for i in unit if (cands[i] & dbit)]
                 if not places:
                     return False
