@@ -508,6 +508,8 @@ data/project-euler-statements/formalsw/formalsw solvers/1.py
 
 The proofs of FormalSW statements such as `Equiv` as present in .py.lean files present next to each .py file, e.g.: link:solvers/1.py.lean[]. These files are very complicated for humans to understand, but that's fine, we just have LLMs deal with it for us, and Lean checks that the required proof checks out.
 
+Keep custom Lean contracts in those proof files rather than duplicating them in Python docstrings. FormalSW compiles the entire adjacent proof file, including when the Python file has no property markers; the reported property count counts only marker-generated obligations.
+
 When proofs are larger and this can make compilation run faster, we also by convention create a `solvers/N.py.lean.d` diretory from which `py.lean` can import partial results from, see e.g. link:
 
 Reusable mathematical concepts and lemmas are stored under link:ProjectEulerSolutions/Lib/[] so that they may be used across multiple programming languages and problems as needed.
@@ -614,6 +616,10 @@ Problem 75 has structural source termination and equivalence proofs for every si
 Problem 76 has structural source termination and equivalence proofs for every signed integer input. The recursive reference preserves an exact cache keyed by both the remaining sum and maximum part. The optimized proof executes list allocation, initialization, ascending part and sum loops, in-place additions, and the final indexed read. A coin-change frontier connects the complete table to the unordered partition recurrence. Negative inputs return zero, and zero counts the empty partition. Caller heap objects are preserved. The proofs use only standard Lean axioms and do not evaluate either whole program. The standalone Lean array solver shares the signed interface and has proved termination and equivalence.
 
 Problem 93 has structural source termination and equivalence proofs for every signed maximum operand, including the omitted default argument. Exact expression-tree enumeration agrees with memoized canonical rational-pair reduction. The optimized proof covers every set traversal order, positive-integer collection, consecutive-run scoring, and first-on-tie winner selection. Bounds below three return an empty tuple. Caller objects are preserved, and the proofs use only standard Lean axioms without evaluating either complete program.
+
+Problem 94 has structural source termination and equivalence proofs for every signed perimeter bound. Pell classification proves that the optimized recurrence enumerates precisely the positive integral almost-equilateral triangles tested by the reference. The source proofs cover integer square roots, Heron’s formula, list appends, tuple updates, and both bounded searches. The adjacent Lean contract uses heap execution for both implementations and proves that they terminate with equal sums. Only standard Lean axioms are used.
+
+Problem 95 has structural source termination and equivalence proofs for every signed inclusive bound. The divisor sieve and cached first-repeat walks agree with the reference's bounded walks and strict longest-chain selection, including ties and negative bounds. The proofs execute the actual list and dictionary updates and use only standard Lean axioms, without evaluating either complete program.
 
 Problem 97 has structural source equivalence for its fixed expression. The reference's repeated modular multiplication agrees with Python's three-argument `pow`; the proof does not evaluate the complete programs. Both terminate, and the reference helper also covers negative exponents and signed nonzero moduli. The proofs use only standard Lean axioms.
 
@@ -792,10 +798,10 @@ Benchmarked on Lenovo ThinkPad P14s by running `./main.py`:
 | link:solvers/89.py[89.py] | link:solvers/89.md[89.md] | link:solvers/89.py.lean[89.py.lean] | 0.138 | 743 |
 | link:solvers/90.py[90.py] | link:solvers/90.md[90.md] | link:solvers/90.py.lean[90.py.lean] | 0.155 | 1217 |
 | link:solvers/91.py[91.py] | link:solvers/91.md[91.md] | link:solvers/91.py.lean[91.py.lean] | 0.113 | 14234 |
-| link:solvers/92.py[92.py] | link:solvers/92.md[92.md] |  | 0.231 | 8581146 |
+| link:solvers/92.py[92.py] | link:solvers/92.md[92.md] | link:solvers/92.py.lean[92.py.lean] | 0.231 | 8581146 |
 | link:solvers/93.py[93.py] | link:solvers/93.md[93.md] | link:solvers/93.py.lean[93.py.lean] | 1.740 | 1258 |
-| link:solvers/94.py[94.py] | link:solvers/94.md[94.md] |  | 0.060 | 518408346 |
-| link:solvers/95.py[95.py] | link:solvers/95.md[95.md] |  | 0.370 | 14316 |
+| link:solvers/94.py[94.py] | link:solvers/94.md[94.md] | link:solvers/94.py.lean[94.py.lean] | 0.060 | 518408346 |
+| link:solvers/95.py[95.py] | link:solvers/95.md[95.md] | link:solvers/95.py.lean[95.py.lean] | 0.370 | 14316 |
 | link:solvers/96.py[96.py] | link:solvers/96.md[96.md] |  | 0.175 | 24702 |
 | link:solvers/97.py[97.py] | link:solvers/97.md[97.md] | link:solvers/97.py.lean[97.py.lean] | 0.117 | 8739992577 |
 | link:solvers/98.py[98.py] | link:solvers/98.md[98.md] |  | 0.226 | 18769 |
