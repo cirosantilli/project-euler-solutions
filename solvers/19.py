@@ -28,6 +28,7 @@ def solve(start_year: int, end_year: int) -> int:
     @formalsw: Py from project_euler_statements.p19 import naive_years
     @formalsw: Requires(1900 <= start_year <= end_year)
     @formalsw: Equiv(naive_years)
+    @formalsw: BigO(n, n = abs(start_year) + abs(end_year) + 1)
     """
     # Day of week encoding: 0=Mon, 1=Tue, ..., 6=Sun
     dow_first_of_month = 0  # 1 Jan 1900 was Monday

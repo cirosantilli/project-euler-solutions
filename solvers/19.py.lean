@@ -1,6 +1,7 @@
 import «.formalsw».solvers.«19.py.ast»
+import solvers.«19.py.lean.d».RuntimeCost
 import data.«project-euler-statements».data.py.project_euler_statements.«p19.py»
-import FormalSW
+import lang.py.FormalSW.MembershipCalls
 
 namespace solvers.«19»
 open FormalSW.PyAst

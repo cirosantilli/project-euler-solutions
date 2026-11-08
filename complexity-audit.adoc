@@ -62,6 +62,10 @@ The following implementations have runtime proofs following their generated Pyth
 |link:solvers/18.py.lean[O(n)]
 |link:data/project-euler-statements/data/py/project_euler_statements/p18.py.lean.d/RuntimeCost.lean[O(n)]
 |n is the number of rows plus entries. Fixed arithmetic, uniform in signed cell values. Whole-function bounds are `110n+300` for the optimized source and `500n+300` for the reference. Both charge setup, copies, traversal, comprehensions and the final return. The optimized source uses its declared triangle precondition; the reference also covers empty and ragged rows. No asymptotic improvement claimed.
+|19
+|link:solvers/19.py.lean.d/RuntimeCost.lean[O(n)]
+|Pending
+|n = abs(start_year) + abs(end_year) + 1. The optimized source costs at most `1637*max(end_year-1899,0)+32`, including all twelve months per year, short-circuit tests, leap-year calls and tuple membership. The reference runtime proof is unfinished.
 |20
 |link:solvers/20.py.lean.d/RuntimeCost.lean[O(n log n)]
 |link:data/project-euler-statements/data/py/project_euler_statements/p20.py.lean.d/RuntimeCost.lean[O(n log n)]
@@ -125,7 +129,7 @@ Problems 13, 15, 16, 18 and 20 have runtime proofs on both sides. The other prob
 * 12: prime-table mutation and a search bound expressed through the first qualifying triangular index.
 * 14: memoized execution, dictionary costs and an explicit Collatz-chain measure. The existing functional proofs assume the Collatz conjecture; no polynomial bound in the starting limit follows from that assumption alone.
 * 17: the supplied global word tables and their lookup costs.
-* 19: two integer inputs and the repeated calendar traversals in the reference.
+* 19: the optimized bound and signed two-integer input family are proved. The reference still needs date-record costs and bounds for its repeated calendar traversals.
 
 == Size and cost conventions for the audit
 
