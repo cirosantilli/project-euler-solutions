@@ -1,6 +1,6 @@
 import solvers.«84.py.lean.d».Encoding
 import solvers.«84.py.lean.d».LandingModel
-import ProjectEulerSolutions.Lib.DiceSums
+import solvers.«84.py.lean.d».OutcomeSource
 
 namespace solvers.«84».encode_state
 open FormalSW.PyAst HeapCalls
