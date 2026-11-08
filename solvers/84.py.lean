@@ -1,4 +1,4 @@
-import solvers.«84.py.lean.d».TransitionIteration
+import solvers.«84.py.lean.d».TransitionRowBuild
 
 namespace solvers.«84».encode_state
 open FormalSW.PyAst HeapCalls
