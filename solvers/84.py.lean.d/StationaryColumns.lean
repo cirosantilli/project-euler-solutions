@@ -1,13 +1,13 @@
 import solvers.«84.py.lean.d».StationaryEntry
 import ProjectEulerSolutions.Lib.TriangleBufferCalls
+import ProjectEulerSolutions.Lib.MonopolyMatrixLayout
 
 namespace solvers.«84».stationary_weights
 open FormalSW.PyAst HeapCalls ProjectEulerSolutions
 open TriangleBufferCalls (encode working)
 set_option Elab.async false
 
-def columnValues (sides : Nat) (target : Fin 120) (first count : Nat) : List Int :=
-  (List.range' first count).map fun source => Monopoly.coefficients sides target (Fin.ofNat 120 source)
+export ProjectEulerSolutions.MonopolyMatrixLayout (columnValues)
 
 theorem columns_scan (sides : Nat) (target : Fin 120) (ordinary : target ≠ 119)
     (base : Mutable.Heap) (value : Mutable.Value) (view : transitions.View sides base value)

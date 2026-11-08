@@ -1,11 +1,11 @@
 import solvers.«84.py.lean.d».StationaryMatrixView
+import ProjectEulerSolutions.Lib.MonopolyMatrixLayout
 
 namespace solvers.«84».stationary_weights
 open FormalSW.PyAst HeapCalls ProjectEulerSolutions
 set_option Elab.async false
 
-def setupEnv (env : HeapCalls.Env) (heap : Mutable.Heap) : HeapCalls.Env :=
-  setLocal (setLocal env "size" (.scalar (.int 120))) "matrix" (.ref heap.length)
+export ProjectEulerSolutions.MonopolyMatrixLayout (setupEnv)
 
 theorem setup_full_source : (executableBody definition.2).take 3 =
     [.assign [.name "size"] (.builtinCall .len [.name "transitions"]), .assign [.name "matrix"] matrixExpression,
