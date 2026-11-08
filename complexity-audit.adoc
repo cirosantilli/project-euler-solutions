@@ -90,6 +90,10 @@ The following implementations have runtime proofs following their generated Pyth
 |link:solvers/21.py.lean.d/RuntimeCost.lean[O(n²)]
 |link:data/project-euler-statements/data/py/project_euler_statements/p21.py.lean.d/RuntimeCost.lean[O(n³)]
 |Fixed arithmetic. Both bounds cover the complete source execution. The optimized proof includes sieve allocation and loops, cached lookups, factorization fallback and the final scan. The shared bound `d(a) <= a²` limits each fallback to `250*(a+1)` work; logarithmic potential accounts for repeated factor stripping across trial divisors. The reference bound includes both divisor scans and short-circuit evaluation. These are conservative upper bounds, without a matching reference lower bound.
+|22
+|link:solvers/22.py.lean.d/RuntimeCost.lean[O(n² log(n+1))]
+|link:data/project-euler-statements/data/py/project_euler_statements/p22.py.lean.d/RuntimeCost.lean[O(n² log(n+1))]
+|n is the number of names plus their total Unicode character count. Both proofs include sorting, enumeration, scoring helpers and summation. The sort tariff charges O(k log(k+1) * (w+1)) for k names of maximum length w; the displayed total-size envelope is conservative. Empty names still contribute one input slot. Fixed arithmetic; no asymptotic improvement claimed.
 |28
 |link:solvers/28.py.lean.d/RuntimeCost.lean[O(1)]
 |link:data/project-euler-statements/data/py/project_euler_statements/p28.py.lean.d/RuntimeCost.lean[O(n)]
@@ -153,7 +157,7 @@ Problems 11–20 have runtime proofs on both sides. The Collatz-dependent measur
 
 == Coverage for 21–30
 
-Problems 21 and 28 have runtime proofs on both sides. Runtime pairs for 22–27 and 29–30 remain unfinished. The existing functional-equivalence proofs do not establish these runtime bounds.
+Problems 21, 22 and 28 have runtime proofs on both sides. Runtime pairs for 23–27 and 29–30 remain unfinished. The existing functional-equivalence proofs do not establish these runtime bounds.
 
 == Size and cost conventions for the audit
 

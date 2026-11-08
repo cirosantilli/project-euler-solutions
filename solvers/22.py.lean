@@ -1,6 +1,7 @@
 import «.formalsw».solvers.«22.py.ast»
 import data.«project-euler-statements».data.py.project_euler_statements.«p22.py»
 import FormalSW
+import solvers.«22.py.lean.d».RuntimeCost
 
 namespace solvers.«22»
 open FormalSW.PyAst FormalSW.PyAst.HeapCalls
@@ -73,7 +74,6 @@ private theorem test_result (c : Char) (env : Mutable.Env) (heap : Mutable.Heap)
       · rfl
       · apply Evaluates.Compares.last (value := number 90) (middle := heap) Evaluates.constant
         simp [HeapCalls.compare, scalarCompare, evalCmpOp, upper, lower]
-        omega
     · have rejected : upper c = false := by simp [upper, lower]
       rw [rejected]
       apply Evaluates.Compares.stop (middle := heap) (finalHeap := heap) ordinal

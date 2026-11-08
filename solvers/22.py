@@ -34,6 +34,7 @@ def solve(names: list[str]) -> int:
     @formalsw: Py from project_euler_statements.p22 import naive
     @formalsw: Requires(names_are_uppercase(names))
     @formalsw: Equiv(naive)
+    @formalsw: BigO(n^2 * (Nat.log2 (n + 1) + 1), n = len(names) + sum(len(name) for name in names))
     """
     names_sorted = sorted(names)
     total = 0
