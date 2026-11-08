@@ -54,6 +54,10 @@ The following implementations have runtime proofs following their generated Pyth
 |link:solvers/16.py.lean.d/RuntimeCost.lean[O(n)]
 |link:data/project-euler-statements/data/py/project_euler_statements/p16.py.lean.d/RuntimeCost.lean[O(n)]
 |Fixed arithmetic, including exponentiation and all digit processing. The optimized bound is `26n+75`; the reference bound is `41n+100`. Both use the shared decimal-length bound for 2^n. The optimized proof charges formatting and each character parse; the reference charges repeated division, list resizing and summation. No asymptotic improvement claimed.
+|20
+|link:solvers/20.py.lean.d/RuntimeCost.lean[O(n log n)]
+|link:data/project-euler-statements/data/py/project_euler_statements/p20.py.lean.d/RuntimeCost.lean[O(n log n)]
+|Fixed arithmetic. With `D = n*(log2(n+1)+1)+1`, the optimized source costs at most `11n+24D+60`, and the reference at most `8n+39D+70`. The shared factorial bound covers both intermediate products and final decimal length. The optimized proof follows each multiplication; the reference uses an explicit linear `math.factorial` tariff. Both charge all digit processing. No asymptotic improvement claimed.
 |===
 
 The optional `arithmetic=bits` model charges addition by the sum of operand widths and multiplication/division by their product. Problem 6's link:solvers/6.py.lean.d/RuntimeCost.lean[runtime proof file] also checks a quadratic bound in input bit length as validation of that model, without adding a second source annotation.
@@ -98,7 +102,7 @@ With this project's Lean/formalsw dependencies installed:
 
 [source,sh]
 ----
-python3 tools/check_complexity.py 1 2 3 4 5 6 7 8 9 10 15 16
+python3 tools/check_complexity.py 1 2 3 4 5 6 7 8 9 10 15 16 20
 ----
 
 The link:tools/check_complexity.py[checker] regenerates the selected optimized and reference ASTs using formalsw's existing frontend, recompiles them, and checks the cost library, regressions, and source proofs through a shared process lock, with one Lean thread, a 2.5 GiB Lean heap limit and a watchdog that stops checks above 3 GiB resident memory. It does not depend on the earlier generated AST binaries being fresh. It does not rebuild the full Mathlib dependency tree. It also audits the exported proof theorems, accepting only Lean’s standard `propext`, `Classical.choice` and `Quot.sound` axioms. Pass problem numbers to check a subset, for example `python3 tools/check_complexity.py 1 3 9`.
@@ -107,13 +111,12 @@ The checked runtime pairs share arithmetic and scalar-operation policies. Proble
 
 == Extending coverage to 11–20
 
-Problems 15 and 16 have runtime proofs on both sides. The other problems in this group remain unfinished. Their source shapes require the following extensions:
+Problems 15, 16 and 20 have runtime proofs on both sides. The other problems in this group remain unfinished. Their source shapes require the following extensions:
 
 * 11 and 18: nested-list input families and traversal/copy costs. Problem 11's optimized domain fixes the grid at 20×20; a bound must respect that domain.
 * 12: prime-table mutation and a search bound expressed through the first qualifying triangular index.
 * 13: a size measure including integer widths; list length alone cannot bound decimal conversion.
 * 14: memoized execution, dictionary costs and an explicit Collatz-chain measure. The existing functional proofs assume the Collatz conjecture; no polynomial bound in the starting limit follows from that assumption alone.
-* 20: factorial work and its decimal-length bound, reusing problem 16's digit-conversion and summation proofs.
 * 17: the supplied global word tables and their lookup costs.
 * 19: two integer inputs and the repeated calendar traversals in the reference.
 

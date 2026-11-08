@@ -6,6 +6,7 @@ def solve(n: int) -> int:
     @formalsw: Py from project_euler_statements.p20 import naive
     @formalsw: Requires(n >= 0)
     @formalsw: Equiv(naive)
+    @formalsw: BigO(n * (Nat.log2 (n + 1) + 1))
     """
     fact = 1
     for k in range(2, n + 1):

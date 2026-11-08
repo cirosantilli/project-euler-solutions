@@ -1,6 +1,7 @@
 import «.formalsw».solvers.«20.py.ast»
 import data.«project-euler-statements».data.py.project_euler_statements.«p20.py»
-import FormalSW
+import lang.py.FormalSW.SumCalls
+import solvers.«20.py.lean.d».RuntimeCost
 import ProjectEulerSolutions.Equiv.P20
 
 namespace solvers.«20»
