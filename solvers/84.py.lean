@@ -1,5 +1,5 @@
 import solvers.«84.py.lean.d».Encoding
-import solvers.«84.py.lean.d».Landing
+import solvers.«84.py.lean.d».LandingJail
 import ProjectEulerSolutions.Lib.DiceSums
 import ProjectEulerSolutions.Lib.MonopolyStationary
 
