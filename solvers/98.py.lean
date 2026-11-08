@@ -44,6 +44,30 @@ theorem pair_result (word digits : String) (heap : Mutable.Heap) :
 
 end solvers.«98».pattern_signature
 
+namespace solvers.«98».mapping
+open FormalSW.PyAst HeapCalls ProjectEulerSolutions.AnagramSquares
+open data.«project-euler-statements».data.py.project_euler_statements.p98.mapping
+
+/-- Actual optimized pattern calls and the complete reference dictionary checker accept the same candidates. -/
+theorem checker_agrees (word digits : String) (heap : Mutable.Heap) (env : HeapCalls.Env)
+    (globals : Mutable.Globals) (otherwise : List Stmt)
+    (sameLength : word.toList.length = digits.toList.length)
+    (getWord : env "word" = some (.scalar (.string word))) (getSquare : env "square" = some (.scalar (.string digits))) :
+    ∃ middle tested left right, ∃ accepted : Bool, ∃ finalEnv letters values garbage,
+      ReturnsValue pattern_signature.program "pattern_signature" [.scalar (.string word)] heap (.ref left) middle ∧
+      ReturnsValue pattern_signature.program "pattern_signature" [.scalar (.string digits)] middle (.ref right) tested ∧
+      Pending env (prepareCode ++ [loopCode otherwise]) tested finalEnv (if accepted then otherwise else [])
+        (work tested letters values garbage) globals ∧
+      (accepted = true ↔ tested[left]? = tested[right]?) ∧
+      (accepted = true → letters = alphabet [] word.toList ∧ values = alphabet [] digits.toList) := by
+  obtain ⟨middle, tested, left, right, first, second, keys⟩ := pattern_signature.pair_result word digits heap
+  obtain ⟨accepted, finalEnv, letters, values, garbage, checked, accepts, mapping, _⟩ :=
+    result word digits tested env globals otherwise sameLength getWord getSquare
+  refine ⟨middle, tested, left, right, accepted, finalEnv, letters, values, garbage, first, second, checked, ?_, mapping⟩
+  exact accepts.trans ((labels_eq_iff_substitution '0' _ _).trans keys.symm)
+
+end solvers.«98».mapping
+
 namespace solvers.«98».solve
 open FormalSW.PyAst HeapCalls ProjectEulerSolutions.AnagramKeys
 open pattern_signature (program)
