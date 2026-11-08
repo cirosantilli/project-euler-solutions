@@ -129,7 +129,7 @@ Problems 13, 15, 16, 18 and 20 have runtime proofs on both sides. The other prob
 * 12: prime-table mutation and a search bound expressed through the first qualifying triangular index.
 * 14: memoized execution, dictionary costs and an explicit Collatz-chain measure. The existing functional proofs assume the Collatz conjecture; no polynomial bound in the starting limit follows from that assumption alone.
 * 17: the supplied global word tables and their lookup costs.
-* 19: the optimized bound and signed two-integer input family are proved. The reference still needs date-record costs and bounds for its repeated calendar traversals.
+* 19: the optimized bound and signed two-integer input family are proved. Date-record costs and the reference's leap-year/month-length helper bounds are checked; its range sums and repeated calendar traversals still need runtime proofs.
 
 == Size and cost conventions for the audit
 
