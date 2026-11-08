@@ -1,5 +1,6 @@
 import solvers.«84.py.lean.d».Encoding
 import solvers.«84.py.lean.d».LandingTableAccess
+import solvers.«84.py.lean.d».OutcomeTransition
 
 namespace solvers.«84».encode_state
 open FormalSW.PyAst HeapCalls
