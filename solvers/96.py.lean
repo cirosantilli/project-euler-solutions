@@ -1,4 +1,4 @@
 import solvers.«96.py.lean.d».Grid
 import solvers.«96.py.lean.d».Normalization
-import solvers.«96.py.lean.d».CandidatePeers
+import solvers.«96.py.lean.d».CandidateQueue
 import data.«project-euler-statements».data.py.project_euler_statements.«p96.py.lean»
