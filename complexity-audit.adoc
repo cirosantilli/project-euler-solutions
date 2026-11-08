@@ -119,7 +119,7 @@ Problems 15, 16, 18 and 20 have runtime proofs on both sides. The other problems
 
 * 11: nested-list families and comprehension costs are modeled. The optimized domain fixes the grid at 20×20; its bound must respect that domain and account for the window argument.
 * 12: prime-table mutation and a search bound expressed through the first qualifying triangular index.
-* 13: a size measure including integer widths; list length alone cannot bound decimal conversion.
+* 13: integer-width input measures are now available as `n = sum(1 + value.bit_length() for value in values)`. Shared lemmas bound the sum and its decimal output length. The source runtime proofs remain unfinished.
 * 14: memoized execution, dictionary costs and an explicit Collatz-chain measure. The existing functional proofs assume the Collatz conjecture; no polynomial bound in the starting limit follows from that assumption alone.
 * 17: the supplied global word tables and their lookup costs.
 * 19: two integer inputs and the repeated calendar traversals in the reference.
