@@ -1,4 +1,5 @@
-import solvers.«99.py.lean.d».Comparison
+import solvers.«99.py.lean.d».Search
+import data.«project-euler-statements».data.py.project_euler_statements.«p99.py»
 
 namespace solvers.«99».round_power_bounds
 open FormalSW.PyAst HeapCalls ProjectEulerSolutions.PowerIntervals
@@ -72,4 +73,54 @@ theorem «Supported» (a : Nat) (m : Int) (b : Nat) (n : Int) (positiveA : 0 < a
     (HeapCalls.call program "compare_powers" [number a, number m, number b, number n] []).Supported :=
   («Returns» a m b n positiveA positiveB).supported
 
+theorem reference_agreement (a : Nat) (m : Int) (b : Nat) (n : Int)
+    (positiveA : 0 < a) (positiveB : 0 < b) (left right : Nat)
+    (heap : Mutable.Heap) (globals : Mutable.Globals)
+    (foundLeft : heap[left]? = some
+      (data.«project-euler-statements».data.py.project_euler_statements.p99.pairObject a m))
+    (foundRight : heap[right]? = some
+      (data.«project-euler-statements».data.py.project_euler_statements.p99.pairObject b n)) :
+    ∃ extra value, ReturnsValue program "compare_powers" [number a, number m, number b, number n] heap
+      (number value) (heap ++ extra) globals ∧
+      ReturnsValue P99Ast.module "greater_power" [.ref left, .ref right] heap
+        (.scalar (.bool (decide (0 < value)))) heap globals := by
+  obtain ⟨extra, ran⟩ := result a m b n positiveA positiveB heap globals
+  exact ⟨extra, _, ran,
+    data.«project-euler-statements».data.py.project_euler_statements.p99.greater_power.result
+      a m b n left right heap globals foundLeft foundRight⟩
+
 end solvers.«99».compare_powers
+
+namespace solvers.«99».solve
+open FormalSW.PyAst HeapCalls ProjectEulerSolutions.PowerMaximum
+
+theorem «Returns» (entries : List Entry) (address : Nat) (heap : Mutable.Heap)
+    (stored : heap[address]? = some (.list (entries.map entryValue)))
+    (valid : ∀ entry ∈ entries, 0 < entry.2.1 ∧ heap[entry.1]? = some (entryObject entry)) :
+    (HeapCalls.call program "solve" [.ref address] heap).Returns := by
+  obtain ⟨extra, returned⟩ := result entries address heap stored valid
+  exact returned.returns
+
+theorem «Supported» (entries : List Entry) (address : Nat) (heap : Mutable.Heap)
+    (stored : heap[address]? = some (.list (entries.map entryValue)))
+    (valid : ∀ entry ∈ entries, 0 < entry.2.1 ∧ heap[entry.1]? = some (entryObject entry)) :
+    (HeapCalls.call program "solve" [.ref address] heap).Supported :=
+  («Returns» entries address heap stored valid).supported
+
+/-- Both complete source calls agree, including the original heap's aliases and cycles. -/
+theorem «Equiv(naive)» (entries : List Entry) (address : Nat) (heap : Mutable.Heap)
+    (globals : Mutable.Globals)
+    (closed : heap.Valid) (globalsWithin : ∀ entry ∈ globals, entry.2.edge.Within heap.length)
+    (stored : heap[address]? = some (.list (entries.map entryValue)))
+    (valid : ∀ entry ∈ entries, 0 < entry.2.1 ∧ heap[entry.1]? = some (entryObject entry)) :
+    (HeapCalls.call program "solve" [.ref address] heap globals).Equiv
+      (HeapCalls.call P99Ast.module "naive" [.ref address] heap globals) := by
+  obtain ⟨extra, left⟩ := result entries address heap stored valid globals
+  have right := data.«project-euler-statements».data.py.project_euler_statements.p99.naive.result
+    entries address heap stored valid globals
+  apply Mutable.Call.equiv_of_finishes left.finishes right.finishes
+  simpa only [List.append_nil] using
+    Mutable.Completion.equivalent_allocations heap extra []
+      (number (maximumIndex (entries.map Prod.snd))) globals closed trivial globalsWithin
+
+end solvers.«99».solve
