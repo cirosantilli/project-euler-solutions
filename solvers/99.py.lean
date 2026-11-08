@@ -1,4 +1,4 @@
-import solvers.«99.py.lean.d».Refinement
+import solvers.«99.py.lean.d».Comparison
 
 namespace solvers.«99».round_power_bounds
 open FormalSW.PyAst HeapCalls ProjectEulerSolutions.PowerIntervals
@@ -59,3 +59,17 @@ theorem «Supported» (left leftShift right rightShift : Nat) :
   («Returns» left leftShift right rightShift).supported
 
 end solvers.«99».compare_scaled
+
+namespace solvers.«99».compare_powers
+open FormalSW.PyAst HeapCalls
+
+theorem «Returns» (a : Nat) (m : Int) (b : Nat) (n : Int) (positiveA : 0 < a) (positiveB : 0 < b) :
+    (HeapCalls.call program "compare_powers" [number a, number m, number b, number n] []).Returns := by
+  obtain ⟨extra, returned⟩ := result a m b n positiveA positiveB []
+  exact returned.returns
+
+theorem «Supported» (a : Nat) (m : Int) (b : Nat) (n : Int) (positiveA : 0 < a) (positiveB : 0 < b) :
+    (HeapCalls.call program "compare_powers" [number a, number m, number b, number n] []).Supported :=
+  («Returns» a m b n positiveA positiveB).supported
+
+end solvers.«99».compare_powers
