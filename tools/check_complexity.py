@@ -123,7 +123,7 @@ def main():
         f"solvers/{problem}.py",
         f"data/project-euler-statements/data/py/project_euler_statements/p{problem}.py",
     )]
-    if set(problems) & {3, 4, 7, 10, 16, 20}:
+    if set(problems) & {3, 4, 7, 10, 13, 16, 20}:
         sources.append("data/project-euler-statements/data/py/project_euler_statements/common.py")
     for relative in sources:
         source = Path(relative)
@@ -166,7 +166,7 @@ def main():
     if 7 in problems:
         source = Path("data/project-euler-statements/data/py/project_euler_statements/common.py.lean.d/PrimeRuntimeResult.lean")
         check(source.resolve(), build / source.with_suffix(".olean"))
-    if set(problems) & {4, 16, 20}:
+    if set(problems) & {4, 13, 16, 20}:
         source = Path("data/project-euler-statements/data/py/project_euler_statements/common.py.lean.d/DigitsRuntimeCost.lean")
         check(source.resolve(), build / source.with_suffix(".olean"))
     if set(problems) & {16, 20}:
@@ -208,6 +208,11 @@ def main():
         for source in (Path("ProjectEulerSolutions/P9.lean"), Path("ProjectEulerSolutions/Equiv/P9.lean")):
             check(source.resolve(), build / source.with_suffix(".olean"))
     if 13 in problems:
+        for name in ("DigitsBERuntimeCost", "OfDigitsRuntimeCost", "OfDigitsBERuntimeCost"):
+            source = Path(f"data/project-euler-statements/data/py/project_euler_statements/common.py.lean.d/{name}.lean")
+            check(source.resolve(), build / source.with_suffix(".olean"))
+        source = Path("data/project-euler-statements/data/py/project_euler_statements/p13.py.lean.d/SourceRuntime.lean")
+        check(source.resolve(), build / source.with_suffix(".olean"))
         for name in ("FormattingRuntime", "ParsingRuntime", "FirstDigitsRuntime", "LeadingRuntime", "SourceRuntime"):
             source = Path(f"solvers/13.py.lean.d/{name}.lean")
             check(source.resolve(), build / source.with_suffix(".olean"))
@@ -300,11 +305,14 @@ def main():
                                for name in ("Source", "InnerRuntime", "LoopRuntime"))
                 sources.extend(Path(f"solvers/9.py.lean.d/{name}.lean") for name in
                                ("SortingRuntime", "ScalarRuntime", "GuardRuntime", "CandidateRuntime", "RangeRuntime", "OuterRuntime", "TailRuntime"))
-            if problem in (4, 16, 20):
+            if problem in (4, 13, 16, 20):
                 sources.append(Path("data/project-euler-statements/data/py/project_euler_statements/common.py.lean.d/DigitsRuntimeCost.lean"))
             if problem in (16, 20):
                 sources.append(Path("data/project-euler-statements/data/py/project_euler_statements/common.py.lean.d/DigitSumRuntimeCost.lean"))
             if problem == 13:
+                sources.extend(Path(f"data/project-euler-statements/data/py/project_euler_statements/common.py.lean.d/{name}.lean") for name in
+                               ("DigitsBERuntimeCost", "OfDigitsRuntimeCost", "OfDigitsBERuntimeCost"))
+                sources.append(Path("data/project-euler-statements/data/py/project_euler_statements/p13.py.lean.d/SourceRuntime.lean"))
                 sources.extend(Path(f"solvers/13.py.lean.d/{name}.lean") for name in
                                ("FormattingRuntime", "ParsingRuntime", "FirstDigitsRuntime", "LeadingRuntime", "SourceRuntime"))
             if problem == 4:
