@@ -37,6 +37,15 @@ theorem normalized_scaled (values : Fin 120 → Int) (scale : Int) (index : Fin 
   rw [gcdNormalized, Int.fdiv_eq_ediv_of_dvd (signedDivisor_dvd values scale index)]
   exact Int.mul_ediv_cancel_of_dvd (signedDivisor_dvd values scale index)
 
+theorem signedDivisor_nonzero (values : Fin 120 → Int) (scale : Int)
+    (nonzero : scale ≠ 0) (total : ∑ index, values index = scale) : signedDivisor values scale ≠ 0 := by
+  have scaledTotal : signedDivisor values scale * (∑ index, gcdNormalized values scale index) = scale := by
+    rw [Finset.mul_sum]
+    simpa only [normalized_scaled] using total
+  intro zero
+  rw [zero, zero_mul] at scaledTotal
+  exact nonzero scaledTotal.symm
+
 /-- The reference's final signed gcd makes the total positive without changing any stationary equation. -/
 theorem gcd_normalized_weights (sides : Nat) (values : Fin 120 → Int) (scale : Int)
     (nonzero : scale ≠ 0) (total : ∑ index, values index = scale)
@@ -45,10 +54,7 @@ theorem gcd_normalized_weights (sides : Nat) (values : Fin 120 → Int) (scale :
   have scaledTotal : signedDivisor values scale * (∑ index, gcdNormalized values scale index) = scale := by
     rw [Finset.mul_sum]
     simpa only [normalized_scaled] using total
-  have divisorNonzero : signedDivisor values scale ≠ 0 := by
-    intro zero
-    rw [zero, zero_mul] at scaledTotal
-    exact nonzero scaledTotal.symm
+  have divisorNonzero := signedDivisor_nonzero values scale nonzero total
   have naturalPositive : 0 < (IntegerGcdRow.divisor values : Int) := by
     have notZero : IntegerGcdRow.divisor values ≠ 0 := by
       intro zero

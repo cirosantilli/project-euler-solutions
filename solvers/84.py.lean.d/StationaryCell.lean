@@ -1,4 +1,5 @@
 import solvers.«84.py.lean.d».StationaryPivot
+import ProjectEulerSolutions.Lib.IntegerDivisionCalls
 
 namespace solvers.«84».stationary_weights
 open FormalSW.PyAst HeapCalls ProjectEulerSolutions
@@ -21,15 +22,7 @@ theorem cell_source : eliminationRowBody[(1 : Nat)]? =
     some (.forIn (.name "j") (.call (.name "range")
       [.binOp (.name "column") .add (.constant (.int 1)), .binOp (.name "size") .add (.constant (.int 1))]) cellBody []) := rfl
 
-theorem floor_divide (numerator divisor : Int) (heap : Mutable.Heap) (nonzero : divisor ≠ 0) :
-    Mutable.binary .floorDiv (.scalar (.int numerator)) (.scalar (.int divisor)) heap =
-      some (.ok (.scalar (.int (numerator.fdiv divisor))), heap) := by
-  by_cases positive : 0 < divisor
-  · simp [Mutable.binary, scalarBinary, nonzero, positive,
-      Int.fdiv_eq_ediv_of_nonneg numerator (by omega : 0 ≤ divisor)]
-  · have quotient : numerator.fdiv divisor = (-numerator) / (-divisor) := by
-      rw [← Int.neg_fdiv_neg, Int.fdiv_eq_ediv_of_nonneg _ (by omega : 0 ≤ -divisor)]
-    simp [Mutable.binary, scalarBinary, nonzero, positive, quotient]
+export ProjectEulerSolutions.IntegerDivisionCalls (floor_divide)
 
 theorem cell_value (matrix : Matrix (Fin 120) (Fin 121) Int) (heap : Mutable.Heap)
     (root : Nat) (addresses : Fin 120 → Nat) (view : MutableIntegerMatrix.View matrix heap root addresses)

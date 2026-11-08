@@ -1,4 +1,5 @@
 import solvers.«84.py.lean.d».StationaryBackRow
+import ProjectEulerSolutions.Lib.MatrixBackLoopCalls
 
 namespace solvers.«84».stationary_weights
 open FormalSW.PyAst HeapCalls ProjectEulerSolutions
@@ -17,29 +18,8 @@ theorem back_scan {sides : Nat} (state : Bareiss.State (Monopoly.augmentedMatrix
       BackView state.matrix (Bareiss.backwards state.matrix scale count bound values) afterHeap root addresses weights ∧
       (∀ name, name ≠ "row" → afterEnv name = env name) ∧
       ∀ address, weights ≠ address → afterHeap[address]? = heap[address]? := by
-  induction count generalizing values heap env with
-  | zero =>
-      exact ⟨env, heap, BlockContinues.range_done (by simp [Calls.rangeContinues]) .nil, view,
-        fun _ _ => rfl, fun _ _ => rfl⟩
-  | succ count ih =>
-      let row : Fin 120 := ⟨count, by omega⟩
-      let boundEnv := setLocal env "row" (.scalar (.int count))
-      have boundMatrix : boundEnv "matrix" = some (.ref root) := by simpa [boundEnv, setLocal] using getMatrix
-      have boundWeights : boundEnv "weights" = some (.ref weights) := by simpa [boundEnv, setLocal] using getWeights
-      have boundSize : boundEnv "size" = some (.scalar (.int 120)) := by simpa [boundEnv, setLocal] using getSize
-      have boundScale : boundEnv "scale" = some (.scalar (.int scale)) := by simpa [boundEnv, setLocal] using getScale
-      obtain ⟨written, nextView⟩ := back_row_result state values heap root weights addresses view row scale boundEnv globals
-        boundMatrix boundWeights rfl boundSize boundScale
-      obtain ⟨afterEnv, afterHeap, rest, finalView, locals, objects⟩ := ih _ (by omega) _ nextView boundEnv boundMatrix boundWeights boundSize boundScale
-      refine ⟨afterEnv, afterHeap, ?_, finalView, ?_, ?_⟩
-      · simp only [Nat.cast_add, Nat.cast_one, Int.add_sub_cancel]
-        apply BlockContinues.range_step (by simp [Calls.rangeContinues]; omega)
-        simpa only [Calls.loopContinuation, show Calls.loopControl backBody = false from rfl, Bool.false_eq_true, if_false,
-          sub_eq_add_neg] using written.append rest
-      · intro name notRow
-        exact (locals name notRow).trans (by simp [boundEnv, setLocal, notRow])
-      · intro address untouched
-        exact (objects address untouched).trans (List.getElem?_set_ne untouched)
+  exact ProjectEulerSolutions.MatrixBackLoopCalls.back_scan program state.matrix state.diagonal_nonzero values count bound scale
+    heap root weights addresses view env globals getMatrix getWeights getSize getScale
 
 /-- All 120 source reverse steps recover the proved integer solution at the final determinant scale. -/
 theorem back_loop_result {sides : Nat} (state : Bareiss.State (Monopoly.augmentedMatrix sides) 119)
