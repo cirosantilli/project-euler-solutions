@@ -64,8 +64,8 @@ The following implementations have runtime proofs following their generated Pyth
 |n is the number of rows plus entries. Fixed arithmetic, uniform in signed cell values. Whole-function bounds are `110n+300` for the optimized source and `500n+300` for the reference. Both charge setup, copies, traversal, comprehensions and the final return. The optimized source uses its declared triangle precondition; the reference also covers empty and ragged rows. No asymptotic improvement claimed.
 |19
 |link:solvers/19.py.lean.d/RuntimeCost.lean[O(n)]
-|Pending
-|n = abs(start_year) + abs(end_year) + 1. The optimized source costs at most `1637*max(end_year-1899,0)+32`, including all twelve months per year, short-circuit tests, leap-year calls and tuple membership. The reference runtime proof is unfinished.
+|link:data/project-euler-statements/data/py/project_euler_statements/p19.py.lean.d/RuntimeCost.lean[O(n²)]
+|n = abs(start_year) + abs(end_year) + 1. The optimized source costs at most `1637*max(end_year-1899,0)+32`; the reference costs at most `(1920n+66065)*max(end_year+1-start_year,0)+154n+3300`. Both include calendar helpers and collection work. The reference also charges date-record construction/access, month-table allocation, range sums and repeated year traversals, including signed or reversed ranges. These are upper bounds; no reference lower bound is claimed.
 |20
 |link:solvers/20.py.lean.d/RuntimeCost.lean[O(n log n)]
 |link:data/project-euler-statements/data/py/project_euler_statements/p20.py.lean.d/RuntimeCost.lean[O(n log n)]
@@ -119,17 +119,16 @@ python3 tools/check_complexity.py 1 2 3 4 5 6 7 8 9 10 13 15 16 18 20
 
 The link:tools/check_complexity.py[checker] regenerates the selected optimized and reference ASTs using formalsw's existing frontend, recompiles them, and checks the cost library, regressions, and source proofs through a shared process lock, with one Lean thread, a 2.5 GiB Lean heap limit and a watchdog that stops checks above 3 GiB resident memory. It does not depend on the earlier generated AST binaries being fresh. It does not rebuild the full Mathlib dependency tree. It also audits the exported proof theorems, accepting only Lean’s standard `propext`, `Classical.choice` and `Quot.sound` axioms. Pass problem numbers to check a subset, for example `python3 tools/check_complexity.py 1 3 9`.
 
-The checked runtime pairs share arithmetic and scalar-operation policies. Problem 4 uses `Calls` for the optimized string algorithm and `HeapCalls` for the reference's digit lists, with collection work charged in both. Problems 7 and 10 use `HeapCalls` for their bytearray sieves and `Calls` for their references; both charge the square-root library work. Both P8 functions use `HeapCalls`, with list length as their size and bounds uniform over all list contents and valid window widths. Both P9 implementations use `HeapCalls`, charging set operations, sorting, tuple construction and unpacking. Problems 13, 16, 18 and 20 also use `HeapCalls` on both sides. The other completed pairs use `Calls` on both sides. The earlier weighted P8 pair uses `HeapCalls` on both sides; its allocation costs, and the earlier transition counts, remain partial models. Existing functional-equivalence proofs remain separate.
+The checked runtime pairs share arithmetic and scalar-operation policies. Problem 4 uses `Calls` for the optimized string algorithm and `HeapCalls` for the reference's digit lists, with collection work charged in both. Problems 7 and 10 use `HeapCalls` for their bytearray sieves and `Calls` for their references; both charge the square-root library work. Both P8 functions use `HeapCalls`, with list length as their size and bounds uniform over all list contents and valid window widths. Both P9 implementations use `HeapCalls`, charging set operations, sorting, tuple construction and unpacking. Problems 13, 16, 18, 19 and 20 also use `HeapCalls` on both sides. The other completed pairs use `Calls` on both sides. The earlier weighted P8 pair uses `HeapCalls` on both sides; its allocation costs, and the earlier transition counts, remain partial models. Existing functional-equivalence proofs remain separate.
 
 == Extending coverage to 11–20
 
-Problems 13, 15, 16, 18 and 20 have runtime proofs on both sides. The other problems in this group remain unfinished. Their source shapes require the following extensions:
+Problems 13, 15, 16, 18, 19 and 20 have runtime proofs on both sides. The other problems in this group remain unfinished. Their source shapes require the following extensions:
 
 * 11: nested-list families and comprehension costs are modeled. The optimized domain fixes the grid at 20×20; its bound must respect that domain and account for the window argument.
 * 12: prime-table mutation and a search bound expressed through the first qualifying triangular index.
 * 14: memoized execution, dictionary costs and an explicit Collatz-chain measure. The existing functional proofs assume the Collatz conjecture; no polynomial bound in the starting limit follows from that assumption alone.
 * 17: the supplied global word tables and their lookup costs.
-* 19: the optimized bound and signed two-integer input family are proved. Date-record costs and the reference's leap-year/month-length helper bounds are checked; its range sums and repeated calendar traversals still need runtime proofs.
 
 == Size and cost conventions for the audit
 

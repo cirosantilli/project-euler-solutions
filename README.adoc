@@ -468,7 +468,7 @@ Let me know if you want that change.
 [[formalsw]]
 ===== Python source proofs with FormalSW
 
-Runtime complexity work for Python problems 1–20 is tracked in link:complexity-audit.adoc[]. `@formalsw: BigO(...)` defaults to fixed-cost arithmetic; add `arithmetic=bits` when integer widths matter. Keep one annotation per function, choosing the model that best explains its algorithm. Runtime proofs currently cover both optimized and primary reference implementations for problems 1–10, 13, 15, 16, 18 and 20, with one source annotation and an adjacent proof per function. Run `python3 tools/check_complexity.py 1 2 3 4 5 6 7 8 9 10 13 15 16 18 20` to check the current declarations and cost-model regressions.
+Runtime complexity work for Python problems 1–20 is tracked in link:complexity-audit.adoc[]. `@formalsw: BigO(...)` defaults to fixed-cost arithmetic; add `arithmetic=bits` when integer widths matter. Keep one annotation per function, choosing the model that best explains its algorithm. Runtime proofs currently cover both optimized and primary reference implementations for problems 1–10, 13, 15, 16, 18, 19 and 20, with one source annotation and an adjacent proof per function. Run `python3 tools/check_complexity.py 1 2 3 4 5 6 7 8 9 10 13 15 16 18 19 20` to check the current declarations and cost-model regressions.
 
 While trying to create Lean versions of each solution and proofs, we've realized that we didn't really want to learn Lean, and so instead we created https://github.com/cirosantilli/formalsw[FormalSW] which converts Python to a format Lean understand and then proves things in Lean from there.
 
