@@ -22,7 +22,7 @@ theorem result (choices : ChoiceSchedule) (globals : Mutable.Globals) (peers : P
       (∀ index < heap.length, address ≠ index → finalHeap[index]? = heap[index]?) ∧
       (match result with
        | none => ¬ ∃ assignment, Legal assignment ∧ Admits candidates assignment
-       | some after => View address finalHeap after.candidates ∧ propagationLoop.Finished candidates after) ∧
+       | some after => View address finalHeap after.candidates ∧ propagationLoop.Finished units candidates after) ∧
       SetCalls.Reaches choices program anchors
         ⟨⟨.operation (.call "reduce_cands") [.ref address], stack, heap⟩, used⟩
         ⟨⟨.value (.scalar (.bool result.isSome)), stack, finalHeap⟩, finalUsed⟩ globals := by

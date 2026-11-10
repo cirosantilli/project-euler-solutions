@@ -13,19 +13,20 @@ theorem source : definition.2.drop 2 = [statement, .return (.constant (.bool tru
 theorem body_source : outerBody = outerBody.take 3 ++ [onlyPlace.statement] := rfl
 theorem resume : Calls.loopContinuation outerBody statement = statement := rfl
 
-structure Success (before : Candidates) (after : Propagation.State) : Prop where
+structure Success (units : UnitTable) (before : Candidates) (after : Propagation.State) : Prop where
   progress : Propagation.Progress (singletons.initial before) after
   nonempty : Propagation.Nonempty after
   empty : after.queued = []
   equivalent : ∀ assignment, Legal assignment → (Admits after.candidates assignment ↔ Admits before assignment)
+  checked : after.changed = false → units.Covered after.candidates
 
-def bodyOutcome (choices : ChoiceSchedule) (globals : Mutable.Globals) (address : Nat)
+def bodyOutcome (choices : ChoiceSchedule) (globals : Mutable.Globals) (units : UnitTable) (address : Nat)
     (before : Candidates) (result : Option Propagation.State) (start : SetCalls.State) (env : HeapCalls.Env)
     (heap : Mutable.Heap) (used : Nat) (following : List Stmt) (anchors : Nat) (stack : List HeapCalls.Frame) : Prop :=
   match result with
   | none => (¬ ∃ assignment, Legal assignment ∧ Admits before assignment) ∧
       SetCalls.Reaches choices program anchors start ⟨⟨.value (.scalar (.bool false)), stack, heap⟩, used⟩ globals
-  | some after => View address heap after.candidates ∧ onlyPlace.Locals address after env ∧ Success before after ∧
+  | some after => View address heap after.candidates ∧ onlyPlace.Locals address after env ∧ Success units before after ∧
       SetCalls.Reaches choices program anchors start ⟨⟨.block following env, stack, heap⟩, used⟩ globals
 
 /-- Both propagation phases, with one fresh queue and at most nine fresh lists per unit. -/
@@ -39,7 +40,7 @@ theorem body (choices : ChoiceSchedule) (globals : Mutable.Globals) (peers : Pee
       finalHeap.length ≤ heap.length + 1 + 9 * units.units.length ∧
       (∀ index < heap.length, address ≠ index → finalHeap[index]? = heap[index]?) ∧
       (∀ name, name ∉ written → finalEnv name = env name) ∧
-      bodyOutcome choices globals address candidates result ⟨⟨.block (outerBody ++ following) env, stack, heap⟩, used⟩
+      bodyOutcome choices globals units address candidates result ⟨⟨.block (outerBody ++ following) env, stack, heap⟩, used⟩
         finalEnv finalHeap finalUsed following anchors stack := by
   obtain ⟨middleHeap, middleEnv, middleUsed, result, length, frame, names, executed⟩ :=
     singletons.execute choices globals peers address candidates heap env used found peerView getCandidates getPeers nonempty
@@ -60,7 +61,7 @@ theorem body (choices : ChoiceSchedule) (globals : Mutable.Globals) (peers : Pee
       rcases executed with ⟨middleView, middleLocals, progress, middleNonempty, _, empty, equivalent, path⟩
       have unitKept := units.preserve address heap middleHeap unitView (units.separation address heap candidates unitView found) frame
       have lookup := (names "UNITS" (by decide)).trans getUnits
-      obtain ⟨finalHeap, finalEnv, finalResult, lower, upper, finalFrame, finalNames, conclusion, finished⟩ :=
+      obtain ⟨finalHeap, finalEnv, finalResult, lower, upper, finalFrame, finalNames, conclusion, checked, finished⟩ :=
         onlyPlace.phase units address middle middleHeap middleEnv globals middleView.candidates
           ⟨middleLocals.candidates, middleLocals.changed⟩ unitKept lookup middleNonempty
       refine ⟨finalHeap, finalEnv, middleUsed, finalResult, by omega, by omega, ?_, ?_, ?_⟩
@@ -83,7 +84,7 @@ theorem body (choices : ChoiceSchedule) (globals : Mutable.Globals) (peers : Pee
         | some after =>
             refine ⟨finished.1, finished.2.1,
               ⟨progress.trans conclusion.progress, conclusion.nonempty, conclusion.queued.trans empty,
-                fun assignment legal => (conclusion.equivalent assignment legal).trans (equivalent assignment legal)⟩, ?_⟩
+                fun assignment legal => (conclusion.equivalent assignment legal).trans (equivalent assignment legal), checked⟩, ?_⟩
             rw [start]
             exact path.trans (SetCalls.Reaches.of_heap (finished.2.2 following anchors stack) choices middleUsed)
 

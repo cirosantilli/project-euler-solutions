@@ -29,20 +29,35 @@ theorem finish (choices : ChoiceSchedule) (globals : Mutable.Globals) (heap : Mu
   apply (Evaluates.lookup (globals := globals) (module := program) (heap := heap) changed anchors _).trans
   exact .next (by simp [step, run, Mutable.truth, scalarTruth]) .refl
 
-structure Finished (before : Candidates) (after : Propagation.State) : Prop where
+structure Finished (units : UnitTable) (before : Candidates) (after : Propagation.State) : Prop where
   subset : ∀ cell, after.candidates cell ⊆ before cell
   nonempty : Propagation.Nonempty after
   empty : after.queued = []
   unchanged : after.changed = false
   equivalent : ∀ assignment, Legal assignment → (Admits after.candidates assignment ↔ Admits before assignment)
+  covered : units.Covered after.candidates
 
-def outcome (choices : ChoiceSchedule) (globals : Mutable.Globals) (address : Nat)
+theorem Finished.solved {units : UnitTable} {before : Candidates} {after : Propagation.State}
+    (finished : Finished units before after) (complete : units.Complete)
+    (single : ∀ cell, (after.candidates cell).card = 1) :
+    ∃ assignment, Legal assignment ∧ Admits before assignment ∧
+      (∀ cell, after.candidates cell = {assignment cell}) ∧
+      (∀ other, Legal other → Admits before other → other = assignment) := by
+  obtain ⟨assignment, legal, assigned⟩ := units.singleton_legal complete after.candidates finished.covered single
+  have admitted : Admits after.candidates assignment := by intro cell; simp [assigned]
+  refine ⟨assignment, legal, (finished.equivalent assignment legal).mp admitted, assigned, ?_⟩
+  intro other otherLegal otherAdmitted
+  have afterAdmitted := (finished.equivalent other otherLegal).mpr otherAdmitted
+  funext cell
+  simpa [assigned] using afterAdmitted cell
+
+def outcome (choices : ChoiceSchedule) (globals : Mutable.Globals) (units : UnitTable) (address : Nat)
     (before : Candidates) (result : Option Propagation.State) (start : SetCalls.State) (env : HeapCalls.Env)
     (heap : Mutable.Heap) (used : Nat) (following : List Stmt) (anchors : Nat) (stack : List HeapCalls.Frame) : Prop :=
   match result with
   | none => (¬ ∃ assignment, Legal assignment ∧ Admits before assignment) ∧
       SetCalls.Reaches choices program anchors start ⟨⟨.value (.scalar (.bool false)), stack, heap⟩, used⟩ globals
-  | some after => View address heap after.candidates ∧ onlyPlace.Locals address after env ∧ Finished before after ∧
+  | some after => View address heap after.candidates ∧ onlyPlace.Locals address after env ∧ Finished units before after ∧
       SetCalls.Reaches choices program anchors start ⟨⟨.block following env, stack, heap⟩, used⟩ globals
 
 /-- Every further outer pass consumes candidates, regardless of peer-set iteration order. -/
@@ -56,7 +71,7 @@ theorem run (choices : ChoiceSchedule) (globals : Mutable.Globals) (peers : Peer
     ∃ finalHeap finalEnv finalUsed result, heap.length < finalHeap.length ∧
       (∀ index < heap.length, address ≠ index → finalHeap[index]? = heap[index]?) ∧
       (∀ name, name ∉ written → finalEnv name = env name) ∧
-      outcome choices globals address candidates result ⟨⟨.block (statement :: following) env, stack, heap⟩, used⟩
+      outcome choices globals units address candidates result ⟨⟨.block (statement :: following) env, stack, heap⟩, used⟩
         finalEnv finalHeap finalUsed following anchors stack := by
   have entry := enter choices globals heap env getChanged following anchors stack used
   obtain ⟨middleHeap, middleEnv, middleUsed, result, length, _, frame, names, executed⟩ :=
@@ -69,7 +84,7 @@ theorem run (choices : ChoiceSchedule) (globals : Mutable.Globals) (peers : Peer
       cases changed : middle.changed with
       | false =>
           exact ⟨middleHeap, middleEnv, middleUsed, some middle, length, frame, names, middleView, middleLocals,
-            ⟨success.progress.subset, success.nonempty, success.empty, changed, success.equivalent⟩,
+            ⟨success.progress.subset, success.nonempty, success.empty, changed, success.equivalent, success.checked changed⟩,
             entry.trans (path.trans (finish choices globals middleHeap middleEnv (by simpa [changed] using middleLocals.changed)
               following anchors stack middleUsed))⟩
       | true =>
@@ -96,7 +111,7 @@ theorem run (choices : ChoiceSchedule) (globals : Mutable.Globals) (peers : Peer
                 exact ⟨finalView, finalLocals,
                   ⟨fun cell => (finalSuccess.subset cell).trans (success.progress.subset cell), finalSuccess.nonempty,
                     finalSuccess.empty, finalSuccess.unchanged,
-                    fun assignment legal => (finalSuccess.equivalent assignment legal).trans (success.equivalent assignment legal)⟩,
+                    fun assignment legal => (finalSuccess.equivalent assignment legal).trans (success.equivalent assignment legal), finalSuccess.covered⟩,
                   entry.trans (path.trans finalPath)⟩
 termination_by weight candidates
 decreasing_by exact smaller

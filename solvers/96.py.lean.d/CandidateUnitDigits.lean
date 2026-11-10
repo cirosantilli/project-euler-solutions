@@ -22,13 +22,15 @@ theorem digits (address unit : Nat) (unitCells : Fin 9 → Cell)
       (∀ index < heap.length, address ≠ index → finalHeap[index]? = heap[index]?) ∧
       (∀ name, name ∉ ["k", "dbit", "places", "changed"] → finalEnv name = env name) ∧
       OnlyPlace.Conclusion state result ∧
+      OnlyPlace.Checked result (fun candidates => ∀ digit, k ≤ digit.val → OnlyPlace.Covers candidates unitCells digit) ∧
       outcome address result env heap [digitLoop k] finalEnv finalHeap globals := by
   induction remaining generalizing k state heap env with
   | zero =>
       have last : k = 9 := by omega
       subst k
       exact ⟨heap, env, some state, Nat.le_refl _, by omega, by intros; rfl, by intros; rfl,
-        OnlyPlace.Success.refl state nonempty, found, locals, BlockContinues.range_done rfl .nil⟩
+        OnlyPlace.Success.refl state nonempty, (by intro _ digit bound; have := digit.isLt; omega),
+        found, locals, BlockContinues.range_done rfl .nil⟩
   | succ remaining ih =>
       have inside : k < 9 := by omega
       let digit : Digit := ⟨k, inside⟩
@@ -49,7 +51,7 @@ theorem digits (address unit : Nat) (unitCells : Fin 9 → Cell)
       | none =>
           simp only [result, outcome] at executed
           simp only [result] at conclusion
-          refine ⟨middleHeap, middleEnv, none, by omega, by omega, frame, names, conclusion, ?_⟩
+          refine ⟨middleHeap, middleEnv, none, by omega, by omega, frame, names, conclusion, trivial, ?_⟩
           intro following
           apply BlockReturns.range_step continues
           simpa only [List.append_assoc, List.singleton_append] using
@@ -59,13 +61,25 @@ theorem digits (address unit : Nat) (unitCells : Fin 9 → Cell)
           simp only [result, OnlyPlace.Conclusion] at conclusion
           have unitKept := (frame unit (List.getElem?_eq_some_iff.mp unitFound).1 different).trans unitFound
           have lookup := (names "unit" (by decide)).trans getUnit
-          obtain ⟨finalHeap, finalEnv, finalResult, lower, upper, restFrame, restNames, finalConclusion, finished⟩ :=
+          obtain ⟨finalHeap, finalEnv, finalResult, lower, upper, restFrame, restNames, finalConclusion, checked, finished⟩ :=
             ih (k + 1) (by omega) middle middleHeap middleEnv executed.1 executed.2.1 unitKept lookup conclusion.nonempty
-          refine ⟨finalHeap, finalEnv, finalResult, by omega, by omega, ?_, ?_, OnlyPlace.Conclusion.trans conclusion finalConclusion, ?_⟩
+          refine ⟨finalHeap, finalEnv, finalResult, by omega, by omega, ?_, ?_, OnlyPlace.Conclusion.trans conclusion finalConclusion, ?_, ?_⟩
           · intro index bound away
             exact (restFrame index (by omega) away).trans (frame index bound away)
           · intro name outside
             exact (restNames name outside).trans (names name outside)
+          · cases finalResult with
+            | none => trivial
+            | some after =>
+                intro unchanged current bound
+                by_cases atCurrent : current.val = k
+                · have sameDigit : current = digit := Fin.ext atCurrent
+                  subst current
+                  rw [finalConclusion.stable unchanged]
+                  exact (OnlyPlace.covers_iff middle.candidates unitCells digit).mpr
+                    (OnlyPlace.inspect_unchanged state middle _ digit result
+                      (OnlyPlace.unchanged_before finalConclusion.progress unchanged)).2
+                · exact checked unchanged current (by omega)
           · cases finalResult with
             | none =>
                 intro following
@@ -88,10 +102,14 @@ theorem unit (address location : Nat) (unitCells : Fin 9 → Cell)
       (∀ index < heap.length, address ≠ index → finalHeap[index]? = heap[index]?) ∧
       (∀ name, name ∉ ["k", "dbit", "places", "changed"] → finalEnv name = env name) ∧
       OnlyPlace.Conclusion state result ∧
+      OnlyPlace.Checked result (fun candidates => ∀ digit, OnlyPlace.Covers candidates unitCells digit) ∧
       outcome address result env heap places.unitBody finalEnv finalHeap globals := by
-  obtain ⟨finalHeap, finalEnv, result, lower, upper, frame, names, conclusion, executed⟩ :=
+  obtain ⟨finalHeap, finalEnv, result, lower, upper, frame, names, conclusion, checked, executed⟩ :=
     digits address location unitCells peers different 0 9 rfl state heap env globals found locals unitFound getUnit nonempty
-  refine ⟨finalHeap, finalEnv, result, lower, upper, frame, names, conclusion, ?_⟩
+  refine ⟨finalHeap, finalEnv, result, lower, upper, frame, names, conclusion, ?_, ?_⟩
+  · cases result with
+    | none => trivial
+    | some after => exact fun unchanged digit => checked unchanged digit (Nat.zero_le _)
   cases result with
   | none =>
       intro following

@@ -117,13 +117,52 @@ structure Success (before after : Propagation.State) : Prop where
   queued : after.queued = before.queued
   equivalent : ∀ assignment, Legal assignment →
     (Admits after.candidates assignment ↔ Admits before.candidates assignment)
+  stable : after.changed = false → after.candidates = before.candidates
+
+theorem unchanged_before {before after : Propagation.State} (progress : Propagation.Progress before after)
+    (unchanged : after.changed = false) : before.changed = false := by
+  cases changed : before.changed with
+  | false => rfl
+  | true => have := progress.retainsChanged changed; simp [unchanged] at this
+
+theorem inspect_unchanged (before after : Propagation.State) (cells : List Cell) (digit : Digit)
+    (done : inspect before cells digit = some after) (unchanged : after.changed = false) :
+    after = before ∧ places after.candidates cells digit ≠ [] := by
+  have available : places before.candidates cells digit ≠ [] := by
+    intro missing
+    have rejected := (inspect_none before cells digit).mpr missing
+    rw [done] at rejected
+    contradiction
+  unfold inspect at done
+  split at done
+  · contradiction
+  · split at done
+    · cases done
+      exact ⟨rfl, available⟩
+    · cases done
+      simp [force] at unchanged
+  · cases done
+    exact ⟨rfl, available⟩
+
+def Covers (candidates : Candidates) (unit : Fin 9 → Cell) (digit : Digit) : Prop :=
+  ∃ index, digit ∈ candidates (unit index)
+
+theorem covers_iff (candidates : Candidates) (unit : Fin 9 → Cell) (digit : Digit) :
+    Covers candidates unit digit ↔ places candidates ((List.finRange 9).map unit) digit ≠ [] := by
+  simp [Covers, places, List.filter_eq_nil_iff]
+
+def Checked (result : Option Propagation.State) (property : Candidates → Prop) : Prop :=
+  match result with
+  | none => True
+  | some after => after.changed = false → property after.candidates
 
 theorem Success.refl (state : Propagation.State) (nonempty : Propagation.Nonempty state) : Success state state :=
-  ⟨.refl _, nonempty, rfl, fun _ _ => Iff.rfl⟩
+  ⟨.refl _, nonempty, rfl, fun _ _ => Iff.rfl, fun _ => rfl⟩
 
 theorem Success.trans {a b c : Propagation.State} (first : Success a b) (second : Success b c) : Success a c :=
   ⟨first.progress.trans second.progress, second.nonempty, second.queued.trans first.queued,
-    fun assignment legal => (second.equivalent assignment legal).trans (first.equivalent assignment legal)⟩
+    fun assignment legal => (second.equivalent assignment legal).trans (first.equivalent assignment legal),
+    fun unchanged => (second.stable unchanged).trans (first.stable (unchanged_before second.progress unchanged))⟩
 
 def Conclusion (before : Propagation.State) (result : Option Propagation.State) : Prop :=
   match result with
@@ -137,7 +176,8 @@ theorem conclusion (state : Propagation.State) (unit : Fin 9 → Cell) (digit : 
   | none => exact inspect_impossible state unit digit peers result
   | some after =>
       obtain ⟨progress, nonempty, queued, equivalent⟩ := inspect_some state after unit digit peers nonempty result
-      exact ⟨progress, nonempty, queued, equivalent⟩
+      exact ⟨progress, nonempty, queued, equivalent, fun unchanged =>
+        congrArg Propagation.State.candidates (inspect_unchanged state after _ digit result unchanged).1⟩
 
 theorem Conclusion.trans {a b : Propagation.State} {result : Option Propagation.State}
     (first : Success a b) (second : Conclusion b result) : Conclusion a result := by

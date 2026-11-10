@@ -21,11 +21,12 @@ theorem units (table : UnitTable) (address : Nat) (before remaining : List UnitE
       (∀ index < heap.length, address ≠ index → finalHeap[index]? = heap[index]?) ∧
       (∀ name, name ∉ ["unit", "k", "dbit", "places", "changed"] → finalEnv name = env name) ∧
       OnlyPlace.Conclusion state result ∧
+      OnlyPlace.Checked result (fun candidates => ∀ unit ∈ remaining, ∀ digit, OnlyPlace.Covers candidates unit.cells digit) ∧
       outcome address result env heap [unitsLoop table before.length] finalEnv finalHeap globals := by
   induction remaining generalizing before state heap env with
   | nil =>
       refine ⟨heap, env, some state, Nat.le_refl _, by simp, by intros; rfl, by intros; rfl,
-        OnlyPlace.Success.refl state nonempty, found, locals, ?_⟩
+        OnlyPlace.Success.refl state nonempty, (by intro _ unit member; cases member), found, locals, ?_⟩
       apply BlockContinues.sequence_done (items := UnitTable.references table.units)
       · simp [Mutable.sequence, sequenceValue, tableView.root]
       · simp [UnitTable.references, split]
@@ -35,7 +36,7 @@ theorem units (table : UnitTable) (address : Nat) (before remaining : List UnitE
       let ready := setLocal env "unit" (.ref current.address)
       have readyLocals : Locals address state ready :=
         ⟨by simpa [ready, setLocal] using locals.candidates, by simpa [ready, setLocal] using locals.changed⟩
-      obtain ⟨middleHeap, middleEnv, middleResult, lower, upper, frame, envFrame, conclusion, executed⟩ :=
+      obtain ⟨middleHeap, middleEnv, middleResult, lower, upper, frame, envFrame, conclusion, checkedUnit, executed⟩ :=
         unit address current.address current.cells current.related (separate.units current member) state heap ready globals
           found readyLocals (tableView.units current member) (by simp [ready, setLocal]) nonempty
       have names : ∀ name, name ∉ ["unit", "k", "dbit", "places", "changed"] → middleEnv name = env name := by
@@ -51,7 +52,7 @@ theorem units (table : UnitTable) (address : Nat) (before remaining : List UnitE
       | none =>
           change OnlyPlace.Conclusion state none at conclusion
           change outcome address none ready heap places.unitBody middleEnv middleHeap globals at executed
-          refine ⟨middleHeap, middleEnv, none, lower, by simp only [List.length_cons]; omega, frame, names, conclusion, ?_⟩
+          refine ⟨middleHeap, middleEnv, none, lower, by simp only [List.length_cons]; omega, frame, names, conclusion, trivial, ?_⟩
           intro following
           apply BlockReturns.sequence_step sequence item
           simpa only [List.append_assoc, List.singleton_append] using
@@ -59,15 +60,23 @@ theorem units (table : UnitTable) (address : Nat) (before remaining : List UnitE
       | some middle =>
           change OnlyPlace.Success state middle at conclusion
           change outcome address (some middle) ready heap places.unitBody middleEnv middleHeap globals at executed
-          obtain ⟨finalHeap, finalEnv, finalResult, restLower, restUpper, restFrame, restNames, finalConclusion, finished⟩ :=
+          obtain ⟨finalHeap, finalEnv, finalResult, restLower, restUpper, restFrame, restNames, finalConclusion, checkedRest, finished⟩ :=
             ih (before ++ [current]) (by simpa only [List.append_assoc, List.singleton_append] using split) middle middleHeap middleEnv
               executed.1 executed.2.1 (table.preserve address heap middleHeap tableView separate frame) conclusion.nonempty
           refine ⟨finalHeap, finalEnv, finalResult, by omega, by simp only [List.length_cons]; omega,
-            ?_, ?_, OnlyPlace.Conclusion.trans conclusion finalConclusion, ?_⟩
+            ?_, ?_, OnlyPlace.Conclusion.trans conclusion finalConclusion, ?_, ?_⟩
           · intro index bound away
             exact (restFrame index (by omega) away).trans (frame index bound away)
           · intro name outside
             exact (restNames name outside).trans (names name outside)
+          · cases finalResult with
+            | none => trivial
+            | some after =>
+                intro unchanged unit member digit
+                rcases List.mem_cons.mp member with rfl | member
+                · rw [finalConclusion.stable unchanged]
+                  exact checkedUnit (OnlyPlace.unchanged_before finalConclusion.progress unchanged) digit
+                · exact checkedRest unchanged unit member digit
           · cases finalResult with
             | none =>
                 intro following
@@ -90,11 +99,12 @@ theorem phase (table : UnitTable) (address : Nat) (state : Propagation.State)
       (∀ index < heap.length, address ≠ index → finalHeap[index]? = heap[index]?) ∧
       (∀ name, name ∉ ["unit", "k", "dbit", "places", "changed"] → finalEnv name = env name) ∧
       OnlyPlace.Conclusion state result ∧
+      OnlyPlace.Checked result table.Covered ∧
       outcome address result env heap [statement] finalEnv finalHeap globals := by
-  obtain ⟨finalHeap, finalEnv, result, lower, upper, frame, names, conclusion, executed⟩ :=
+  obtain ⟨finalHeap, finalEnv, result, lower, upper, frame, names, conclusion, checked, executed⟩ :=
     units table address [] table.units rfl state heap env globals found locals tableView
       (table.separation address heap state.candidates tableView found) nonempty
-  refine ⟨finalHeap, finalEnv, result, lower, upper, frame, names, conclusion, ?_⟩
+  refine ⟨finalHeap, finalEnv, result, lower, upper, frame, names, conclusion, checked, ?_⟩
   cases result with
   | none =>
       intro following
