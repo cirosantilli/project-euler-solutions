@@ -547,7 +547,7 @@ Problem 32 has structural source equivalence and termination proofs for every in
 
 Problem 33’s source-level equivalence proof covers decimal string replacement, the nested fraction search, tuple allocations, and reduction of the product by its greatest common divisor.
 
-Problem 34’s previous source proof is archived after removing the reference-only search-limit argument. Both implementations derive a finite bound from the maximum digit-factorial sum. Structural `Equiv` checking for the fixed problem remains pending.
+Problem 34 has structural source termination and equivalence proofs for every numeral base at least two. Both searches use a complete bound derived from digit growth and the maximum digit-factorial sum, without a supplied search limit. The default decimal call follows from the general proof.
 
 Problem 35’s source-level equivalence proof covers the prime sieve, decimal rotations, captured primality lookup, and circular-prime count for every nonnegative limit.
 
@@ -555,7 +555,7 @@ Problem 36’s source-level equivalence and termination proofs cover every nonne
 
 Problem 37 has source-level equivalence and support proofs for every numeral base at least two. Both searches return the complete sum exactly when their right-truncatable-prime tree exhausts, and otherwise both supported-diverge. The proof covers the mutable frontier traversal, duplicate-free candidates, prime tests, arithmetic suffixes, and digit-list truncations. Neither implementation prescribes a depth or success count. A separate decimal certificate closes the full prime tree and proves default-call termination at 748317.
 
-Problem 38’s previous source proof is archived after removing the reference-only base-search limit. The four-digit base bound follows from fitting at least two products into nine digits. Structural `Equiv` checking remains pending.
+Problem 38 has structural source termination and equivalence proofs for every signed target width. Complete seed and product-count bounds follow from the requested width. Both searches return zero outside widths two through nine, without a supplied search limit.
 
 Problem 39’s source-level equivalence proof connects primitive Pythagorean triples and their multiples to the reference’s triangle counts, including first-on-tie perimeter selection, for every nonnegative limit.
 
@@ -569,9 +569,9 @@ Problem 43’s source-level equivalence proof covers the complete tuple-key tabl
 
 Problem 44’s source-level equivalence proof covers pentagonal-table allocation and writes, the exhaustive and integer-square-root predicates, pair enumeration, the descending scan’s early break, and bounded minimum selection for every nonnegative limit. Both implementations terminate; the reference also handles negative limits. The contract uses positive indices and returns `10**30` when no qualifying pair improves that bound. The proofs use only standard Lean axioms.
 
-Problem 45 now generalizes over an integer threshold `after` on both sides. The reference merges increasing triangular, pentagonal, and hexagonal sequences, while the optimized solver searches hexagonal values. Neither uses a numeric cutoff. The earlier fixed-instance source proof is retained as an attempt pending a generalized `Equiv` proof.
+Problem 45 has structural source termination and equivalence proofs for every signed `after` threshold. A recurrence supplies arbitrarily large common polygonal values. The reference’s three-way merge and the optimized hexagonal search both reach the least qualifying value without a search cutoff.
 
-Problem 46’s public naive reference now searches for the first counterexample without a numeric cutoff. The earlier bounded-reference source proof is retained as an attempt pending structural `Equiv` checking of the fixed problem.
+Problem 46 has structural source equivalence and support proofs for every signed `after` threshold. Both searches return the same least counterexample when one exists, and otherwise both diverge. The explicit counterexample 5777 separately establishes default-call termination.
 
 Problem 47’s source-level equivalence proof covers guarded primality calls, filtered sums, mutable sieve allocation and updates, streak counting, early return, and repeated sieve rebuilding after doubling. The contract covers every positive factor count with an equal run length and every positive initial bound. Reference termination and the least-run argument are conditional on the existing `ProjectEulerStatements.P47.exists_consecutive_with_n_factors` axiom; the sieve proof itself uses only standard Lean axioms. No new axiom is introduced.
 
@@ -581,9 +581,9 @@ Problem 49’s source-level equivalence proof covers the Boolean sieve, decimal 
 
 Problem 50’s source-level equivalence proof covers the bytearray sieve, prime filtering, prefix sums, maximum-length discovery, descending window search, early breaks and returns, and the reference’s exhaustive tuple collection and keyed maximum. The contract covers every integer limit and preserves first-on-tie selection. The proofs use only standard Lean axioms.
 
-Problem 51’s optimized search now expands digit widths without a fixed cutoff, matching its unbounded naive reference. The previous proof restricted to targets through eight is retained as an attempt; there is no unconditional termination claim for targets without a matching family.
+Problem 51 has structural source equivalence and support proofs for every signed family threshold. Both searches return the same least prime when a qualifying family exists, and otherwise both diverge. A checked eight-member family proves termination for thresholds at most eight; thresholds above ten cannot succeed. Termination for nine and ten remains conditional on existence.
 
-Problem 52’s implementations now have no artificial upper multiplier cap. The previous proof for multipliers through six is retained as an attempt, and larger checked witnesses demonstrate why that restriction was insufficient. A generalized `Equiv` proof remains pending.
+Problem 52 has structural source equivalence for every positive multiplier. Both searches terminate at the least solution for multipliers one through nine. Larger multipliers cannot preserve decimal width, and both searches diverge with supported execution.
 
 Problem 53’s source-level equivalence proof covers every integer bound and threshold. Exact binomial updates, symmetry, and monotonicity justify the early break; the reference’s nested generator sum terminates for all inputs. The nonpositive-threshold shortcut counts both row endpoints. The proofs use only standard Lean axioms.
 
@@ -614,6 +614,8 @@ Problem 74 has structural source termination and equivalence proofs for every si
 Problem 75 has structural source termination and equivalence proofs for every signed perimeter bound. The optimized proof executes list allocation, the integer-square-root bound, parity and gcd tests, both continue paths, the increasing-perimeter break, strided counter updates, and the live filtered sum. Pythagorean classification and uniqueness justify the complete multiplicity table. The reference proof covers both nested generator loops and the outer singular-count sum. Negative bounds return zero, and existing caller heap objects are preserved. The proofs use only standard Lean axioms and do not evaluate either whole program. The standalone Lean array sieve has the same signed interface and a structural equivalence proof.
 
 Problem 76 has structural source termination and equivalence proofs for every signed integer input. The recursive reference preserves an exact cache keyed by both the remaining sum and maximum part. The optimized proof executes list allocation, initialization, ascending part and sum loops, in-place additions, and the final indexed read. A coin-change frontier connects the complete table to the unordered partition recurrence. Negative inputs return zero, and zero counts the empty partition. Caller heap objects are preserved. The proofs use only standard Lean axioms and do not evaluate either whole program. The standalone Lean array solver shares the signed interface and has proved termination and equivalence.
+
+Problem 84 has complete structural source termination and equivalence proofs for every positive dice size. The weighted transition builder and exhaustive reference enumeration give the same matrix. Bareiss and gcd-reduced Gaussian elimination produce proportional positive-total integer stationary weights, so both complete source calls return the same modal string with the same tie breaks. Caller heaps and global aliases are preserved. The proofs use only standard Lean axioms. This covers the independent uniform-card model documented in `spec.yaml`; it does not assume equivalence to cycling shuffled decks.
 
 Problem 93 has structural source termination and equivalence proofs for every signed maximum operand, including the omitted default argument. Exact expression-tree enumeration agrees with memoized canonical rational-pair reduction. The optimized proof covers every set traversal order, positive-integer collection, consecutive-run scoring, and first-on-tie winner selection. Bounds below three return an empty tuple. Caller objects are preserved, and the proofs use only standard Lean axioms without evaluating either complete program.
 
