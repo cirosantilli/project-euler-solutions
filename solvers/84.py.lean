@@ -1,4 +1,4 @@
-import solvers.«84.py.lean.d».TransitionRowBuild
+import solvers.«84.py.lean.d».TransitionIndex
 
 namespace solvers.«84».encode_state
 open FormalSW.PyAst HeapCalls
@@ -38,3 +38,16 @@ theorem «Supported» (square : Int) :
   («Returns» square).supported
 
 end solvers.«84».resolve_landing
+
+namespace solvers.«84».build_transition
+open FormalSW.PyAst
+
+theorem «Returns» (sides : Nat) (positive : 0 < sides) :
+    (HeapMemoCalls.call program "build_transition" [.scalar (.int sides)] []).Returns :=
+  (result sides positive [] []).returns
+
+theorem «Supported» (sides : Nat) (positive : 0 < sides) :
+    (HeapMemoCalls.call program "build_transition" [.scalar (.int sides)] []).Supported :=
+  («Returns» sides positive).supported
+
+end solvers.«84».build_transition
