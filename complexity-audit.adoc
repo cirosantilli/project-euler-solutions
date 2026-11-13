@@ -46,6 +46,10 @@ The following implementations have runtime proofs following their generated Pyth
 |link:solvers/10.py.lean.d/RuntimeCost.lean[O(n log n)]
 |link:data/project-euler-statements/data/py/project_euler_statements/p10.py.lean.d/RuntimeCost.lean[O(n sqrt n)]
 |Fixed arithmetic. Includes every primality test, its square-root library call, and filtering/summation overhead. The link:data/project-euler-statements/data/py/project_euler_statements/common.py.lean.d/PrimeRuntimeCost.lean[shared primality proof] also supplies problem 3's bit-cost bound. The optimized bound includes buffer allocation, square-root work, every candidate iteration, slice writes and the final sum. These are upper bounds; no tight reference lower bound is claimed.
+|11
+|Pending
+|link:data/project-euler-statements/data/py/project_euler_statements/p11.py.lean.d/RuntimeCost.lean[O(n²)]
+|n = abs(window) + 1. The reference bound covers arbitrary signed windows and ragged grids, charging every product call, both comprehension loops, temporary allocation, in-place list extension and the final maximum scan. Negative windows can produce quadratically many candidates; this does not establish an improvement on the optimized solver’s nonnegative-window domain.
 |13
 |link:solvers/13.py.lean.d/RuntimeCost.lean[O(n)]
 |link:data/project-euler-statements/data/py/project_euler_statements/p13.py.lean.d/RuntimeCost.lean[O(n)]
@@ -125,7 +129,7 @@ The checked runtime pairs share arithmetic and scalar-operation policies. Proble
 
 Problems 13, 15, 16, 18, 19 and 20 have runtime proofs on both sides. The other problems in this group remain unfinished. Their source shapes require the following extensions:
 
-* 11: nested-list families can measure the signed window argument, and in-place list concatenation charges resizing and copying. The reference grid-access and four product-helper runtime bounds are checked in link:data/project-euler-statements/data/py/project_euler_statements/p11.py.lean.d/ProductRuntime.lean[]. The outer comprehensions and complete source bounds remain unfinished. The optimized domain fixes the grid at 20×20; its bound must respect that domain and account for the window argument.
+* 11: the complete reference runtime bound is proved. The optimized domain fixes the grid at 20×20; its pending bound must respect that domain and account for the window argument.
 * 12: prime-table mutation and a search bound expressed through the first qualifying triangular index.
 * 14: memoized execution, dictionary costs and an explicit Collatz-chain measure. The existing functional proofs assume the Collatz conjecture; no polynomial bound in the starting limit follows from that assumption alone.
 * 17: the supplied global word tables and their lookup costs.

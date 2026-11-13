@@ -1,7 +1,9 @@
 import «.formalsw».solvers.«11.py.ast»
 import data.«project-euler-statements».data.py.project_euler_statements.«p11.py»
 import ProjectEulerStatements.P11
-import FormalSW
+import lang.py.FormalSW.UnpackingCalls
+import Mathlib.Tactic.IntervalCases
+import Mathlib.Data.List.TakeDrop
 
 namespace solvers.«11»
 open FormalSW.PyAst

@@ -87,9 +87,18 @@ def main():
     lean = subprocess.check_output(
         ["lake", "env", "which", "lean"], text=True, env=environment
     ).strip()
-    for name in ("ExecutionCost", "ExecutionCostDomain", "CallsCost", "CallsCostLoops", "CallsCostControl", "HeapCallsCost", "HeapCallsCostLists", "ScalarSortCost", "WeightedExecutionCost", "AllocationCost", "HeapReadCost", "BufferCost", "BufferCostSlice", "RuntimeCost", "PrimitiveWork", "PrimitiveWorkBounds", "CallsRuntimeCost", "CallsRuntimeCostLoops", "CallsRuntimeCostControl", "CallsRuntimeCostFunctions", "CallsRuntimeCostScaled", "CallsRuntimeCostBitBounds", "CallsRuntimeCostNumberBounds", "CallsRuntimeCostLinking", "CallsRuntimeCostBlocks", "DecimalWorkBounds", "IntegerListWork", "FactorialWorkBounds", "CallsRuntimeCostStrings", "CallsRuntimeCostRanges", "LcmRuntimeCost", "FibonacciRuntimeCost", "HeapMapWork", "HeapRecordWork", "HeapSetWork", "HeapSortWork", "HeapBufferWork", "HeapSequenceWork", "DynamicArrayWork", "AmortizedRuntimeCost", "HeapRuntimeCost", "HeapRuntimeInputs", "HeapRuntimeCostLists", "HeapRuntimeCostControl", "HeapRuntimeCostRecords", "HeapRuntimeCostLibrary", "HeapRuntimeCostRanges", "HeapRuntimeCostBuffers", "HeapRuntimeCostBufferLoops", "HeapRuntimeCostReturns", "HeapRuntimeCostPrimitives", "HeapRuntimeCostSequences", "HeapRuntimeCostStrings", "HeapRuntimeCostComprehensions", "HeapRuntimeCostLoopControl", "HeapRuntimeCostListCopies", "HeapRuntimeCostListExtension", "HeapRuntimeCostSetup", "HeapRuntimeCostListLoops", "HeapRuntimeCostSumGenerators", "HeapRuntimeCostRangeSums", "HeapRuntimeCostSums", "DecimalSumRuntimeCost", "HeapRuntimeCostSets", "HeapRuntimeCostComparisons", "HeapRuntimeCostSorting", "HeapRuntimeCostMembership", "HeapRuntimeCostBooleans"):
+    for name in ("ExecutionCost", "ExecutionCostDomain", "CallsCost", "CallsCostLoops", "CallsCostControl", "HeapCallsCost", "HeapCallsCostLists", "ScalarSortCost", "WeightedExecutionCost", "AllocationCost", "HeapReadCost", "BufferCost", "BufferCostSlice", "RuntimeCost", "PrimitiveWork", "PrimitiveWorkBounds", "CallsRuntimeCost", "CallsRuntimeCostLoops", "CallsRuntimeCostControl", "CallsRuntimeCostFunctions", "CallsRuntimeCostScaled", "CallsRuntimeCostBitBounds", "CallsRuntimeCostNumberBounds", "CallsRuntimeCostLinking", "CallsRuntimeCostBlocks", "DecimalWorkBounds", "IntegerListWork", "FactorialWorkBounds", "CallsRuntimeCostStrings", "CallsRuntimeCostRanges", "LcmRuntimeCost", "FibonacciRuntimeCost", "HeapMapWork", "HeapRecordWork", "HeapSetWork", "HeapSortWork", "HeapBufferWork", "HeapSequenceWork", "DynamicArrayWork", "AmortizedRuntimeCost", "HeapRuntimeCost", "HeapRuntimeInputs", "HeapRuntimeCostLists", "HeapRuntimeCostControl", "HeapRuntimeCostRecords", "HeapRuntimeCostLibrary", "HeapRuntimeCostRanges", "HeapRuntimeCostBuffers", "HeapRuntimeCostBufferLoops", "HeapRuntimeCostReturns", "HeapRuntimeCostPrimitives", "HeapRuntimeCostExtrema", "HeapRuntimeCostSequences", "HeapRuntimeCostStrings", "HeapRuntimeCostComprehensions", "HeapRuntimeCostRangeComprehensions", "HeapRuntimeCostLoopControl", "HeapRuntimeCostListCopies", "HeapRuntimeCostListExtension", "HeapRuntimeCostSetup", "HeapRuntimeCostListLoops", "HeapRuntimeCostSumGenerators", "HeapRuntimeCostRangeSums", "HeapRuntimeCostSums", "DecimalSumRuntimeCost", "HeapRuntimeCostSets", "HeapRuntimeCostComparisons", "HeapRuntimeCostSorting", "HeapRuntimeCostMembership", "HeapRuntimeCostBooleans"):
         check(FORMALSW / f"lang/py/FormalSW/{name}.lean",
               FORMALSW / f".lake/build/lib/lean/lang/py/FormalSW/{name}.olean")
+    if 11 in problems:
+        statements_lean = ROOT / "data/project-euler-statements/data/lean"
+        for relative in (Path("ProjectEulerStatements/Lib/Grid.lean"),
+                         Path("ProjectEulerStatements/Lib/ListMaximum.lean"),
+                         Path("ProjectEulerStatements/Lib/GridProducts.lean"),
+                         Path("ProjectEulerStatements/P11.lean")):
+            check(statements_lean / relative,
+                  statements_lean / ".lake/build/lib/lean" / relative.with_suffix(".olean"),
+                  source_root=statements_lean)
     if 18 in problems:
         statements_lean = ROOT / "data/project-euler-statements/data/lean"
         for relative in (Path("ProjectEulerStatements/P18.lean"),
@@ -162,6 +171,8 @@ def main():
     check(FORMALSW / "tests/py/runtime_records.lean")
     check(FORMALSW / "tests/py/runtime_range_sums.lean")
     check(FORMALSW / "tests/py/runtime_list_extension.lean")
+    check(FORMALSW / "tests/py/runtime_range_comprehensions.lean")
+    check(FORMALSW / "tests/py/runtime_extrema.lean")
     with tempfile.TemporaryDirectory(prefix="formalsw-runtime-inputs-") as directory:
         generated = Path(directory) / "ListInputs.lean"
         subprocess.run([sys.executable, str(FORMALSW / "tests/py/execution_complexity_checks"),
@@ -219,7 +230,7 @@ def main():
         for source in (Path("ProjectEulerSolutions/P9.lean"), Path("ProjectEulerSolutions/Equiv/P9.lean")):
             check(source.resolve(), build / source.with_suffix(".olean"))
     if 11 in problems:
-        for name in ("GridRuntime", "ProductRuntime"):
+        for name in ("GridRuntime", "ProductRuntime", "ComprehensionRuntime", "CollectionRuntime", "SourceRuntime"):
             source = Path(f"data/project-euler-statements/data/py/project_euler_statements/p11.py.lean.d/{name}.lean")
             check(source.resolve(), build / source.with_suffix(".olean"))
     if 13 in problems:
@@ -333,7 +344,7 @@ def main():
                 sources.append(Path("data/project-euler-statements/data/py/project_euler_statements/common.py.lean.d/DigitSumRuntimeCost.lean"))
             if problem == 11:
                 sources.extend(Path(f"data/project-euler-statements/data/py/project_euler_statements/p11.py.lean.d/{name}.lean")
-                               for name in ("GridRuntime", "ProductRuntime"))
+                               for name in ("GridRuntime", "ProductRuntime", "ComprehensionRuntime", "CollectionRuntime", "SourceRuntime"))
             if problem == 13:
                 sources.extend(Path(f"data/project-euler-statements/data/py/project_euler_statements/common.py.lean.d/{name}.lean") for name in
                                ("DigitsBERuntimeCost", "OfDigitsRuntimeCost", "OfDigitsBERuntimeCost"))
@@ -359,7 +370,9 @@ def main():
                 for name in ("IntegerListWork", "HeapRuntimeCostStrings", "HeapRuntimeCostComprehensions", "HeapRuntimeCostSumGenerators"):
                     names.extend(public_theorems(FORMALSW / f"lang/py/FormalSW/{name}.lean"))
             if problem == 11:
-                names.extend(public_theorems(FORMALSW / "lang/py/FormalSW/HeapRuntimeCostListExtension.lean"))
+                for name in ("HeapRuntimeCostListExtension", "HeapRuntimeCostRangeComprehensions", "HeapRuntimeCostExtrema"):
+                    names.extend(public_theorems(FORMALSW / f"lang/py/FormalSW/{name}.lean"))
+                names.append("FormalSW.PyAst.HeapCalls.Runtime.NestedIntList.typed")
                 names.extend(["FormalSW.PyAst.HeapCalls.Runtime.EvaluatesIn.nonnegative_below",
                               "FormalSW.PyAst.HeapCalls.Runtime.BlockContinuesIn.for_range_bound"])
             if problem == 18:
