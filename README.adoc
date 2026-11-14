@@ -468,8 +468,6 @@ Let me know if you want that change.
 [[formalsw]]
 ===== Python source proofs with FormalSW
 
-Runtime complexity work for Python problems 1–30 is tracked in link:complexity-audit.adoc[]. `@formalsw: BigO(...)` defaults to fixed-cost arithmetic; add `arithmetic=bits` when integer widths matter. Keep one annotation per function, choosing the model that best explains its algorithm. Runtime proofs cover both optimized and primary reference implementations for problems 1–23 and 28, with one source annotation and an adjacent proof per function. Run `python3 tools/check_complexity.py 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 28` to check the declarations and cost-model regressions. Both problem 14 bounds use total Collatz-chain work under the existing Collatz assumption; they do not establish a polynomial bound in the input or an asymptotic speedup. Problem 28 establishes O(1) for the formula versus a reference traversal that is O(n) and not O(1).
-
 While trying to create Lean versions of each solution and proofs, we've realized that we didn't really want to learn Lean, and so instead we created https://github.com/cirosantilli/formalsw[FormalSW] which converts Python to a format Lean understand and then proves things in Lean from there.
 
 FormalSW theorems are stated in Python docstrings for each function e.g. link:solvers/1.py[] contains:
@@ -507,11 +505,31 @@ data/project-euler-statements/formalsw/formalsw solvers/1.py
 
 The proofs of FormalSW statements such as `Equiv` as present in .py.lean files present next to each .py file, e.g.: link:solvers/1.py.lean[]. These files are very complicated for humans to understand, but that's fine, we just have LLMs deal with it for us, and Lean checks that the required proof checks out.
 
-Keep custom Lean contracts in those proof files rather than duplicating them in Python docstrings. FormalSW compiles the entire adjacent proof file, including when the Python file has no property markers; the reported property count counts only marker-generated obligations.
-
 When proofs are larger and this can make compilation run faster, we also by convention create a `solvers/N.py.lean.d` diretory from which `py.lean` can import partial results from, see e.g. link:
 
 Reusable mathematical concepts and lemmas are stored under link:ProjectEulerSolutions/Lib/[] so that they may be used across multiple programming languages and problems as needed.
+
+For some of the problems, we have also produced `BigO` complexity proofs, in an attempt to prove that the optimized algorithm is better than the naive one. For example link:solvers/1.py[] contains:
+
+[source,python]
+----
+def solve(n: int) -> int:
+    """
+    @formalsw: BigO(1)
+    """
+----
+
+which states that the algorithm finishes in constant time following the default model in which each arithmetic operation is a single operation. This is an improvement over the naive implementation link:data/project-euler-statements/data/py/project_euler_statements/p1.py[] which instead has:
+
+[source,python]
+----
+def naive(n: int) -> int:
+    """
+    @formalsw: BigO(n)
+    """
+----
+
+Codex status dump of complexity at: complexity-audit.adoc[].
 
 [[nagini]]
 ====== Python source proofs with Nagini
